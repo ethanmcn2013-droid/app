@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-settings",
+  "source": "tasks/src/app/app/settings/page.tsx",
+  "materialityHash": "3fcba4d3b2bb4dcf",
+  "reviewedAt": "2026-10-12",
+  "reviewer": "ping_final_review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-f02258016060450aec52c62b-412173bdffff5c7e.json",
+    "attestationSha256": "bf3a347d494f76e26c726288eb5118cdf8d141a1704515f3c24429acdd561006",
+    "runId": "tasks-playwright-f02258016060450aec52c62b",
+    "canonicalEvidenceSha256": "f02258016060450aec52c62b1455235a13ca1b779284d2ee167874ae2d45aac1",
+    "rawArtifactSha256": "412173bdffff5c7edd5058a98fa322d2709f15b9505a10f157cefd10e677d750",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-settings",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Re-linked on 12 October 2026 to the full green critical run of the approved sidebar icons (196 of 196, experience/evidence-runs/tasks-playwright-f02258016060450aec52c62b-412173bdffff5c7e.json). That change refreshed the rendered source inputs in the fixture manifest for the shell files it touches, and a receipt is bound to the manifest. This source and its reviewed hash are unchanged. The earlier receipt stays at experience/reviews/tasks.page.app-settings-durable-controls-0d426-oct11.json; its reviewed change read: Fresh source 0d426 capture and independent current-source materiality review; do not reuse prior 4c4d capture qualification.",
+  "decision": "Root delegated acceptance: independent d4eb9fbf reviewed all 196 actual current-source captures. Accept bounded synthetic rendering with recorded mobile-width, footer-overlay, empty-search and unavailable-activity limitations. No genuine authentication, production activation or voice qualification inferred."
+}

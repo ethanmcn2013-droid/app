@@ -26,6 +26,7 @@ import {
   STUDIO_PALETTE_EVENT,
 } from "@/components/studio-bar/studio-chrome-context";
 import { AccountMenu } from "./account-menu";
+import { SidebarIcon } from "./sidebar-icon";
 import {
   CREATE_AUTOMATION_HREF,
   CREATE_AUTOMATION_READY_ATTRIBUTE,
@@ -380,14 +381,15 @@ const THEME_NAMES: Record<ThemeChoice, string> = { dark: "Dark", light: "Light" 
  * each press switches to the other, and the icon shows the one in use. A
  * set-once preference, so it takes an icon's room, not a row.
  */
-export function ThemeCycleButton({ className }: { className?: string }) {
+export function ThemeCycleButton({ className, sidebar = false }: { className?: string; sidebar?: boolean }) {
   const theme = useSyncExternalStore(subscribeThemeChoice, readThemeChoice, () => "dark" as ThemeChoice);
   const next: ThemeChoice = theme === "dark" ? "light" : "dark";
   const Icon = theme === "light" ? ShellIcon.sun : ShellIcon.moon;
   const label = `Theme: ${THEME_NAMES[theme]}. Switch to ${THEME_NAMES[next]}`;
   return (
     <button type="button" className={className} onClick={() => chooseTheme(next)} aria-label={label} title={label}>
-      <Icon />
+      {/* The sidebar uses the approved set's single theme icon; the label says which theme is on. */}
+      {sidebar ? <SidebarIcon name="theme" /> : <Icon />}
     </button>
   );
 }

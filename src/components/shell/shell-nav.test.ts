@@ -134,11 +134,12 @@ test("the sidebar has no Initial setup group", () => {
   assert.doesNotMatch(sidebarSource, /INITIAL_SETUP|Initial setup|styles\.setup/);
 });
 
-test("Projects lists the reader's own catalog with a tile each and a dot only for a real status", () => {
+test("Projects lists the reader's own catalog with a project marker each and a dot only for a real status", () => {
   // One authorized read: the catalog action's rows, plus the status rule.
   assert.match(sidebarSource, /loadSidebarProjectsAction\(\)/);
   assert.doesNotMatch(sidebarSource, /loadProjectCatalogAction/);
-  assert.match(sidebarSource, /backgroundColor: projectColor\(row\.id\)/);
+  // The approved sidebar set: every project wears the same marker in its own colour.
+  assert.match(sidebarSource, /<ProjectMarker color=\{projectColor\(row\.id\)\} \/>/);
   assert.match(sidebarSource, /const mark = marks\[row\.id\];/);
   assert.match(sidebarSource, /const dot = mark \? <span className=\{styles\.statusDot\} data-tone=\{mark\}/);
   // A row is a link to that Project; a plain click uses the guarded switch.
