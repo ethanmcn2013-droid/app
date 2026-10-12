@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-tasks-loading",
+  "source": "tasks/src/app/app/tasks/loading.tsx",
+  "materialityHash": "12140b4bae611a58",
+  "reviewedAt": "2026-10-12",
+  "reviewer": "ping_final_review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-fa0be851d352fd0da52b645e-6c0ebfd03692e4c6.json",
+    "attestationSha256": "bbeed663e652f67b5dbaead0cd3fa4714dd3484d9805fce4f7aa7d40144b290a",
+    "runId": "tasks-playwright-fa0be851d352fd0da52b645e",
+    "canonicalEvidenceSha256": "fa0be851d352fd0da52b645efbdf13038041fa100c5989662a0d90599f38626d",
+    "rawArtifactSha256": "6c0ebfd03692e4c648b3d714ed829fa44b789a70e8ec4b120d871c6b4dd21716",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-tasks-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Relinked after main (sidebar icons) was merged into the white light mode and full-width change; the capture re-ran 196 of 196 against the merged source. The earlier receipt stays at experience/reviews/2026-10-12-light-wide/receipts/tasks.state.app-tasks-loading-materiality.json; its reviewed change read: Re-linked on 12 October 2026 to the full green critical run of the light-mode and full-width change (196 of 196, experience/evidence-runs/tasks-playwright-eb0571aed82f2624166e3ddf-bdd79c0e83857be9.json). That change refreshed the rendered source inputs in the fixture manifest for the files it touches, and a receipt is bound to the manifest. This source and its reviewed hash are unchanged. The earlier receipt stays at experience/reviews/tasks.state.app-tasks-loading-durable-controls-0d426-oct11.json; its reviewed change read: Fresh source 0d426 capture and independent current-source materiality review; do not reuse prior 4c4d capture qualification.",
+  "decision": "Root delegated acceptance: independent d4eb9fbf reviewed all 196 actual current-source captures. Accept bounded synthetic rendering with recorded mobile-width, footer-overlay, empty-search and unavailable-activity limitations. No genuine authentication, production activation or voice qualification inferred."
+}
