@@ -298,7 +298,7 @@
 
 .card:hover {
   border-color: var(--v3-border-strong);
-  box-shadow: 0 6px 18px -10px rgba(20, 18, 14, 0.22), var(--v3-shadow-1);
+  box-shadow: 0 6px 18px -10px rgba(20, 20, 20, 0.22), var(--v3-shadow-1);
 }
 
 .card:has(.cardButton:not(:disabled)):active {

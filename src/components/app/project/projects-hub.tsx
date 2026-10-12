@@ -10,7 +10,9 @@
  * runs the guarded Active Project switch, so the page reloads on that Project
  * with the URL, chrome and content moving together (ADR 0001, D-022).
  *
- * Below: the open Project's overview.
+ * The open Project's overview no longer sits below the list (founder, 12 Oct
+ * 2026): the list already carries it, and the open Project opens the same
+ * summary as any other row.
  *
  * With Active Project V3 off (no provider, so `useActiveProject()` is null)
  * or no hub read, the index is not rendered and the overview is the page.
@@ -53,7 +55,6 @@ import { ProjectOverview, type ProjectDeclaredState, type ProjectOverviewLinks }
 import { StatusPill } from "./project-status-pill";
 import styles from "./projects-hub.module.css";
 
-const OVERVIEW_ANCHOR = "project-overview";
 
 /** Every overview link carries its Project (ADR 0001 §8). */
 function overviewLinks(workspaceId: string): ProjectOverviewLinks {
@@ -97,28 +98,26 @@ export function ProjectsHub({
     <div className={`${styles.page} thin-scroll`}>
       <div className={`${styles.inner} mx-auto w-full max-w-[var(--v3-page-w)] px-4 md:px-8`}>
         {showIndex ? (
-          <>
-            <ProjectsIndex
-              hub={hub}
-              data={data}
-              declared={declared}
-              activeProject={activeProject}
-              initialView={initialView}
-              initialFilter={initialFilter}
-            />
-            <div className={styles.divider} role="presentation" />
-          </>
-        ) : null}
-        <div id={OVERVIEW_ANCHOR} className={styles.overview}>
-          <ProjectOverview
+          <ProjectsIndex
+            hub={hub}
             data={data}
-            titleLevel={showIndex ? 2 : 1}
-            identityColor={projectColor(data.workspaceId)}
-            monogram={openRow?.monogram ?? monogramOf(data.displayName)}
-            links={overviewLinks(data.workspaceId)}
-            onDeclaredChange={setDeclared}
+            declared={declared}
+            activeProject={activeProject}
+            initialView={initialView}
+            initialFilter={initialFilter}
           />
-        </div>
+        ) : (
+          <div className={styles.overview}>
+            <ProjectOverview
+              data={data}
+              titleLevel={1}
+              identityColor={projectColor(data.workspaceId)}
+              monogram={openRow?.monogram ?? monogramOf(data.displayName)}
+              links={overviewLinks(data.workspaceId)}
+              onDeclaredChange={setDeclared}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -230,9 +229,9 @@ export function ProjectsIndex({
 
   function go(projectId: string, surface: ConsoleSurface) {
     if (projectId === data.workspaceId) {
+      // Already open: show its summary, as any other row does.
       if (surface === "project") {
-        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        document.getElementById(OVERVIEW_ANCHOR)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+        setPeek({ id: projectId, order: [projectId] });
       } else {
         router.push(buildProjectUrl({ surface }, projectId as ProjectId));
       }
@@ -559,7 +558,7 @@ function ProjectCard({
               onClick={onOpen}
               disabled={!row.selectable}
               aria-current={isOpen ? "true" : undefined}
-              aria-label={isOpen ? `${row.accessibleName} Its overview is below.` : row.accessibleName}
+              aria-label={isOpen ? `${row.accessibleName} Open now.` : row.accessibleName}
               title={row.name}
             >
               {row.name}

@@ -146,9 +146,6 @@ function Frame() {
               initialFilter="all"
             />
           )}
-          <div id="project-overview" className="fixture-overview">
-            The open project’s overview sits here on the real page.
-          </div>
         </div>
       </main>
     </div>
