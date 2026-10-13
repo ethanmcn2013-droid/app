@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "tasks-reviewed-migration-candidate/1",
+  "id": "wedding-guests-0042-oct12",
+  "repository": "ethanmcn2013-droid/app",
+  "pullRequestNumber": 275,
+  "candidateSourceRevision": "ebfcdeab3e66bbae3f2d9308baa87f9d54771d16",
+  "candidateBaseRevision": "ffb8a33d9638c60878204072bb50e3dbfceb19f7",
+  "baseLedgerSha256": "82591fea2e1851e4066ba6d3f053602d0bf43801d5d88f2aee35a5cecdad423e",
+  "candidateLedgerSha256": "57de3b9d49f7ffd1b407eb114a9e7851a1a53fc3b71d615941ea759ac024e0c2",
+  "expectedLastMigrationId": "0041_ping_command_receipts",
+  "targetUrlSha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "databaseIdentitySha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "notBefore": "2026-10-13T04:08:40.000Z",
+  "expiresAt": "2026-10-13T16:13:40.000Z",
+  "authorization": {
+    "source": "Ethan asked in the Claude Code session building Wedding tools on 12-13 Oct 2026 for migration 0042 to be applied and the work made live ('yes you have full authority and approval proceed, get this live and deployed'; 'continue until complete'); recorded on https://github.com/ethanmcn2013-droid/app/pull/275",
+    "authorizedBy": "Ethan McNamara, explicit request to the cloud session operator"
+  },
+  "review": {
+    "verdict": "approved",
+    "sourceRevision": "ebfcdeab3e66bbae3f2d9308baa87f9d54771d16",
+    "reviewedBy": "Independent read-only review agent (separate context, not the producer); operator bound target and status from the main-only status run 38281009904",
+    "reference": "https://github.com/ethanmcn2013-droid/app/pull/275#issuecomment-6128858384",
+    "reviewedAt": "2026-10-12T17:04:00.000Z"
+  },
+  "migrations": [
+    {
+      "id": "0042_wedding_guests",
+      "sha256": "999b8a76a7ac88de92ef942c7b69cbfe9a852e534d134d16a15d3df4f1d15501",
+      "receiptSha256": "ab9630a2fd0c0038d84a4224f7dcb7934db11e70f1904dd0d9cc8268f9771987"
+    }
+  ],
+  "files": [
+    {
+      "path": "drizzle/migration-ledger.json",
+      "sha256": "57de3b9d49f7ffd1b407eb114a9e7851a1a53fc3b71d615941ea759ac024e0c2"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "sha256": "b42c84751f60cd56317ffa26ec10f2a10d9726997c3a6417c7a1867b3c1a1786"
+    },
+    {
+      "path": "drizzle/0042_wedding_guests.sql",
+      "sha256": "999b8a76a7ac88de92ef942c7b69cbfe9a852e534d134d16a15d3df4f1d15501"
+    },
+    {
+      "path": "drizzle/receipts/wedding-guests-2026-10-12.json",
+      "sha256": "ab9630a2fd0c0038d84a4224f7dcb7934db11e70f1904dd0d9cc8268f9771987"
+    }
+  ]
+}

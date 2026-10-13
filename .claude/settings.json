@@ -5,9 +5,18 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
+      "Bash(git switch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
       "Edit(drizzle/**)",
       "Write(drizzle/**)",
-      "Edit(src/server/db/schema.ts)"
+      "Edit(src/server/db/schema.ts)",
+      "Edit(docs/ops/migration-candidates/**)",
+      "Write(docs/ops/migration-candidates/**)",
+      "mcp__github__create_pull_request",
+      "mcp__github__merge_pull_request",
+      "mcp__github__update_pull_request",
+      "mcp__github__actions_run_trigger"
     ]
   }
 }
