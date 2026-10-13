@@ -549,6 +549,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/ping-command-receipts-2026-10-11.json",
       "receiptSha256": "b3fd72a231134c46a1f985e2e4734b2bd3f0742d5aaf52ad20e037a2c40e131a"
+    },
+    {
+      "ordinal": 42,
+      "id": "0042_wedding_guests",
+      "file": "drizzle/0042_wedding_guests.sql",
+      "when": 1791817200000,
+      "sha256": "999b8a76a7ac88de92ef942c7b69cbfe9a852e534d134d16a15d3df4f1d15501",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/wedding-guests-2026-10-12.json",
+      "receiptSha256": "ab9630a2fd0c0038d84a4224f7dcb7934db11e70f1904dd0d9cc8268f9771987"
     }
   ]
 }
