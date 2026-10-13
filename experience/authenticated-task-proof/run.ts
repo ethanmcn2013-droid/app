@@ -10,6 +10,7 @@ import { seedFiveStoreFixture, validateProofInput, type ProofInput } from "./fix
 import { boundedServerDiagnostics } from "./server-diagnostics";
 import { waitForProofReadiness } from "./readiness";
 import { signInDiagnostics } from "./sign-in-diagnostics";
+import { selectNormalEmailCode, normalEmailControls, factorRoute, EmailFactorSelectionError } from "./normal-email-factor";
 
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 const endpoint = "/api/internal/local-task-operations";
@@ -156,7 +157,7 @@ export async function runAuthenticatedTaskProof(input: ProofInput) {
     let page: Page | undefined;
     const sample = async () => {
       if (!page) return diagnostics.pageState("about:blank");
-      const locators = { identifier: page.locator('input[name="identifier"]'), continue: page.getByRole("button", { name: "Continue", exact: true }), "choose-code": page.getByRole("button", { name: /email.*code|send.*code/i }), code: page.locator('input[autocomplete="one-time-code"]') };
+      const locators = { identifier: page.locator('input[name="identifier"]'), continue: page.getByRole("button", { name: "Continue", exact: true }), ...normalEmailControls(page) };
       const selectors = Object.fromEntries(await Promise.all(Object.entries(locators).map(async ([name, locator]) => [name, await Promise.all([locator.count(), locator.first().isVisible()]).then(([count, visible]) => ({ count, visible })).catch(() => ({ count: null, visible: null }))])));
       return diagnostics.pageState(page.url(), selectors);
     };
@@ -171,11 +172,21 @@ export async function runAuthenticatedTaskProof(input: ProofInput) {
     await diagnostics.step("goto", async () => { navigationStatus = (await signedInPage.goto(`${input.origin}/sign-in?redirect_url=${encodeURIComponent(`${input.origin}/app/tasks?workspaceId=${input.accounts[index].projectId}`)}`))?.status(); }, sample, () => navigationStatus);
     await diagnostics.step("identifier", () => signedInPage.locator('input[name="identifier"]').fill(input.accounts[index].email), sample);
     await diagnostics.step("continue", () => signedInPage.getByRole("button", { name: "Continue", exact: true }).click(), sample);
-    const emailCode = page.getByRole("button", { name: /email.*code|send.*code/i }).first();
-    await diagnostics.step("choose-code", async () => { if (await emailCode.isVisible().catch(() => false)) await emailCode.click(); }, sample);
-    const code = page.locator('input[autocomplete="one-time-code"]');
+    const controls = normalEmailControls(page);
+    await diagnostics.step("factor-selection", () => selectNormalEmailCode({ expiresAt: input.runtimeGrant.expiresAt, active,
+      observe: async () => { const state = await sample(); return { route: state.factorRoute, code: state.selectors.code.visible, codeCount: state.selectors.code.count, emailPrompt: state.selectors["email-prompt"].count === 1, emailOptionCount: state.selectors["choose-code"].count, emailOptionVisible: state.selectors["choose-code"].visible, anotherMethodCount: state.selectors["another-method"].count, anotherMethodVisible: state.selectors["another-method"].visible, password: state.selectors.password.visible, alternatives: state.selectors["alternative-menu"].count === 1 }; },
+      openMethods: timeout => diagnostics.step("other-method", () => controls["another-method"].click({ timeout }), sample),
+      chooseEmail: timeout => diagnostics.step("choose-code", () => controls["choose-code"].click({ timeout }), sample),
+      onState: state => diagnostics.factorState(state),
+    }), sample);
+    const code = controls.code;
     await diagnostics.step("code-visible", () => code.first().waitFor({ state: "visible" }), sample);
-    await diagnostics.step("code-fill", async () => { if (await code.count() === 1) await code.fill("424242"); else for (const [position, digit] of [..."424242"].entries()) await code.nth(position).fill(digit); }, sample);
+    await diagnostics.step("code-fill", async () => {
+      active();
+      if (factorRoute(signedInPage.url(), input.origin) !== "first" || await controls["email-prompt"].count() !== 1 || !await code.first().isVisible() || await controls.password.isVisible()) throw new EmailFactorSelectionError("EMAIL_FACTOR_CODE_PURPOSE");
+      const inputs = await code.count(); if (![1, 6].includes(inputs)) throw new EmailFactorSelectionError("EMAIL_FACTOR_AMBIGUOUS");
+      if (inputs === 1) await code.fill("424242"); else for (const [position, digit] of [..."424242"].entries()) await code.nth(position).fill(digit);
+    }, sample);
     await diagnostics.step("redirect", () => signedInPage.waitForURL(/\/app\//, { timeout: 60000 }), sample);
     navigationStatus = undefined;
     await diagnostics.step("own-project-navigation", async () => { navigationStatus = (await signedInPage.goto(`${input.origin}/app/tasks?workspaceId=${input.accounts[index].projectId}`))?.status(); }, sample, () => navigationStatus);

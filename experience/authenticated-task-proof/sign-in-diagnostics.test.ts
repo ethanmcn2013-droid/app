@@ -57,3 +57,14 @@ test("hung or broken state sampling adds at most a bounded diagnostic wait and p
   await assert.rejects(diagnostic.step(privateText as "identifier", async () => undefined), /Unknown sign-in diagnostic step/);
   assert(!JSON.stringify(diagnostic.snapshot()).includes(privateText));
 });
+test("factor controls remain fixed-schema and terminal failure survives exhausted record caps", async () => {
+  const diagnostic = signInDiagnostics(origin, issuer, [issuer], () => undefined);
+  for (let index = 0; index < 200; index++) diagnostic.factorState({ route: "first", password: true, privateValue: privateText });
+  const error = Object.assign(new Error(privateText), { name: "EmailFactorSelectionError", code: "EMAIL_FACTOR_NOT_OFFERED" });
+  await assert.rejects(diagnostic.step("factor-selection", async () => { throw error; }, async () => diagnostic.pageState(`${origin}/sign-in/factor-one`, { password: { count: 1, visible: true }, "another-method": { count: 0, visible: false } })), value => value === error);
+  const snapshot = diagnostic.snapshot();
+  assert.equal((snapshot.lastFailure as { error: { code: string } }).error.code, "EMAIL_FACTOR_NOT_OFFERED");
+  assert.equal((snapshot.lastFailure as { state: SignInPageState }).state.factorRoute, "first");
+  assert(snapshot.dropped.steps > 0); assert(Buffer.byteLength(JSON.stringify(snapshot, null, 2)) <= 64 * 1024);
+  assert(!JSON.stringify(snapshot).includes(privateText));
+});

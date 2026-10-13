@@ -16,17 +16,19 @@ test("fixture admission fails closed before store creation", async () => {
   assert.throws(() => validateProofInput(config));
   await assert.rejects(seedFiveStoreFixture(config)); assert.equal(existsSync(config.storeRoot), false);
 });
-test("synthetic unit fixture creates five independent schemas and disjoint canonical memberships", async () => {
+test("synthetic five-store fixture has disjoint memberships and ordinary catalog selects primary Project", async () => {
   const config = input();
   try {
     // The native SQLite package retains file handles after client.close on
     // Windows; process exit, followed by parent cleanup, is the reliable fence.
-    const code = `const assert = require('node:assert/strict'); const {createClient}=require('@libsql/client'); const {seedFiveStoreFixture}=require('./experience/authenticated-task-proof/fixture.ts');
+    const code = `const assert = require('node:assert/strict'); const {createClient}=require('@libsql/client'); const {drizzle}=require('drizzle-orm/libsql'); const schema=require('./src/server/db/schema.ts'); const {firstMembershipByCatalogOrder}=require('./src/server/projects/catalog.ts'); const {seedFiveStoreFixture}=require('./experience/authenticated-task-proof/fixture.ts');
       (async()=> { const config=${JSON.stringify(config)}; const urls=await seedFiveStoreFixture(config); assert.equal(new Set(Object.values(urls)).size,5);
       for(const [module,url] of Object.entries(urls)){ const client=createClient({url}); const tables=(await client.execute("SELECT name FROM sqlite_master WHERE type='table'")).rows;
       if(module==='ENTITLEMENTS_DATABASE_URL') assert.equal(tables.length,0); else assert(tables.length>0);
-      if(module==='TASKS_DATABASE_URL'){ const rows=(await client.execute('SELECT user_id,workspace_id,role FROM workspace_members ORDER BY user_id,workspace_id')).rows; assert.deepEqual(rows.map(row=>[row.user_id,row.workspace_id,row.role]),[['user_fixtureA','control_a','owner'],['user_fixtureA','fixture_a','owner'],['user_fixtureB','control_b','owner'],['user_fixtureB','fixture_b','owner']]); assert.equal((await client.execute('SELECT count(*) n FROM planning_periods')).rows[0].n,2); assert.equal((await client.execute('SELECT count(*) n FROM tasks')).rows[0].n,4); } client.close(); }
+      if(module==='TASKS_DATABASE_URL'){ const rows=(await client.execute('SELECT user_id,workspace_id,role FROM workspace_members ORDER BY user_id,workspace_id')).rows; assert.deepEqual(rows.map(row=>[row.user_id,row.workspace_id,row.role]),[['user_fixtureA','control_a','owner'],['user_fixtureA','fixture_a','owner'],['user_fixtureB','control_b','owner'],['user_fixtureB','fixture_b','owner']]); assert.equal((await client.execute('SELECT count(*) n FROM planning_periods')).rows[0].n,2); assert.equal((await client.execute('SELECT count(*) n FROM tasks')).rows[0].n,4);
+      const database=drizzle(client,{schema}); for(const account of config.accounts) assert.equal(await firstMembershipByCatalogOrder(database,account.subject),account.projectId);
+      await client.execute('UPDATE workspaces SET position=1000'); for(const account of config.accounts) assert.equal(await firstMembershipByCatalogOrder(database,account.subject),account.controlProjectId); } client.close(); }
       await assert.rejects(seedFiveStoreFixture(config),/unoccupied/); })().catch(()=>{process.exitCode=1;});`;
-    execFileSync(process.execPath, ["--import", "tsx", "--eval", code], { timeout: 30000, stdio: "pipe" });
+    execFileSync(process.execPath, ["--import", "tsx", "--import", "./src/test/register-server-only.mjs", "--eval", code], { timeout: 30000, stdio: "pipe" });
   } finally { assert(config.storeRoot.startsWith(resolve("D:/Codex-scratch/release-all-20261013/02b-source"))); rmSync(config.storeRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });

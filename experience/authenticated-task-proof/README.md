@@ -70,9 +70,9 @@ Each admitted ordinary sign-in now writes its own private
 navigation, identifier/Continue, optional email-code choice, code visibility/fill,
 redirect, own Project navigation/GET, identity and UI assertions. Recovery uses
 the same sign-in wrapper; only assertions already present in that path run.
-The auth actions, selectors, code eligibility, exact network allowlist and
-request payloads are unchanged. No screenshots or DOM text are collected by
-this diagnostic.
+Code eligibility, exact network allowlist and request payloads remain enforced.
+The normal factor-selection flow below defines supported UI actions/selectors.
+No screenshots or DOM text are collected by this diagnostic.
 
 The fixed schema retains step begin/pass/fail times, known error name/code,
 origin class, status, request-failure code, resource class, safe page class and
@@ -83,3 +83,48 @@ and 24 browser records within 64KiB serialized output, with dropped counters.
 State sampling is capped at 500ms per step and cannot replace the action's
 original thrown error. This is source instrumentation, not a replay or a claim
 about the preserved attempt03 sign-in failure.
+
+## Normal first-factor email-code selection
+
+The previous immediate optional-button check is replaced by one 30s selection
+budget, capped by remaining grant time. It waits for known normal UI state,
+accepts a direct email OTP only on the first-factor route, or opens the offered
+methods link once and selects an offered email-code button once. Observations
+are bounded at 500ms, clicks at 2s and remaining budget. Password presence is
+observed only: no password, reset, resend, MFA, trust or protect action is taken.
+Unsupported/ambiguous routes, code purpose or unavailable email options fail
+with a fixed stage/code. The first-factor/email-purpose guard is repeated before
+entering the already-qualified development code. Network policy is unchanged.
+
+Supported English labels and route/flow contracts were inspected in official
+Clerk source pinned at `8bf9d1d8db668764c16209004d5d484af88ddeb6`:
+[normal factor alternatives](https://github.com/clerk/javascript/blob/8bf9d1d8db668764c16209004d5d484af88ddeb6/packages/ui/src/components/SignIn/AlternativeMethods.tsx),
+[routes](https://github.com/clerk/javascript/blob/8bf9d1d8db668764c16209004d5d484af88ddeb6/packages/ui/src/components/SignIn/index.tsx),
+[password card](https://github.com/clerk/javascript/blob/8bf9d1d8db668764c16209004d5d484af88ddeb6/packages/ui/src/components/SignIn/SignInFactorOnePasswordCard.tsx),
+[OTP control](https://github.com/clerk/javascript/blob/8bf9d1d8db668764c16209004d5d484af88ddeb6/packages/ui/src/elements/CodeControl.tsx),
+and [localization](https://github.com/clerk/javascript/blob/8bf9d1d8db668764c16209004d5d484af88ddeb6/packages/localizations/src/en-US.ts).
+Installed @clerk/shared localization types have the matching alternative-method
+and password keys. The pinned primary source supports the methods link and
+email-code option; no unsupported "Other options" label is guessed. This
+research does not identify the actual branch reached in failed attempt04 or
+prove its served UI bundle equals that upstream revision.
+
+Safe diagnostics add only known control booleans/counts and a finite route
+class. State changes are recorded within the existing caps; a reserved terminal
+failure snapshot survives exhausted record caps. A fresh private fixture puts
+the primary Project at position0 and control at1, so ordinary catalog order
+selects the intended initial Project without cookie injection, feature flags or
+App-gate changes. The synthetic fixture test uses the maintained catalog query
+and reproduces the old same-position Control-before-Proof ordering. Ordinary
+production App access still requires Clerk plus the existing membership gate;
+empty Entitlements retains its existing fail-soft/free read contract.
+
+The auth-page appearance preserves ordinary alternate-method actions: only its
+`footerAction: display:none` override was removed. The branded header/footer
+rules remain unchanged. Clerk renders these method actions outside Card.Footer,
+so hiding all footerAction elements could suppress a functional sign-in choice.
+The exact known "Check your email" heading may be counted even when the branded
+header is hidden, solely as semantic form identification. It is never clicked
+or filled. A visible OTP on the first-factor route is still required before any
+code entry, with the same guard repeated immediately before fill. This source
+repair does not turn attempt04 into a successful sign-in or prove its branch.

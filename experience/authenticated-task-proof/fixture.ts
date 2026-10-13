@@ -46,9 +46,9 @@ export async function seedFiveStoreFixture(input: ProofInput) {
           validateProofInput(input);
           await database.insert(schema.users).values({ id: account.subject, clerkId: account.subject, email: account.email, name: `Proof account ${index + 1}`, color: "indigo", initials: `P${index + 1}` });
           await database.insert(schema.planningPeriods).values({ id: account.planningPeriodId, ownerUserId: account.subject, name: `Proof period ${index + 1}` });
-          await database.insert(schema.workspaces).values({ id: account.projectId, slug: account.projectId, name: `Proof project ${index + 1}`, ownerUserId: account.subject, planningPeriodId: account.planningPeriodId, onboardingCompletedAt: new Date(), activeDomain: "General" });
+          await database.insert(schema.workspaces).values({ id: account.projectId, slug: account.projectId, name: `Proof project ${index + 1}`, ownerUserId: account.subject, planningPeriodId: account.planningPeriodId, position: 0, onboardingCompletedAt: new Date(), activeDomain: "General" });
           await database.insert(schema.workspaceMembers).values({ workspaceId: account.projectId, userId: account.subject, role: "owner" });
-          await database.insert(schema.workspaces).values({ id: account.controlProjectId, slug: account.controlProjectId, name: `Control project ${index + 1}`, ownerUserId: account.subject, planningPeriodId: account.planningPeriodId, onboardingCompletedAt: new Date() });
+          await database.insert(schema.workspaces).values({ id: account.controlProjectId, slug: account.controlProjectId, name: `Control project ${index + 1}`, ownerUserId: account.subject, planningPeriodId: account.planningPeriodId, position: 1, onboardingCompletedAt: new Date() });
           await database.insert(schema.workspaceMembers).values({ workspaceId: account.controlProjectId, userId: account.subject, role: "owner" });
           for (const [taskId, projectId] of [[account.siblingTaskId, account.projectId], [account.controlTaskId, account.controlProjectId]]) await database.insert(schema.tasks).values({ id: taskId, workspaceId: projectId, title: "Fixture control task", lane: "todo", priority: "p2", assignees: [], seq: 1, position: 1 });
         }
