@@ -25,11 +25,11 @@ These product and programme rules apply to Signal work. Personal work follows it
 
 ## Task authority and completion
 
-Use the existing private Delivery task and its current handoff anchor to identify the outcome, writer, source, destination and acceptance target. Preserve the existing limits: Ready three, started three, Verify one and founder requests two; parent outcomes do not consume child-task WIP. Only the current coordinator admits work sequentially. A new checkout or issue comment alone does not establish distributed ownership.
+Use the existing private Delivery task and its current handoff anchor to identify the outcome, writer, source, destination and acceptance target. Respect the current WIP limits in the owning private operating contract; parent outcomes do not consume child-task WIP. Only the current coordinator admits work sequentially. A new checkout or issue comment alone does not establish distributed ownership.
 
 Done requires appropriate revision-bound review, intended receiving-result proof, an acceptance receipt, explicit Project update, native Completed closure and both readbacks, followed by owned-resource closeout. Parked or superseded work closes as Not planned with its restore or successor link. Provider changes transfer the same task's writer claim before editing.
 
-Programme-only development remains internal with isolated test data. The commercial launch/outreach target is 21 January 2027; that date and a merge do not authorize production changes or external communication. Preserve task-specific release holds until explicitly superseded.
+Programme-only development remains internal with isolated test data. Programme dates and a merge do not authorize production changes or external communication. Preserve task-specific release holds until explicitly superseded.
 
 ## Setup and checks
 
@@ -59,7 +59,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Follow docs/SUITE_URL_AND_NAMING_CONTRACT.md and the typed constants in src/lib/product-urls.ts. Marketing uses signalstudio.ie/{notes|tasks|timeline} and /features/daily-briefing; signed-in products use app.signalstudio.ie/app/{notes|tasks|timeline}, Home /app/home and Full Briefing /app/home/briefing. Retired /app/board, /app/plan, /app/brief and legacy /app/signal inputs remain compatibility redirects only; new UI, analytics, docs and email must not emit them.
 
-For front-facing changes preserve the priority order: considered experience, deliberate design, then unaided utility. Use docs/brand.md, the installed signal-ds tokens and owning component styles; preserve existing spacing, type, motion, loading/error/empty-state and copy standards. The existing quality-council evidence and 9.5 gate live in experience/QUALITY_COUNCIL_EVIDENCE.md. Relevant first-contact behavior follows docs/FIRST_CONTACT_TEST.md. A workflow refactor does not waive these gates or require a design panel for unrelated engineering. Canonical product priorities and decisions live in Studio HQ; locate that owning repository explicitly rather than assuming a parent checkout.
+For front-facing changes preserve the priority order: considered experience, deliberate design, then unaided utility. Use docs/brand.md, the installed signal-ds tokens and owning component styles; preserve existing spacing, type, motion, loading/error/empty-state and copy standards. The existing quality-council evidence and 9.5 gate live in experience/QUALITY_COUNCIL_EVIDENCE.md. Relevant first-contact behavior follows docs/FIRST_CONTACT_TEST.md. A workflow refactor does not waive these gates or require a design panel for unrelated engineering. Delightful moments require an explicit animate-or-restrained verdict. The operator re-derives the north star about every six months; its durable decision and review date live in Studio content/hq/decisions/product-north-star.md. Locate that owning repository explicitly rather than assuming a parent checkout.
 
 Before invitations, sharing, guest access, templates or public output, read docs/COLLABORATION_LOOP.md. Preserve authentication, tenant isolation, privacy, entitlement and erasure boundaries; choose stronger domain checks and independent review for changes to them.
 
@@ -69,6 +69,6 @@ Never run drizzle-kit push or drizzle-kit migrate directly against production: t
 
 ## Product records and maintained context
 
-Product-state changes feed the owning Studio HQ record in the same delivery cycle: content/hq/features for scope/status/impact; content/hq/risks for risks; content/hq/decisions for product/pricing/brand/GTM decisions; content/hq/campaigns for campaign changes; content/atlas for cross-product flows, data shapes and schedules (update lastVerified); content/hq/messaging.md for messaging. Shipped operator-visible changes also update this repository's CHANGELOG.md. Verify the owning Studio contract and revision before writing there. Historical log-cycle/check-cycles scripts are retired.
+For product-state changes, open or update a Studio PR against the matching HQ source in the same delivery cycle: content/hq/features for scope/status/impact; content/hq/risks for risks; content/hq/decisions for product/pricing/brand/GTM decisions; content/hq/campaigns for campaign changes; content/atlas for cross-product flows, data shapes and schedules (update lastVerified); content/hq/messaging.md for messaging. Shipped operator-visible changes also update this repository's CHANGELOG.md. Verify the owning Studio contract and revision before writing there. Historical log-cycle/check-cycles scripts are retired.
 
 The shared block is maintained in Signal Operations docs/agent-rules.md; its version/hash is recorded above. CLAUDE.md imports this local entrypoint. Repository setup and invariants stay here; specialist procedures load when relevant, live priorities/ownership stay in Delivery, and past evidence remains historical. docs/agent-context-migration.md records the removal of the former mandatory parent dependency.
