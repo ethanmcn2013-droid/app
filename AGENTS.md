@@ -1,41 +1,49 @@
-# Signal Studio app — repo contract
+# Signal App
 
-Read the workspace contract at `../AGENTS.md` first (company, products,
-autonomy, design register, record-keeping), then this file, then only
-what the task needs.
+This repository owns the signed-in Signal Studio app at app.signalstudio.ie. Notes captures work, Tasks executes it, and Timeline provides direction. Home is the authenticated front door, with Today's Signal and the Full Briefing; it is not a fourth product. This entrypoint is self-contained in an isolated checkout. Product source and checks belong here; shared workflow tools live in Signal Operations.
 
-## What this repo is
+<!-- signal-shared-rules:begin -->
+<!-- Source: docs/agent-rules.md; sha256: b87309ff14660a99c962bd2deca2147faaf782e9f04ccfce01d5bec15b2c2068 -->
+## Shared working rules
 
-This is the unified signed-in Signal Studio app at `app.signalstudio.ie`
-— one app with three products: **Notes** (capture), **Tasks** (execution),
-and **Timeline** (direction). **Home** is the authenticated front door and
-contains Today's Signal plus the Full Briefing; it is not a fourth product.
-The GitHub repo is
-named `app` (`ethanmcn2013-droid/app`); local clones should sit in a
-matching `app/` directory.
+Signal Studio builds one coherent product system. Use current source and accepted product facts; do not revive an archived architecture or infer scope from an old chat.
 
-## North star (set 2026-08 · operator re-derives ~every six months)
+These product and programme rules apply to Signal work. Personal work follows its own purpose, checks, and acceptance target; it does not inherit Signal launch or programme constraints.
 
-Three priorities govern everything front-facing, in this order:
+- Follow the user's scope. Research-only requests stay read-only. For authorized implementation, own relevant checks, review, integration, receiving verification, and closeout.
+- Integrate routine in-scope work without a founder merge click once current checks and proportionate revision-bound review pass. Missing review, unresolved findings, changed source/target, and explicit release holds prevent eligibility. Production consequences must be authorized and verified separately.
+  During this migration, apply that integration path only to explicitly admitted, individually reviewed pilots. Adopt it as the general operating default after the P6 qualification receipt; enabling a repository setting alone does not qualify the workflow.
+- One task owns its branch and checkout; one session holds the writer claim. Concurrent writers use isolated worktrees. Transfer the claim before another provider edits. Preserve unrelated changes.
+- Use the existing task authority and handoff anchor. Record intended outcome, owner, source revision, target, evidence, next proof, and paused-state restore location. A new chat is not a new source of truth.
+- Run the owning checks against the final state. UI changes require a real rendered check. Never report a test, review, merge, deployment, or acceptance that was not observed.
+- Keep code, customer/privacy boundaries, secrets, and production/test environments distinct. Access to a tool does not authorize every effect it can perform.
+- Ask the founder for a material decision outside standing authority, such as changed product direction, pricing/legal commitments, purchases, external communication, or destructive action beyond the adopted housekeeping policy. Prepare concrete options first.
+- Before pausing or retiring work, preserve useful commits and files and verify the restore route. Never delete by age alone, remove another owner's state, or treat a squashed commit as unpublished solely from ancestry.
+- Finish with target proof, task-state readbacks, and cleanup of owned disposable resources. A draft PR or a successful merge alone is not completion.
+- Prefer purpose-based names, concise entrypoints, and scoped procedures. Automate mechanical bookkeeping; spend review effort in proportion to impact.
+<!-- signal-shared-rules:end -->
 
-1. **Experience.** Using the product should feel considered end to end,
-   and in the right moments delightful. Delight is deliberate: candidate
-   moments get an explicit animate-or-restrained verdict — never sprinkled
-   ad hoc.
-2. **Design.** Every front-facing surface ships at the standard of the
-   best studios working today — spacing, type, motion, empty, loading,
-   and error states, microcopy, all deliberate, nothing default. The bar
-   is the design register plus the 9.5 gate
-   (`experience/QUALITY_COUNCIL_EVIDENCE.md`).
-3. **Utility.** Someone who has never used a project-management tool
-   must be able to pick this up and understand it unaided — the
-   first-contact test (`docs/FIRST_CONTACT_TEST.md`), whose automated
-   half runs as `pnpm first-contact:language`. No jargon, no technical
-   lock-out; a surface that needs explaining is not done.
+## Task authority and completion
 
-When the three pull against each other, that order decides. The durable
-record and the review date live in
-`studio/content/hq/decisions/product-north-star.md`.
+Use the existing private Delivery task and its current handoff anchor to identify the outcome, writer, source, destination and acceptance target. Preserve the existing limits: Ready three, started three, Verify one and founder requests two; parent outcomes do not consume child-task WIP. Only the current coordinator admits work sequentially. A new checkout or issue comment alone does not establish distributed ownership.
+
+Done requires appropriate revision-bound review, intended receiving-result proof, an acceptance receipt, explicit Project update, native Completed closure and both readbacks, followed by owned-resource closeout. Parked or superseded work closes as Not planned with its restore or successor link. Provider changes transfer the same task's writer claim before editing.
+
+Programme-only development remains internal with isolated test data. The commercial launch/outreach target is 21 January 2027; that date and a merge do not authorize production changes or external communication. Preserve task-specific release holds until explicitly superseded.
+
+## Setup and checks
+
+Use the package-manager version declared in package.json, currently pnpm 11.9.0, through Corepack. CI uses Node 22; this source has no .node-version pin. Install with corepack pnpm install --frozen-lockfile in the actual task checkout. Keep environment values in approved secret storage or ignored configuration; never copy production credentials into test fixtures or evidence.
+
+- Quick source checks: corepack pnpm typecheck and corepack pnpm lint.
+- Owning tests: corepack pnpm test; its pretest and posttest hooks include additional truth, arrival and Project Drive suites. Do not omit or duplicate them accidentally.
+- Build: corepack pnpm build, including the built-token check.
+- Database changes: corepack pnpm db:contract, plus the applicable isolated rehearsal and migration-ledger checks.
+- Front-facing language: corepack pnpm first-contact:language; actual rendered and behavioral evidence is still required.
+
+Read .github/workflows/ci.yml and verify.yml for final head/integration gates and their paired Studio inputs. Use the workflow's immutable compatible Studio revision for parity; latest Studio main is not an interchangeable fixture. Select additional checks from package.json and the owning contract for the changed behavior. A local subset is not full CI or production proof.
+
+Development uses corepack pnpm dev with a task-owned available port. Git isolation does not isolate ports, databases, dependencies or background processes. Record their actual target and process identity before startup; stop only verified owned resources. Refresh the current deployment route and Git-deployment setting before integration. DEPLOY.md describes the release procedure, but historical comments do not establish current account configuration. A merge alone is not a deployment receipt; verify revision, READY state, canonical alias and intended live behavior when release is authorized.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
@@ -47,62 +55,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-## URL and naming contract
+## Product, design and access contracts
 
-Full rules: `docs/SUITE_URL_AND_NAMING_CONTRACT.md`. Marketing:
-`signalstudio.ie/{notes|tasks|timeline}` plus
-`signalstudio.ie/features/daily-briefing`; signed-in:
-`app.signalstudio.ie/app/{notes|tasks|timeline}` with Home at `/app/home`
-and the Full Briefing at `/app/home/briefing`. Use the typed
-constants in `src/lib/product-urls.ts` — never invent hostnames or
-product names in components. `/app/board`, `/app/plan`, and `/app/brief`
-are retired compatibility inputs; new UI, docs, analytics, and email
-must never emit them. `/app/signal*` is a legacy redirect input only.
+Follow docs/SUITE_URL_AND_NAMING_CONTRACT.md and the typed constants in src/lib/product-urls.ts. Marketing uses signalstudio.ie/{notes|tasks|timeline} and /features/daily-briefing; signed-in products use app.signalstudio.ie/app/{notes|tasks|timeline}, Home /app/home and Full Briefing /app/home/briefing. Retired /app/board, /app/plan, /app/brief and legacy /app/signal inputs remain compatibility redirects only; new UI, analytics, docs and email must not emit them.
 
-## Database release gate
+For front-facing changes preserve the priority order: considered experience, deliberate design, then unaided utility. Use docs/brand.md, the installed signal-ds tokens and owning component styles; preserve existing spacing, type, motion, loading/error/empty-state and copy standards. The existing quality-council evidence and 9.5 gate live in experience/QUALITY_COUNCIL_EVIDENCE.md. Relevant first-contact behavior follows docs/FIRST_CONTACT_TEST.md. A workflow refactor does not waive these gates or require a design panel for unrelated engineering. Canonical product priorities and decisions live in Studio HQ; locate that owning repository explicitly rather than assuming a parent checkout.
 
-Never run `drizzle-kit push` or `drizzle-kit migrate` directly against
-production — the historical `0000`–`0013` chain is non-idempotent.
-The approved production workflow is `db-migrate-encrypted` on `main`, with a
-verified encrypted backup upload before apply; the old `db-migrate` workflow
-must remain disabled. The receipt-backed runner (`pnpm db:migrate`) remains
-the low-level migration engine, and `pnpm db:contract` is the pre-flight gate.
-Full contract: `DEPLOY.md` §4 and
-`drizzle/MIGRATIONS.md`.
+Before invitations, sharing, guest access, templates or public output, read docs/COLLABORATION_LOOP.md. Preserve authentication, tenant isolation, privacy, entitlement and erasure boundaries; choose stronger domain checks and independent review for changes to them.
 
-## Signal HQ sync
+## Database release safety
 
-Product-state changes here — feature scope, risk, decisions, campaigns,
-cross-product flows, messaging, shipped work — feed Signal HQ, the
-founder's source of truth, which lives in the `studio` repo. Open or
-update a Studio PR against the matching source file in the same cycle:
+Never run drizzle-kit push or drizzle-kit migrate directly against production: the historical 0000-0013 chain is non-idempotent. The approved production route is db-migrate-encrypted on main, with verified encrypted backup upload before apply; the old db-migrate workflow must remain disabled. The receipt-backed corepack pnpm db:migrate command remains the low-level engine, and db:contract is the pre-flight gate. Read DEPLOY.md section 4 and drizzle/MIGRATIONS.md before migration work. Task scope and current release authority still govern execution.
 
-| Change here | Source file in studio |
-|---|---|
-| feature scope, status, or impact | `content/hq/features/<id>.md` |
-| risk surfaced or mitigation changed | `content/hq/risks/<id>.md` |
-| decision on pricing, brand, GTM, product | `content/hq/decisions/<id>.md` |
-| campaign goal, blocker, or progress | `content/hq/campaigns/<id>.md` |
-| cross-product flow, data shape, cron schedule | `content/atlas/<slug>.md` (bump `lastVerified`) |
-| messaging, hooks, pitches | `content/hq/messaging.md` |
-| shipped operator-visible change | this repo's `CHANGELOG.md` |
+## Product records and maintained context
 
-Canonical rules live in `studio/AGENTS.md`.
+Product-state changes feed the owning Studio HQ record in the same delivery cycle: content/hq/features for scope/status/impact; content/hq/risks for risks; content/hq/decisions for product/pricing/brand/GTM decisions; content/hq/campaigns for campaign changes; content/atlas for cross-product flows, data shapes and schedules (update lastVerified); content/hq/messaging.md for messaging. Shipped operator-visible changes also update this repository's CHANGELOG.md. Verify the owning Studio contract and revision before writing there. Historical log-cycle/check-cycles scripts are retired.
 
-## Collaboration surfaces
-
-Before invite, sharing, guest access, template, or public-output work,
-read `docs/COLLABORATION_LOOP.md`.
-
-## Design
-
-The design register lives in the workspace `../AGENTS.md` — do not
-duplicate it here.
-
-## History
-
-The `log-cycle` / `check-cycles` scripts (leftovers from this codebase's
-personal-portfolio origins) were retired 2026-07-30 and deleted
-2026-07-31. A shipped cycle's only records are the dispatch entry in
-this repo's `CHANGELOG.md` and the Signal HQ record in
-`studio/content/hq/**`.
+The shared block is maintained in Signal Operations docs/agent-rules.md; its version/hash is recorded above. CLAUDE.md imports this local entrypoint. Repository setup and invariants stay here; specialist procedures load when relevant, live priorities/ownership stay in Delivery, and past evidence remains historical. docs/agent-context-migration.md records the removal of the former mandatory parent dependency.
