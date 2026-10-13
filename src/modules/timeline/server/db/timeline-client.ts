@@ -1,6 +1,8 @@
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
 import * as schema from "./timeline-schema";
+import { validateLocalOperationRuntime } from "@/server/tasks/local-operation-policy";
+if (process.env.SIGNAL_LOCAL_TASK_OPERATIONS === "true") validateLocalOperationRuntime();
 
 /**
  * libSQL client for the Timeline module.

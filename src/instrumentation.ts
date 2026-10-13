@@ -10,6 +10,17 @@ export async function register() {
   // Validate env first, must run even when Sentry is unconfigured, so a
   // misconfigured production boots loudly here, not with runtime 500s.
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    if (process.env.SIGNAL_LOCAL_TASK_OPERATIONS === "true") {
+      const { validateLocalOperationRuntime, localFetchAllowed } = await import("@/server/tasks/local-operation-policy");
+      validateLocalOperationRuntime();
+      const originalFetch = globalThis.fetch.bind(globalThis);
+      globalThis.fetch = ((input, init) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const method = init?.method ?? (typeof input === "object" && !(input instanceof URL) ? input.method : "GET");
+        if (!localFetchAllowed(url, process.env, method)) throw new Error("Local runtime disables external request");
+        return originalFetch(input, init);
+      }) as typeof fetch;
+    }
     const { validateEnv } = await import("@/env");
     validateEnv();
   }

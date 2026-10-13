@@ -4,6 +4,7 @@ import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 import { seedIfEmpty } from "./seed";
 import { isDemoMode } from "@/lib/access-mode";
+import { validateLocalOperationRuntime } from "@/server/tasks/local-operation-policy";
 
 /**
  * libSQL client for Tasks. In production (VERCEL=1) this connects to
@@ -24,6 +25,7 @@ import { isDemoMode } from "@/lib/access-mode";
 // Explicit demo/review previews are the exception: they are intentionally
 // database-free and bind to the in-memory client below.
 const demoMode = isDemoMode();
+if (process.env.SIGNAL_LOCAL_TASK_OPERATIONS === "true") validateLocalOperationRuntime();
 
 if (
   process.env.VERCEL === "1" &&
@@ -57,6 +59,7 @@ const globalForDb = globalThis as unknown as { _seeded?: boolean };
 if (
   process.env.NODE_ENV === "development" &&
   !demoMode &&
+  process.env.SIGNAL_LOCAL_TASK_OPERATIONS !== "true" &&
   !globalForDb._seeded
 ) {
   globalForDb._seeded = true;

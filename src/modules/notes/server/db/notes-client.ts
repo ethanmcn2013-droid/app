@@ -2,6 +2,7 @@ import { createClient, type Client } from "@libsql/client";
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 
 import * as schema from "./notes-schema";
+import { validateLocalOperationRuntime } from "@/server/tasks/local-operation-policy";
 
 type Db = LibSQLDatabase<typeof schema>;
 
@@ -13,6 +14,7 @@ let _libsql: Client | null = null;
 let _db: Db | null = null;
 
 function getDb(): Db {
+  if (process.env.SIGNAL_LOCAL_TASK_OPERATIONS === "true") validateLocalOperationRuntime();
   if (_db) return _db;
   const url =
     process.env.NOTES_DATABASE_URL ?? "file:notes.db"; // dev fallback per D2

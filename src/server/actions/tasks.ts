@@ -7,6 +7,7 @@ import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { isDoneColumnKey, isTaskDone } from "@/lib/board-columns";
 import { nextTaskSeq } from "@/server/db/task-seq";
 import { createTaskInTransaction, prepareCanonicalTaskCreate } from "@/server/tasks/create-task-core";
+import { canonicalTitleUpdate } from "@/server/tasks/title-update-core";
 import {
   activities,
   attachments,
@@ -511,7 +512,7 @@ export async function updateTaskAction(
   // user who knows any task id could overwrite cross-tenant rows.
   await privateTaskDbWrite(() => db
     .update(tasks)
-    .set({ ...cleaned, ...bump() })
+    .set({ ...cleaned, ...(typeof cleaned.title === "string" ? canonicalTitleUpdate(cleaned.title) : bump()) })
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws))));
 
   // Emit one activity per tracked field (parallel; observability,

@@ -1,6 +1,7 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./signal-analytics-schema";
+import { validateLocalOperationRuntime } from "@/server/tasks/local-operation-policy";
 
 /**
  * Signal DB client — the briefing engine tables plus, since the 2026-07-31
@@ -20,6 +21,7 @@ type DB = ReturnType<typeof drizzle<typeof schema>>;
 let _db: DB | null = null;
 
 function getDb(): DB {
+  if (process.env.SIGNAL_LOCAL_TASK_OPERATIONS === "true") validateLocalOperationRuntime();
   if (_db) return _db;
   const url =
     process.env.SIGNAL_DATABASE_URL ??

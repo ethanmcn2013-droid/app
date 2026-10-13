@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { validateLocalOperationRuntime } from "@/server/tasks/local-operation-policy";
 
 const PRODUCTION_AUTHORIZED_PARTIES = [
   "https://app.signalstudio.ie",
@@ -74,6 +75,10 @@ export function sprintPreviewAuthorizedPartiesForTargets(
  * fail-closed branches for their single nominated origins.
  */
 export function clerkAuthorizedParties(env: Environment): string[] {
+  if (env.SIGNAL_LOCAL_TASK_OPERATIONS === "true") {
+    const { origin } = validateLocalOperationRuntime(env);
+    return [origin];
+  }
   if (env.SIGNAL_SPRINT_PREVIEW_AUTH !== undefined) {
     return sprintPreviewAuthorizedPartiesForTargets(env, SPRINT_PREVIEW_STORE_HASHES);
   }

@@ -1,0 +1,46 @@
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import test from "node:test";
+const require = createRequire(import.meta.url);
+const seed = (id: string, exports: unknown) => { const filename = require.resolve(id); require.cache[filename] = { id: filename, filename, loaded: true, exports } as NodeModule; };
+const root = resolve("work/route-test-stores");
+Object.assign(process.env, { SIGNAL_LOCAL_TASK_OPERATIONS: "true", SIGNAL_ACCESS_MODE: "production", NEXT_PUBLIC_SIGNAL_ACCESS_MODE: "production", SIGNAL_LOCAL_TASK_ORIGIN: "http://127.0.0.1:3188", SIGNAL_LOCAL_TASK_STORE_ROOT: root, SIGNAL_LOCAL_TASK_ISSUER: "https://fixture.clerk.accounts.dev", SIGNAL_LOCAL_TASK_SUBJECTS: "user_fixtureA,user_fixtureB", NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_fixture", CLERK_SECRET_KEY: "sk_test_fixture" }, Object.fromEntries(["TASKS", "NOTES", "TIMELINE", "SIGNAL", "ENTITLEMENTS"].map(module => [`${module}_DATABASE_URL`, pathToFileURL(resolve(root, `${module}.db`)).href])));
+process.env.SIGNAL_LOCAL_TASK_EXPIRES_AT = new Date(Date.now() + 60000).toISOString();
+process.env.SIGNAL_LOCAL_TASK_CLERK_ORIGINS = JSON.stringify(["https://fixture.clerk.accounts.dev", "https://api.clerk.com"]);
+let subject: string | null = "user_fixtureA";
+let issuer = process.env.SIGNAL_LOCAL_TASK_ISSUER;
+let calls = 0;
+seed("@clerk/nextjs/server", { auth: async () => ({ userId: subject, sessionClaims: { iss: issuer, azp: process.env.SIGNAL_LOCAL_TASK_ORIGIN } }) });
+seed("@/server/db", { db: { select: () => ({ from: () => ({ where: () => ({ limit: async () => subject ? [{ id: subject }] : [] }) }) }) } });
+seed("@/server/auth", { getCurrentUser: async () => { throw new Error("No fallback"); } });
+seed("@/server/sponsored-use/erasure", {});
+const real = require("./local-operation-service") as typeof import("./local-operation-service");
+seed("@/server/tasks/local-operation-service", { ...real, applyLocalOperation: async () => { calls++; return { ok: true }; }, reconcileLocalOperation: async () => { calls++; return { response: null }; }, readLocalTasks: async () => { calls++; return { tasks: [] }; } });
+const route = require("@/app/api/internal/local-task-operations/route") as typeof import("@/app/api/internal/local-task-operations/route");
+const operation = { operationId: "op_one", kind: "create", projectId: "project_a", taskId: "task_a", title: "A task" };
+const request = (body: unknown = operation, method = "POST", query = "") => new Request(`http://127.0.0.1:3188/api/internal/local-task-operations${query}`, { method, headers: { host: "127.0.0.1:3188", "content-type": "application/json", ...(method === "GET" ? { referer: "http://127.0.0.1:3188/app/tasks", "sec-fetch-site": "same-origin", "sec-fetch-mode": "cors" } : { origin: "http://127.0.0.1:3188" }) }, ...(method === "GET" ? {} : { body: JSON.stringify(body) }) });
+test("disabled and unauthenticated requests have zero service effects", async () => {
+  delete process.env.SIGNAL_LOCAL_TASK_OPERATIONS;
+  assert.equal((await route.POST(request())).status, 404); assert.equal(calls, 0);
+  process.env.SIGNAL_LOCAL_TASK_OPERATIONS = "true";
+  subject = null; assert.equal((await route.POST(request())).status, 404); assert.equal(calls, 0);
+  subject = "user_fixtureA";
+});
+test("issuer mismatch and supplied actor never reach operations", async () => {
+  issuer = "https://foreign.clerk.accounts.dev";
+  assert.equal((await route.POST(request())).status, 404);
+  issuer = process.env.SIGNAL_LOCAL_TASK_ISSUER;
+  assert.equal((await route.POST(request({ ...operation, actor: "user_fixtureB" }))).status, 400);
+  assert.equal(calls, 0);
+});
+test("create, title-only PATCH, read and reconcile use consistent strict methods", async () => {
+  assert.equal((await route.POST(request())).status, 200);
+  assert.equal((await route.PATCH(request({ ...operation, kind: "title" }, "PATCH"))).status, 200);
+  assert.equal((await route.PATCH(request(operation, "PATCH"))).status, 400);
+  assert.equal((await route.GET(request(null, "GET", "?projectId=project_a"))).status, 200);
+  assert.equal((await route.GET(request(null, "GET", "?projectId=project_a&actor=foreign"))).status, 400);
+  assert.equal((await route.PUT(request(operation, "PUT"))).status, 200);
+  assert.equal(calls, 4);
+});

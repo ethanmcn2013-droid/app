@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
+import { validateLocalOperationRuntime } from "@/server/tasks/local-operation-policy";
 
 /**
  * Drizzle client for the shared signal-entitlements DB.
@@ -22,6 +23,7 @@ const authToken = process.env.ENTITLEMENTS_AUTH_TOKEN;
 let cached: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
 export function entitlementsDb() {
+  if (process.env.SIGNAL_LOCAL_TASK_OPERATIONS === "true") validateLocalOperationRuntime();
   if (cached) return cached;
   if (!url) {
     throw new Error(

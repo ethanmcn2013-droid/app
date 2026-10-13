@@ -35,6 +35,7 @@ type SendArgs = {
 export async function sendEmail(
   args: SendArgs,
 ): Promise<{ ok: boolean; id?: string; error?: string }> {
+  if (process.env.SIGNAL_LOCAL_TASK_OPERATIONS === "true") return { ok: false, error: "Local runtime disables email" };
   if (!resend) {
     if (process.env.NODE_ENV === "development") {
       // op-log-safe: gated on NODE_ENV === "development", so this line cannot

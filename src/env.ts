@@ -77,6 +77,12 @@ export function validateEnv(): void {
   validated = true;
 
   const isProd = process.env.NODE_ENV === "production";
+  if (process.env.SIGNAL_LOCAL_TASK_OPERATIONS === "true") {
+    // Separate explicit fixture posture, validated at instrumentation and each
+    // database constructor. It still requires ordinary configured Clerk auth.
+    if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) throw new Error("Local Clerk configuration required");
+    return;
+  }
   if (!isProd || isDemoMode()) return; // dev / demo / review: nothing to enforce
 
   const missingRecommended = RECOMMENDED_IN_PRODUCTION.filter(
