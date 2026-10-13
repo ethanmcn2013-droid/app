@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { SERVER_ACTION_BODY_LIMIT } from "./src/lib/upload-limit";
+import { localTaskProofUrlNormalization } from "./src/lib/local-task-proof-config";
 
 /**
  * ── Security headers ───────────────────────────────────────────────
@@ -307,6 +308,9 @@ const embedFrameHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Preserve Clerk's ordinary pass-through rewrite at the exact loopback
+  // origin only in separately admitted private proof builds and runtimes.
+  ...(localTaskProofUrlNormalization() ? { skipProxyUrlNormalize: true } : {}),
   // Dev-only: the floating dev-tools badge sits over the bottom-nav Home tab
   // at 375px and contaminates every mobile design capture. No production effect.
   devIndicators: false,

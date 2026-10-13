@@ -8,6 +8,7 @@ import { createClient } from "@libsql/client";
 import { chromium, type Page, type BrowserContext } from "@playwright/test";
 import { seedFiveStoreFixture, validateProofInput, type ProofInput } from "./fixture";
 import { boundedServerDiagnostics } from "./server-diagnostics";
+import { waitForProofReadiness } from "./readiness";
 
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 const endpoint = "/api/internal/local-task-operations";
@@ -111,13 +112,10 @@ export async function runAuthenticatedTaskProof(input: ProofInput) {
       facts.push({ name: "owned-server-private-diagnostics", passed: true, detail: { file, bytes: result.bytes, sha256: result.sha256, rawBytes: result.rawBytes, truncated: result.truncated, pid: owned.pid, nativeExitCode: code, signal } }); save();
     });
     await custody("owned-server-start", server.pid);
-    for (let attempt = 0; attempt < 120; attempt++) {
-      active();
-      if (server.exitCode !== null) throw new Error("Owned server exited before readiness");
-      try { const response = await fetch(`${input.origin}/sign-in`); if (response.status < 500) return; } catch { /* bounded local readiness */ }
-      await delay(250);
-    }
-    throw new Error("Owned server readiness timeout");
+    const readiness = await waitForProofReadiness({ origin: input.origin, expiresAt: input.runtimeGrant.expiresAt, active, child: () => ({ pid: owned.pid, exitCode: owned.exitCode, signalCode: owned.signalCode }) });
+    const snapshot = diagnostics.finish(privateValues, true);
+    facts.push({ name: "owned-server-readiness", passed: readiness.ready, detail: { ...readiness, diagnostics: { file, bytes: snapshot.bytes, sha256: snapshot.sha256, truncated: snapshot.truncated } } }); save();
+    if (!readiness.ready) throw new Error("Owned server readiness failed");
   };
   const counts = async () => {
     const result = await database.execute("SELECT (SELECT count(*) FROM tasks) tasks, (SELECT count(*) FROM activities) activities, (SELECT count(*) FROM meta WHERE key LIKE 'local-task-operation:v1:%') receipts, (SELECT count(*) FROM workspace_members) memberships");

@@ -1,6 +1,6 @@
 # Local authenticated Task proof
 
-This source is a default-off adapter and an unlaunched receiving harness for disposable local stores. It makes no production receipt retention or export promise. Whole-store cleanup belongs to the separately admitted runtime.
+This source is a default-off adapter and a receiving harness for disposable local stores. It makes no production receipt retention or export promise. Whole-store cleanup belongs to the separately admitted runtime.
 
 The route is `/api/internal/local-task-operations`. It independently verifies ordinary Clerk authentication even though internal API routes are outside the proxy's App-page protection matcher. All methods require an admitted development subject, exact issuer and loopback authorized party, and exact Host. Writes require exact Origin. Originless browser GET reads require both same-origin Fetch Metadata and an exact-origin Referer. The caller cannot supply actor identity.
 
@@ -38,3 +38,28 @@ The runner launches an owned headless browser with fresh contexts and normal Cle
 Server stdout/stderr is capped at 128 KiB and persisted as complete redacted lines while running, retaining diagnostics after a hard child failure. Full keys, session tokens, subjects, emails and privately admitted values are redacted across chunk boundaries before disk writes. Reports contain only private file paths, hashes, byte counts, truncation and native exit metadata; they never quote raw diagnostics.
 
 Recovery intercepts the committed HTTP response before browser delivery, independently checks Task/activity/receipt, stops the owned server, drops the response, closes contexts, restarts the same stores, signs in again, reads before retry and compares the exact response and row counts. Parent custody records actual native PID/parent/creation-time ancestry at server and browser startup. Server stop has a 10-second limit; expiry/interruption requests child cleanup before a 20-second forced stop. Terminal cleanup rechecks creation times before stopping any remaining owned processes and preserves actual stop attempts and remaining native records. Whole-store removal follows verified native process absence and child exit, because Windows SQLite may retain handles beyond `client.close()`. A failed custody or cleanup check stays failed. Exact build-content hashes and checked parent-directory ancestry remain coordinator admission inputs. Source checks do not establish future receiving results.
+# Readiness correction after the preserved attempt01 failure
+
+Private qualified builds must explicitly set `SIGNAL_LOCAL_TASK_PROOF_BUILD=true`,
+`NODE_ENV=production`, both `SIGNAL_ACCESS_MODE=production` and
+`NEXT_PUBLIC_SIGNAL_ACCESS_MODE=production`, and the exact admitted
+`SIGNAL_LOCAL_TASK_ORIGIN=http://127.0.0.1:<port>`. No VERCEL/VERCEL_ENV or demo
+posture is allowed. Runtime uses the existing `SIGNAL_LOCAL_TASK_OPERATIONS=true`
+and exact same origin/access posture. The build marker supplies no runtime
+operation authority or identity configuration.
+
+Installed Next16.3.6 `build/define-env.js` inlines
+`__NEXT_NO_MIDDLEWARE_URL_NORMALIZE` from `skipProxyUrlNormalize`; setting the
+runtime config alone cannot repair an already-built Proxy. `next-server.js`
+also reads the setting when choosing the original initURL at runtime. Root must
+therefore review, rebuild and privately qualify a fresh artifact before another
+finite grant. Default production config keeps the flag absent. Ordinary Clerk
+middleware/auth and exact Host/Origin/issuer/actor checks remain required.
+
+Readiness now has one 30s overall deadline, 2s maximum per request bounded by the
+remaining grant/deadline, manual redirects, body cancellation and early child
+exit checks. Only `/sign-in` HTTP200 without Location is ready. Private facts
+contain finite attempt times/statuses, redirect origin class, allowlisted error
+names/codes, child identity/exit and bounded diagnostic file hash/bytes; no raw
+headers, bodies, errors or redirect locations. Failure uses the existing owned
+server stop and parent cleanup, and consumes that invocation.
