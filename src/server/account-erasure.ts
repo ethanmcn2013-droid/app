@@ -16,6 +16,8 @@ import {
   projectDriveOperations,
   providerConnections,
   resources,
+  weddingGuests,
+  weddingHouseholds,
   shareLinkVisits,
   shareLinks,
   tasks,
@@ -896,6 +898,9 @@ export async function eraseAccountData(
     await database
       .delete(resources)
       .where(eq(resources.workspaceId, wsId));
+    // The guest list: people before their invitations, no cascade relied on.
+    await database.delete(weddingGuests).where(eq(weddingGuests.workspaceId, wsId));
+    await database.delete(weddingHouseholds).where(eq(weddingHouseholds.workspaceId, wsId));
     await database
       .delete(driveFolderGrants)
       .where(eq(driveFolderGrants.workspaceId, wsId));

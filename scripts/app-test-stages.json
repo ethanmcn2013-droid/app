@@ -402,6 +402,8 @@
     "src/server/projects/project-console-facts.test.ts",
     "src/server/projects/project-deletion-meta.test.ts",
     "src/server/projects/project-files.test.ts",
+    "src/server/wedding/guests.test.ts",
+    "src/lib/wedding/guests.test.ts",
     "src/server/projects/project-analytics-portfolio.test.ts",
     "src/server/actions/nudge.test.ts",
     "src/lib/projects/project-console.test.ts",

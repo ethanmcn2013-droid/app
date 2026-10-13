@@ -38,6 +38,7 @@ import {
   sectionIsOpen,
   sectionStoreKey,
   SIDEBAR_GROUPS,
+  WEDDING_DESTINATIONS,
   WORKSPACE_DESTINATIONS,
   type ShellDestination,
 } from "./shell-nav";
@@ -127,9 +128,12 @@ function useFolded(): ReadonlySet<string> {
   return useSyncExternalStore(subscribeFolded, readFolded, () => EMPTY_FOLDED);
 }
 
+const EMPTY_IDS: ReadonlySet<string> = new Set();
+
 function useProjectRows(enabled: boolean) {
   const [rows, setRows] = useState<readonly ChooserRow[] | null>(null);
   const [marks, setMarks] = useState<Readonly<Record<string, SidebarProjectMark>>>({});
+  const [weddingIds, setWeddingIds] = useState<ReadonlySet<string>>(EMPTY_IDS);
   const [failed, setFailed] = useState(false);
   const loaded = useRef(false);
   useEffect(() => {
@@ -141,13 +145,14 @@ function useProjectRows(enabled: boolean) {
         if (result.ok) {
           setRows(result.rows);
           setMarks(result.marks);
+          setWeddingIds(new Set(result.weddingIds));
         } else setFailed(true);
       } catch {
         setFailed(true);
       }
     })();
   }, [enabled]);
-  return { rows, marks, failed };
+  return { rows, marks, weddingIds, failed };
 }
 
 export function AppSidebar({
@@ -176,7 +181,7 @@ export function AppSidebar({
   const suiteContext = useSuiteContext();
   const activeProject = useActiveProject();
   const { collapsed, toggleCollapsed, setMobileOpen } = useShell();
-  const { rows, marks, failed } = useProjectRows(Boolean(activeProject));
+  const { rows, marks, weddingIds, failed } = useProjectRows(Boolean(activeProject));
   const foldedSections = useFolded();
   const shortcut = useShortcutLabel();
   const currentProjectId =
@@ -305,6 +310,42 @@ export function AppSidebar({
     );
   };
 
+  /**
+   * Wedding tools, nested under the open wedding Project. Only what has been
+   * built is a link; the rest says it is coming and goes nowhere.
+   */
+  const weddingTools = (row: ChooserRow) => {
+    if (collapsed || row.id !== currentProjectId || !weddingIds.has(row.id)) return null;
+    return (
+      <div key={`${row.id}-wedding`} className={styles.nested} role="group" aria-label={`Wedding tools for ${row.name}`}>
+        {WEDDING_DESTINATIONS.map((destination) => {
+          const current = destination.owns.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+          if (destination.soon) {
+            return (
+              <span key={destination.id} className={styles.nestedItem} data-soon="" aria-disabled="true">
+                <span className={styles.itemLabel}>{destination.label}</span>
+                <span className={styles.soonTag}>
+                  <span className="sr-only">Coming </span>Soon
+                </span>
+              </span>
+            );
+          }
+          return (
+            <SidebarIntentLink
+              key={destination.id}
+              href={`${destination.href}?workspaceId=${encodeURIComponent(row.id)}`}
+              className={styles.nestedItem}
+              aria-current={current ? "page" : undefined}
+              onClick={() => setMobileOpen(false)}
+            >
+              <span className={styles.itemLabel}>{destination.label}</span>
+            </SidebarIntentLink>
+          );
+        })}
+      </div>
+    );
+  };
+
   const chatLink = (entry: ChatDirectoryEntry) => {
     const current = here === entry.href;
     const trailing = entry.count > 0
@@ -393,7 +434,7 @@ export function AppSidebar({
                     <SidebarIntentLink href="/app/project" onClick={() => setMobileOpen(false)}>Start one</SidebarIntentLink>
                   </div>
                 ) : null}
-                {rows?.slice(0, projectLimit).map((row) => projectRow(row))}
+                {rows?.slice(0, projectLimit).flatMap((row) => [projectRow(row), weddingTools(row)])}
                 {rows && rows.length > projectLimit ? (
                   <SidebarIntentLink
                     href="/app/project"

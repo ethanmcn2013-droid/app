@@ -79,11 +79,22 @@ export const TOOL_DESTINATIONS: readonly ShellDestination[] = [
   { id: "notes", label: "Notes", href: "/app/notes", icon: "notes", owns: ["/app/notes"] },
 ];
 
+/**
+ * Wedding tools (12 Oct 2026): nested under the open Project's row when that
+ * Project is a wedding, never a group of their own. Only the guest list is
+ * built; Seating and Budget say they are coming and go nowhere.
+ */
+export const WEDDING_DESTINATIONS: readonly ShellDestination[] = [
+  { id: "wedding-guests", label: "Guest list", href: "/app/wedding/guests", icon: "projects", owns: ["/app/wedding/guests"] },
+  { id: "wedding-seating", label: "Seating", href: "/app/wedding/seating", icon: "projects", owns: ["/app/wedding/seating"], soon: true },
+  { id: "wedding-budget", label: "Budget", href: "/app/wedding/budget", icon: "projects", owns: ["/app/wedding/budget"], soon: true },
+];
+
 export const FOOTER_DESTINATIONS: readonly ShellDestination[] = [
   { id: "settings", label: "Settings", href: "/app/settings", icon: "settings", owns: ["/app/settings", "/app/import"] },
 ];
 
-const ALL = [HOME_DESTINATION, ...WORKSPACE_DESTINATIONS, ...BUILD_DESTINATIONS, ...UTILITY_DESTINATIONS, ...TOOL_DESTINATIONS, ...FOOTER_DESTINATIONS];
+const ALL = [HOME_DESTINATION, ...WORKSPACE_DESTINATIONS, ...BUILD_DESTINATIONS, ...UTILITY_DESTINATIONS, ...TOOL_DESTINATIONS, ...WEDDING_DESTINATIONS, ...FOOTER_DESTINATIONS];
 const APPS_AND_TOOLS: Crumb = { label: LAUNCHER_NAME, href: "/app/tools" };
 
 function ownsPath(pathname: string, prefix: string): boolean {
@@ -145,6 +156,7 @@ export function crumbsForPath(pathname: string): Crumb[] {
   if (!destination) return crumbs;
   // Tools sit one level under Apps and tools.
   if (TOOL_DESTINATIONS.includes(destination)) crumbs.push(APPS_AND_TOOLS);
+  if (WEDDING_DESTINATIONS.includes(destination)) crumbs.push({ label: "Wedding tools" });
   crumbs.push({ label: destination.label, href: destination.href });
   if (destination.id === "home" && isOverviewPath(pathname)) crumbs.push({ label: "Overview" });
   if (destination.id === "automations" && pathname !== AUTOMATIONS_APP_PATH) crumbs.push({ label: "Draft" });

@@ -199,6 +199,9 @@ export const TENANT_SURFACES = [
       "conversationOutbox",
       "workLinks",
       "workOperationReceipts",
+      // Wedding tools (12 Oct 2026): the guest list is Project content.
+      "weddingHouseholds",
+      "weddingGuests",
     ],
     /**
      * Tables in schema.ts that are genuinely global and are excluded from

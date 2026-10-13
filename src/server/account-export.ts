@@ -25,6 +25,8 @@ import {
   workspaceStorage,
   workLinks,
   workspaces,
+  weddingGuests,
+  weddingHouseholds,
 } from "./db/schema";
 import * as schema from "./db/schema";
 import type {
@@ -261,6 +263,14 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
         sql`EXISTS (SELECT 1 FROM workspace_members dm WHERE dm.workspace_id=${workLinks.destinationProjectId} AND dm.user_id=${userId})`)),
   ]);
 
+  // The guest lists of the Projects this person owns (Wedding tools).
+  const [ownedWeddingHouseholds, ownedWeddingGuests] = slugs.length
+    ? await Promise.all([
+        database.select().from(weddingHouseholds).where(inArray(weddingHouseholds.workspaceId, slugs)),
+        database.select().from(weddingGuests).where(inArray(weddingGuests.workspaceId, slugs)),
+      ])
+    : [[], []];
+
   const myProviderConnections = await database
     .select(providerConnectionMeta)
     .from(providerConnections)
@@ -433,6 +443,8 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       boardMeta: ownedMeta,
       workspaceStorage: ownedWorkspaceStorage,
       driveFolderGrants: ownedDriveFolderGrants,
+      weddingHouseholds: ownedWeddingHouseholds,
+      weddingGuests: ownedWeddingGuests,
       googleDriveActivity: ownedGoogleDriveActivityRows.map((activity) =>
         describeGoogleDriveActivity(activity),
       ),

@@ -416,7 +416,7 @@
       "materialityReview": {
         "materialityHash": "3fcba4d3b2bb4dcf",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.page.app-settings-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.page.app-settings-materiality.json"
       }
     },
     {
@@ -2131,7 +2131,7 @@
       "materialityReview": {
         "materialityHash": "795236cc4236a32a",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.page.app-project-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.page.app-project-materiality.json"
       }
     },
     {
@@ -2179,7 +2179,7 @@
       "materialityReview": {
         "materialityHash": "50734606e8cded67",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.state.app-project-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.state.app-project-loading-materiality.json"
       }
     },
     {
@@ -3187,7 +3187,7 @@
       "materialityReview": {
         "materialityHash": "9dcb7b09c5c2c254",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.state.app-home-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.state.app-home-loading-materiality.json"
       }
     },
     {
@@ -3234,7 +3234,7 @@
       "materialityReview": {
         "materialityHash": "94e95fe898bce26d",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.state.app-home-error-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.state.app-home-error-materiality.json"
       }
     },
     {
@@ -3498,7 +3498,7 @@
       "materialityReview": {
         "materialityHash": "12140b4bae611a58",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.state.app-tasks-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.state.app-tasks-loading-materiality.json"
       }
     },
     {
@@ -3739,7 +3739,7 @@
       "materialityReview": {
         "materialityHash": "19f85eac6f784ffa",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.resources.drive-upload-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.resources.drive-upload-materiality.json"
       }
     },
     {
@@ -4002,7 +4002,7 @@
       "materialityReview": {
         "materialityHash": "e7fbf84c50efd4b0",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.page.app-messages-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.page.app-messages-materiality.json"
       }
     },
     {
@@ -4188,7 +4188,7 @@
       "materialityReview": {
         "materialityHash": "d89f2a4abd38ee57",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.page.app-analytics-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.page.app-analytics-materiality.json"
       }
     },
     {
@@ -4235,7 +4235,7 @@
       "materialityReview": {
         "materialityHash": "9a83f9e97a750b1b",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.state.app-analytics-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.state.app-analytics-loading-materiality.json"
       }
     },
     {
@@ -4282,7 +4282,7 @@
       "materialityReview": {
         "materialityHash": "16a0888ed7b367ab",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.state.app-analytics-error-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.state.app-analytics-error-materiality.json"
       }
     },
     {
@@ -4555,7 +4555,7 @@
       "materialityReview": {
         "materialityHash": "45e0fc19aaf3ca48",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.state.app-tools-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.state.app-tools-loading-materiality.json"
       }
     },
     {
@@ -4611,7 +4611,7 @@
       "materialityReview": {
         "materialityHash": "63e7924b683e8c06",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.page.app-concepts-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.page.app-concepts-materiality.json"
       }
     },
     {
@@ -4718,7 +4718,7 @@
       "materialityReview": {
         "materialityHash": "85929e83ebaece9a",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.page.app-files-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.page.app-files-materiality.json"
       }
     },
     {
@@ -4765,7 +4765,7 @@
       "materialityReview": {
         "materialityHash": "9beac142f8f04cb2",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.state.app-files-loading-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.state.app-files-loading-materiality.json"
       }
     },
     {
@@ -4812,8 +4812,185 @@
       "materialityReview": {
         "materialityHash": "83d088f7615c6a6b",
         "reviewedAt": "2026-10-12",
-        "evidence": "experience/reviews/2026-10-12-light-wide-2/receipts/tasks.state.app-files-error-materiality.json"
+        "evidence": "experience/reviews/2026-10-12-wedding-guests/receipts/tasks.state.app-files-error-materiality.json"
       }
+    },
+    {
+      "id": "tasks.page.app-wedding",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/wedding",
+      "source": "tasks/src/app/app/wedding/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "application-shell-and-navigation",
+      "primaryJob": "Open the Wedding tools at the guest list, keeping the chosen project.",
+      "primaryAction": "None, redirects to the guest list.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-12",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "31d76edfc8ca7a78"
+    },
+    {
+      "id": "tasks.page.app-wedding-guests",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/wedding/guests",
+      "source": "tasks/src/app/app/wedding/guests/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "list-and-data-table",
+      "primaryJob": "Keep a wedding's guest list: who is invited, who has replied, what they will eat, and what the caterer needs.",
+      "primaryAction": "Add guests, then change a reply, meal or dietary need in place.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "error",
+        "restricted",
+        "dense",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-10-12",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "91188a737ce28c60"
+    },
+    {
+      "id": "tasks.state.app-wedding-guests-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/wedding/guests",
+      "source": "tasks/src/app/app/wedding/guests/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Wait for the guest list without losing orientation.",
+      "primaryAction": "None, resolves on its own.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-12",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "35ca873667603a6e"
+    },
+    {
+      "id": "tasks.state.app-wedding-guests-error",
+      "product": "tasks",
+      "surfaceType": "error",
+      "route": "/app/wedding/guests",
+      "source": "tasks/src/app/app/wedding/guests/error.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Recover from a guest list read failure, knowing nothing was changed.",
+      "primaryAction": "Try again.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-12",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "db9c41b8cd6e766f"
     },
     {
       "id": "tasks.state.app-messages-loading",

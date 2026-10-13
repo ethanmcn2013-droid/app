@@ -1854,3 +1854,49 @@ export const pingCommandReceipts = sqliteTable("ping_command_receipts", {
   committedAt: integer("committed_at").notNull(),
 }, table => [primaryKey({ columns: [table.actorId, table.commandId] }),
   check("ping_receipt_json", sql`json_valid(${table.receiptJson})`)]);
+
+// ── Wedding tools: guests (12 Oct 2026) ────────────────────────────────
+// A household is one invitation; each guest in it replies for themselves.
+// Both belong to the wedding's Project and go with it on deletion.
+export const weddingHouseholds = sqliteTable("wedding_households", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  groupLabel: text("group_label"),
+  invitedTo: text("invited_to").notNull().default("day"),
+  invitation: text("invitation").notNull().default("not_sent"),
+  notes: text("notes"),
+  createdBy: text("created_by").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, table => [
+  index("idx_wedding_households_workspace").on(table.workspaceId),
+  check("wedding_household_invited_to", sql`${table.invitedTo} IN ('day', 'evening')`),
+  check("wedding_household_invitation", sql`${table.invitation} IN ('not_sent', 'sent')`),
+  check("wedding_household_name", sql`length(${table.name}) BETWEEN 1 AND 120`),
+]);
+
+export const weddingGuests = sqliteTable("wedding_guests", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  householdId: text("household_id").notNull().references(() => weddingHouseholds.id, { onDelete: "cascade" }),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  rsvp: text("rsvp").notNull().default("awaiting"),
+  meal: text("meal").notNull().default("not_provided"),
+  dietary: text("dietary"),
+  isChild: integer("is_child", { mode: "boolean" }).notNull().default(false),
+  plusOneOf: text("plus_one_of"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, table => [
+  index("idx_wedding_guests_workspace").on(table.workspaceId),
+  index("idx_wedding_guests_household").on(table.householdId),
+  check("wedding_guest_rsvp", sql`${table.rsvp} IN ('awaiting', 'attending', 'not_attending')`),
+  check("wedding_guest_meal", sql`${table.meal} IN ('not_provided', 'no_preference', 'vegetarian', 'vegan', 'pescatarian', 'child')`),
+  check("wedding_guest_named", sql`${table.firstName} IS NOT NULL OR ${table.plusOneOf} IS NOT NULL`),
+]);
