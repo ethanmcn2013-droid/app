@@ -63,3 +63,23 @@ contain finite attempt times/statuses, redirect origin class, allowlisted error
 names/codes, child identity/exit and bounded diagnostic file hash/bytes; no raw
 headers, bodies, errors or redirect locations. Failure uses the existing owned
 server stop and parent cleanup, and consumes that invocation.
+# Sign-in diagnostic boundary
+
+Each admitted ordinary sign-in now writes its own private
+`sign-in-N.diagnostics.json`. It wraps the existing context/page creation,
+navigation, identifier/Continue, optional email-code choice, code visibility/fill,
+redirect, own Project navigation/GET, identity and UI assertions. Recovery uses
+the same sign-in wrapper; only assertions already present in that path run.
+The auth actions, selectors, code eligibility, exact network allowlist and
+request payloads are unchanged. No screenshots or DOM text are collected by
+this diagnostic.
+
+The fixed schema retains step begin/pass/fail times, known error name/code,
+origin class, status, request-failure code, resource class, safe page class and
+known-selector count/visibility only. URLs, paths/query values, headers,
+cookies, tokens, raw errors/console text, response bodies and account values
+never enter that schema. It keeps at most 48 step records, 96 network records
+and 24 browser records within 64KiB serialized output, with dropped counters.
+State sampling is capped at 500ms per step and cannot replace the action's
+original thrown error. This is source instrumentation, not a replay or a claim
+about the preserved attempt03 sign-in failure.

@@ -9,6 +9,7 @@ import { chromium, type Page, type BrowserContext } from "@playwright/test";
 import { seedFiveStoreFixture, validateProofInput, type ProofInput } from "./fixture";
 import { boundedServerDiagnostics } from "./server-diagnostics";
 import { waitForProofReadiness } from "./readiness";
+import { signInDiagnostics } from "./sign-in-diagnostics";
 
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 const endpoint = "/api/internal/local-task-operations";
@@ -134,29 +135,50 @@ export async function runAuthenticatedTaskProof(input: ProofInput) {
     const receipt = (await database.execute({ sql: "SELECT value FROM meta WHERE key = ?", args: [`local-task-operation:v1:${JSON.stringify([actor, operation.operationId])}`] })).rows[0];
     assert(receipt); const stored = JSON.parse(String(receipt.value)); assert.equal(stored.actor, actor); assert.deepEqual(stored.operation, operation); assert.deepEqual(stored.response, response);
   };
+  let signInSequence = 0;
+  const signInByPage = new Map<Page, { diagnostics: ReturnType<typeof signInDiagnostics>; sample: () => Promise<ReturnType<ReturnType<typeof signInDiagnostics>["pageState"]>> }>();
   const signIn = async (index: number) => {
     active();
-    const context = await browser!.newContext(); contexts.push(context);
-    // Only the admitted local app and normal Clerk development endpoints can
-    // receive browser requests. There is no mailbox or provider administration.
-    await context.route("**/*", async route => {
-      if (interrupted || Date.parse(input.runtimeGrant.expiresAt) <= Date.now()) return route.abort();
-      const url = new URL(route.request().url());
-      if (url.origin === input.origin || input.clerkOrigins.includes(url.origin)) await route.continue();
-      else await route.abort();
+    const sequence = ++signInSequence;
+    const diagnostics = signInDiagnostics(input.origin, input.issuer, input.clerkOrigins, snapshot => writeFileSync(resolve(input.evidenceRoot, `sign-in-${sequence}.diagnostics.json`), JSON.stringify(snapshot, null, 2)));
+    const context = await diagnostics.step("context", async () => {
+      const ownedContext = await browser!.newContext(); contexts.push(ownedContext);
+      // Only the admitted local app and normal Clerk development endpoints can
+      // receive browser requests. There is no mailbox or provider administration.
+      await ownedContext.route("**/*", async route => {
+        if (interrupted || Date.parse(input.runtimeGrant.expiresAt) <= Date.now()) return route.abort();
+        const url = new URL(route.request().url());
+        if (url.origin === input.origin || input.clerkOrigins.includes(url.origin)) await route.continue();
+        else { diagnostics.network("blocked", url.href, route.request().resourceType()); await route.abort(); }
+      });
+      return ownedContext;
     });
-    const page = await context.newPage();
-    await page.goto(`${input.origin}/sign-in?redirect_url=${encodeURIComponent(`${input.origin}/app/tasks?workspaceId=${input.accounts[index].projectId}`)}`);
-    await page.locator('input[name="identifier"]').fill(input.accounts[index].email);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    let page: Page | undefined;
+    const sample = async () => {
+      if (!page) return diagnostics.pageState("about:blank");
+      const locators = { identifier: page.locator('input[name="identifier"]'), continue: page.getByRole("button", { name: "Continue", exact: true }), "choose-code": page.getByRole("button", { name: /email.*code|send.*code/i }), code: page.locator('input[autocomplete="one-time-code"]') };
+      const selectors = Object.fromEntries(await Promise.all(Object.entries(locators).map(async ([name, locator]) => [name, await Promise.all([locator.count(), locator.first().isVisible()]).then(([count, visible]) => ({ count, visible })).catch(() => ({ count: null, visible: null }))])));
+      return diagnostics.pageState(page.url(), selectors);
+    };
+    page = await diagnostics.step("page", async () => { page = await context.newPage(); return page; }, sample);
+    const signedInPage = page;
+    signInByPage.set(page, { diagnostics, sample });
+    page.on("response", response => diagnostics.network("response", response.url(), response.request().resourceType(), response.status()));
+    page.on("requestfailed", request => diagnostics.network("request-failed", request.url(), request.resourceType(), request.failure()?.errorText));
+    page.on("pageerror", error => diagnostics.browser("page-error", error));
+    page.on("console", message => { if (message.type() === "error") diagnostics.browser("console-error"); else if (message.type() === "warning") diagnostics.browser("console-warning"); });
+    let navigationStatus: number | undefined;
+    await diagnostics.step("goto", async () => { navigationStatus = (await signedInPage.goto(`${input.origin}/sign-in?redirect_url=${encodeURIComponent(`${input.origin}/app/tasks?workspaceId=${input.accounts[index].projectId}`)}`))?.status(); }, sample, () => navigationStatus);
+    await diagnostics.step("identifier", () => signedInPage.locator('input[name="identifier"]').fill(input.accounts[index].email), sample);
+    await diagnostics.step("continue", () => signedInPage.getByRole("button", { name: "Continue", exact: true }).click(), sample);
     const emailCode = page.getByRole("button", { name: /email.*code|send.*code/i }).first();
-    if (await emailCode.isVisible().catch(() => false)) await emailCode.click();
+    await diagnostics.step("choose-code", async () => { if (await emailCode.isVisible().catch(() => false)) await emailCode.click(); }, sample);
     const code = page.locator('input[autocomplete="one-time-code"]');
-    await code.first().waitFor({ state: "visible" });
-    if (await code.count() === 1) await code.fill("424242");
-    else for (const [position, digit] of [..."424242"].entries()) await code.nth(position).fill(digit);
-    await page.waitForURL(/\/app\//, { timeout: 60000 });
-    await page.goto(`${input.origin}/app/tasks?workspaceId=${input.accounts[index].projectId}`);
+    await diagnostics.step("code-visible", () => code.first().waitFor({ state: "visible" }), sample);
+    await diagnostics.step("code-fill", async () => { if (await code.count() === 1) await code.fill("424242"); else for (const [position, digit] of [..."424242"].entries()) await code.nth(position).fill(digit); }, sample);
+    await diagnostics.step("redirect", () => signedInPage.waitForURL(/\/app\//, { timeout: 60000 }), sample);
+    navigationStatus = undefined;
+    await diagnostics.step("own-project-navigation", async () => { navigationStatus = (await signedInPage.goto(`${input.origin}/app/tasks?workspaceId=${input.accounts[index].projectId}`))?.status(); }, sample, () => navigationStatus);
     return page;
   };
   const request = async (page: Page, method: string, payload?: unknown, query = "") => { active(); return page.evaluate(async ({ endpoint, method, payload, query }) => {
@@ -169,9 +191,11 @@ export async function runAuthenticatedTaskProof(input: ProofInput) {
     for (const index of [0, 1]) {
       await check(`normal-sign-in-${index + 1}`, async () => {
         const page = await signIn(index); pages.push(page);
-        const read = await request(page, "GET", undefined, `?projectId=${input.accounts[index].projectId}`);
-        assert.equal(read.status, 200); assert.deepEqual(read.body.identity, { subject: input.accounts[index].subject, issuer: input.issuer, authorizedParty: input.origin });
-        assert(await page.getByText(`Proof project ${index + 1}`, { exact: true }).first().isVisible());
+        const { diagnostics, sample } = signInByPage.get(page)!;
+        let readStatus: number | undefined;
+        const read = await diagnostics.step("own-project-get", async () => { const result = await request(page, "GET", undefined, `?projectId=${input.accounts[index].projectId}`); readStatus = result.status; assert.equal(result.status, 200); return result; }, sample, () => readStatus);
+        await diagnostics.step("identity", async () => { assert.deepEqual(read.body.identity, { subject: input.accounts[index].subject, issuer: input.issuer, authorizedParty: input.origin }); }, sample);
+        await diagnostics.step("own-project-ui", async () => { assert(await page.getByText(`Proof project ${index + 1}`, { exact: true }).first().isVisible()); }, sample);
         return { subjectSha256: hash(input.accounts[index].subject), issuerSha256: hash(input.issuer), party: input.origin };
       });
     }
