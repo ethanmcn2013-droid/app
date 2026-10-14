@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-home-loading",
+  "source": "tasks/src/app/app/home/loading.tsx",
+  "materialityHash": "9dcb7b09c5c2c254",
+  "reviewedAt": "2026-10-14",
+  "reviewer": "root (technical receiving review)",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e0a4268a9f6461a73c9936fc-fac20804c9a3e8ae.json",
+    "attestationSha256": "0a41fec74e0b61522506900285a7898dcb7831d15a61faecf6cf0591d37161f2",
+    "runId": "tasks-playwright-e0a4268a9f6461a73c9936fc",
+    "canonicalEvidenceSha256": "e0a4268a9f6461a73c9936fcfd6e1e80eb9512edf53f3f9c25d93059dfaccee1",
+    "rawArtifactSha256": "fac20804c9a3e8ae14ef824ec2ad4b06755d11cf9fd4c635b160f32437d44a5c",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-home-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh schema2 synthetic technical receiving: actual /materiality/tasks.state.app-home-loading or deterministic local component captured in a fully green 196/196 run; root technical reviewer visually reviewed nominated target evidence and independently hash-checked all 64 target captures. This records local synthetic rendering only, not Clerk, provider continuity, production behavior, subjective design certification, or release acceptance.",
+  "decision": "PASS technical synthetic receiving only; not subjective design certification or release acceptance"
+}
