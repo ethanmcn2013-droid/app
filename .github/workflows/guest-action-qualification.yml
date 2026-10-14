@@ -1,0 +1,52 @@
+name: Guest action qualification
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [test/frontend-release-5-guest-rehearsal]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guest-qualification-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: false
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install immutable dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify immutable runtime and bundle actual actions
+        run: node --max-old-space-size=1536 scripts/release-qualification/frontend-release-5-guest/build.mjs --install-ready
+      - name: Disposable action, isolation and lifecycle qualification
+        run: python3 scripts/release-qualification/frontend-release-5-guest/run.py attempt-linux01
+      - name: Retain safe qualification receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guest-action-qualification-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            scripts/release-qualification/frontend-release-5-guest/source-pins.json
+            scripts/release-qualification/frontend-release-5-guest/attempts/attempt-linux01/results.json
+            scripts/release-qualification/frontend-release-5-guest/attempts/attempt-linux01/receiving.json
+            scripts/release-qualification/frontend-release-5-guest/attempts/attempt-linux01/process-receipt.json
+            scripts/release-qualification/frontend-release-5-guest/attempts/attempt-linux01/postprocess-cleanup.json
+            scripts/release-qualification/frontend-release-5-guest/attempts/attempt-linux01/stdout.jsonl
+            scripts/release-qualification/frontend-release-5-guest/attempts/attempt-linux01/stderr.txt

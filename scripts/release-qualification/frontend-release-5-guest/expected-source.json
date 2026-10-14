@@ -1,0 +1,435 @@
+{
+  "schema": "signal-immutable-guest-qualification-inputs/1",
+  "sourceCommit": "b805c5501f8198218791491ae0a2f26efbae0657",
+  "sourceTree": "07ea449b3f9f39724961875bd612f18f6ae34071",
+  "createdBeforeCiQualification": true,
+  "inputs": [
+    {
+      "path": "drizzle/0014_current_schema_baseline.sql",
+      "gitBlob": "1641a6ae6601bf46aa7050c358c8f75a1a4c5336",
+      "sha256": "8cc96bf8357d820e8e4bc99e5fd829a177645bd0c52579755bb4e21a9d8171ea",
+      "bytes": 15374
+    },
+    {
+      "path": "drizzle/0015_notes_extract_exact_identity.sql",
+      "gitBlob": "557f4b867f45277a24f24b4e8e725f8adb093b3a",
+      "sha256": "67562e86ac54d8cfce5bb5c30e2eac1e884cef74c2becd7ffc95dde2aeacfb43",
+      "bytes": 139
+    },
+    {
+      "path": "drizzle/0016_tasks_archived_at.sql",
+      "gitBlob": "63f48142795e708717f6d08de9d3b34de93ab704",
+      "sha256": "bcfda865ffae2066029e8284b59f2cab21bb71c59eadd258b07dab5a590d49c0",
+      "bytes": 47
+    },
+    {
+      "path": "drizzle/0017_resources.sql",
+      "gitBlob": "148e28bab9217178d7776d50973dbf6072189887",
+      "sha256": "70acfb68112f42a096afe16c02578f265d782c435487368424f17414c5642828",
+      "bytes": 1679
+    },
+    {
+      "path": "drizzle/0018_notification_prefs_nudges.sql",
+      "gitBlob": "48d631e9b6f41e8970bd5d86a691f43e5ff0e643",
+      "sha256": "505c94e536fa4d11d665ea2972a2eb95974492da6eb0fd465b89dbd1f8737b5d",
+      "bytes": 74
+    },
+    {
+      "path": "drizzle/0019_invites_and_workspace_events.sql",
+      "gitBlob": "709aa4193102742cd34ea224675c785b794206f9",
+      "sha256": "5835f200fe1b510a033738be9d38b293f757793c436e762c536890b7f745aebf",
+      "bytes": 777
+    },
+    {
+      "path": "drizzle/0020_user_preferences_theme_mode.sql",
+      "gitBlob": "9c96003b73d89fd85a5eefd0524171d9414e1eeb",
+      "sha256": "f372dd8df9fb132b58050d41bd9c02713783ff6ec961014d62cc9ff39a8efb46",
+      "bytes": 54
+    },
+    {
+      "path": "drizzle/0021_tasks_seq.sql",
+      "gitBlob": "1136f26fe4b0ddfd95479d2459cc6b2d0d1c677c",
+      "sha256": "97f290913eecb62d3a60c412bb7c908d2a519512ef835727396551615725491b",
+      "bytes": 1566
+    },
+    {
+      "path": "drizzle/0022_workspaces_description.sql",
+      "gitBlob": "2a3405520ad76713f4942d387fd695d20492a12f",
+      "sha256": "4c77afd07791a89a358252842b6fcb017f666b9cc49ff300297e251642d5c84c",
+      "bytes": 49
+    },
+    {
+      "path": "drizzle/0023_retire_launch_scaffolding.sql",
+      "gitBlob": "6d3c0b07335390ef41801c830773e5ff28547e53",
+      "sha256": "6cba388bf386737cba7931191f847cbfc32b021b9250eb2a9d9013ed6b1c0c7d",
+      "bytes": 628
+    },
+    {
+      "path": "drizzle/0024_retire_waiting_lane.sql",
+      "gitBlob": "29ab454c8098190876777018117b904f6886f6f0",
+      "sha256": "63a96b5effdf633c0341193506225d209777ca6353234522cdbb1fd439d3a9a9",
+      "bytes": 2609
+    },
+    {
+      "path": "drizzle/0025_tasks_completed_at.sql",
+      "gitBlob": "7093d1c10fc888e39d88cb7306f624a5a95fcb39",
+      "sha256": "0d169a3ca395616c3d81868da31f732fd3181d7a5efc624bf703192ff3155613",
+      "bytes": 1215
+    },
+    {
+      "path": "drizzle/0026_workspace_money.sql",
+      "gitBlob": "dce1727f36c9349376e6fc77e6ea502aa9f63438",
+      "sha256": "025060ee078882de300df2e06388d89353ebf1504120bb297b82a7707d31225a",
+      "bytes": 528
+    },
+    {
+      "path": "drizzle/0027_share_link_token_hash.sql",
+      "gitBlob": "a00b134054691c49e7417f2509153c5ebfb900d4",
+      "sha256": "a4d68de27671b09197ed88ae1e7e8cd8a52e04deafd38ccbee1f03d456b97fde",
+      "bytes": 1097
+    },
+    {
+      "path": "drizzle/0028_project_drive.sql",
+      "gitBlob": "d2875853c0d8efe8fbcc89b6c859211e0e049547",
+      "sha256": "a24f9715df59e2b132f2839d912479304adb4b560ed7052aef1c0d3254c90d8b",
+      "bytes": 5830
+    },
+    {
+      "path": "drizzle/0029_project_drive_operations.sql",
+      "gitBlob": "9bde11588db8485cf55e6cca950f1cd3975d1843",
+      "sha256": "332c40bf70ad206f247cb12793b3a49ecf7d20f47b3a16b93cacb519ee13b79a",
+      "bytes": 10609
+    },
+    {
+      "path": "drizzle/0030_sponsored_use_intents.sql",
+      "gitBlob": "5ea181baba4fb0cd4bbcbcdae965b42614397e46",
+      "sha256": "a9319eae5e1a7006ff6ddcd557c62a2e18e5dc0670778f7ccd1389d567c31a37",
+      "bytes": 962
+    },
+    {
+      "path": "drizzle/0031_event_purchase_designations.sql",
+      "gitBlob": "7b1b0eb52c25e7a7a6abbf9f5491fc7fee01b76c",
+      "sha256": "139892f27ff427e36ede52e470ec94f32eabfb7ad5308a0906e8c31f922c60d3",
+      "bytes": 3840
+    },
+    {
+      "path": "drizzle/0032_project_conversations.sql",
+      "gitBlob": "1b87b3996ef1ebcdcc48fa804bd65b3e575aa8a3",
+      "sha256": "ebd7067120118c9757a143303a66fa2defb7d98462c7036ce25f674eb91afd6b",
+      "bytes": 13644
+    },
+    {
+      "path": "drizzle/0033_conversation_task_outcomes.sql",
+      "gitBlob": "9d466a6995ae1bc50178b39226fd992f127c76bc",
+      "sha256": "28477c279dc45b8c7c26a5bfeec10fee7754f5c7c89638d61d61b9f3b2f22b7a",
+      "bytes": 3616
+    },
+    {
+      "path": "drizzle/0034_project_direct_messages.sql",
+      "gitBlob": "c0daa96025a2891a2eb5f1d3ca495f6a4835783e",
+      "sha256": "e384172282c5c908ee7834a1c52b53b1fd9441f3cd5571065c8a3a3180d79948",
+      "bytes": 13439
+    },
+    {
+      "path": "drizzle/0035_task_discussion.sql",
+      "gitBlob": "0095e939990ee7cf2ac584f75b4ed7b606e0d6bb",
+      "sha256": "f547d3e9251015de89c6da20c2121ab53ce582413c8685210f3253312345f48e",
+      "bytes": 18773
+    },
+    {
+      "path": "drizzle/0036_conversation_erasure_tombstones.sql",
+      "gitBlob": "c28f453fc2bafc1864f2a8d20db5c06586b5df30",
+      "sha256": "1e9a55199384996ffd2992ae2e564d730616c8fdb2da2ccd0bf8391f2a5bfa18",
+      "bytes": 36226
+    },
+    {
+      "path": "drizzle/0037_message_read_coverage.sql",
+      "gitBlob": "cfe7b5ae2d859eb161a5efa406c5b0752ac1b615",
+      "sha256": "19562652ba33f5c7025ce80d2c80762497bb654654d8633c0ada2757f5e06364",
+      "bytes": 1684
+    },
+    {
+      "path": "drizzle/0038_project_drive_token_revocation.sql",
+      "gitBlob": "71a043d70276b2082d963100d47ae295f7b0c061",
+      "sha256": "054f3aa69d775f6b4ab59e40811cef209dcb12d886944ccef92ad9316ccd16c8",
+      "bytes": 734
+    },
+    {
+      "path": "drizzle/0039_conversation_messages_workspace_index.sql",
+      "gitBlob": "61d148e1c3a675425a085b2a652cee17a7630d91",
+      "sha256": "e9874a3f361ebcbc1a01d30fe0e36ebadb04d508392c9f9ff418d33a5b494264",
+      "bytes": 85
+    },
+    {
+      "path": "drizzle/0040_sponsored_measurement_choice.sql",
+      "gitBlob": "edab95ba2b8966aaf39eb9542e6e8423c344dd6f",
+      "sha256": "5c6e94d2305ef142d072266a6e69e7f9617eeadeaa129ecfaf947729b747e662",
+      "bytes": 373
+    },
+    {
+      "path": "drizzle/0041_ping_command_receipts.sql",
+      "gitBlob": "707142482762e0e796f9de42f055cd531efe2e91",
+      "sha256": "5e4f477ba599dee48f8a4f2c73b3d5b2b069425e7128e8a889bfc19a317c3953",
+      "bytes": 466
+    },
+    {
+      "path": "drizzle/0042_wedding_guests.sql",
+      "gitBlob": "78c05f7e07ec2d8ded4fd72258282f1efe0e0c00",
+      "sha256": "999b8a76a7ac88de92ef942c7b69cbfe9a852e534d134d16a15d3df4f1d15501",
+      "bytes": 2071
+    },
+    {
+      "path": "next.config.ts",
+      "gitBlob": "6aa6524a2b0744f35e27880bd3275410894564c7",
+      "sha256": "0ee15fb521d9e4d7b00e7e055e8fe63f448a72dce21978f31f4e6d02aa51284a",
+      "bytes": 21206
+    },
+    {
+      "path": "package.json",
+      "gitBlob": "8e26631478660fc9359a1b2e13193b8344508649",
+      "sha256": "b54064cb8c4f91ad6fa1356b2b11804ca99970c720faa81cceb3e420db4729ce",
+      "bytes": 22004
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "gitBlob": "ee84a18f4a274ac2a5f6a082320ca607bca2f2e0",
+      "sha256": "40aef667cf11eefe65e710ccfe44ac1a65464f61545568531fb2cc3721f0b2b1",
+      "bytes": 325532
+    },
+    {
+      "path": "src/lib/access-mode.ts",
+      "gitBlob": "fb91b1b394fd7e22118bf512812dfb746e24360c",
+      "sha256": "10ecdeb6477b5507850d8033af04c70fb6165f6da4b3d0afd8b4cd22eeda263b",
+      "bytes": 5714
+    },
+    {
+      "path": "src/lib/account/instrumentation/emitter.ts",
+      "gitBlob": "9f1e0288b898ff45bc1fc83bcba8ac0783dea664",
+      "sha256": "5bf125cea3d5935d709ae8fb01ca3513a3829e8b48e9a943ea501bc8a60ced65",
+      "bytes": 3782
+    },
+    {
+      "path": "src/lib/account/instrumentation/event-schema.ts",
+      "gitBlob": "fe9930a8b03e03148d00f162024f5f032dfc8c13",
+      "sha256": "57bb371c0f799ab0536b54171b7ab2ca87a7bca82c5fc5227f97507fa1251b20",
+      "bytes": 5730
+    },
+    {
+      "path": "src/lib/attachment-claim.ts",
+      "gitBlob": "41cc5406e879f9443e5a9f04f8a88aa36911864f",
+      "sha256": "ca2205eee554ce5f1fa51d6d7163916c763340bb34b480e22b10caa3d6b4ca62",
+      "bytes": 2588
+    },
+    {
+      "path": "src/lib/board-colors.ts",
+      "gitBlob": "9fa9b004e955ed40707d476bf5dbb270dfed0b9b",
+      "sha256": "40dd070f8e89a0e2e8bcc8c5732cf1e5f61606b8e2ebafaf53e4f750f9a95f0e",
+      "bytes": 7118
+    },
+    {
+      "path": "src/lib/board-columns.ts",
+      "gitBlob": "74db0c5a4f285e57748d5c8640b89fb457a6083a",
+      "sha256": "61351649199e5891654351432d0420b2322aabdb95c9aa5445632743f8984549",
+      "bytes": 9247
+    },
+    {
+      "path": "src/lib/board-config.ts",
+      "gitBlob": "39b983636ca6c22671d7894066ad024ebbb65fb7",
+      "sha256": "0d8b3e99dc1423de916fcb3dcf4a94d443179d3540f38e52339d6b1169e5f6fc",
+      "bytes": 9935
+    },
+    {
+      "path": "src/lib/data.ts",
+      "gitBlob": "612e8c981cdba421067892144e021d9f7c5326e5",
+      "sha256": "7759ec953f37f059920bdd0b1286fd95b3f7dc2a5a75b7076db2477f41b229b0",
+      "bytes": 27581
+    },
+    {
+      "path": "src/lib/projects/project-hub.ts",
+      "gitBlob": "55428287a335ddd0336be6819312739b8ee79f49",
+      "sha256": "3d63b7a423fde88861ce96ba6d57a7bdc0fc4842ec3372da13bc6eb72b06d8fa",
+      "bytes": 10521
+    },
+    {
+      "path": "src/lib/projects/project-ref.ts",
+      "gitBlob": "25082be90385256851c8c3a26f35e16002a9c3d7",
+      "sha256": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
+      "bytes": 6579
+    },
+    {
+      "path": "src/lib/review-suite-fixture.ts",
+      "gitBlob": "57303fbd4a9d8501713892f9ea3b68511c80d82f",
+      "sha256": "27a155722cdd0ce8182539508ea4b5254711c08a0e8019540c0855309019e3a2",
+      "bytes": 4449
+    },
+    {
+      "path": "src/lib/sponsored-use/service-auth.ts",
+      "gitBlob": "8cf9ffde21632f13136637821bc28e2ec8c164c1",
+      "sha256": "7a565b44fc8f1ba468668bae924da5a804471b62707000defeaba0fc33f691c1",
+      "bytes": 3777
+    },
+    {
+      "path": "src/lib/venue-issuance/protocol.ts",
+      "gitBlob": "26e877fb0f8bf69e61329be963432e3978d5f1bc",
+      "sha256": "d95cf00f4cded05ea5c75a4e522b6d2d0381ad6cb58c9c7d927b0738bb5298a7",
+      "bytes": 7320
+    },
+    {
+      "path": "src/lib/wedding/guests.ts",
+      "gitBlob": "551929818a2ea4a516f7c6b2097626bc76760224",
+      "sha256": "b73a16a11bafc698a8262121641e249b12863cd4d9b4debc11c31779818b4547",
+      "bytes": 14790
+    },
+    {
+      "path": "src/server/account-deletion-key.ts",
+      "gitBlob": "1c354d2d22440b211fb1496b7d35427e27dbba79",
+      "sha256": "c1f261ce07f736e8d16b8179da259a0771b55bf0441b72b61ee99443136fc180",
+      "bytes": 517
+    },
+    {
+      "path": "src/server/account-deletion-lifecycle.ts",
+      "gitBlob": "c84f09e45d3e95615acf87c739a32de8621c9eee",
+      "sha256": "31742f7e4a58188136ee666c4c66a0bf1a04931242adfd2f3d270a5eb70848e9",
+      "bytes": 2468
+    },
+    {
+      "path": "src/server/account-erasure.ts",
+      "gitBlob": "df361b927c5039a32857b8cb035bc9ecdf42ad73",
+      "sha256": "95c9e39799e2e874b20dd02314d85b0f35a8e6b28503326d738ff7841a553a1e",
+      "bytes": 43720
+    },
+    {
+      "path": "src/server/account-export.ts",
+      "gitBlob": "3f5def6b0e2026941ad5d9e7b856127fe0dcdc3e",
+      "sha256": "91b829082ba01407f8a77777a17b392be323505785703b7fd6c218cbf0f70389",
+      "bytes": 19491
+    },
+    {
+      "path": "src/server/actions/project-authz.ts",
+      "gitBlob": "2bdb9ef3d7793f07b9a4c867171ed3932e787e23",
+      "sha256": "3287f5c9e9ce150d43f3a3f5cf991aab1df3249f8e3717e6438d42f3ad8a9f25",
+      "bytes": 15926
+    },
+    {
+      "path": "src/server/actions/wedding-guests.ts",
+      "gitBlob": "fee16d2e7cbd932b376c33cf898c377e85d82058",
+      "sha256": "da5e7993f200ad751733b386036b1243a365765080f0df3736188ed5a3b2e9bc",
+      "bytes": 5773
+    },
+    {
+      "path": "src/server/attachments/native-byte-cleanup.ts",
+      "gitBlob": "5e178330002fb7661a1af765e11c6fd83582df14",
+      "sha256": "54b0931162eaa6f424bb8a1aef8cd7295d94403ea8585c48079cca69b0bb1630",
+      "bytes": 14699
+    },
+    {
+      "path": "src/server/attachments/native-upload-custody.ts",
+      "gitBlob": "d4a7be4e6381e1238d6ef64f34af999cd43d30f2",
+      "sha256": "0f793d40402487ab94f4a089ef603a4efc161354a08aef7b123ddb24f9bdfc80",
+      "bytes": 39258
+    },
+    {
+      "path": "src/server/connections/project-drive-operation-lifecycle.ts",
+      "gitBlob": "77c526d7800f571d0298b501c9b36c86efe0bd92",
+      "sha256": "1accf0e2315a7a95bddfdc9c34d97135729dc878a808c7efe3faf11ad636419f",
+      "bytes": 2883
+    },
+    {
+      "path": "src/server/connections/project-drive-upload-receipts-core.ts",
+      "gitBlob": "215771e7a1a954da57a1a9596826c20aebd430d4",
+      "sha256": "bbcfe2f655d6af4bbbd8ea840578b9e85ebb6bf30a84aa3e3a3afa0b571d3672",
+      "bytes": 5759
+    },
+    {
+      "path": "src/server/conversations/account-lifecycle.ts",
+      "gitBlob": "dae1cbfe5afe73d3f9ed84bf8c29d1e3e55fdb06",
+      "sha256": "fe1155a9fd1d7d8617340d6ecdab483de7ce3d0eebb705a5940d51afffc3a4c8",
+      "bytes": 8731
+    },
+    {
+      "path": "src/server/crypto/secret-box.ts",
+      "gitBlob": "af9ad235218068b4c2f1454e75db1459df1f12c9",
+      "sha256": "480ae18d90eb1803d463735192350068a8c8a4d878015f2fae2001667dc4e554",
+      "bytes": 13295
+    },
+    {
+      "path": "src/server/db/schema.ts",
+      "gitBlob": "ce35ef93ce55afe8738f0eec916a6681657539da",
+      "sha256": "7237e4de0e86767e8a13814d5e532ba68a5d8c9b4500d2b002e9d17460c034d9",
+      "bytes": 86580
+    },
+    {
+      "path": "src/server/projects/capabilities.ts",
+      "gitBlob": "a77164fcb9662478ea5d23bcd8e656e0ddb7c023",
+      "sha256": "ce2f5beb8bb7439d158dc8bfeefa6116b0174c2f6fdbfcdccc3dd623e785af98",
+      "bytes": 3853
+    },
+    {
+      "path": "src/server/projects/project-deletion-fence.ts",
+      "gitBlob": "e1a415470793993e7b3847741a90843959e20a2d",
+      "sha256": "8fb441bc1e29ec497690982d90a725a159b1191db63d3d31792e56609cd92bc4",
+      "bytes": 2605
+    },
+    {
+      "path": "src/server/projects/project-deletion-rows.ts",
+      "gitBlob": "f233303aaf8357ffdcc5df11ace1305f8df5a871",
+      "sha256": "1c09f7d641b044e264111c6539e1b368ae19b55b0c8abf27353e66dca431339e",
+      "bytes": 5382
+    },
+    {
+      "path": "src/server/sponsored-use/capture.ts",
+      "gitBlob": "e08d122fa0d7eda1d69a894a552d00cc3d50741a",
+      "sha256": "59b3aa36f92233c0aa7ba73a1f78107d0ec54b91c35a0bdc02947af08453ffcc",
+      "bytes": 5063
+    },
+    {
+      "path": "src/server/sponsored-use/erasure.ts",
+      "gitBlob": "848f70f0a77cc632dc954291231ed974eedcbedb",
+      "sha256": "69d70b4d5c68e6aeba63b03c624e850efc17ef48ec09cf49e3ace8893d3c30b3",
+      "bytes": 4146
+    },
+    {
+      "path": "src/server/sponsored-use/schema.ts",
+      "gitBlob": "dd89643f8afcb8c82a1289d007931c50f9527386",
+      "sha256": "040e0c452dcfbc6a8b6b4930c7f90167b3c6e1edeb4f7b98ecff1b1d7e54d476",
+      "bytes": 1575
+    },
+    {
+      "path": "src/server/storage.ts",
+      "gitBlob": "1b436b6df9b7556f2254262000757efd02c0b863",
+      "sha256": "5b8199f1dbe48fc9c008a5391af148512794fb0c49928a44ce9612ef7c2db3ed",
+      "bytes": 12118
+    },
+    {
+      "path": "src/server/venue-issuance/canonical.ts",
+      "gitBlob": "0e2ba845dd85ddac1553d202d4acbc8df90157a1",
+      "sha256": "4ed66ab798d2a8d23538a1f240eb1a126c90629a5c0b94435140d4a62ddff98e",
+      "bytes": 9329
+    },
+    {
+      "path": "src/server/venue-issuance/erasure.ts",
+      "gitBlob": "7937c0343f9469907889e5301e04d61cff736be9",
+      "sha256": "b2f8d2f4f5f656be83433350fa34383de54f70d75125bbd396085e9b0fca2797",
+      "bytes": 3159
+    },
+    {
+      "path": "src/server/wedding/guests-demo.ts",
+      "gitBlob": "606cec0536b3ab218359e0f90c03eabf1874bc60",
+      "sha256": "0513520fe15ef3763a2ff5ecd549249389fd9918e64dbb9e4f5b1a22a0adadb5",
+      "bytes": 5827
+    },
+    {
+      "path": "src/server/wedding/guests.ts",
+      "gitBlob": "8dd963e8be8945c17a156c1f98f2b0e7ef345e9c",
+      "sha256": "0b2e4fb91bf13012cfbb43bf97d350a027228f335dbe31a3b96e3bca036c7415",
+      "bytes": 16789
+    },
+    {
+      "path": "vercel.json",
+      "gitBlob": "98846cc1b1407245b49ea04774be9205be51f9dc",
+      "sha256": "45dcb34a2a9c405168f40900fdd8ec24f27aebf67226aecf855ff421ea6cfac7",
+      "bytes": 394
+    }
+  ],
+  "boundary": "Expected hashes read from immutable b805 Git objects, not generated from the qualification branch runtime. Windows CRLF is compared after LF normalization; Linux bytes must match exact expected bytes."
+}
