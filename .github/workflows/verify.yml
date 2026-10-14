@@ -26,6 +26,8 @@ jobs:
         run: |
           git rev-parse HEAD
           git rev-parse 'HEAD^{tree}'
+      - name: CI workflow contract
+        run: node --test scripts/ci-workflow.test.mjs
       - uses: pnpm/action-setup@v4
         with:
           version: 11.9.0
@@ -56,6 +58,8 @@ jobs:
         run: corepack pnpm install --frozen-lockfile
       - name: Record paired Studio revision
         run: git -C studio-parity rev-parse HEAD
+      - name: Project Drive suite is wired into pnpm test
+        run: node -e "const s=require('./package.json').scripts.posttest||''; if(!/(^|&& )pnpm test:project-drive( &&|$)/.test(s)){console.error('posttest must run pnpm test:project-drive; it is the only CI entry point for the Project Drive suite');process.exit(1)}"
       - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
         run: pnpm test
         env:
@@ -69,6 +73,9 @@ jobs:
       # removed so the build and later gates never see a second repository.
       - name: Remove parity checkout
         run: rm -rf studio-parity
+      - name: Parser unit test (informational — date-sensitive)
+        run: pnpm run test:parser
+        continue-on-error: true
       # Project Drive remains required once via pnpm test's posttest lifecycle.
       - name: Install Chromium for isolated task Provider proof
         run: pnpm exec playwright install --with-deps chromium
@@ -98,3 +105,24 @@ jobs:
         run: pnpm perf:budgets:self-test
       - name: Performance budgets (bundle ratchet)
         run: pnpm perf:budgets
+
+  # Preserve the existing required context without repeating installation,
+  # lint, typecheck, migration rehearsals, paired Studio or the full test suite.
+  # needs.verify aggregates BOTH PR matrix jobs; every non-success fails closed.
+  legacy-status:
+    name: typecheck · test
+    needs: verify
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require all canonical verification jobs
+        env:
+          VERIFY_RESULT: ${{ needs.verify.result }}
+        shell: bash
+        run: |
+          if [[ "$VERIFY_RESULT" != "success" ]]; then
+            printf 'Canonical verification did not succeed: %s\n' "$VERIFY_RESULT"
+            exit 1
+          fi
+          printf 'All canonical verification jobs passed.\n'
