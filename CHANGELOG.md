@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-14 · Candidate · Alternate sign-in methods stay available
+
+**People can choose another offered sign-in method when the sign-in form provides one.**
+
+This candidate removes the shared `footerAction` hiding rule from the Clerk sign-in appearance. The stage-owned header and footer keep their existing styling. A regression test checks the merged appearance and runs in the maintained App test suite. Release review and live verification remain pending.
+
 ## 2026-10-11 · T·158 · tightens · Keep completed prerequisite names out of dependency explanations
 
 **Briefing dependency explanations retain completion counts while keeping completed prerequisite names out of their supporting prose.** Open prerequisites remain named. Independently recorded completions and comments retain their own meaning, and authorized internal evidence membership is preserved. This changes contextual wording rather than access permissions.
