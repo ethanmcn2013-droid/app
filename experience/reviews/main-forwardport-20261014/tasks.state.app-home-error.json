@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-home-error",
+  "source": "tasks/src/app/app/home/error.tsx",
+  "materialityHash": "94e95fe898bce26d",
+  "reviewedAt": "2026-10-14",
+  "reviewer": "root (technical receiving review)",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-70dd810b3431615c093df52d-c42f80016bcdde58.json",
+    "attestationSha256": "987d3d0c9b48df7980ec8fab5d0a9dd7d5c7cb9e4bdb255ca9b37d128523c1d7",
+    "runId": "tasks-playwright-70dd810b3431615c093df52d",
+    "canonicalEvidenceSha256": "70dd810b3431615c093df52d299f8b10d57f34b18935165d567c7ffe9d4b73e3",
+    "rawArtifactSha256": "c42f80016bcdde58bcef00204438450e81b0d6cd4a817f531c8b250a685d6824",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-home-error",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh main-specific schema2 technical receiving on exact source f48113e9b7d715cf8d180f92587607059a03d17f: /materiality/tasks.state.app-home-error was captured in the fully green 196/196 maintained suite; root reviewed all16 desktop representatives and3 mobile representatives and independently hash-checked all64 viewport captures. This records synthetic demo/local component rendering only, not real Clerk identity, provider continuity, production behavior, subjective design certification, or release acceptance.",
+  "decision": "PASS technical synthetic receiving only; not subjective design certification or release acceptance"
+}
