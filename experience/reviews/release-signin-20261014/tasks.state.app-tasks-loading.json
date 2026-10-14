@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "Fresh schema2 synthetic technical receiving: actual /materiality/tasks.state.app-tasks-loading or deterministic local component captured in a fully green 196/196 run; root technical reviewer visually reviewed nominated target evidence and independently hash-checked all 64 target captures. This records local synthetic rendering only, not Clerk, provider continuity, production behavior, subjective design certification, or release acceptance. Mobile original is 664px tall for a 390px viewport, with skeleton on left and blank area to right; cause not established. Retained as capture/layout limitation; no general overflow claim.",
+  "reviewedChange": "Fresh schema2 synthetic technical receiving: deterministic local component captured in a fully green 196/196 run; root technical reviewer visually reviewed nominated target evidence and independently hash-checked all 64 target captures. This records local synthetic rendering only, not Clerk, provider continuity, production behavior, subjective design certification, or release acceptance. Mobile original is 664px wide for a 390px-wide viewport, with skeleton on left and blank area to right; cause not established. Retained as capture/layout limitation; no general overflow claim.",
   "decision": "PASS technical synthetic receiving only; not subjective design certification or release acceptance"
 }
