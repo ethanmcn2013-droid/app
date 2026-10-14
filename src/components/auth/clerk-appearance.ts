@@ -222,6 +222,7 @@ export const signalAuthPageAppearance: ClerkAppearance = {
     header: { display: "none" },
     // Terms and privacy live in the stage footer, at the bottom of the page.
     footer: { display: "none" },
-    footerAction: { display: "none" },
+    // Alternate sign-in methods also use footerAction outside the branded footer.
+    // Leave those ordinary authentication controls visible.
   },
 };
