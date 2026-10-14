@@ -254,8 +254,16 @@ test("tasks detail workshop / equal-state comparison and interactions", async ({
         });
         await check(item, "title-edit", async () => {
           const edited = `${taskName} — workshop readback`;
-          await panel.getByRole("textbox", { name: "Task title", exact: true }).fill(edited);
-          await panel.getByRole("textbox", { name: "Task title", exact: true }).press("Enter");
+          const taskId = new URL(page.url()).searchParams.get("task");
+          expect(taskId).toBeTruthy();
+          // Editing updates the dialog's accessible name before Enter. Keep
+          // the unique task panel identity rather than its old mutable title.
+          const stablePanel = page.locator("[data-task-detail-panel]");
+          await expect(stablePanel).toHaveCount(1);
+          const title = stablePanel.getByRole("textbox", { name: "Task title", exact: true });
+          await title.fill(edited);
+          await title.press("Enter");
+          expect(new URL(page.url()).searchParams.get("task")).toBe(taskId);
           panel = page.getByRole("dialog", { name: edited, exact: true }); await expect(panel).toBeVisible();
           await panel.getByRole("button", { name: "Close", exact: true }).click();
           opener = page.locator('article[data-id][aria-label]').filter({ hasText: edited }).first();
