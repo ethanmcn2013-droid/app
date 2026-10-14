@@ -979,14 +979,12 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
 /**
  * RW-3b, toggle the milestone flag on a task.
  *
- * D6 contract: setting isMilestone=true fills the Roadmap's PRIVATE draft
- * only. Nothing here auto-publishes. The publish gate is separate and
- * lives entirely in the Roadmap app. This action ONLY sets the flag.
+ * D6 contract: sets only the Task flag and update timestamp. It writes no
+ * Timeline draft and never updates or publishes frozen shared copies.
  *
- * Reversible: calling with `false` unsets the flag. If a Roadmap node
- * was generated from this task, the Roadmap curation overlay controls
- * visibility (hide toggle), the node is NOT auto-deleted on unset,
- * preventing accidental data loss from an accidental mis-tap.
+ * Reversible: false clears the flag. A later complete authorized Timeline
+ * refresh removes absent generated private nodes and retains their overlays.
+ * Partial/failed refreshes do not authorize removal; publication is separate.
  *
  * Project guard: this was the one task mutation with no pre-read at all — a
  * bare `UPDATE … WHERE id = ? AND workspace_id = <cookie>`, where the guard
