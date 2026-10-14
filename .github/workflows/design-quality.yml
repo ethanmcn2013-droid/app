@@ -1,66 +1,12 @@
 name: Design quality
 
-# `registry-and-drift` is a REQUIRED status check on main. A required check that
-# is path-filtered never reports on a PR outside those paths, and GitHub blocks
-# the merge waiting for a job that will never run — a docs-only PR was therefore
-# unmergeable. `docs/**` is listed so the check always reports; on a docs change
-# it passes trivially, which is the point.
+# This required status must report for every PR and receiving push. Filtering
+# whole workflows leaves unmatched changes waiting forever for a required job.
+# Keep the owning validation intact; scope individual checks only with proof.
 on:
   pull_request:
-    paths:
-      - "docs/**"
-      - "scripts/db/**"
-      - "drizzle/**"
-      - "DEPLOY.md"
-      - ".github/workflows/db-migrate-encrypted.yml"
-      - "src/app/**"
-      - "src/components/**"
-      - "src/ds/**"
-      - "src/lib/**"
-      - "src/modules/**"
-      - "src/server/**"
-      - "src/proxy.ts"
-      - "src/env.ts"
-      - "src/instrumentation*.ts"
-      - "src/preview/**"
-      - "public/**"
-      - "next.config.*"
-      - "experience/**"
-      - ".gitattributes"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "scripts/experience/**"
-      - "scripts/design/extract-floor-css*"
-      - ".github/workflows/design-quality.yml"
-      - ".github/pull_request_template.md"
   push:
     branches: [main, release/january-2027]
-    paths:
-      - "docs/**"
-      - "scripts/db/**"
-      - "drizzle/**"
-      - "DEPLOY.md"
-      - ".github/workflows/db-migrate-encrypted.yml"
-      - "src/app/**"
-      - "src/components/**"
-      - "src/ds/**"
-      - "src/lib/**"
-      - "src/modules/**"
-      - "src/server/**"
-      - "src/proxy.ts"
-      - "src/env.ts"
-      - "src/instrumentation*.ts"
-      - "src/preview/**"
-      - "public/**"
-      - "next.config.*"
-      - "experience/**"
-      - ".gitattributes"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "scripts/experience/**"
-      - "scripts/design/extract-floor-css*"
-      - ".github/workflows/design-quality.yml"
-      - ".github/pull_request_template.md"
 
 permissions:
   contents: read

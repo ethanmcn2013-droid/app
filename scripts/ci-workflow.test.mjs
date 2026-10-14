@@ -43,3 +43,12 @@ test('legacy unique checks survive without repeating the owning test lifecycle',
   assert.match(workflow, /pnpm test:venue-rehearsal --studio-root studio-parity/);
   assert.match(workflow, /pnpm test:sponsored-use:paired --studio-root studio-parity/);
 });
+
+test('required design status cannot disappear for unmatched file paths', () => {
+  const quality = readFileSync(new URL('../.github/workflows/design-quality.yml', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+  const triggers = quality.split('\non:\n')[1]?.split('\npermissions:')[0];
+  assert.ok(triggers);
+  assert.match(triggers, /  pull_request:\n  push:\n    branches: \[main, release\/january-2027\]/);
+  assert.doesNotMatch(triggers, /paths:|paths-ignore:|types:/);
+  assert.match(quality, /  registry-and-drift:\n    runs-on: ubuntu-latest/);
+});
