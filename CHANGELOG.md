@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-14 · Candidate · Alternate sign-in methods stay available
+
+**People can choose another offered sign-in method when the sign-in form provides one.**
+
+This candidate removes the shared `footerAction` hiding rule from the Clerk sign-in appearance. The stage-owned header and footer keep their existing styling. A regression test checks the merged appearance and runs in the maintained App test suite. Release review and live verification remain pending.
+
 ## 2026-10-12 · Candidate · Wedding tools: the guest list
 
 A wedding project now has a guest list, opened from Wedding tools in the sidebar under the open wedding. Guests are added by household, the way invitations go out, with children marked and a plus-one whose name can come later. A guest's reply, meal and dietary needs change right in the list, and a household's reply can be set for everyone on it at once. One bar shows attending, awaiting a reply and not attending, which always add up to everyone listed, alongside the meals still to choose and the dietary needs to share. A list can be pasted or imported from a CSV and is grouped into households; the caterer's list downloads as a spreadsheet of attending guests only, with no contact details or notes. Seating and Budget show in the sidebar as coming soon.
