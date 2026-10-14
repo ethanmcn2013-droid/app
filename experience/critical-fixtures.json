@@ -2071,7 +2071,7 @@
     "src/components/app/your-work/your-work-view.tsx": "5f7c4e341cfc287973b8357ba8025584ebf2d7074976be01d829aea310a3836e",
     "src/components/auth/auth-stage.module.css": "c485ec848ff7ad893738a66999e432d04445065d458678ce5d787aa248c52d2a",
     "src/components/auth/auth-stage.tsx": "dc117ee9716510af27670124386d056cba20bae2c6542155bf3cfd6889611035",
-    "src/components/auth/clerk-appearance.ts": "e24fb5bbd13ca66e7f5678fac8f3d1ccff69348a5f76d68cf4103e95f488cda2",
+    "src/components/auth/clerk-appearance.ts": "5a6986be60d8840591ea96ebe6b9867693dc25bb9f1b9759ad141e67cfb3028d",
     "src/components/auth/demo-auth-card.tsx": "bee133cc2669ba3c34311e518569899a92be9d4324078bc3728f613e2d05bd51",
     "src/components/billing/require-tier.tsx": "f0607dd02666728d04921643659f9783d44500ade2e9d5635ccb1e4ea8880667",
     "src/components/brand/qr-matrix.generated.ts": "7bf79203a9b4a99bd6282a9bf4b118575ab118e5eb8074161faacff61fc3b040",
