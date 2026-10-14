@@ -1,32 +1,15 @@
 # Signal Tasks · the dispatch
 
-## 2026-10-14 · Candidate · Alternate sign-in methods stay available
+## 2026-10-14 · Released · A clearer Tasks workspace, with Wedding guests
 
-**People can choose another offered sign-in method when the sign-in form provides one.**
+- **Workspace:** Pages use the space beside the sidebar. Projects no longer repeat the open project's overview below the list.
+- **Icons and colour:** The approved sidebar icons show the selected page in solid; project markers use each project's colour. Light mode uses white paper and ink.
+- **Wedding guests:** Guests are grouped by household, with replies, meals and dietary needs in the list. Import previews group matching emails into households; the caterer export includes attending guests and selected columns.
+- **Sign-in:** The sign-in appearance no longer hides another method when the form offers one.
 
-This candidate removes the shared `footerAction` hiding rule from the Clerk sign-in appearance. The stage-owned header and footer keep their existing styling. A regression test checks the merged appearance and runs in the maintained App test suite. Release review and live verification remain pending.
+Operator evidence: App `b805c5501f8198218791491ae0a2f26efbae0657` (tree `07ea449b3f9f39724961875bd612f18f6ae34071`) is served by deployment `dpl_8vdnW7eRwiDzinzDQwFwrCzh1k38`. Release receipt SHA-256 `9b7e46357c42a8c422cce5171c6785e300d18bdd42dadbeb76902945dfac2bd5` records reviewed reconciliation of all six live aliases; independent provider review passed. Migration `0042_wedding_guests` was already applied and was not replayed.
 
-## 2026-10-12 · Candidate · Wedding tools: the guest list
-
-A wedding project now has a guest list, opened from Wedding tools in the sidebar under the open wedding. Guests are added by household, the way invitations go out, with children marked and a plus-one whose name can come later. A guest's reply, meal and dietary needs change right in the list, and a household's reply can be set for everyone on it at once. One bar shows attending, awaiting a reply and not attending, which always add up to everyone listed, alongside the meals still to choose and the dietary needs to share. A list can be pasted or imported from a CSV and is grouped into households; the caterer's list downloads as a spreadsheet of attending guests only, with no contact details or notes. Seating and Budget show in the sidebar as coming soon.
-
-Migration `0042_wedding_guests` adds the two tables and **must be applied to production before this code is released**: project deletion, account erasure and account export now include the guest list. Not yet released: it ships with the next guarded release.
-
-## 2026-10-12 · Redesign candidate · Light mode in white, ink and indigo; every page uses its width; Projects without the overview below
-
-Light mode no longer has a grey paper background. The page, the frame around it and every card are white; every grey left (borders, hover, the sunken step) is a plain tint of the ink, and indigo stays the one colour. Dark mode is unchanged.
-
-Every page now uses the width beside the sidebar instead of sitting in a centred column with empty space either side: Home, Projects, Tasks, Timeline, Files, Analytics, Settings, Inbox and the rest keep their side gutter and stretch to the edge.
-
-The Projects page no longer shows the open project's overview below the list, since the list already carries it. The open project's row now opens the same summary as any other row.
-
-No server action, read, schema change or dependency was added. Not yet released: it ships with the next guarded release.
-
-## 2026-10-12 · Redesign candidate · The approved sidebar icons, solid when selected
-
-The sidebar now draws every row from the approved icon set: Home, Projects, Tasks, Timeline, Files, Analytics, Automations, Whiteboard, All conversations, each chat channel, Settings, and the collapse, search, help and theme buttons. A row shows a grey outline; the page you are on shows the same icon filled in solid, with its inner details cut out. Navigation no longer uses indigo for the page you are on: the solid icon and the row highlight say it. Each project in the Projects list now has one marker, a square tinted with its colour and a dot of it in the middle, in place of the letter squares, and the open project is shown by the row highlight.
-
-The approved source set (outline and solid SVGs and their notes) is kept in `docs/design/sidebar-icons/`, and a contract test fails if a sidebar row goes back to another icon. No server action, read, schema change or dependency was added. Not yet released: it ships with the next guarded release.
+Bounded live checks used the existing signed-in session: Projects; Tasks board and list; task detail with persisted comments and attachments; Files; Timeline; and Home. No fresh sign-in or provider-choice session, two-account isolation requalification, or production Wedding guest create/edit/reload was tested. Local theme captures cover the guest sample at 1920×1080 light, 390×844 light, and 1280×800 dark; these are not live viewport checks. Activity and Settings remain unfinished; Seating and Budget remain coming soon.
 
 ## 2026-10-11 · T·158 · tightens · Keep completed prerequisite names out of dependency explanations
 
