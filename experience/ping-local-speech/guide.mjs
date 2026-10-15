@@ -18,7 +18,7 @@ root.innerHTML = `
     </header>
     <section class="guide-intro" id="intro-panel">
       <h2 id="intro-title">Work through Ping, one task at a time</h2>
-      <p>Read a goal, choose the named tasks in Signal, then use the real Ping controls to enter and review your request. This guide never selects tasks or starts the microphone.</p>
+      <p>Read the goal and choose the named tasks in Signal, then use the real Ping controls. Type lets you review changes before Finish and apply or Cancel. Talk can save when you choose Finish and run, so check the goal before starting. This guide never selects tasks or starts the microphone.</p>
     </section>
     <section class="case-panel" id="case-panel" aria-labelledby="case-goal" hidden>
       <div class="case-meta"><span id="case-label">Case</span><span id="case-mode"></span></div>
@@ -29,7 +29,7 @@ root.innerHTML = `
     <ol class="steps" id="setup-steps">
       <li><div><strong>Start a case</strong>The guide prepares an invented task set in the isolated fixture.</div></li>
       <li><div><strong>Use Ping yourself</strong>Select the task names shown here. Speak or type in the mounted Tasks window.</div></li>
-      <li><div><strong>Review before Apply</strong>Choose Apply or Cancel in Ping. The guide checks the saved result separately.</div></li>
+      <li><div><strong>Follow the path you chose</strong>With Type, review changes before Finish and apply or Cancel. With Talk, Finish and run can save immediately, so check the goal before starting.</div></li>
     </ol>
     <section class="progress-block" aria-label="Session progress">
       <div class="progress-heading"><span>Session progress</span><strong id="planned-count">100 cases planned</strong></div>
@@ -115,7 +115,7 @@ function phraseForPhase(phase) {
   return ({
     setup: 'Your session is prepared. Start whenever you are ready.',
     ready: 'Choose the case goal and task names shown here, then use Ping in the Tasks window.',
-    interacting: 'Use Ping to enter your request. Review its proposal before choosing Apply or Cancel.',
+    interacting: 'Follow the Ping path you chose. Type shows a review before Finish and apply or Cancel. Talk may save at Finish and run, so check the goal before starting.',
     outcome: 'The saved result is being checked. Continue when the case is settled.',
     unresolved: 'The original result is still uncertain. Check its status before deciding what to do next.',
     paused: 'Your session is paused and saved. Resume when you are ready.',
@@ -165,8 +165,8 @@ function render() {
   el('case-mode').textContent = activeCase?.modeInfo ?? '';
   el('case-goal').textContent = activeCase?.goal ?? '';
   el('action-hint').textContent = activeCase?.taskNames.length
-    ? 'Select these names in Tasks. Use Ping there, then review its full proposal before Apply or Cancel.'
-    : 'This case starts from an empty selection. Use Ping in Tasks, then review its full proposal before Apply or Cancel.';
+    ? 'Select these names in Tasks. With Type, review changes before Finish and apply or Cancel. With Talk, Finish and run can save immediately, so check the goal before starting.'
+    : 'This case starts from an empty selection. With Type, review changes before Finish and apply or Cancel. With Talk, Finish and run can save immediately, so check the goal before starting.';
   const list = el('task-list');
   list.replaceChildren(...(activeCase?.taskNames ?? []).map(name => {
     const item = document.createElement('li');
