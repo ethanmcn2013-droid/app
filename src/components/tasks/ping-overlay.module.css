@@ -15,13 +15,13 @@
 .project { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .scope { flex-shrink: 0; padding: 2px 7px; border-radius: 6px; background: var(--v3-sunken); font-size: 11px; font-weight: 500; white-space: nowrap; }
 .close { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--v3-text-2); }
-.content { padding: 28px 28px 26px; }
-.voice { padding-top: 2px; text-align: center; }
-.signal { position: relative; display: grid; place-items: center; width: 108px; height: 108px; margin: 0 auto 22px; color: var(--v3-text-2); }
+.content { padding: 24px 24px 22px; }
+.voice { display: grid; grid-template-columns: 80px minmax(0, 1fr); column-gap: 20px; align-items: start; text-align: left; }
+.signal { grid-column: 1; grid-row: 1 / span 3; position: relative; display: grid; place-items: center; width: 80px; height: 80px; margin: 0; color: var(--v3-text-2); }
 .signalFrame { position: absolute; inset: 0; border: 1px solid var(--v3-border); border-radius: 50%; }
-.signalCore { position: absolute; inset: 12px; display: grid; place-items: center; border-radius: 50%; background: var(--v3-sunken); transition: background 180ms cubic-bezier(.23, 1, .32, 1), color 180ms cubic-bezier(.23, 1, .32, 1); }
-.signalCore > svg { width: 36px; height: 36px; }
-.signal > svg { width: 36px; height: 36px; padding: 24px; border-radius: 50%; background: var(--v3-sunken); }
+.signalCore { position: absolute; inset: 8px; display: grid; place-items: center; border-radius: 50%; background: var(--v3-sunken); transition: background 180ms cubic-bezier(.23, 1, .32, 1), color 180ms cubic-bezier(.23, 1, .32, 1); }
+.signalCore > svg { width: 30px; height: 30px; }
+.signal > svg { box-sizing: border-box; width: 64px; height: 64px; padding: 17px; border-radius: 50%; background: var(--v3-sunken); }
 .listening .signal > svg { background: var(--v3-accent-soft); color: var(--v3-accent-text); }
 .signal[data-state="listening"], .signal[data-state="working"], .signal[data-state="saved"] { color: var(--v3-accent-text); }
 .signal[data-state="listening"] .signalCore, .signal[data-state="saved"] .signalCore { background: var(--v3-accent-soft); }
@@ -29,20 +29,20 @@
 .signal[data-state="saved"] .signalFrame { border-color: var(--v3-accent-soft); }
 .workingMark { animation: working 1s linear infinite; }
 .workingTrack { stroke: var(--v3-border-strong); }
-.title { margin: 0; font-size: 26px; font-weight: 600; line-height: 1.25; letter-spacing: -.03em; text-wrap: balance; }
-.status { margin: 12px auto 0; max-width: 37ch; color: var(--v3-text-2); font-size: 13px; line-height: 1.6; text-wrap: pretty; }
-.timer { min-height: 18px; margin: 12px 0 0; color: var(--v3-text-2); font-size: 12px; font-variant-numeric: tabular-nums; }
-.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 24px; }
-.primary, .secondary { min-height: 46px; padding: 0 22px; border: 0; border-radius: 11px; font-size: 13px; font-weight: 600; }
-.primary { min-width: 136px; }
-.secondary { min-width: 104px; }
+.title { grid-column: 2; grid-row: 1; margin: 0; font-size: 26px; font-weight: 600; line-height: 1.25; letter-spacing: -.03em; text-wrap: balance; }
+.status { grid-column: 2; grid-row: 2; margin: 8px 0 0; min-width: 0; color: var(--v3-text-2); font-size: 13px; line-height: 1.6; text-wrap: pretty; }
+.timer { grid-column: 2; grid-row: 3; min-height: 18px; margin: 10px 0 0; color: var(--v3-text-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+.actions { grid-column: 1 / -1; grid-row: 4; display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px; margin-top: 24px; }
+.primary, .secondary { min-height: 44px; padding: 0 16px; border: 0; border-radius: 11px; font-size: 13px; font-weight: 600; }
+.actions > button:last-child:not(:first-child) { margin-inline-start: auto; }
 .secondary { background: var(--v3-sunken); color: var(--v3-text); }
-.footnote { margin: 24px 0 0; padding: 16px 6px 0; border-top: 1px solid var(--v3-border); color: var(--v3-text-2); font-size: 11px; line-height: 1.6; text-wrap: pretty; }
+.voice > :not(.signal):not(.title):not(.status):not(.timer):not(.actions) { grid-column: 1 / -1; }
+.footnote { margin: 18px 0 0; padding: 14px 0 0; border-top: 1px solid var(--v3-border); color: var(--v3-text-2); font-size: 11px; line-height: 1.6; text-wrap: pretty; }
 .typedFlow { text-align: left; }
 .typedFlow h2 { font-size: 18px; line-height: 1.4; }
 .launch:focus-visible, .typeLaunch:focus-visible, .primary:focus-visible, .secondary:focus-visible, .close:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 3px; }
 .launch:disabled, .primary:disabled, .secondary:disabled { cursor: not-allowed; opacity: .55; }
 @keyframes working { to { transform: rotate(360deg); } }
 @media (max-width: 1100px) { .dock[data-has-selection="true"] { bottom: max(80px, calc(env(safe-area-inset-bottom) + 76px)); } }
-@media (max-width: 560px) { .dock { right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); } .header { padding: 20px 16px 0 20px; } .content { padding: 26px 20px 22px; } .context { gap: 6px; } .title { font-size: 24px; } }
+@media (max-width: 560px) { .dock { right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); } .header { padding: 20px 16px 0 20px; } .content { padding: 22px 20px; } .context { gap: 6px; } .voice { column-gap: 16px; } .title { font-size: 24px; } }
 @media (prefers-reduced-motion: reduce) { .workingMark { animation: none; } .launch, .typeLaunch, .primary, .secondary, .close, .signalCore { transition: none; } }

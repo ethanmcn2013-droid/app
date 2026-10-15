@@ -20,7 +20,7 @@ export function PingDock({ children, selectedCount = 0 }: { children: ReactNode;
 export function PingOverlay({ open, onClose, projectName, selectedCount, children }: {
   open: boolean; onClose: () => void; projectName: string | null; selectedCount: number; children: ReactNode;
 }) {
-  return <Dialog open={open} onClose={onClose} ariaLabel="Ping" width={460}>
+  return <Dialog open={open} onClose={onClose} ariaLabel="Ping" width={520}>
     <div className={styles.overlay} data-testid="ping-overlay">
       <header className={styles.header}>
         <div className={styles.identity}><div>
