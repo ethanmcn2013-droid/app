@@ -32,11 +32,11 @@ function fixture(settings: { availability?: string[]; installResult?: boolean; o
     onend: (() => void) | null = null;
     onerror: ((event: unknown) => void) | null = null;
     onnomatch: (() => void) | null = null;
-    starts = 0; stops = 0; aborts = 0;
+    starts = 0; stops = 0; aborts = 0; abortEnds = true;
     constructor() { instances.push(this); }
     start() { this.starts++; this.onstart?.(); }
     stop() { this.stops++; }
-    abort() { this.aborts++; }
+    abort() { this.aborts++; if (this.abortEnds) this.onend?.(); }
     result(segments: [string, boolean][], resultIndex = 0) {
       this.onresult?.({ resultIndex, results: segments.map(([transcript, isFinal]) => ({
         isFinal, length: 1, 0: { transcript },
@@ -139,7 +139,7 @@ test("early native end, empty results, interim tail, no-match, and errors never 
     await flush();
     assert.deepEqual(f.finals, [], scenario);
     assert.equal(f.deadlines.size, 0, scenario);
-    assert.equal(native.aborts, 1, scenario);
+    assert.equal(native.aborts, scenario === "no_match" || scenario === "error" ? 1 : 0, scenario);
     assert.equal(JSON.stringify(f.states).includes("private transcript"), false);
   }
 });
@@ -279,4 +279,61 @@ test("browser factory is lazy and never falls back to webkit-only recognition", 
     if (standard) Object.defineProperty(target, "SpeechRecognition", standard); else delete target.SpeechRecognition;
     if (webkit) Object.defineProperty(target, "webkitSpeechRecognition", webkit); else delete target.webkitSpeechRecognition;
   }
+});
+
+test("abort blocks this and recreated controllers until actual native end; end never hands off cancelled text", async () => {
+  const f = fixture(); await f.controller.start(); const native = f.instances[0];
+  native.abortEnds = false; native.result([["assign me", true]]); f.controller.finish(); f.controller.cancel();
+  assert.equal(f.controller.getSnapshot().phase, "closing");
+  assert.equal(await f.controller.start(), false);
+  const replacement = createPingLocalSpeech({ getConstructor: () => f.Native, isContextCurrent: () => true,
+    onState() {}, onFinal: async () => { assert.fail("recreated overlap"); } });
+  assert.equal(await replacement.start(), false);
+  assert.equal(replacement.getSnapshot().reason, "native_closure_pending");
+  assert.equal(f.instances.length, 1);
+  native.onend?.(); await flush();
+  assert.equal(f.controller.getSnapshot().phase, "closed");
+  assert.deepEqual(f.finals, []); assert.equal(f.deadlines.size, 0);
+  assert.equal(await replacement.start(), true);
+  replacement.dispose();
+});
+
+test("unobserved closure fails closed after five seconds, including recreation and late native end", async () => {
+  const f = fixture(); await f.controller.start(); const native = f.instances[0];
+  native.abortEnds = false; f.controller.dispose(); const end = native.onend;
+  f.advance(4_999); assert.equal(f.controller.getSnapshot().phase, "closing");
+  f.advance(1); assert.equal(f.controller.getSnapshot().reason, "native_closure_unconfirmed");
+  end?.(); assert.equal(f.controller.getSnapshot().phase, "unavailable");
+  const replacement = createPingLocalSpeech({ getConstructor: () => f.Native, isContextCurrent: () => true,
+    onState() {}, onFinal: async () => { assert.fail("closure guessed"); } });
+  assert.equal(await replacement.start(), false);
+  assert.equal(replacement.getSnapshot().reason, "native_closure_unconfirmed");
+  assert.equal(f.instances.length, 1); assert.deepEqual(f.finals, []);
+});
+
+test("hung readiness times out at ten seconds; late settlement cannot start or unlock a newer query", async () => {
+  const f = fixture(), old = deferred<string>(), fresh = deferred<string>();
+  let queries = 0;
+  f.Native.available = async () => ++queries === 1 ? old.promise : fresh.promise;
+  const first = f.controller.start(); f.advance(10_000);
+  assert.equal(await first, false); assert.equal(f.controller.getSnapshot().reason, "readiness_timeout");
+  assert.equal(f.instances[0].starts, 0);
+  const second = f.controller.start(); old.resolve("available"); await flush();
+  assert.equal(await f.controller.start(), false);
+  assert.equal(f.instances.every(native => native.starts === 0), true);
+  fresh.resolve("available"); assert.equal(await second, true);
+  assert.equal(f.instances[1].starts, 1); f.controller.dispose();
+});
+
+test("hung explicit install times out at 120 seconds without a microphone or automatic repeat", async () => {
+  const f = fixture({ availability: ["downloadable"] }), pending = deferred<boolean>();
+  f.Native.install = async options => { f.installs.push(options); return pending.promise; };
+  const installing = f.controller.install(); await flush();
+  f.advance(119_999); assert.equal(f.controller.getSnapshot().phase, "installing");
+  f.advance(1); assert.equal(await installing, false);
+  assert.equal(f.controller.getSnapshot().reason, "install_timeout");
+  pending.resolve(true); await flush();
+  assert.equal(f.queries.length, 1); assert.equal(f.installs.length, 1);
+  assert.equal(f.instances[0].starts, 0); assert.deepEqual(f.finals, []);
+  assert.equal(f.deadlines.size, 0);
 });

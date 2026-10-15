@@ -2,9 +2,10 @@
 export const PING_LOCAL_SPEECH_LANGUAGE = "en-US";
 export const PING_LOCAL_SPEECH_MAX_MS = 30_000;
 export const PING_LOCAL_SPEECH_MAX_POINTS = 4_000;
+export const PING_LOCAL_SPEECH_CLOSE_MS = 5_000;
 
 export type PingLocalSpeechPhase = "idle" | "checking" | "needs_install" | "installing" |
-  "listening" | "finishing" | "processing" | "finished" | "unavailable" | "closed" | "error";
+  "listening" | "finishing" | "closing" | "processing" | "finished" | "unavailable" | "closed" | "error";
 export type PingLocalSpeechSnapshot = Readonly<{
   phase: PingLocalSpeechPhase;
   reason: string | null;
@@ -55,7 +56,11 @@ export type PingLocalSpeech = Readonly<{
   getSnapshot(): PingLocalSpeechSnapshot;
 }>;
 type Segment = { text: string; final: boolean };
-type Capture = { recognition: PingLocalSpeechRecognition; startedAt: number; finish: boolean; segments: Segment[] };
+type NativeOwner = { failed: boolean };
+// Survives panel disposal/recreation in this document. No text or browser storage.
+const nativeOwners = new WeakMap<PingLocalSpeechConstructor, NativeOwner>();
+type Capture = { Constructor: PingLocalSpeechConstructor; owner: NativeOwner;
+  recognition: PingLocalSpeechRecognition; startedAt: number; finish: boolean; ended: boolean; segments: Segment[] };
 
 export function createPingLocalSpeech(options: PingLocalSpeechOptions): PingLocalSpeech {
   const now = options.now ?? (() => performance.now());
@@ -63,6 +68,9 @@ export function createPingLocalSpeech(options: PingLocalSpeechOptions): PingLoca
   let phase: PingLocalSpeechPhase = "idle", reason: string | null = null;
   let elapsedMs = 0, generation = 0, disposed = false, pendingQuery = false, pendingFinal = false;
   let active: Capture | null = null, clearTimer: (() => void) | null = null;
+  let closing: { capture: Capture; next: PingLocalSpeechPhase; why: string } | null = null;
+  let clearCloseTimer: (() => void) | null = null;
+  let cancelQuery: (() => void) | null = null;
   const getSnapshot = (): PingLocalSpeechSnapshot => Object.freeze({ phase, reason,
     elapsedMs: active ? Math.max(0, Math.min(PING_LOCAL_SPEECH_MAX_MS, now() - active.startedAt)) : elapsedMs });
   const current = () => { try { return options.isContextCurrent() === true; } catch { return false; } };
@@ -70,17 +78,63 @@ export function createPingLocalSpeech(options: PingLocalSpeechOptions): PingLoca
     phase = next; reason = why;
     try { options.onState(getSnapshot()); } catch { /* A view observer cannot restart capture. */ }
   }
-  function release(abort: boolean) {
+  function awaitWithDeadline<T>(promise: Promise<T>, milliseconds: number, timeoutReason: string): Promise<T> {
+    return new Promise((resolve, reject) => {
+      let settled = false, clearDeadline = () => {};
+      const settle = (action: () => void) => {
+        if (settled) return;
+        settled = true; clearDeadline();
+        if (cancelQuery === cancel) cancelQuery = null;
+        action();
+      };
+      const cancel = () => settle(() => reject({ localSpeechReason: "query_cancelled" }));
+      cancelQuery = cancel;
+      clearDeadline = setTimer(() => settle(() => reject({ localSpeechReason: timeoutReason })), milliseconds);
+      promise.then(value => settle(() => resolve(value)), error => settle(() => reject(error)));
+    });
+  }
+  function release() {
     clearTimer?.(); clearTimer = null;
     const owned = active; active = null;
-    if (!owned) return;
+    if (!owned) return null;
     elapsedMs = Math.max(0, Math.min(PING_LOCAL_SPEECH_MAX_MS, now() - owned.startedAt));
     owned.segments.length = 0;
     const engine = owned.recognition;
     engine.onstart = engine.onresult = engine.onend = engine.onerror = engine.onnomatch = null;
-    if (abort) { try { engine.abort(); } catch { /* No restart or fallback. */ } }
+    return owned;
   }
-  function close(next: PingLocalSpeechPhase, why: string) { generation++; release(true); state(next, why); }
+  function close(next: PingLocalSpeechPhase, why: string) {
+    generation++;
+    cancelQuery?.();
+    const capture = release();
+    if (!capture) {
+      if (closing) {
+        closing.next = next; closing.why = why;
+        state(closing.capture.owner.failed ? "unavailable" : "closing",
+          closing.capture.owner.failed ? "native_closure_unconfirmed" : why);
+      } else state(next, why);
+      return;
+    }
+    if (capture.ended) {
+      nativeOwners.delete(capture.Constructor); state(next, why); return;
+    }
+    const pending = { capture, next, why }; closing = pending;
+    state("closing", why);
+    capture.recognition.onend = () => {
+      if (closing !== pending || capture.owner.failed) return;
+      clearCloseTimer?.(); clearCloseTimer = null;
+      capture.recognition.onend = null; closing = null;
+      if (nativeOwners.get(capture.Constructor) === capture.owner) nativeOwners.delete(capture.Constructor);
+      state(pending.next, pending.why); // Closure only; never a transcript handoff.
+    };
+    clearCloseTimer = setTimer(() => {
+      if (closing !== pending) return;
+      clearCloseTimer = null; capture.owner.failed = true;
+      capture.recognition.onend = null;
+      state("unavailable", "native_closure_unconfirmed");
+    }, PING_LOCAL_SPEECH_CLOSE_MS);
+    try { capture.recognition.abort(); } catch { /* Wait for end; never assume closure. */ }
+  }
   function live(capture: Capture) {
     if (disposed || active !== capture) return false;
     if (!current()) { close("closed", "context_changed"); return false; }
@@ -93,6 +147,8 @@ export function createPingLocalSpeech(options: PingLocalSpeechOptions): PingLoca
   function localEngine() {
     const Constructor = options.getConstructor();
     if (typeof Constructor !== "function" || typeof Constructor.available !== "function" || typeof Constructor.install !== "function") return null;
+    const owner = nativeOwners.get(Constructor);
+    if (owner) return { blocked: owner.failed ? "native_closure_unconfirmed" : "native_closure_pending" };
     const recognition = new Constructor();
     // Do not let a cloud-only API appear local by adding a new expando property.
     if (!("processLocally" in recognition)) return null;
@@ -111,7 +167,7 @@ export function createPingLocalSpeech(options: PingLocalSpeechOptions): PingLoca
     else state("unavailable", "local_language_unavailable");
   }
   async function query(install: boolean): Promise<boolean> {
-    if (disposed || pendingQuery || pendingFinal || active || !current()) return false;
+    if (disposed || pendingQuery || pendingFinal || active || closing || !current()) return false;
     const token = ++generation; elapsedMs = 0; pendingQuery = true;
     state("checking");
     try {
@@ -119,7 +175,8 @@ export function createPingLocalSpeech(options: PingLocalSpeechOptions): PingLoca
       if (!current()) { close("closed", "context_changed"); return false; }
       const local = localEngine();
       if (!local) { state("unavailable", "local_api_required"); return false; }
-      const available = await local.Constructor.available(queryOptions());
+      if ("blocked" in local) { state("unavailable", local.blocked); return false; }
+      const available = await awaitWithDeadline(local.Constructor.available(queryOptions()), 10_000, "readiness_timeout");
       if (disposed || token !== generation) return false;
       if (!current()) { close("closed", "context_changed"); return false; }
       if (install) {
@@ -128,18 +185,22 @@ export function createPingLocalSpeech(options: PingLocalSpeechOptions): PingLoca
         state("installing");
         if (disposed || token !== generation) return false;
         if (!current()) { close("closed", "context_changed"); return false; }
-        const installed = await local.Constructor.install(queryOptions());
+        const installed = await awaitWithDeadline(local.Constructor.install(queryOptions()), 120_000, "install_timeout");
         if (disposed || token !== generation) return false;
         if (!current()) { close("closed", "context_changed"); return false; }
         if (installed !== true) { state("error", "install_failed"); return false; }
-        const ready = await local.Constructor.available(queryOptions());
+        const ready = await awaitWithDeadline(local.Constructor.available(queryOptions()), 10_000, "readiness_timeout");
         if (disposed || token !== generation) return false;
         if (!current()) { close("closed", "context_changed"); return false; }
         if (ready !== "available") { capability(ready); return false; }
         state("idle"); return true; // Installation never starts the microphone.
       }
       if (available !== "available") { capability(available); return false; }
-      const capture: Capture = { recognition: local.recognition, startedAt: now(), finish: false, segments: [] };
+      const existing = nativeOwners.get(local.Constructor);
+      if (existing) { state("unavailable", existing.failed ? "native_closure_unconfirmed" : "native_closure_pending"); return false; }
+      const owner = { failed: false }; nativeOwners.set(local.Constructor, owner);
+      const capture: Capture = { Constructor: local.Constructor, owner, recognition: local.recognition,
+        startedAt: now(), finish: false, ended: false, segments: [] };
       active = capture;
       capture.recognition.onstart = () => { if (live(capture) && !capture.finish) state("listening"); };
       capture.recognition.onerror = () => { if (active === capture) close("error", "recognition_error"); };
@@ -167,11 +228,15 @@ export function createPingLocalSpeech(options: PingLocalSpeechOptions): PingLoca
         } catch { close("closed", "invalid_or_over_limit_result"); }
       };
       capture.recognition.onend = () => {
+        if (active !== capture) return;
+        capture.ended = true;
         if (!live(capture)) return;
-        if (!capture.finish) { close("closed", "end_before_finish"); return; }
-        if (!capture.segments.length || capture.segments.some(segment => !segment.final || !segment.text)) { close("closed", "incomplete_result"); return; }
+        if (!capture.finish || !capture.segments.length || capture.segments.some(segment => !segment.final || !segment.text)) {
+          const why = !capture.finish ? "end_before_finish" : "incomplete_result";
+          release(); nativeOwners.delete(capture.Constructor); generation++; state("closed", why); return;
+        }
         const text = capture.segments.map(segment => segment.text).join(" ");
-        release(false); pendingFinal = true; state("processing");
+        release(); nativeOwners.delete(capture.Constructor); pendingFinal = true; state("processing");
         if (disposed || token !== generation || !current()) { pendingFinal = false; if (!disposed && token === generation) close("closed", "context_changed"); return; }
         // Native finals plus native end are the only finality claim. Never a Task success.
         void Promise.resolve().then(() => {
@@ -190,7 +255,14 @@ export function createPingLocalSpeech(options: PingLocalSpeechOptions): PingLoca
       if (!live(capture)) return false;
       capture.recognition.start();
       return active === capture;
-    } catch { if (!disposed && token === generation) close("error", install ? "install_failed" : "recognition_unavailable"); return false; }
+    } catch (error) {
+      if (!disposed && token === generation) {
+        const timeoutReason = (error as { localSpeechReason?: string } | null)?.localSpeechReason;
+        if (timeoutReason === "readiness_timeout" || timeoutReason === "install_timeout") close("unavailable", timeoutReason);
+        else close("error", install ? "install_failed" : "recognition_unavailable");
+      }
+      return false;
+    }
     finally { pendingQuery = false; }
   }
   return Object.freeze({
