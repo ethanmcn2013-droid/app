@@ -75,8 +75,8 @@ async function resetMounted(){if(state.release){state.release();state.release=nu
 async function startCapture(){await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).check();await page.getByTestId('ping-voice-start').click();await page.waitForFunction(()=>document.querySelector('[data-testid="ping-local-state"]')?.getAttribute('data-phase')==='listening',null,{timeout:15000});}
 async function injectedFinal(text){await page.evaluate(text=>window.localSpeechFixture.emit([{text,final:true}]),text);}
 async function injectedFinish(){await page.getByTestId('ping-local-finish').evaluate(b=>{b.click();b.click();});await page.evaluate(()=>window.localSpeechFixture.end());}
-async function settledCaptures(){
-  receipt.overlayRenders=[];
+async function settledCaptures(label){
+  assert.ok(['listening','processing','saved'].includes(label));receipt.overlayRenders??=[];
   assert.equal(await page.getByRole('dialog',{name:'Ping',exact:true}).count(),1);
   for(const theme of ['light','dark'])for(const viewport of [{width:1440,height:960},{width:390,height:844}]){
     await page.setViewportSize(viewport);await page.emulateMedia({colorScheme:theme,reducedMotion:'reduce'});await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);await page.evaluate(()=>document.fonts.ready);
@@ -97,7 +97,8 @@ async function settledCaptures(){
     });
     const {dock,bulk}=settled.sample;assert.ok(dock.right<=bulk.x||bulk.right<=dock.x||dock.bottom<=bulk.y||bulk.bottom<=dock.y,'Actual Ping dock and selected Tasks BulkBar must not overlap');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
-    const file=`local-speech-${theme}-${viewport.width}.png`;await page.screenshot({path:path.join(out,file),fullPage:true});receipt.overlayRenders.push({theme,viewport,file,settled});
+    const domState=await currentState();if(label==='saved')assert.equal(domState.outcome,'committed');else assert.equal(domState.phase,label);
+    const file=`local-speech-${label}-${theme}-${viewport.width}.png`;await page.screenshot({path:path.join(out,file),fullPage:true});receipt.overlayRenders.push({label,domState,theme,viewport,file,settled});
   }
   await page.setViewportSize({width:1440,height:960});await page.emulateMedia({colorScheme:'light',reducedMotion:'reduce'});await page.evaluate(()=>{document.documentElement.dataset.theme='light';});
   await page.keyboard.press('Tab');assert.equal(await page.getByRole('dialog',{name:'Ping',exact:true}).evaluate(el=>el.contains(document.activeElement)),true,'Tab remains inside the settled dialog');
@@ -185,7 +186,11 @@ try{
     const audioContext=new AudioContext(),bytes=await(await fetch('/fixture/invented.wav')).arrayBuffer(),buffer=await audioContext.decodeAudioData(bytes),destination=audioContext.createMediaStreamDestination(),source=audioContext.createBufferSource();source.buffer=buffer;source.connect(destination);const track=destination.stream.getAudioTracks()[0];window.inventedAudioTrack={context:audioContext,source,track,started:false};
   });
   if(mode==='deterministic'){
-    let before={rows:await rows(),counts:await counts()};await startCapture();await injectedFinal('status doing');await injectedFinish();await waitOutcome('committed');await settledCaptures();await saved();
+    let before={rows:await rows(),counts:await counts()};await startCapture();await settledCaptures('listening');
+    state.holdAction='prepare';await injectedFinal('status doing');await injectedFinish();await waitHeld();await settledCaptures('processing');
+    assert.equal((await counts()).prepareRequests-before.counts.prepareRequests,1);assert.equal((await counts()).executeRequests,before.counts.executeRequests);assert.deepEqual(await rows(),before.rows,'Held Prepare cannot alter canonical Tasks');
+    const resumePrepare=state.release;assert.equal(typeof resumePrepare,'function');state.holdAction=null;state.release=null;resumePrepare();
+    await waitOutcome('committed');await settledCaptures('saved');assert.equal(receipt.overlayRenders.length,12);await saved();
     let after=await counts();assert.equal(after.executeRequests-before.counts.executeRequests,1);assert.equal(after.prepareRequests-before.counts.prepareRequests,1);assert.equal(after.receipts-before.counts.receipts,1);assert.equal(after.activities-before.counts.activities,1);
     let committed=state.responses.findLast(r=>r.action==='execute').value;assert.equal(committed.knowledge,'committed');exactStatusEffect(before.rows,await rows(),'doing',committed.receipt.committedAtSeconds);assert.equal(await page.evaluate(()=>window.pingObserved.find(t=>t.id==='target').lane),'doing');assert.deepEqual(await markers(),[]);await record('double Finish: one maintained prepare/execute/receipt and exact canonical effect',before);
 
@@ -239,7 +244,7 @@ try{
     else{assert.equal(after.executeRequests,before.counts.executeRequests);assert.deepEqual(await rows(),before.rows);receipt.status=receipt.nativeUi.outcome==='refused'?'native_recognized_safely_refused':'native_recognized_no_complete_command';}
     receipt.cases.push({name:'actual installed local ASR over invented TTS through mounted Finish and actual HTTP/SQLite',native:true,outcome:receipt.nativeUi.outcome||receipt.nativeUi.phase,before:before.counts,after,rowsBefore:before.rows,rowsAfter:await rows(),markers:await markers()});
   }
-  await page.screenshot({path:path.join(out,'final-mounted.png'),fullPage:true});receipt.finalCounts=await counts();receipt.http=state.requests;receipt.responses=state.responses;receipt.errors=errors;
+  if(mode!=='deterministic')await page.screenshot({path:path.join(out,'final-mounted.png'),fullPage:true});receipt.finalCounts=await counts();receipt.http=state.requests;receipt.responses=state.responses;receipt.errors=errors;
   }
 }catch(error){receipt.status='failed';receipt.error=preview?'preview_failed':String(error.stack??error);process.exitCode=1;
   if(mode==='native'&&page&&!page.isClosed())try{receipt.nativeObservation=await page.evaluate(()=>window.nativeSpeechObservation);receipt.nativeUi=await currentState();await page.screenshot({path:path.join(out,'native-failure-mounted.png'),fullPage:true});}catch(observationError){receipt.failureObservationError=String(observationError.message);}

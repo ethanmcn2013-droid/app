@@ -23,9 +23,9 @@ export function PingOverlay({ open, onClose, projectName, selectedCount, childre
   return <Dialog open={open} onClose={onClose} ariaLabel="Ping" width={460}>
     <div className={styles.overlay} data-testid="ping-overlay">
       <header className={styles.header}>
-        <div className={styles.identity}><span className={styles.brandMark}><PingMic /></span><div>
+        <div className={styles.identity}><div>
           <h2 className={styles.name}>Ping</h2>
-          <p className={styles.context} title={projectName || "Current Project"}>{projectName || "Current Project"}<span aria-hidden="true"> · </span>{selectedCount ? `${selectedCount} selected` : "New tasks"}</p>
+          <p className={styles.context}><span className={styles.project} title={projectName || "Current Project"}>{projectName || "Current Project"}</span><span className={styles.scope}>{selectedCount ? `${selectedCount} selected` : "New tasks"}</span></p>
         </div></div>
         <button type="button" className={styles.close} aria-label="Close Ping" data-dialog-skip-focus onClick={onClose}>
           <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" /></svg>

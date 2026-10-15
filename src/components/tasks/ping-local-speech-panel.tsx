@@ -210,13 +210,18 @@ export function PingLocalSpeechPanel<Capture>(props: Props<Capture>) {
   return <>
     <PingDock selectedCount={props.selectedCount}>
       <button type="button" className={styles.launch} data-testid="ping-voice-start" aria-haspopup="dialog" aria-expanded={open && mode === "voice"} onClick={launchVoice}><PingMic />Talk to Ping</button>
-      <button type="button" className={styles.typeLaunch} data-testid="ping-type-open" aria-haspopup="dialog" aria-expanded={open && mode === "typed"} onClick={launchTyped}>Type a request</button>
+      <button type="button" className={styles.typeLaunch} data-testid="ping-type-open" aria-haspopup="dialog" aria-expanded={open && mode === "typed"} onClick={launchTyped}><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="4" width="16" height="12" rx="3" /><path d="M5.5 7.5h.01m3-.01h.01m3-.01h.01m3-.01h.01M5.5 10.5h.01m3-.01h.01m3-.01h.01m3-.01h.01M6.5 13h7" /></svg>Type a request</button>
     </PingDock>
     <PingOverlay open={open} onClose={close} projectName={props.projectName} selectedCount={props.selectedCount}>
       {mode === "typed" ? <div ref={typedRegion}>{props.typedContent}</div> :
         <div ref={voiceRegion} className={`${styles.voice} ${listening ? styles.listening : ""}`} data-testid="ping-local-speech-panel"
           onClickCapture={(event) => { const node = (event.target as HTMLElement).closest<HTMLButtonElement>("button"); if (node === document.activeElement) focusOrigin.current = node; }}>
-          <div className={styles.signal}><PingMic /></div>
+          <div className={styles.signal} data-state={closing || closureUnconfirmed ? "idle" : busy ? "working" : outcome === "committed" ? "saved" : listening ? "listening" : "idle"} aria-hidden="true">
+            <span className={styles.signalFrame} />
+            <span className={styles.signalCore}>
+              {closing || closureUnconfirmed ? <PingMic /> : busy ? <svg className={styles.workingMark} viewBox="0 0 40 40" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><circle className={styles.workingTrack} cx="20" cy="20" r="13" /><path d="M20 7a13 13 0 0 1 13 13" /></svg> : outcome === "committed" ? <svg viewBox="0 0 40 40" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m11 20 6 6 12-13" /></svg> : <PingMic />}
+            </span>
+          </div>
           <h3 className={styles.title}>{title}</h3>
           <p tabIndex={-1} className={styles.status} role="status" aria-live="polite" data-testid="ping-local-state" data-phase={phase} data-outcome={outcome ?? ""}>{status}</p>
           {listening ? <p className={styles.timer}>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")} · Microphone on · 30 seconds max</p> : null}
