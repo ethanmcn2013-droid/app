@@ -7,6 +7,7 @@ import {
   PING_TYPED_MAX_TEXT_POINTS,
   PING_TYPED_VERSION,
   type PingTypedReceipt,
+  type PingTypedPrepare,
   type PingTypedRequest,
   type PingTypedSnapshot,
   type PingTypedTokenRequest,
@@ -28,9 +29,11 @@ import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { isDemoMode } from "@/lib/access-mode";
 import { PingVoicePanel } from "./ping-voice-panel";
+import { PingLocalSpeechPanel } from "./ping-local-speech-panel";
 import styles from "./ping-overlay.module.css";
 
 const PING_TYPED_ENABLED = process.env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED === "1";
+const PING_LOCAL_SPEECH_ENABLED = process.env.NEXT_PUBLIC_PROJECT_PING_LOCAL_SPEECH_ENABLED === "1";
 const STATUS_NAME: Record<string, string> = {
   todo: "To do",
   doing: "Doing",
@@ -53,6 +56,14 @@ type PreparedIntent = Readonly<{
   selectedCount: number;
   expiresAt: number;
 }>;
+
+type LocalSpeechCapture = Readonly<{
+  request: PingTypedPrepare;
+  scopeKey: string;
+  selectionKey: string;
+  selectionEpoch: number;
+}>;
+type PrepareResult = { kind: "prepared"; intent: PreparedIntent } | { kind: "unknown" | "refused" | "cancelled" };
 
 type RefreshState = "not_requested" | "loading" | "matches" | "diverged" | "unavailable" | "stale";
 type SendState = "idle" | "preparing" | "prepare_unknown" | "prepared" | "invoking" | "unknown" | "committed" | "not_invoked";
@@ -208,8 +219,9 @@ function PingTypedPanelFlow({
     if (next) { next.focus(); focusOrigin.current = { ...origin, node: next }; }
   });
   const codePointCount = [...draft].length;
-  const canPrepare = markerLoaded && !busy && !hasRecovery && !prepared && draft.trim().length > 0 &&
-    codePointCount <= PING_TYPED_MAX_TEXT_POINTS && !tooManyTargets && !staleSelection && !unsupportedTargets;
+  const captureEligible = markerLoaded && !busy && !hasRecovery && !prepared &&
+    !tooManyTargets && !staleSelection && !unsupportedTargets;
+  const canPrepare = captureEligible && draft.trim().length > 0 && codePointCount <= PING_TYPED_MAX_TEXT_POINTS;
   const statusLabel = sendState === "preparing" ? "Checking the whole request" :
     sendState === "prepare_unknown" ? "The request check could not be confirmed" :
       sendState === "prepared" ? "Ready for you to review" :
@@ -225,17 +237,40 @@ function PingTypedPanelFlow({
     prepareRequestRef.current = null;
   };
 
-  const prepareRequest = async () => {
-    if (submitLatch.current || !canPrepare || currentScope.current.scopeKey !== scopeKey ||
-      currentScope.current.selectionKey !== selectionKey) return;
+  // Called at speech activation, before the microphone opens. The server receives these
+  // exact snapshots at Finish and independently refuses stale values or changed access.
+  const captureLocalRequest = (): LocalSpeechCapture | null => {
+    if (!captureEligible || submitLatch.current || prepareRequestRef.current || !window.crypto?.randomUUID ||
+      currentScope.current.scopeKey !== scopeKey || currentScope.current.selectionKey !== selectionKey ||
+      readPingIntentMarker(window.sessionStorage, actorId, projectId)) return null;
+    const snapshots: Record<string, PingTypedSnapshot> = Object.create(null);
+    for (const task of selectedTasks) {
+      const snapshot = snapshotTask(task);
+      snapshots[task.id] = Object.freeze({ ...snapshot, assignees: Object.freeze([...snapshot.assignees]) });
+    }
+    return Object.freeze({ scopeKey, selectionKey, selectionEpoch: selectionEpoch.current,
+      request: Object.freeze({ version: PING_TYPED_VERSION, action: "prepare", projectId,
+        generationId: window.crypto.randomUUID(), requestId: window.crypto.randomUUID(),
+        selectedTaskIds: Object.freeze([...selectedSet].sort()), snapshots: Object.freeze(snapshots), text: "" }) });
+  };
+  const isLocalCaptureCurrent = (capture: LocalSpeechCapture) => mounted.current &&
+    currentScope.current.scopeKey === capture.scopeKey && currentScope.current.selectionKey === capture.selectionKey &&
+    currentScope.current.selectionEpoch === capture.selectionEpoch;
+
+  const prepareRequest = async (speech?: { capture: LocalSpeechCapture; text: string; isActive: () => boolean }): Promise<PrepareResult> => {
+    if (submitLatch.current || !(speech ? captureEligible && !prepareRequestRef.current : canPrepare) ||
+      currentScope.current.scopeKey !== scopeKey || currentScope.current.selectionKey !== selectionKey ||
+      (speech && (!speech.isActive() || !isLocalCaptureCurrent(speech.capture) || !speech.text.trim() ||
+        [...speech.text].length > PING_TYPED_MAX_TEXT_POINTS))) return { kind: "cancelled" };
     submitLatch.current = true;
     setBusyAction("prepare");
     setSendState("preparing");
     setError(null);
     setNotice(null);
-    const chosenIds = [...selectedSet].sort();
-    const requestedSelectionEpoch = selectionEpoch.current;
-    let request = prepareRequestRef.current;
+    const chosenIds = speech ? speech.capture.request.selectedTaskIds : [...selectedSet].sort();
+    const requestedSelectionEpoch = speech ? speech.capture.selectionEpoch : selectionEpoch.current;
+    let request: PingTypedRequest | null = speech ? { ...speech.capture.request, text: speech.text } : prepareRequestRef.current;
+    if (speech) setDraft(speech.text);
     if (!request) {
       const byId = new Map(selectedTasks.map((task) => [task.id, task]));
       const snapshots: Record<string, PingTypedSnapshot> = Object.create(null);
@@ -254,33 +289,33 @@ function PingTypedPanelFlow({
         snapshots,
         text: draft,
       };
-      prepareRequestRef.current = request;
     }
+    prepareRequestRef.current = request;
     try {
       const sent = await sendPingTyped(request);
       if (!mounted.current || currentScope.current.scopeKey !== scopeKey || currentScope.current.selectionKey !== selectionKey ||
-        currentScope.current.selectionEpoch !== requestedSelectionEpoch) return;
+        currentScope.current.selectionEpoch !== requestedSelectionEpoch) return { kind: "cancelled" };
       if (sent.kind === "unknown") {
         setSendState("prepare_unknown");
         setError("We could not confirm that request was understood. No task change was started. You can safely check the same request again.");
-        return;
+        return { kind: "unknown" };
       }
       const response = sent.response;
       if (!response.ok) {
         prepareRequestRef.current = null;
         setSendState("idle");
         setError(safeErrorCopy(response.code));
-        return;
+        return { kind: "refused" };
       }
       if (!pingTypedResponseMatches(response, request, projectId)) {
         setSendState("prepare_unknown");
         setError("We could not confirm that request was understood. No task change was started. You can safely check the same request again.");
-        return;
+        return { kind: "unknown" };
       }
       if (response.action !== "prepare" || response.expiresAt <= Date.now()) {
         setSendState("prepare_unknown");
         setError("The review window expired before it could be shown. Check the original request or write it again.");
-        return;
+        return { kind: "unknown" };
       }
       const nextMarker: PingTypedIntentMarker = {
         version: "ping.typed.intent.v1",
@@ -295,12 +330,15 @@ function PingTypedPanelFlow({
       setMarker(wroteMarker ? nextMarker : null);
       setReceipt(null);
       setRefreshState("not_requested");
-      setPrepared({ marker: nextMarker, proposal: response.proposal, selectionKey, selectionEpoch: requestedSelectionEpoch, selectedCount: chosenIds.length, expiresAt: response.expiresAt });
+      const intent = { marker: nextMarker, proposal: response.proposal, selectionKey, selectionEpoch: requestedSelectionEpoch, selectedCount: chosenIds.length, expiresAt: response.expiresAt };
+      setPrepared(intent);
       setSendState("prepared");
       if (!wroteMarker) setError("This browser could not keep a private recovery note. You may review or cancel, but changes will not be sent.");
+      return wroteMarker ? { kind: "prepared", intent } : { kind: "refused" };
     } catch {
       setSendState("prepare_unknown");
       setError("We could not check this request. No task change was started. You can safely check the same request again.");
+      return { kind: "unknown" };
     } finally {
       submitLatch.current = false;
       setBusyAction(null);
@@ -369,22 +407,27 @@ function PingTypedPanelFlow({
     window.setTimeout(() => { void refreshCurrent(intent); }, 0);
   }, [refreshCurrent]);
 
-  const executePrepared = async () => {
-    const current = prepared;
-    if (submitLatch.current || !current || !marker || marker.commandId !== current.marker.commandId ||
-      marker.phase !== "prepared" || current.selectionKey !== selectionKey || current.selectionEpoch !== selectionEpoch.current ||
-      busy || !window.crypto?.randomUUID) return;
+  const executePrepared = async (speech?: { intent: PreparedIntent; capture: LocalSpeechCapture; isActive: () => boolean }): Promise<"committed" | "unknown" | "refused" | "cancelled"> => {
+    const current = speech?.intent ?? prepared;
+    // A speech handoff may precede the React marker render. Read the durable handle;
+    // never infer permission to execute from a successful Promise or UI phase.
+    const originalMarker = speech ? readPingIntentMarker(window.sessionStorage, actorId, projectId) : marker;
+    if (submitLatch.current || !current || !originalMarker || originalMarker.commandId !== current.marker.commandId ||
+      originalMarker.generationId !== current.marker.generationId || originalMarker.token !== current.marker.token ||
+      originalMarker.phase !== "prepared" || current.selectionKey !== currentScope.current.selectionKey ||
+      current.selectionEpoch !== currentScope.current.selectionEpoch || currentScope.current.scopeKey !== scopeKey ||
+      (speech ? !speech.isActive() || !isLocalCaptureCurrent(speech.capture) : busy) || !window.crypto?.randomUUID) return "cancelled";
     if (current.expiresAt <= Date.now()) {
       setPrepared(null);
       setSendState("idle");
       setError("This review has expired. Check the original request before starting over.");
-      return;
+      return "refused";
     }
-    if (!updatePingIntentPhase(window.sessionStorage, actorId, marker, "invoking")) {
+    if (!updatePingIntentPhase(window.sessionStorage, actorId, originalMarker, "invoking")) {
       setError("This browser could not update the recovery note, so no change was sent.");
-      return;
+      return "refused";
     }
-    const invokingMarker = { ...marker, phase: "invoking" as const };
+    const invokingMarker = { ...originalMarker, phase: "invoking" as const };
     submitLatch.current = true;
     setBusyAction("execute");
     setMarker(invokingMarker);
@@ -397,21 +440,26 @@ function PingTypedPanelFlow({
     };
     try {
       const sent = await sendPingTyped(request);
-      if (!mounted.current || currentScope.current.scopeKey !== scopeKey) return;
+      if (!mounted.current || currentScope.current.scopeKey !== scopeKey) return "unknown";
       if (sent.kind === "unknown" || !pingTypedResponseMatches(sent.response, request, invokingMarker.projectId) ||
         !sent.response.ok || sent.response.commandId !== invokingMarker.commandId || sent.response.action !== "execute") {
         setSendState("unknown");
         setNotice("We could not confirm the save. It was not sent a second time. Check the original result below.");
-        return;
+        return "unknown";
       }
-      if (sent.response.knowledge === "committed") acceptCommitted(invokingMarker, sent.response.receipt);
+      if (sent.response.knowledge === "committed") {
+        acceptCommitted(invokingMarker, sent.response.receipt);
+        return "committed";
+      }
       else {
         setSendState("unknown");
         setNotice("The save may still be finishing. Check the original result; do not send it again.");
+        return "unknown";
       }
     } catch {
       setSendState("unknown");
       setNotice("We could not confirm the save. It was not sent a second time. Check the original result below.");
+      return "unknown";
     } finally {
       submitLatch.current = false;
       setBusyAction(null);
@@ -492,11 +540,7 @@ function PingTypedPanelFlow({
   const plan = prepared ? proposalLines(prepared.proposal, prepared.selectedCount) : [];
   const intentNeedsRecovery = marker && (!prepared || marker.phase === "invoking" || marker.commandId !== prepared.marker.commandId);
   const title = projectName?.trim() || "this Project";
-
-  return (
-    <PingVoicePanel projectId={projectId} projectName={projectName} selectedTaskIds={selectedTaskIds}
-      tasks={tasks} actorId={actorId} available={process.env.NEXT_PUBLIC_PROJECT_PING_VOICE_ENABLED === "1"}
-      typedContent={(
+  const typedContent = (
     <section
       ref={panelRef}
       onClickCapture={(event) => {
@@ -640,7 +684,22 @@ function PingTypedPanelFlow({
       {error && !prepared ? <p className="mt-2 text-sm text-[color:var(--v3-danger-text)]" data-testid="ping-error" role="alert">{error}</p> : null}
       {!notice && !error && sendState !== "idle" ? <p className="sr-only" data-testid="ping-state" role="status" aria-live="polite">{statusLabel}</p> : null}
     </section>
-    )} />
+  );
+  return PING_LOCAL_SPEECH_ENABLED ? (
+    <PingLocalSpeechPanel projectName={projectName} selectedCount={selectedSet.size}
+      contextKey={`${scopeKey}\u001f${selectionKey}`} canStart={captureEligible && sendState !== "prepare_unknown"}
+      hasRecovery={Boolean(marker) || sendState === "prepare_unknown"} typedContent={typedContent}
+      capture={captureLocalRequest} isCurrent={isLocalCaptureCurrent}
+      run={async (capture, text, isActive) => {
+        if (!isActive() || !isLocalCaptureCurrent(capture)) return "cancelled";
+        const result = await prepareRequest({ capture, text, isActive });
+        if (result.kind !== "prepared") return result.kind;
+        return executePrepared({ intent: result.intent, capture, isActive });
+      }} />
+  ) : (
+    <PingVoicePanel projectId={projectId} projectName={projectName} selectedTaskIds={selectedTaskIds}
+      tasks={tasks} actorId={actorId} available={process.env.NEXT_PUBLIC_PROJECT_PING_VOICE_ENABLED === "1"}
+      typedContent={typedContent} />
   );
 }
 
