@@ -2591,7 +2591,7 @@
     "src/components/shell/shell-nav.ts": "d09281214a4ccd6838302e2552894f60f8c774cc75f0353270fc89ad2f350a92",
     "src/components/shell/shell.module.css": "77742b4674d0f94645bffbd5f0e6e874d996422d2eed7d1e1be0161f859e2ef0",
     "src/components/shell/sidebar-icon.tsx": "205e2ce815f67f4f701a06fe514f52ef4630e61320f222f938d04472f1ab35c2",
-    "src/components/shell/sidebar-icons-contract.test.mjs": "3234a2a196b423c91b83e6f1b0b13bd2d7137e6885c832e2fb25353a06d6b797",
+    "src/components/shell/sidebar-icons-contract.test.mjs": "f341efdba4a3bb0369e3bb9776aec07f6c5909c5b8011d83ee9734d5ac48f915",
     "src/components/shell/sidebar-intent-link.tsx": "a4ecf433cda74f63841606ab79b340272003f08605d62019dca0c9b44b32a32c",
     "src/components/shell/sidebar-more.module.css": "8bc5bca3bb09863bfbc1496a46590ed4c3f1fc81ea59f2381742ea15552ca041",
     "src/components/shell/use-more-preferences.ts": "47bbe536f4d24371bcbdb0e295e192afd34e8ad4d0f291e52a00c465d165b694",
