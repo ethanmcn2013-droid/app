@@ -10,6 +10,7 @@ import { createPingTypedSession } from "./typed-session";
 import type { ConversationDatabaseAdapter } from "@/server/conversations/database";
 import { PING_VOICE_VERSION, type PingVoiceResponse } from "@/lib/ping/voice-contract";
 import type { PingVoiceModelInput, PingVoiceTransport } from "@/lib/ping/voice-session";
+import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
 
 const actor = { actorId: "alice", sessionId: "synthetic-session" };
 const voicePlan = { version: "ping.proposal.v1", outcome: "plan", operation: { kind: "edit_selected", effects: { selfAssignment: "add" } } };
@@ -53,6 +54,181 @@ async function rows(f: Awaited<ReturnType<typeof createPingProofFixture>>) {
   return (await f.client.execute("SELECT id,assignees,due,due_at,lane,start_day,duration_days,completed_at FROM tasks ORDER BY id")).rows;
 }
 function deferred() { let resolve!: () => void; const promise = new Promise<void>(done => { resolve = done; }); return { promise, resolve }; }
+
+async function namedFixture() {
+  const f = await createPingProofFixture();
+  await f.client.execute("UPDATE users SET name='Maya Chen' WHERE id='owner'");
+  await seedProofTask(f.client, "target", { startDay: 2, durationDays: 3 });
+  await seedProofTask(f.client, "sibling");
+  await seedProofTask(f.client, "foreign", { projectId: "synthetic-foreign-project" });
+  return f;
+}
+async function addNamedMember(f: Awaited<ReturnType<typeof createPingProofFixture>>, id: string, name: string | null,
+  projectId = PROOF_PROJECT) {
+  await f.client.execute({ sql: "INSERT INTO users(id,clerk_id,name,color,initials) VALUES(?,?,?,'#111','SS')", args: [id, `clerk_${id}`, name] });
+  await f.client.execute({ sql: "INSERT INTO workspace_members(workspace_id,user_id,role) VALUES(?,?,'member')", args: [projectId, id] });
+}
+async function namedEffects(f: Awaited<ReturnType<typeof createPingProofFixture>>) {
+  return { tasks: (await f.client.execute("SELECT * FROM tasks ORDER BY id")).rows,
+    activities: (await f.client.execute("SELECT * FROM activities ORDER BY id")).rows,
+    receipts: (await f.client.execute("SELECT * FROM ping_command_receipts ORDER BY command_id")).rows };
+}
+
+test("named member add binds verified raw identity, preserves others and unrelated rows, and recovers the original after rename", async () => {
+  const f = await namedFixture();
+  try {
+    const before = await namedEffects(f); let original: { command: PingCommand; context: PingExecutionContext } | undefined;
+    let executions = 0; const base = createPingCommandService(f.adapter, { now: () => PROOF_NOW });
+    const session = createPingTypedSession(f.adapter, { now: () => PROOF_NOW, service: { ...base, execute: args => {
+      original = { command: args.command as PingCommand, context: args.context }; executions++; return base.execute(args);
+    } } });
+    const prepared = await session.handle(actor, request(1, "assign these to maya chen and status doing"));
+    const handle = token(prepared); assert.ok(prepared.ok && prepared.action === "prepare");
+    assert.deepEqual(prepared.proposal.operation.effects, { memberName: "Maya Chen", statusColumnKey: "doing" });
+    assert.equal(JSON.stringify(prepared).includes('"userId"'), false, "wire proposal carries a verified name only");
+    const saved = await session.handle(actor, action(handle, "execute"));
+    assert.ok(saved.ok && saved.action === "execute" && saved.knowledge === "committed");
+    assert.equal(saved.receipt.changedCount, 1); assert.ok(original);
+    assert.deepEqual(original.command.operation.effects.namedAssignment, { userId: "owner", name: "Maya Chen" });
+    assert.ok(Object.isFrozen(original.context.captured.namedAssignment));
+    assert.deepEqual(original.context.captured.namedAssignment, original.command.operation.effects.namedAssignment);
+    const after = await namedEffects(f);
+    assert.deepEqual(after.tasks.filter(row => row.id !== "target"), before.tasks.filter(row => row.id !== "target"));
+    const target = after.tasks.find(row => row.id === "target")!;
+    assert.equal(target.assignees, '["bob","owner"]'); assert.equal(target.lane, "doing");
+    assert.equal(target.start_day, 2); assert.equal(target.duration_days, 3);
+    assert.equal(JSON.stringify(after.activities).includes("Maya"), false);
+    assert.equal(JSON.stringify(after.receipts).includes("Maya"), false);
+    await f.client.execute("UPDATE users SET name='Renamed Person' WHERE id='owner'");
+    await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='synthetic-ping-project' AND user_id='owner'");
+    const recovered = await session.handle(actor, action(handle, "receipt"));
+    assert.ok(recovered.ok && recovered.action === "receipt" && recovered.knowledge === "committed");
+    assert.deepEqual(recovered.receipt, saved.receipt);
+    const replay = await base.execute(original); assert.ok(replay.ok && replay.replayed);
+    assert.deepEqual(replay.receipt, saved.receipt);
+    const refreshed = await session.handle(actor, action(handle, "refresh"));
+    assert.ok(refreshed.ok && refreshed.action === "refresh"); assert.equal(refreshed.projection, "matches");
+    assert.equal(executions, 1); assert.equal((await namedEffects(f)).receipts.length, 1);
+  } finally { f.client.close(); }
+});
+
+test("already assigned named member is a neutral no-op and names use the documented comparison only", async () => {
+  const f = await namedFixture();
+  try {
+    await f.client.execute("UPDATE users SET name='Élodie Chen' WHERE id='bob'");
+    const before = await namedEffects(f);
+    const session = createPingTypedSession(f.adapter, { now: () => PROOF_NOW });
+    const handle = token(await session.handle(actor, request(1, "assign to   ÉLODIE Chen")));
+    const saved = await session.handle(actor, action(handle, "execute"));
+    assert.ok(saved.ok && saved.action === "execute" && saved.knowledge === "committed");
+    assert.equal(saved.receipt.outcome, "no_changes"); assert.equal(saved.receipt.changedCount, 0);
+    const after = await namedEffects(f); assert.deepEqual(after.tasks, before.tasks); assert.deepEqual(after.activities, []);
+    assert.equal(after.receipts.length, 1);
+  } finally { f.client.close(); }
+});
+
+test("Prepare refuses missing, ambiguous, foreign-only and invalid stored names without writes", async t => {
+  for (const [label, stored, text, duplicate, foreign, code] of [
+    ["case collision", "Maya Chen", "maya chen", "MAYA CHEN", false, "ambiguous"],
+    ["Unicode collision", "Élodie", "Élodie", "ÉLODIE", false, "ambiguous"],
+    ["missing", "Maya Chen", "Missing Person", null, false, "unsupported"],
+    ["foreign", "Maya Chen", "Foreign Person", "Foreign Person", true, "unsupported"],
+    ["blank stored", "   ", "Maya Chen", null, false, "unsupported"],
+    ["null stored fallback", null, "owner", null, false, "unsupported"],
+    ["control stored", "Maya\u0085 Chen", "Maya Chen", null, false, "unsupported"],
+    ["overlimit stored", "x".repeat(201), "x".repeat(200), null, false, "unsupported"],
+    ["internal whitespace", "Maya  Chen", "Maya Chen", null, false, "unsupported"],
+    ["no accent stripping", "Máya Chen", "Maya Chen", null, false, "unsupported"],
+  ] as const) await t.test(label, async () => {
+    const f = await namedFixture();
+    try {
+      await f.client.execute({ sql: "UPDATE users SET name=? WHERE id='owner'", args: [stored] });
+      if (duplicate) await addNamedMember(f, "duplicate", duplicate, foreign ? "synthetic-foreign-project" : PROOF_PROJECT);
+      const before = await namedEffects(f); const session = createPingTypedSession(f.adapter, { now: () => PROOF_NOW });
+      assert.deepEqual(await session.handle(actor, request(1, `assign to ${text}`)), { ok: false, code });
+      assert.deepEqual(await namedEffects(f), before);
+    } finally { f.client.close(); }
+  });
+});
+
+test("Execute revalidates name, exact identity, membership and deletion before admission or any batch write", async t => {
+  for (const change of ["removal", "rename", "raw case", "raw normalization", "duplicate", "replacement", "target deletion", "actor deletion", "actor membership"] as const)
+    await t.test(change, async () => {
+      const f = await namedFixture();
+      try {
+        if (change === "raw normalization") await f.client.execute("UPDATE users SET name='Élodie' WHERE id='owner'");
+        if (change === "target deletion") await addNamedMember(f, "recipient", "Valid Person");
+        let admitted = 0; const base = createPingCommandService(f.adapter, { now: () => PROOF_NOW,
+          admitNewCommand: async () => { admitted++; return true; } });
+        const session = createPingTypedSession(f.adapter, { now: () => PROOF_NOW, service: base });
+        const text = change === "raw normalization" ? "assign to Élodie" : change === "target deletion" ? "assign to Valid Person" : "assign to Maya Chen";
+        const handle = token(await session.handle(actor, request(1, text)));
+        if (change === "removal" || change === "replacement") await f.client.execute("DELETE FROM workspace_members WHERE user_id='owner'");
+        if (change === "rename") await f.client.execute("UPDATE users SET name='Other Name' WHERE id='owner'");
+        if (change === "raw case") await f.client.execute("UPDATE users SET name='MAYA CHEN' WHERE id='owner'");
+        if (change === "raw normalization") await f.client.execute("UPDATE users SET name='Élodie' WHERE id='owner'");
+        if (change === "duplicate" || change === "replacement") await addNamedMember(f, "new-person", "Maya Chen");
+        if (change === "target deletion" || change === "actor deletion") await f.client.execute({
+          sql: "INSERT INTO meta(key,value) VALUES(?,'{}')", args: [accountDeletionTombstoneKey(change === "target deletion" ? "clerk_recipient" : "clerk_alice")] });
+        if (change === "actor membership") await f.client.execute("DELETE FROM workspace_members WHERE user_id='alice'");
+        const before = await namedEffects(f);
+        const saved = await session.handle(actor, action(handle, "execute"));
+        assert.ok(saved.ok && saved.action === "execute" && saved.knowledge === "unresolved");
+        assert.equal(admitted, 0); assert.deepEqual(await namedEffects(f), before);
+      } finally { f.client.close(); }
+    });
+});
+
+test("Prepare applies recipient deletion fences and named requests require a selected ordinary task", async () => {
+  const f = await namedFixture();
+  try {
+    await addNamedMember(f, "recipient", "Valid Person");
+    await f.client.execute({ sql: "INSERT INTO meta(key,value) VALUES(?,'{}')", args: [accountDeletionTombstoneKey("clerk_recipient")] });
+    const session = createPingTypedSession(f.adapter, { now: () => PROOF_NOW });
+    assert.deepEqual(await session.handle(actor, request(1, "assign to Valid Person")), { ok: false, code: "unavailable" });
+    assert.deepEqual(await session.handle(actor, { ...request(2, "assign to Maya Chen"), selectedTaskIds: [], snapshots: {} }), { ok: false, code: "invalid_input" });
+    assert.deepEqual(await session.handle(actor, { ...request(3, "assign to Maya Chen"), selectedTaskIds: ["foreign"],
+      snapshots: { foreign: request().snapshots.target } }), { ok: false, code: "stale_capture" });
+    assert.equal((await namedEffects(f)).receipts.length, 0);
+  } finally { f.client.close(); }
+});
+
+test("named whole-assignee CAS refuses a changed later task before writing a valid prefix", async () => {
+  const f = await namedFixture();
+  try {
+    await seedProofTask(f.client, "target-two", { startDay: 2, durationDays: 3 });
+    let admitted = 0; const base = createPingCommandService(f.adapter, { now: () => PROOF_NOW,
+      admitNewCommand: async () => { admitted++; return true; } });
+    const session = createPingTypedSession(f.adapter, { now: () => PROOF_NOW, service: base });
+    const input = request(1, "assign to Maya Chen");
+    const handle = token(await session.handle(actor, { ...input, selectedTaskIds: ["target", "target-two"],
+      snapshots: { ...input.snapshots, "target-two": input.snapshots.target } }));
+    await f.client.execute("UPDATE tasks SET assignees='[\"bob\",\"outsider\"]' WHERE id='target-two'");
+    const before = await namedEffects(f); const saved = await session.handle(actor, action(handle, "execute"));
+    assert.ok(saved.ok && saved.action === "execute" && saved.knowledge === "unresolved");
+    assert.equal(admitted, 0); assert.deepEqual(await namedEffects(f), before);
+  } finally { f.client.close(); }
+});
+
+test("named multi-task failure rolls back tasks, activities, admission usage and receipt together", async () => {
+  const f = await namedFixture();
+  try {
+    await seedProofTask(f.client, "target-two", { startDay: 2, durationDays: 3 });
+    const base = createPingCommandService(f.adapter, { now: () => PROOF_NOW,
+      admitNewCommand: async tx => { await tx.execute("INSERT INTO meta(key,value) VALUES('synthetic:named-usage','1')"); return true; },
+      afterWrite: (seam, index) => { if (seam === "activity" && index === 2) throw Error("synthetic_rollback"); } });
+    const session = createPingTypedSession(f.adapter, { now: () => PROOF_NOW, service: base });
+    const input = request(1, "assign to Maya Chen");
+    const handle = token(await session.handle(actor, { ...input, selectedTaskIds: ["target", "target-two"],
+      snapshots: { ...input.snapshots, "target-two": input.snapshots.target } }));
+    const before = await namedEffects(f); const saved = await session.handle(actor, action(handle, "execute"));
+    assert.ok(saved.ok && saved.action === "execute" && saved.knowledge === "unresolved");
+    assert.deepEqual(await namedEffects(f), before);
+    assert.equal((await f.client.execute("SELECT value FROM meta WHERE key='synthetic:named-usage'")).rows.length, 0);
+    const recovered = await session.handle(actor, action(handle, "receipt"));
+    assert.ok(recovered.ok && recovered.action === "receipt" && recovered.knowledge === "unresolved" && recovered.detail === "absent");
+  } finally { f.client.close(); }
+});
 
 test("actual typed compound execution, idempotent token and canonical status-aware readback", async () => {
   const f = await createPingProofFixture();

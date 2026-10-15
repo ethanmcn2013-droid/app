@@ -3,9 +3,19 @@ export const PING_COMMAND_VERSION = "ping.command.v1" as const;
 export const PING_PROOF_TIME_ZONE = "Europe/Dublin" as const;
 export const PING_SYSTEM_COLUMNS = ["todo", "doing", "review", "done"] as const;
 export type PingSystemColumn = (typeof PING_SYSTEM_COLUMNS)[number];
+export const PING_MEMBER_NAME_MAX_POINTS = 200;
+export type PingNamedAssignee = Readonly<{ userId: string; name: string }>;
+
+/** Full real profile names only. This key never replaces the raw identity witness. */
+export function pingMemberNameKey(value: unknown): string | null {
+  if (typeof value !== "string" || value.length > PING_MEMBER_NAME_MAX_POINTS * 2 ||
+    Array.from(value).length > PING_MEMBER_NAME_MAX_POINTS || /[\p{Cc}\p{Cf}]/u.test(value) || !value.trim()) return null;
+  return value.trim().normalize("NFC").toLocaleLowerCase("en-US");
+}
 
 export type PingEffects = Readonly<{
   selfAssignment?: "add" | "remove";
+  namedAssignment?: PingNamedAssignee;
   dueDate?: string | null;
   statusColumnKey?: PingSystemColumn;
 }>;
@@ -67,13 +77,23 @@ export function validPingCalendarDate(value: unknown): value is string {
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value &&
     Number(value.slice(0, 4)) >= 2000 && Number(value.slice(0, 4)) <= 2100;
 }
+export function normalizePingNamedAssignee(value: unknown): PingNamedAssignee | null {
+  if (!record(value) || !only(value, ["userId", "name"]) || !validPingId(value.userId) ||
+    pingMemberNameKey(value.name) === null) return null;
+  return { userId: value.userId, name: value.name as string };
+}
 function effects(value: unknown, creating: boolean): PingEffects | null {
-  if (!record(value) || !only(value, ["selfAssignment", "dueDate", "statusColumnKey"])) return null;
-  const result: { selfAssignment?: "add" | "remove"; dueDate?: string | null; statusColumnKey?: PingSystemColumn } = {};
+  if (!record(value) || !only(value, ["selfAssignment", "namedAssignment", "dueDate", "statusColumnKey"])) return null;
+  const result: { selfAssignment?: "add" | "remove"; namedAssignment?: PingNamedAssignee; dueDate?: string | null; statusColumnKey?: PingSystemColumn } = {};
   if (Object.hasOwn(value, "selfAssignment")) {
     if (value.selfAssignment !== "add" && value.selfAssignment !== "remove") return null;
     if (creating && value.selfAssignment === "remove") return null;
     result.selfAssignment = value.selfAssignment;
+  }
+  if (Object.hasOwn(value, "namedAssignment")) {
+    const member = normalizePingNamedAssignee(value.namedAssignment);
+    if (creating || Object.hasOwn(value, "selfAssignment") || !member) return null;
+    result.namedAssignment = member;
   }
   if (Object.hasOwn(value, "dueDate")) {
     if (value.dueDate !== null && !validPingCalendarDate(value.dueDate)) return null;
@@ -89,7 +109,7 @@ function precondition(value: unknown, effect: PingEffects): PingTaskPrecondition
   if (!record(value) || !only(value, ["assignees", "due", "dueAtSeconds", "startDay", "durationDays",
     "lane", "boardColumnKey", "completedAtSeconds"])) return null;
   const result: Record<string, unknown> = {};
-  if (effect.selfAssignment) {
+  if (effect.selfAssignment || effect.namedAssignment) {
     if (!Array.isArray(value.assignees) || value.assignees.length > 100 ||
       !value.assignees.every(validPingId) || new Set(value.assignees).size !== value.assignees.length) return null;
     result.assignees = [...value.assignees].sort();

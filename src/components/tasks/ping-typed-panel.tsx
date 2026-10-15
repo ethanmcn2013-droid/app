@@ -105,6 +105,7 @@ function proposalLines(proposal: Extract<PingProposal, { outcome: "plan" }>, sel
   const effects = operation.effects;
   if (effects.selfAssignment === "add") lines.push("Add you as an assignee.");
   if (effects.selfAssignment === "remove") lines.push("Remove you as an assignee.");
+  if (effects.memberName) lines.push(`Add ${effects.memberName} to ${selectedCount} selected task${selectedCount === 1 ? "" : "s"}.`);
   if (Object.hasOwn(effects, "dueDate")) {
     lines.push(effects.dueDate ? `Set the due date to ${effects.dueDate}.` : "Clear the due date.");
   }
@@ -576,6 +577,7 @@ function PingTypedPanelFlow({
           <p>Use exact task words. Unsupported or mixed requests are refused as a whole.</p>
           <ul className="mt-2 space-y-1.5">
             <li><code>assign these to me and mark them in progress</code></li>
+            <li><code>assign these to Maya Chen</code> — use a Project member’s full name</li>
             <li><code>clear due and status review</code></li>
             <li><code>create 3 tasks called &quot;Research and review&quot; and status todo</code></li>
           </ul>
@@ -642,7 +644,7 @@ function PingTypedPanelFlow({
             placeholder="For example: assign these to me and mark them in progress"
           />
           <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <p id="ping-typed-help" className="text-xs text-[color:var(--v3-text-2)]">One exact request at a time. Other people, custom columns and destructive actions are not supported.</p>
+            <p id="ping-typed-help" className="text-xs text-[color:var(--v3-text-2)]">One exact request at a time. Add a Project member by their unique full name. Removing other people, custom columns and destructive actions are not supported.</p>
             <p id="ping-typed-count" className={`text-xs tabular-nums ${codePointCount > PING_TYPED_MAX_TEXT_POINTS ? "text-[color:var(--v3-danger-text)]" : "text-[color:var(--v3-text-2)]"}`}>
               {codePointCount.toLocaleString()} / {PING_TYPED_MAX_TEXT_POINTS.toLocaleString()}
             </p>

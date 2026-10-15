@@ -1,6 +1,25 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parsePingTypedCommand } from "./typed-command";
+import { pingMemberNameKey } from "./command";
+
+test("named assignment preserves the full name payload and consumes only the finite selected-task grammar", () => {
+  for (const prefix of ["assign to ", "ASSIGN THESE TO "]) {
+    const result = parsePingTypedCommand(prefix + "MaYa O’Brien and status doing");
+    assert.ok(result.outcome === "plan");
+    assert.deepEqual(result.operation.effects, { memberName: "MaYa O’Brien", statusColumnKey: "doing" });
+  }
+  assert.equal(pingMemberNameKey("  E\u0301LODIE Chen  "), pingMemberNameKey("Élodie Chen"));
+  assert.notEqual(pingMemberNameKey("Maya  Chen"), pingMemberNameKey("Maya Chen"));
+  assert.notEqual(pingMemberNameKey("Elodie"), pingMemberNameKey("Élodie"));
+  for (const text of ['assign to "Maya and Chen"', "assign to Maya and Chen", "assign to Maya and delete tasks",
+    "create 1 task and assign to Maya", "create 1 task and assign these to Maya", "remove Maya as an assignee",
+    "replace assignees with Maya", "assign to " + "x".repeat(201), "assign to Ma\u0085ya", "assign to Ma\u200bya"]) {
+    assert.notEqual(parsePingTypedCommand(text).outcome, "plan", text);
+  }
+  for (const text of ["assign to Maya and assign me", "unassign me and assign to Maya", "assign to Maya and assign to Maya",
+    "assign these to me and assign to Alice"]) assert.equal(parsePingTypedCommand(text).outcome, "clarification", text);
+});
 
 test("restricted typed grammar consumes compound requests with literal operations", () => {
   assert.deepEqual(parsePingTypedCommand("assign me and due 2026-10-08 and status doing"), {

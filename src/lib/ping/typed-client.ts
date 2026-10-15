@@ -7,6 +7,7 @@ import {
   type PingTypedReceipt,
 } from "./typed-contract";
 import type { Task } from "@/lib/data";
+import { pingMemberNameKey } from "./command";
 
 const ERROR_CODES = new Set([
   "unauthenticated", "unavailable", "invalid_input", "unsupported", "ambiguous",
@@ -46,8 +47,10 @@ function validPlanProposal(value: unknown): boolean {
       ? Object.hasOwn(operation, "title") ? ["kind", "count", "effects", "title"] : ["kind", "count", "effects"]
       : null;
   if (!expectedKeys || !exactKeys(operation, expectedKeys) || !record(operation.effects) ||
-    Object.keys(operation.effects).some((key) => !["selfAssignment", "dueDate", "statusColumnKey"].includes(key))) return false;
+    Object.keys(operation.effects).some((key) => !["selfAssignment", "memberName", "dueDate", "statusColumnKey"].includes(key))) return false;
   const effects = operation.effects;
+  if (Object.hasOwn(effects, "memberName") && (operation.kind !== "edit_selected" ||
+    Object.hasOwn(effects, "selfAssignment") || pingMemberNameKey(effects.memberName) === null)) return false;
   if (Object.hasOwn(effects, "selfAssignment") && !["add", "remove"].includes(String(effects.selfAssignment))) return false;
   if (Object.hasOwn(effects, "dueDate") && effects.dueDate !== null && typeof effects.dueDate !== "string") return false;
   if (Object.hasOwn(effects, "statusColumnKey") && !["todo", "doing", "review", "done"].includes(String(effects.statusColumnKey))) return false;

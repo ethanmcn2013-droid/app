@@ -87,6 +87,23 @@ function memoryStorage(): Storage {
   } as Storage;
 }
 
+test("name-only selected-edit proposals decode without identity fields or assignment/create collisions", () => {
+  const response = { ok: true, action: "prepare", generationId: marker.generationId, commandId: marker.commandId,
+    projectId: marker.projectId, token: marker.token, expiresAt: 1,
+    proposal: { version: "ping.proposal.v1", outcome: "plan", operation: { kind: "edit_selected", effects: { memberName: "Maya Chen" } } } };
+  assert.deepEqual(decodePingTypedResponse(response), response);
+  for (const effects of [{ memberName: "" }, { memberName: " " }, { memberName: "x".repeat(201) },
+    { memberName: "Maya\u0085Chen" }, { memberName: "Maya Chen", selfAssignment: "add" },
+    { memberName: "Maya Chen", userId: "forged" }, { namedAssignment: { userId: "forged", name: "Maya Chen" } }]) {
+    assert.equal(decodePingTypedResponse({ ...response, proposal: { ...response.proposal,
+      operation: { ...response.proposal.operation, effects } } }), null);
+  }
+  assert.equal(decodePingTypedResponse({ ...response, proposal: { ...response.proposal,
+    operation: { kind: "create_placeholders", count: 1, effects: { memberName: "Maya Chen" } } } }), null);
+  assert.ok(decodePingTypedResponse({ ...response, proposal: { ...response.proposal,
+    operation: { kind: "edit_selected", effects: { selfAssignment: "add", dueDate: null, statusColumnKey: "doing" } } } }));
+});
+
 test("typed requests are same-origin, non-cached, and omit actor or session authority", async () => {
   let observedUrl = "";
   let observedInit: RequestInit | undefined;

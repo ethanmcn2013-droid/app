@@ -1,5 +1,5 @@
-import { validPingCalendarDate, type PingEffects } from "./command";
-import type { PingProposal } from "./proposal";
+import { validPingCalendarDate, pingMemberNameKey } from "./command";
+import type { PingProposal, PingProposalEffects } from "./proposal";
 import { PING_TYPED_MAX_TEXT_POINTS } from "./typed-contract";
 
 /** Whole-input restricted syntax. No partial extraction, model fallback or identity authority. */
@@ -32,9 +32,9 @@ export function parsePingTypedCommand(input: unknown): PingProposal {
       if (!remaining) return refuse("incomplete");
     }
   }
-  const effects: PingEffects = {};
+  const effects: PingProposalEffects = {};
   const mutable = effects as { selfAssignment?: "add" | "remove"; dueDate?: string | null;
-    statusColumnKey?: "todo" | "doing" | "review" | "done" };
+    statusColumnKey?: "todo" | "doing" | "review" | "done"; memberName?: string };
   if (remaining) {
     for (const clause of remaining.split(/ and /i)) {
       const value = clause.toLowerCase();
@@ -44,9 +44,17 @@ export function parsePingTypedCommand(input: unknown): PingProposal {
       // Pronouns name the captured selection, never tasks in a creation prefix.
       if (count !== undefined && (selectedAssignment || selectedStatus || selectedReview)) return refuse();
       const dated = /^(?:due|set due date to|move the deadline to) (\d{4}-\d{2}-\d{2})$/.exec(value);
-      if (value === "assign me" || value === "unassign me" || selectedAssignment || value === "remove me as an assignee") {
-        if (Object.hasOwn(effects, "selfAssignment")) return refuse("ambiguous");
+      const namedAssignment = /^assign(?: these)? to (.+)$/i.exec(clause);
+      if (value === "assign me" || value === "assign to me" || value === "unassign me" || selectedAssignment || value === "remove me as an assignee") {
+        if (Object.hasOwn(effects, "selfAssignment") || Object.hasOwn(effects, "memberName")) return refuse("ambiguous");
         mutable.selfAssignment = value === "unassign me" || value === "remove me as an assignee" ? "remove" : "add";
+      } else if (namedAssignment) {
+        if (count !== undefined) return refuse();
+        if (Object.hasOwn(effects, "selfAssignment") || Object.hasOwn(effects, "memberName")) return refuse("ambiguous");
+        const name = namedAssignment[1];
+        // Quoted/separator names need a separate grammar; never extract a supported prefix.
+        if (pingMemberNameKey(name) === null || /["\\]/.test(name) || /^me\b/i.test(name)) return refuse();
+        mutable.memberName = name;
       } else if (value === "clear due" || value === "clear the due date" || dated) {
         if (Object.hasOwn(effects, "dueDate")) return refuse("ambiguous");
         const date = dated?.[1] ?? null;
