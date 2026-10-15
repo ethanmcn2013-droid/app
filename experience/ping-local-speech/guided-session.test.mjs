@@ -45,7 +45,10 @@ test('displayed cases do not count; durable invoke, read-only restart, exact eff
   assert.equal(s.state().outcome,'committed_projection_failed');
   await assert.rejects(s.next(),/blocks advancement/);
   await s.observeTerminal({ok:true,action:'refresh',receipt,projection:'matches'});
-  assert.equal(s.state().outcome,'matched');await s.next();assert.equal(s.state().currentCase.id,'02');
+  assert.equal(s.state().outcome,'matched');assert.equal(s.state().projection,'unknown');assert.equal(s.state().canNext,false);
+  await assert.rejects(s.next(),/blocks advancement/);
+  await s.observeProjection({matches:true,source:'fixture-canonical-mounted'});
+  assert.equal(s.state().canNext,true);await s.next();assert.equal(s.state().currentCase.id,'02');
   const exported=await s.exportResults();assert.equal(exported.json.rows[0].inputMode,'scripted');assert.equal(exported.json.rows[1].started,false);
   assert.ok(!JSON.stringify(exported).includes(prepared.token));await s.close();
 });

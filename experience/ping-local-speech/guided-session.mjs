@@ -347,7 +347,9 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
         await append('terminal',{category:'cancelled_not_invoked'});
       } else if(response?.ok&&(response.knowledge==='committed'||response.action==='refresh'||response.receipt)) {
         assert.ok(o?.invoked);assert.equal(response.receipt?.commandId,o.commandId);assert.equal(response.receipt?.projectId,o.projectId);
-        await append('terminal',{category:'committed',projection:response.action==='refresh'?response.projection==='matches'?'matches':'diverged':c.projection});
+        // Server canonical data is not evidence that React has received and
+        // mounted it. Only the fixed mounted-projection observer may attest that.
+        await append('terminal',{category:'committed',projection:response.action==='refresh'?response.projection==='matches'?'unknown':'diverged':c.projection});
       } else if(action==='refresh')await append('terminal',{category:o?.invoked?'committed':'unresolved',projection:'failed'});
       else if(!o?.invoked&&response?.ok===false&&['unsupported','ambiguous','incomplete','stale_capture','invalid_input'].includes(response.code))
         await append('terminal',{category:'refused',code:response.code,stage});
