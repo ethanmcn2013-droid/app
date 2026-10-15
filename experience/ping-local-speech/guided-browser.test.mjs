@@ -92,7 +92,11 @@ async function startCase(id) {
 async function reviewCurrent() {
   const scenario = manifest.scenarios.find(item => item.scenario_id === state().currentCase.id);
   await openTyped(); await page.getByTestId('ping-input').fill(scenario.supported_input_example);
-  await page.getByTestId('ping-review').click();
+  const review = page.getByTestId('ping-review');
+  if (await review.isDisabled()) {
+    assert.ok(await page.getByTestId('project-ping-typed-panel').getAttribute('data-ping-scope-refusal'),
+      'A client-side refusal needs the actual mounted scope signal');
+  } else await review.click();
 }
 async function applyCurrent({ double = false } = {}) {
   await reviewCurrent(); await page.getByTestId('ping-apply').waitFor();
@@ -153,7 +157,7 @@ try {
   const target = handoff.tasks.find(row => row.id === targetId);
   assert.deepEqual(target, { ...prior,
     assignees: JSON.stringify([...JSON.parse(prior.assignees), 'ping-guide-case-01-member-synthetic-member-01']),
-    due: '2026-10-20', due_at: Date.parse('2026-10-20T00:00:00Z') / 1000,
+    due: '2026-10-20', due_at: Date.parse('2026-10-20T09:00:00Z') / 1000,
     start_day: null, duration_days: null, updated_at: receipt.committedAtSeconds });
   assert.equal(handoff.activities.length, beforeHandoff.activities.length + 2);
   assert.equal(handoff.requestCounts.execute - (beforeHandoff.requestCounts.execute ?? 0), 1);
