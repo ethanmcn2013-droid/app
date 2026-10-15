@@ -312,3 +312,34 @@ test('real libSQL compound named/date/status effects, creation defaults and orig
     assert.equal((await s.verify()).outcome,'mismatch');assert.equal((await snap()).tasks.length,before.tasks.length);
   } finally {await s?.close();fixture.client.close();}
 });
+
+test('gesture starts expose missing completion and observer losses survive reopen without duplicate counts',async()=>{
+  const f=await setup(),s=f.session;await s.startCase();const attemptId=s.state().attemptId;
+  const pageId='00000000-0000-4000-8000-000000000301',gestureId='00000000-0000-4000-8000-000000000302';
+  const gesture={attemptId,pageId,gestureId,metric:'apply-to-visible'};
+  await s.recordGesture(gesture);await s.recordGesture(gesture);
+  await s.recordObserver({attemptId,pageId,attempted:3,delivered:1,failed:1});
+  let result=(await s.exportResults()).json;
+  assert.equal(result.latencyCoverage.gestureCoverage.started,1);assert.equal(result.latencyCoverage.gestureCoverage.missing,1);
+  assert.equal(result.latencyCoverage.observerDelivery.failed,1);
+  await assert.rejects(s.recordObserver({attemptId,pageId,attempted:2,delivered:1,failed:0}),/decrease/);
+  await s.recordTiming({...gesture,clock:'browser-monotonic',evidence:'scripted',sampleOutcome:'unfinished'});
+  await s.close();const reopened=await createGuidedSession(f.options);result=(await reopened.exportResults()).json;
+  assert.equal(result.latencyCoverage.gestureCoverage.unfinished,1);assert.equal(result.latencyCoverage.gestureCoverage.missing,0);
+  assert.equal(result.latencyCoverage.gestureCoverage.completed,0);assert.equal(result.latencyCoverage.observerDelivery.failed,1);await reopened.close();
+});
+
+test('request spans correlate clocks, retain dropped reply and reject contradictory replay and foreign generations',async()=>{
+  const f=await setup(),s=f.session;await s.startCase();
+  await s.observeInput({mode:'scripted',evidence:'scripted',generationId:prepared.generationId});await s.observePrepareResponse(prepared);
+  const base={attemptId:s.state().attemptId,generationId:prepared.generationId,spanId:'request-span-1',requestId:'request-1',evidence:'scripted',durationMs:7};
+  const server={...base,metric:'prepare-server',clock:'server-monotonic',sampleOutcome:'completed',delivery:'reply-dropped'};
+  await s.recordTiming(server);await s.recordTiming(server);
+  await s.recordTiming({...base,metric:'prepare-roundtrip',clock:'browser-monotonic',sampleOutcome:'failed',delivery:'transport-failed'});
+  await assert.rejects(s.recordTiming({...server,durationMs:8}),/Conflicting span/);
+  await assert.rejects(s.recordTiming({...base,spanId:'other',generationId:'foreign',metric:'prepare-roundtrip',clock:'browser-monotonic'}),/generation/);
+  const result=(await s.exportResults()).json;
+  assert.equal(result.rows[0].timings.length,2);assert.equal(result.latencyCoverage.requestCorrelation.paired,1);
+  assert.equal(result.latencyCoverage.droppedReplyCount,1);assert.equal(result.latencyCoverage.sampleCounts.failed,1);
+  assert.equal(result.timingProtocol,'ping.guided.latency.v2');assert.equal(result.timingExtension,'ping.guided.measurement.v1');await s.close();
+});

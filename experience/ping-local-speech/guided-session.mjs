@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { open, mkdir, readFile, unlink, lstat } from 'node:fs/promises';
 import path from 'node:path';
+import { validateBenchmark } from './guided-measurement.mjs';
 import { createHash, randomUUID } from 'node:crypto';
 
 // Fixture-only backend. Callbacks never reach the participant:
@@ -31,7 +32,9 @@ const fields = {
   invocation:['generationId','commandId','projectId','tokenHash','ordinal'],
   terminal:['category','code','stage','projection','source'], verified:['outcome','evidenceHash','projection'],
   projection_observed:['projection','source'],
-  timing:['caseId','attemptId','metric','durationMs','clock','evidence','mode','pageId','gestureId','generationId','sampleOutcome'],
+  timing:['caseId','attemptId','metric','durationMs','clock','evidence','mode','pageId','gestureId','generationId','sampleOutcome','spanId','requestId','delivery'],
+  observer:['caseId','attemptId','pageId','attempted','delivered','failed'],
+  gesture:['caseId','attemptId','metric','pageId','gestureId'],
   retired:[], advanced:[], skipped:[], paused:[], resumed:[], ended:[], feedback:['clarity','ease','confidence','correction'],
 };
 function latencySummary(rows) {
@@ -55,7 +58,18 @@ function latencyCoverage(rows) {
     completedVisible:row.timings.some(sample=>visibleMetrics.includes(sample.metric)&&sample.sampleOutcome==='completed')}));
   const invoked=attempts.filter(row=>row.invoked);
   const unfinishedSamples=rows.flatMap(row=>row.timings.filter(sample=>sample.sampleOutcome==='unfinished'));
-  return {startedAttempts:attempts.length,invokedAttempts:invoked.length,
+  const samples=rows.flatMap(row=>row.timings);
+  const gestures=rows.flatMap(row=>(row.gestures??[]).map(gesture=>({...gesture,
+    completed:row.timings.some(s=>s.gestureId===gesture.gestureId&&s.sampleOutcome==='completed'),
+    unfinished:row.timings.some(s=>s.gestureId===gesture.gestureId&&s.sampleOutcome==='unfinished')})));
+  const observers=rows.flatMap(row=>row.observers??[]);
+  const spans=new Map();for(const sample of samples)if(sample.spanId){const group=spans.get(sample.spanId)??[];group.push(sample);spans.set(sample.spanId,group);}
+  return {requestCorrelation:{observedSpans:spans.size,paired:[...spans.values()].filter(group=>group.some(s=>s.metric.endsWith('-server'))&&group.some(s=>s.metric.endsWith('-roundtrip'))).length,unpaired:[...spans.entries()].filter(([,group])=>!(group.some(s=>s.metric.endsWith('-server'))&&group.some(s=>s.metric.endsWith('-roundtrip')))).map(([spanId])=>spanId)},
+    observerDelivery:{reportedPages:observers.length,attempted:observers.reduce((n,o)=>n+o.attempted,0),delivered:observers.reduce((n,o)=>n+o.delivered,0),failed:observers.reduce((n,o)=>n+o.failed,0),scope:'Last successfully reported page counters; page loss can leave later delivery unknown.'},
+    sampleCounts:Object.fromEntries(['completed','failed','unfinished'].map(outcome=>[outcome,samples.filter(s=>s.sampleOutcome===outcome).length])),
+    droppedReplyCount:samples.filter(s=>s.delivery==='reply-dropped').length,
+    gestureCoverage:{started:gestures.length,completed:gestures.filter(g=>g.completed).length,unfinished:gestures.filter(g=>g.unfinished).length,missing:gestures.filter(g=>!g.completed&&!g.unfinished).length,gestures},
+    startedAttempts:attempts.length,invokedAttempts:invoked.length,
     startedWithCompletedVisible:attempts.filter(row=>row.completedVisible).length,
     startedMissingOrUnfinished:attempts.filter(row=>!row.completedVisible).length,
     invokedWithCompletedVisible:invoked.filter(row=>row.completedVisible).length,
@@ -206,8 +220,9 @@ export function verifyGuidedEffects({baseline,snapshot,oracle,receipt,identity,o
 }
 
 /** Returns a serialized async API; state() is synchronous and participant-safe. No raw request is retained. */
-export async function createGuidedSession({directory,identity:inputIdentity,cases,snapshot,lookupReceipt,prepareCase,publicCase,now=Date.now,io={}}) {
+export async function createGuidedSession({directory,identity:inputIdentity,cases,snapshot,lookupReceipt,prepareCase,publicCase,now=Date.now,io={},benchmark}) {
   const identity=safeIdentity(inputIdentity);
+  const benchmarkIdentity=benchmark===undefined?null:validateBenchmark(benchmark);
   assert.ok(path.isAbsolute(directory));assert.ok(Array.isArray(cases)&&cases.length&&new Set(cases.map(c=>c.id)).size===cases.length);
   for(const c of cases){assert.ok(id(c.id));assert.ok(['edit','create','zero'].includes(c.oracle?.kind));}
   await mkdir(directory,{recursive:true});const journalPath=path.join(directory,'session.jsonl');
@@ -231,6 +246,8 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       }
       case 'verified':c.outcome=d.outcome;c.evidenceHash=d.evidenceHash;c.projection=d.projection;c.status='outcome';break;
       case 'projection_observed':c.projection=d.projection;break;
+      case 'observer': {const owner=state.cases[d.caseId];(owner.observers??={})[d.pageId]=d;break;}
+      case 'gesture': {const owner=state.cases[d.caseId];(owner.gestures??=[]).push(d);break;}
       case 'timing': {
         const owner=state.cases[d.caseId];assert.equal(owner?.attemptId,d.attemptId,'Timing attempt identity mismatch');
         (owner.timings??=[]).push({...d,recordedAt:event.time,sequence:event.seq});break;
@@ -422,34 +439,56 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
     recordFeedback:serial(async feedback=>{active();assert.ok(keys(feedback,fields.feedback));
       for(const [key,value] of Object.entries(feedback))assert.ok(key==='correction'?typeof value==='boolean':['low','medium','high'].includes(value));
       await append('feedback',feedback);return projectionState();}),
+    recordObserver:serial(async value=>{
+      assert.ok(keys(value,['attemptId','pageId','attempted','delivered','failed']));
+      assert.match(value.pageId,/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+      for(const key of ['attempted','delivered','failed'])assert.ok(Number.isSafeInteger(value[key])&&value[key]>=0&&value[key]<=1000000);
+      assert.ok(value.delivered+value.failed<=value.attempted);
+      const owner=Object.entries(state.cases).find(([,record])=>record.attemptId===value.attemptId);assert.ok(owner);const [caseId,c]=owner;
+      const prior=c.observers?.[value.pageId];if(prior){for(const key of ['attempted','delivered','failed'])assert.ok(value[key]>=prior[key],'Observer counts cannot decrease');if(['attempted','delivered','failed'].every(key=>prior[key]===value[key]))return projectionState();}
+      await append('observer',{caseId,...value});return projectionState();
+    }),
+    recordGesture:serial(async value=>{
+      assert.ok(keys(value,['attemptId','pageId','gestureId','metric']));assert.ok(visibleMetrics.includes(value.metric));
+      for(const key of ['pageId','gestureId'])assert.match(value[key],/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+      const owner=Object.entries(state.cases).find(([,record])=>record.attemptId===value.attemptId);assert.ok(owner,'Started gesture attempt required');
+      const [caseId,c]=owner;const existing=c.gestures?.find(g=>g.gestureId===value.gestureId);
+      if(existing){assert.deepEqual(existing,{caseId,...value});return projectionState();}
+      await append('gesture',{caseId,...value});return projectionState();
+    }),
     recordTiming:serial(async value=>{
-      assert.ok(keys(value,['metric','durationMs','clock','evidence','pageId','gestureId','generationId','sampleOutcome','attemptId']),'Unsupported timing metadata');
-      const {metric,durationMs,clock,evidence,pageId,gestureId,generationId,attemptId,sampleOutcome='completed'}=value;
+      assert.ok(keys(value,['metric','durationMs','clock','evidence','pageId','gestureId','generationId','sampleOutcome','attemptId','spanId','requestId','delivery']),'Unsupported timing metadata');
+      const {metric,durationMs,clock,evidence,pageId,gestureId,generationId,attemptId,spanId,requestId,delivery,sampleOutcome='completed'}=value;
       assert.ok(timingMetrics.includes(metric),'Invalid timing metric');
       if(sampleOutcome==='unfinished')assert.ok(!Object.hasOwn(value,'durationMs'),'Unfinished timing must have no duration');
       else assert.ok(Number.isFinite(durationMs)&&durationMs>=0&&durationMs<=8*60*60*1000,'Invalid timing duration');
       assert.equal(clock,metric.endsWith('-server')?'server-monotonic':'browser-monotonic','Timing clock does not match metric');
       assert.ok(['automatic','scripted'].includes(evidence)&&['completed','failed','unfinished'].includes(sampleOutcome));
       for(const uuid of [pageId,gestureId])if(uuid!==undefined)assert.match(uuid,/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+      for(const value of [spanId,requestId])if(value!==undefined)assert.ok(id(value));
+      if(delivery!==undefined)assert.ok(['response','transport-failed','reply-dropped','handler-threw'].includes(delivery));
       if(generationId!==undefined)assert.ok(id(generationId));
       if(attemptId!==undefined)assert.ok(id(attemptId));
       const owner=attemptId?Object.entries(state.cases).find(([,record])=>record.attemptId===attemptId):
         current()?.attemptId?[cases[state.index].id,current()]:null;
       assert.ok(owner,'Started immutable attempt required for timing metadata');
       const [caseId,c]=owner;
-      if(visibleMetrics.includes(metric)&&generationId!==undefined)
-        assert.ok(c.inputGenerations?.includes(generationId)||c.originals.some(original=>original.generationId===generationId),'Visible timing generation must belong to its captured attempt');
+      if(generationId!==undefined)
+        assert.ok(c.inputGenerations?.includes(generationId)||c.originals.some(original=>original.generationId===generationId),'Timing generation must belong to its captured attempt');
       const capturedMode=generationId!==undefined?c.originals.find(original=>original.generationId===generationId)?.inputMode??c.generationModes?.[generationId]:undefined;
+      if(spanId!==undefined){const prior=c.timings?.find(t=>t.spanId===spanId&&t.metric===metric);if(prior){
+        for(const key of ['durationMs','sampleOutcome','generationId','pageId','requestId','delivery'])assert.equal(prior[key],value[key]??(key==='sampleOutcome'?'completed':undefined),'Conflicting span replay');return projectionState();}}
       await append('timing',{caseId,attemptId:c.attemptId,metric,...(sampleOutcome==='unfinished'?{}:{durationMs}),clock,evidence,mode:capturedMode??c.inputMode??state.mode,sampleOutcome,
+        ...(spanId!==undefined?{spanId}:{}),...(requestId!==undefined?{requestId}:{}),...(delivery!==undefined?{delivery}:{}),
         ...(pageId!==undefined?{pageId}:{}),...(gestureId!==undefined?{gestureId}:{}),...(generationId!==undefined?{generationId}:{})});return projectionState();
     }),
     exportResults:serial(async()=>{
       const rows=cases.map(record=>{const c=state.cases[record.id];return {caseId:record.id,attemptId:c?.attemptId??null,started:!!c?.attemptId,
         inputObserved:!!c?.inputObserved,inputMode:c?.inputMode??null,inputEvidence:c?.inputEvidence??null,outcome:c?.outcome??null,
         skipped:c?.status==='skipped',projection:c?.projection??'unknown',originalCount:c?.originals?.length??0,
-        evidenceHash:c?.evidenceHash??null,feedback:c?.feedback??null,timings:structuredClone(c?.timings??[]),
+        evidenceHash:c?.evidenceHash??null,feedback:c?.feedback??null,observers:structuredClone(Object.values(c?.observers??{})),gestures:structuredClone(c?.gestures??[]),timings:structuredClone(c?.timings??[]),
         originals:(c?.originals??[]).map(o=>({generationId:o.generationId,commandId:o.commandId,projectId:o.projectId,ordinal:o.ordinal,invoked:o.invoked,terminal:o.terminal}))};});
-      const json={version:'ping.guided.results.v1',timingProtocol:'ping.guided.latency.v2',identity,counts:projectionState().counts,ledgerHash:chain,rows,
+      const json={version:'ping.guided.results.v1',timingProtocol:'ping.guided.latency.v2',timingExtension:'ping.guided.measurement.v1',benchmark:benchmarkIdentity,runtime:{node:process.version,platform:process.platform,architecture:process.arch},identity,counts:projectionState().counts,ledgerHash:chain,rows,
         timingSummary:latencySummary(rows),latencyCoverage:latencyCoverage(rows),timingStatistics:{percentile:'nearest-rank',median:'midpoint for even sample counts'}};
       const columns=['caseId','attemptId','started','inputObserved','inputMode','inputEvidence','outcome','skipped','projection','originalCount','evidenceHash','timings'];
       const csv=[columns.join(','),...rows.map(row=>columns.map(k=>'"'+String(k==='timings'?JSON.stringify(row.timings):row[k]??'').replaceAll('"','""')+'"').join(','))].join('\n')+'\n';
