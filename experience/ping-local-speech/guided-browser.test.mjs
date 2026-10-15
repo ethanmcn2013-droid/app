@@ -280,6 +280,16 @@ try {
   assert.equal(lost.receipts.length, beforeLost.receipts.length + 1, 'Dropped reply still has one real durable receipt');
   for (const action of ['next', 'start', 'retire']) assert.equal((await request(action)).ok, false, `${action} cannot bypass an uncertain original`);
   unchanged(lost, await snapshot());
+  const beforeLateCancel = await snapshot();
+  const cancellation = page.waitForResponse(response => response.url() === runner.url + '/api/ping'
+    && response.request().method() === 'POST' && response.request().postDataJSON()?.action === 'cancel');
+  await page.getByTestId('ping-cancel-prepared').click();
+  const lateCancelResponse = await cancellation;
+  const lateCancel = await lateCancelResponse.json();
+  assert.equal(lateCancel.knowledge, 'committed', 'Late Cancel preserves the actual original save');
+  assert.equal(state().outcome, 'unresolved', 'Inaccessible durable original remains unresolved after late Cancel');
+  unchanged(beforeLateCancel, await snapshot());
+  assert.equal((await snapshot()).requestCounts.execute, beforeLateCancel.requestCounts.execute, 'Late Cancel never forwards another Execute');
   await page.reload(); await page.getByRole('heading', { name: 'Ping session guide', exact: true }).waitFor();
   assert.equal(state().outcome, 'unresolved'); unchanged(lost, await snapshot());
   await closeOwned();
@@ -291,7 +301,7 @@ try {
   await newBrowser(); await guide('resume'); await guide('verify'); await waitOutcome('matched');
   unchanged(lost, await snapshot());
   assert.equal(state().currentCase.id, '03'); assert.equal(state().counts.started, 3);
-  passed(activeLabel, { sameDatabase: true, sameIdentity: true, receiptCountDelta: 1 });
+  passed(activeLabel, { sameDatabase: true, sameIdentity: true, receiptCountDelta: 1, lateCancelPreservedOriginal: true });
   await advance();
 
   activeLabel = 'one real Create preserves all unrelated rows';
