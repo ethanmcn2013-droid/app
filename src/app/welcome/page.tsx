@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
@@ -47,7 +48,7 @@ export default async function WelcomePage({
     <main className="mx-auto max-w-lg px-6 py-16">
       <h1 className="text-2xl font-semibold text-ink">That project isn’t available.</h1>
       <p className="mt-3 text-ink-soft">Open Home to choose a project you can use.</p>
-      <a href="/app/home" className="mt-6 inline-block underline underline-offset-4">Open Home</a>
+      <Link href="/app/home" className="mt-6 inline-block underline underline-offset-4">Open Home</Link>
     </main>
   );
   const ws = grant.projectId;

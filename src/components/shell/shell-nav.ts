@@ -22,9 +22,9 @@ export type ShellDestination = Readonly<{
 }>;
 
 /**
- * The sidebar, top to bottom (founder instruction, 6 Oct 2026): Home on its
- * own, then four named groups with room between them. Overview is a tab of
- * Home, so Home owns its paths and there is no Overview row.
+ * The sidebar, top to bottom: Home, Analytics, Files; the Workspace trio;
+ * actual Projects; then More. Overview is a tab of Home, so Home owns its
+ * paths and there is no Overview row.
  */
 export const HOME_DESTINATION: ShellDestination = {
   id: "home",
@@ -34,25 +34,140 @@ export const HOME_DESTINATION: ShellDestination = {
   owns: ["/app/home", "/app/signal"],
 };
 
+const ANALYTICS_DESTINATION: ShellDestination = {
+  id: "analytics", label: "Analytics", href: "/app/analytics", icon: "analytics", owns: ["/app/analytics"],
+};
+
+const FILES_DESTINATION: ShellDestination = {
+  id: "files", label: "Files", href: "/app/files", icon: "files", owns: ["/app/files"],
+};
+
+export const PRIMARY_DESTINATIONS: readonly ShellDestination[] = [HOME_DESTINATION, ANALYTICS_DESTINATION, FILES_DESTINATION];
+
 export const WORKSPACE_DESTINATIONS: readonly ShellDestination[] = [
   { id: "projects", label: "Projects", href: "/app/project", icon: "projects", owns: ["/app/project", "/app/archived"] },
   { id: "tasks", label: "Tasks", href: "/app/tasks", icon: "tasks", owns: ["/app/tasks", "/app/task"] },
   { id: "timeline", label: "Timeline", href: "/app/timeline", icon: "timeline", owns: ["/app/timeline"] },
-  { id: "files", label: "Files", href: "/app/files", icon: "files", owns: ["/app/files"] },
-  { id: "analytics", label: "Analytics", href: "/app/analytics", icon: "analytics", owns: ["/app/analytics"] },
 ];
 
-/** Things you build with. Whiteboard opens its existing "Coming soon" page. */
-export const BUILD_DESTINATIONS: readonly ShellDestination[] = [
-  { id: "automations", label: AUTOMATIONS_LABEL, href: AUTOMATIONS_APP_PATH, icon: "automations", owns: [AUTOMATIONS_APP_PATH], preview: true },
-  { id: "whiteboard", label: "Whiteboard", href: "/app/tools/whiteboard", icon: "whiteboard", owns: ["/app/tools/whiteboard"], soon: true },
+const AUTOMATIONS_DESTINATION: ShellDestination = {
+  id: "automations", label: AUTOMATIONS_LABEL, href: AUTOMATIONS_APP_PATH, icon: "automations", owns: [AUTOMATIONS_APP_PATH], preview: true,
+};
+
+function toolDestination(slug: "wedding-planner" | "teacher-toolkit" | "student-hub" | "whiteboard" | "process-map" | "docs" | "forms"): ShellDestination {
+  const tool = toolBySlug(slug)!;
+  const id = slug === "wedding-planner" ? "wedding-hub" : slug === "teacher-toolkit" ? "teacher-hub" : slug;
+  const icon: ShellDestination["icon"] = slug === "whiteboard" ? "whiteboard" : slug === "docs" ? "files" : slug === "forms" ? "tasks" : slug === "process-map" ? "timeline" : "projects";
+  return { id, label: tool.name, href: `/app/tools/${slug}`, icon, owns: [`/app/tools/${slug}`], soon: slug !== "wedding-planner" };
+}
+
+const WEDDING_HUB_DESTINATION = toolDestination("wedding-planner");
+const TEACHER_HUB_DESTINATION = toolDestination("teacher-toolkit");
+const WHITEBOARD_DESTINATION = toolDestination("whiteboard");
+const STUDENT_HUB_DESTINATION = toolDestination("student-hub");
+const PROCESS_MAP_DESTINATION = toolDestination("process-map");
+const DOCS_DESTINATION = toolDestination("docs");
+const FORMS_DESTINATION = toolDestination("forms");
+
+/** Every More link, including optional entries, keeps an active path and crumb. */
+export const MORE_DESTINATIONS: readonly ShellDestination[] = [
+  AUTOMATIONS_DESTINATION,
+  WHITEBOARD_DESTINATION,
+  WEDDING_HUB_DESTINATION,
+  TEACHER_HUB_DESTINATION,
+  STUDENT_HUB_DESTINATION,
+  PROCESS_MAP_DESTINATION,
+  DOCS_DESTINATION,
+  FORMS_DESTINATION,
 ];
 
-/** The named groups, in order. Projects and Chat fold; the others are fixed. */
+/** Stable parent and link ids used by the browser-saved More preferences. */
+export const MORE_CUSTOMIZATION_ITEMS: readonly Readonly<{ id: string; label: string; defaultVisible?: boolean; soon?: boolean }>[] = [
+  { id: "development", label: "Development" },
+  { id: "automations", label: AUTOMATIONS_LABEL },
+  { id: "wedding-hub", label: "Wedding hub" },
+  { id: "wedding-guest-list", label: "Guest list" },
+  { id: "wedding-seating", label: "Seating", soon: true },
+  { id: "wedding-budget", label: "Budget", soon: true },
+  { id: "teacher-hub", label: "Teacher hub" },
+  { id: "whiteboard", label: "Whiteboard", soon: true },
+  { id: "teacher-lessons", label: "Lessons", soon: true },
+  { id: "teacher-marking", label: "Marking", soon: true },
+  { id: "teacher-share-plan", label: "Share a plan", soon: true },
+  { id: "student-hub", label: "Student hub" },
+  { id: "student-deadlines", label: "Deadlines", soon: true },
+  { id: "student-group-work", label: "Group work", soon: true },
+  { id: "student-lecture-notes", label: "Lecture notes", soon: true },
+  { id: "notes", label: "Notes", defaultVisible: false },
+  { id: "process-map", label: "Process map", defaultVisible: false, soon: true },
+  { id: "docs", label: "Docs", defaultVisible: false, soon: true },
+  { id: "forms", label: "Forms", defaultVisible: false, soon: true },
+];
+
+export type MoreNavigationEntry = Readonly<{
+  id: string;
+  label: string;
+  destination?: ShellDestination;
+  soon?: boolean;
+  children?: readonly MoreNavigationEntry[];
+}>;
+export type MoreNavigationGroup = Readonly<{ id: string; label: string; entries: readonly MoreNavigationEntry[] }>;
+
+const WEDDING_GUEST_LIST_DESTINATION: ShellDestination = {
+  id: "wedding-guest-list", label: "Guest list", href: WEDDING_HUB_DESTINATION.href, icon: "projects", owns: [],
+};
+
+/** Tools stay under the kind of work they help with; this is sidebar grouping, not new products. */
+export const MORE_NAVIGATION_GROUPS: readonly MoreNavigationGroup[] = [
+  { id: "development", label: "Development", entries: [{ id: "automations", label: AUTOMATIONS_DESTINATION.label, destination: AUTOMATIONS_DESTINATION }] },
+  { id: "wedding-hub", label: "", entries: [{
+    id: "wedding-hub", label: WEDDING_HUB_DESTINATION.label, destination: WEDDING_HUB_DESTINATION, children: [
+      { id: "wedding-guest-list", label: "Guest list", destination: WEDDING_GUEST_LIST_DESTINATION },
+      { id: "wedding-seating", label: "Seating", soon: true },
+      { id: "wedding-budget", label: "Budget", soon: true },
+    ],
+  }] },
+  { id: "teacher-hub", label: "", entries: [{
+    id: "teacher-hub", label: TEACHER_HUB_DESTINATION.label, destination: TEACHER_HUB_DESTINATION, children: [
+      { id: "whiteboard", label: WHITEBOARD_DESTINATION.label, destination: WHITEBOARD_DESTINATION, soon: true },
+      { id: "teacher-lessons", label: "Lessons", soon: true },
+      { id: "teacher-marking", label: "Marking", soon: true },
+      { id: "teacher-share-plan", label: "Share a plan", soon: true },
+    ],
+  }] },
+  { id: "student-hub", label: "", entries: [{
+    id: "student-hub", label: STUDENT_HUB_DESTINATION.label, destination: STUDENT_HUB_DESTINATION, children: [
+      { id: "student-deadlines", label: "Deadlines", soon: true },
+      { id: "student-group-work", label: "Group work", soon: true },
+      { id: "student-lecture-notes", label: "Lecture notes", soon: true },
+    ],
+  }] },
+  { id: "other-tools", label: "Other tools", entries: [
+    { id: "notes", label: "Notes", destination: { id: "notes", label: "Notes", href: "/app/notes", icon: "notes", owns: ["/app/notes"] } },
+    { id: "process-map", label: PROCESS_MAP_DESTINATION.label, destination: PROCESS_MAP_DESTINATION },
+    { id: "docs", label: DOCS_DESTINATION.label, destination: DOCS_DESTINATION },
+    { id: "forms", label: FORMS_DESTINATION.label, destination: FORMS_DESTINATION },
+  ] },
+];
+
+/** Apply browser customization without changing routes or saved child choices. */
+export function visibleMoreNavigationGroups(hidden: ReadonlySet<string>): MoreNavigationGroup[] {
+  return MORE_NAVIGATION_GROUPS.flatMap((group) => {
+    if (hidden.has(group.id)) return [];
+    const entries = group.entries.flatMap((entry) => {
+      if (hidden.has(entry.id)) return [];
+      const children = entry.children?.filter((child) => !hidden.has(child.id));
+      return [{ ...entry, ...(entry.children ? { children } : {}) }];
+    });
+    return entries.length > 0 ? [{ ...group, entries }] : [];
+  });
+}
+
+/** The named groups, in order. Every group can be folded from its heading. */
 export const SIDEBAR_GROUPS = [
-  { id: "workspace", label: "Workspace", folds: false },
+  { id: "workspace", label: "Workspace", folds: true },
   { id: "projects", label: "Projects", folds: true },
-  { id: "build", label: "Build", folds: false },
+  { id: "more", label: "More", folds: true },
   { id: "chat", label: "Chat", folds: true },
 ] as const;
 
@@ -94,7 +209,7 @@ export const FOOTER_DESTINATIONS: readonly ShellDestination[] = [
   { id: "settings", label: "Settings", href: "/app/settings", icon: "settings", owns: ["/app/settings", "/app/import"] },
 ];
 
-const ALL = [HOME_DESTINATION, ...WORKSPACE_DESTINATIONS, ...BUILD_DESTINATIONS, ...UTILITY_DESTINATIONS, ...TOOL_DESTINATIONS, ...WEDDING_DESTINATIONS, ...FOOTER_DESTINATIONS];
+const ALL = [...PRIMARY_DESTINATIONS, ...WORKSPACE_DESTINATIONS, ...MORE_DESTINATIONS, ...UTILITY_DESTINATIONS, ...TOOL_DESTINATIONS, ...WEDDING_DESTINATIONS, ...FOOTER_DESTINATIONS];
 const APPS_AND_TOOLS: Crumb = { label: LAUNCHER_NAME, href: "/app/tools" };
 
 function ownsPath(pathname: string, prefix: string): boolean {

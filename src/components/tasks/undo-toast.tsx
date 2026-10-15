@@ -6,6 +6,7 @@
  * hovered or focused, and Cmd/Ctrl+Z keeps working after it has gone.
  */
 
+import { useRef } from "react";
 import { useSurface } from "./surface";
 import { Kbd } from "./atoms";
 import { TIcon } from "./icons";
@@ -22,6 +23,8 @@ function shortTitle(title: string): string {
 
 export function UndoToast({ onOpen }: { onOpen: (id: string) => void }) {
   const surface = useSurface();
+  const hovered = useRef(false);
+  const focused = useRef(false);
   const act = surface.undo.showing;
   if (!act) return null;
   const columnName = (key: string) => surface.columnOf(key)?.name ?? "another column";
@@ -32,10 +35,17 @@ export function UndoToast({ onOpen }: { onOpen: (id: string) => void }) {
       className={styles.toast}
       role="status"
       aria-live="polite"
-      onMouseEnter={surface.undo.hold}
-      onMouseLeave={surface.undo.release}
-      onFocus={surface.undo.hold}
-      onBlur={surface.undo.release}
+      onMouseEnter={() => { hovered.current = true; surface.undo.hold(); }}
+      onMouseLeave={() => {
+        hovered.current = false;
+        if (!focused.current) surface.undo.release();
+      }}
+      onFocusCapture={() => { focused.current = true; surface.undo.hold(); }}
+      onBlurCapture={(event) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+        focused.current = false;
+        if (!hovered.current) surface.undo.release();
+      }}
     >
       <span className={styles.toastIcon} aria-hidden="true">
         {act.kind === "done" ? <TIcon.check size={14} /> : act.kind === "add" ? <TIcon.plus size={14} /> : <TIcon.arrowRight size={14} />}
@@ -45,9 +55,9 @@ export function UndoToast({ onOpen }: { onOpen: (id: string) => void }) {
         <span className={styles.toastTitle}>{shortTitle(act.title)}</span>
       </span>
       {act.kind === "add" ? (
-        <button type="button" className={styles.toastAction} onClick={() => onOpen(act.id)}>Open</button>
+        <button type="button" className={styles.toastAction} style={{ minHeight: 44 }} onClick={() => onOpen(act.id)}>Open</button>
       ) : null}
-      <button type="button" className={styles.toastAction} onClick={surface.undo.undo}>
+      <button type="button" className={styles.toastAction} style={{ minHeight: 44 }} onClick={surface.undo.undo}>
         Undo
         <Kbd>{MOD === "⌘" ? "⌘Z" : "Ctrl Z"}</Kbd>
       </button>

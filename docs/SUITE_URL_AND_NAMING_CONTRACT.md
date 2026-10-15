@@ -28,6 +28,20 @@ Use the full name on marketing pages and at first reference in longer public cop
 
 ## Canonical URLs
 
+### Readable project hints (15 October 2026)
+
+Founder-approved readable-links sprint: when the current authorized project name
+is already present in the UI, `buildProjectUrl` may emit an optional `project`
+name hint before `workspaceId`. Example:
+`/app/tasks?project=wedding-planning&workspaceId=ws-example`.
+The hint is presentation only; no server lookup, tenant selection, permission,
+or persistence decision may use it. The stable ID remains authoritative. Old
+links without a hint remain valid, and a stale name after a rename must not
+break access. Do not add private content, credentials or message text to hints.
+Product routes and their local view/filter parameters remain unchanged.
+Visible URL labels should describe the destination without displaying opaque
+share tokens, credentials or query strings; the original link target is kept.
+
 | Intent | Notes | Tasks | Timeline |
 |---|---|---|---|
 | Marketing | `https://signalstudio.ie/notes` | `https://signalstudio.ie/tasks` | `https://signalstudio.ie/timeline` |

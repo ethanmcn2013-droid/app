@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "personal-chat-2026-10-15",
+  "authorizedBy": "Founder-directed selected product sprint, 15 Oct 2026; implementation and local/CI proof only.",
+  "reviewedBy": "Codex implementation; independent exact review required before production.",
+  "authorizationSource": "Selected product sprint task instruction for durable private self-chat.",
+  "migrations": [
+    {
+      "id": "0043_personal_chat",
+      "sha256": "3a78f486c8aded0e3cb7b2e2a8a32d411d7143d40ac731b1d03e9f8ad506e84b",
+      "reviewedAt": "2026-10-15T00:00:00.000Z",
+      "risk": "Additive owner-keyed private message storage and two indexes. Reads and writes are scoped to the authenticated internal user id. Account erasure explicitly deletes these rows. A missing migration leaves the feature unavailable.",
+      "rollbackPlan": "Disable the feature through existing conversation controls. Before any future table drop, export each account's messages or obtain explicit data-discard authorization; production migration execution requires a separate backup and execution receipt.",
+      "postconditions": [
+        "personal_chat_messages has a primary key, required owner/body/idempotency/timestamp columns, and an owner foreign key to users",
+        "The owner/request id index is unique and the owner/created index supports stable pagination",
+        "Request hashes are constrained to 64 characters",
+        "Integrity and foreign-key checks pass"
+      ],
+      "proofs": [
+        {
+          "id": "personal-chat-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('personal_chat_messages') WHERE name IN ('id','owner_id','body','client_request_id','request_hash','created_at') AND \"notnull\"=1",
+          "expected": 6
+        },
+        {
+          "id": "personal-chat-owner-foreign-key",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('personal_chat_messages') WHERE \"table\"='users' AND \"from\"='owner_id'",
+          "expected": 1
+        },
+        {
+          "id": "personal-chat-indexes",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='index' AND name IN ('idx_personal_chat_owner_request','idx_personal_chat_owner_created')",
+          "expected": 2
+        },
+        {
+          "id": "personal-chat-request-check",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='table' AND name='personal_chat_messages' AND sql LIKE '%personal_chat_request_hash%'",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

@@ -17,6 +17,10 @@ import { chatHref, demoChatDirectory } from "./chat-directory";
 import { listTimeLabel, matchesQuery, previewText, type ChatMessage, type ChatPerson } from "./chat-view-model";
 import { conversationAttention, demoReducer, initDemoState, rootMessages, threadReplies, unreadTotal, type DemoConversation, type DemoMessagesSnapshot, type DemoState } from "./demo-messages-model";
 import { useBottomAnchor, JumpToLatest, Avatar, CenterState, ChatIcon, ChatList, Composer, ConversationIntro, DetailsBlock, Dot, MessageStream, PeopleList, Pill, ProjectTile, SidePanel, StatusGlyph, TaskTile, chatStyles as styles, type ChatListItem, type ChatListSection, type MessageActions } from "./chat-ui";
+import { useHiddenConversations } from "./use-hidden-conversations";
+import { ChatDictationTools, ChatDraftCounter } from "./chat-composer-tools";
+import { appendDictatedText } from "./chat-composer-model";
+import floatingStyles from "./floating-chat.module.css";
 
 type Side = Readonly<{ kind: "thread"; rootId: string }> | Readonly<{ kind: "details" }> | null;
 
@@ -37,7 +41,8 @@ function initialState(snapshot: DemoMessagesSnapshot): DemoState {
   return first ? demoReducer(state, { type: "open", conversationId: first.id }) : state;
 }
 
-export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }) {
+export function DemoMessagesApp({ snapshot, embedded = false, requestedConversationId, visible = true }: { snapshot: DemoMessagesSnapshot; embedded?: boolean; requestedConversationId?: string; visible?: boolean }) {
+  const Container = embedded ? "div" : "main";
   const [state, dispatch] = useReducer(demoReducer, snapshot, initialState);
   const [selectedId, setSelectedId] = useState(snapshot.conversations[0]?.id ?? "");
   const [pane, setPane] = useState<"list" | "conversation">("list");
@@ -45,6 +50,9 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
   const [query, setQuery] = useState("");
   const [drafts, setDrafts] = useState<Readonly<Record<string, string>>>({});
   const [mentionDrafts, setMentionDrafts] = useState<Readonly<Record<string, readonly string[]>>>({});
+  const hidden = useHiddenConversations(snapshot.actorId);
+  const draftsRef = useRef(drafts);
+  useEffect(() => { draftsRef.current = drafts; }, [drafts]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [freshIds, setFreshIds] = useState<ReadonlySet<string>>(new Set());
   const [announcement, setAnnouncement] = useState("");
@@ -58,8 +66,8 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
   const sequence = useRef(0);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const urlId = searchParams?.get("c") ?? null;
-  const composing = searchParams?.get("new") === "1";
+  const urlId = embedded ? requestedConversationId ?? null : searchParams?.get("c") ?? null;
+  const composing = !embedded && searchParams?.get("new") === "1";
   const [peopleQuery, setPeopleQuery] = useState("");
 
   // The sidebar's Channels and Direct messages drive the open conversation
@@ -86,8 +94,8 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
 
   // A bare /app/messages names what it shows, so the sidebar can mark it.
   useEffect(() => {
-    if (!urlId && !composing && selectedId) router.replace(chatHref(selectedId), { scroll: false });
-  }, [urlId, composing, selectedId, router]);
+    if (!embedded && !urlId && !composing && selectedId) router.replace(chatHref(selectedId), { scroll: false });
+  }, [urlId, composing, selectedId, router, embedded]);
 
   const people = snapshot.people;
   const selfId = snapshot.actorId;
@@ -115,7 +123,7 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
   }
 
   function select(id: string) {
-    if (id !== urlId) router.replace(chatHref(id), { scroll: false });
+    if (!embedded && id !== urlId) router.replace(chatHref(id), { scroll: false });
     setSelectedId(id);
     setEditingId(null);
     setSide((current) => current?.kind === "details" ? current : null);
@@ -179,14 +187,14 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
       : item.kind === "task" && item.task ? <TaskTile size={32} status={item.task.status} />
         : <Avatar id={item.otherId ?? item.id} name={item.title} size={32} />;
     const attention = conversationAttention(item);
-    return { id: item.id, title: item.title, leading, preview, time: last && !item.request ? listTimeLabel(last.createdAt, clock) : undefined, count: attention.count, countNoun: item.kind === "dm" ? "message" : "mention", activity: attention.activity && !attention.request, tag: attention.request ? "Request" : undefined };
+    return { id: item.id, title: item.title, leading, preview, time: last && !item.request ? listTimeLabel(last.createdAt, clock) : undefined, count: attention.count, countNoun: item.kind === "dm" ? "message" : "mention", activity: attention.activity && !attention.request, tag: attention.request ? "Request" : undefined, onHide: item.kind === "task" ? undefined : () => hidden.hide(item.id) };
   };
   const rows = (kind: DemoConversation["kind"]) => state.conversations
-    .filter((item) => item.kind === kind)
+    .filter((item) => item.kind === kind && !hidden.hidden.includes(item.id))
     .sort((a, b) => Number(Boolean(b.request)) - Number(Boolean(a.request)) || (lastOf(b)?.createdAt ?? 0) - (lastOf(a)?.createdAt ?? 0))
     .map(rowFor).filter((item): item is ChatListItem => item !== null);
   const sections: ChatListSection[] = [
-    { id: "project", label: "Project", items: rows("project") },
+    { id: "project", label: "Project", items: rows("project"), after: hidden.hidden.length ? <details className={floatingStyles.hiddenList}><summary>Hidden conversations</summary>{state.conversations.filter((item) => hidden.hidden.includes(item.id)).map((item) => <button key={item.id} onClick={() => { hidden.restore(item.id); select(item.id); }} type="button">Show {item.title}</button>)}</details> : undefined },
     { id: "direct", label: "Direct messages", items: rows("dm"), empty: "No private conversations yet." },
     { id: "tasks", label: "Task threads", items: rows("task"), empty: "Task threads appear when someone comments on a task." },
   ];
@@ -227,7 +235,7 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
   />;
 
   if (!conversation) {
-    return <main className={styles.page} id="app-main-content" tabIndex={-1}><div className={styles.chat}>{list}<section className={styles.pane}><CenterState text="Conversations appear here when your Project has members." title="No conversations yet" /></section></div></main>;
+    return <Container className={styles.page} id={embedded ? undefined : "app-main-content"} tabIndex={-1}><div className={styles.chat}>{list}<section className={styles.pane}><CenterState text="Conversations appear here when your Project has members." title="No conversations yet" /></section></div></Container>;
   }
 
   /* Conversation */
@@ -260,6 +268,8 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
   const request = conversation.request && conversation.request.requesterId !== selfId ? conversation.request : null;
   const pendingOwn = conversation.request && conversation.request.requesterId === selfId;
   const composer = <Composer
+    additionalTools={<ChatDictationTools active={visible} contextKey={`${selfId}:${key}`} append={(text) => { const next = appendDictatedText(draftsRef.current[key] ?? "", text); if (next === null) return false; draftsRef.current = { ...draftsRef.current, [key]: next }; setDrafts(draftsRef.current); return true; }} />}
+    count={<ChatDraftCounter value={drafts[key] ?? ""} />}
     blocked={request ? "Accept the request to start messaging." : pendingOwn ? "Messages begin after they accept." : undefined}
     label={`Message ${conversation.title}`}
     mentionIds={mentionDrafts[key] ?? []}
@@ -343,7 +353,7 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
       {directPeople.map((person) => {
         const direct = state.conversations.find((item) => item.kind === "dm" && item.otherId === person.id);
         return <li key={person.id}>
-          <button className={styles.newMessagePerson} disabled={!direct} onClick={() => { if (direct) { setPeopleQuery(""); router.push(chatHref(direct.id), { scroll: false }); } }} type="button">
+          <button className={styles.newMessagePerson} disabled={!direct} onClick={() => { if (direct) { setPeopleQuery(""); if (embedded) select(direct.id); else router.push(chatHref(direct.id), { scroll: false }); } }} type="button">
             <Avatar id={person.id} name={person.name} size={32} />
             <span className={styles.newMessageName}>{person.name}{person.role ? <small>{person.role}</small> : null}</span>
             <span className={styles.newMessageGo}>Message <ChatIcon.chevron size={14} /></span>
@@ -378,6 +388,8 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
         selfId={selfId}
       />
       <Composer
+        additionalTools={<ChatDictationTools active={visible} contextKey={`${selfId}:${threadKey}`} append={(text) => { const next = appendDictatedText(draftsRef.current[threadKey] ?? "", text); if (next === null) return false; draftsRef.current = { ...draftsRef.current, [threadKey]: next }; setDrafts(draftsRef.current); return true; }} />}
+        count={<ChatDraftCounter value={drafts[threadKey] ?? ""} />}
         autoFocus
         label="Reply in thread"
         mentionIds={mentionDrafts[threadKey] ?? []}
@@ -410,12 +422,12 @@ export function DemoMessagesApp({ snapshot }: { snapshot: DemoMessagesSnapshot }
     </SidePanel>;
   }
 
-  return <main className={styles.page} id="app-main-content" tabIndex={-1}>
+  return <Container className={styles.page} id={embedded ? undefined : "app-main-content"} tabIndex={-1}>
     <div className={styles.chat} data-directory="sidebar" data-pane={composing ? "conversation" : pane} data-preview="" data-side={sidePanel && !composing ? "" : undefined} onKeyDown={onChatKey} ref={chatRef}>
       {list}
       {composing ? newMessagePane : conversationPane}
       {composing ? null : sidePanel}
     </div>
     <p aria-live="polite" className={styles.srOnly} role="status">{announcement}</p>
-  </main>;
+  </Container>;
 }

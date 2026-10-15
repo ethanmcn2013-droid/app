@@ -7,6 +7,7 @@ import { createConversationService } from "./service";
 import { createConversationTaskOutcomeService } from "./work-links";
 import { createTaskDiscussionService } from "./task-discussion";
 import { createMessageAttentionService } from "./attention";
+import { createPersonalChatService } from "./personal-chat";
 import { createLocalConversationDatabaseAdapter, createRemoteConversationDatabaseAdapter, createUnavailableConversationDatabaseAdapter, type ConversationDatabaseAdapter } from "./database";
 import { resolveConversationRuntimeTarget } from "./runtime-target";
 
@@ -14,7 +15,8 @@ type Service = ReturnType<typeof createConversationService>;
 type TaskOutcomes = ReturnType<typeof createConversationTaskOutcomeService>;
 type TaskDiscussion = ReturnType<typeof createTaskDiscussionService>;
 type Attention = ReturnType<typeof createMessageAttentionService>;
-type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes; taskDiscussion: TaskDiscussion; attention: Attention }>;
+type PersonalChat = ReturnType<typeof createPersonalChatService>;
+type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes; taskDiscussion: TaskDiscussion; attention: Attention; personalChat: PersonalChat }>;
 const runtimeGlobal = globalThis as typeof globalThis & { conversationRuntime?: { cacheKey: string; services: RuntimeServices } };
 
 function servicesFor(adapter: ConversationDatabaseAdapter): RuntimeServices {
@@ -24,6 +26,7 @@ function servicesFor(adapter: ConversationDatabaseAdapter): RuntimeServices {
     taskOutcomes: createConversationTaskOutcomeService(adapter, { directMessagesEnabled }),
     taskDiscussion: createTaskDiscussionService(adapter),
     attention: createMessageAttentionService(adapter),
+    personalChat: createPersonalChatService(adapter),
   };
 }
 
@@ -79,6 +82,10 @@ export async function getTaskDiscussionService(): Promise<TaskDiscussion> {
 
 export async function getMessageAttentionService(): Promise<Attention> {
   return (await getRuntimeServices()).attention;
+}
+
+export async function getPersonalChatService(): Promise<PersonalChat> {
+  return (await getRuntimeServices()).personalChat;
 }
 
 export async function authenticateConversationActor(mode: "read" | "write" = "read"): Promise<string | null> {

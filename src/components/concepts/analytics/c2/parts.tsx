@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Lever, Project, Risk } from "./data";
@@ -315,9 +317,9 @@ export function Risks({ risks }: { risks: Risk[] }) {
                       ) : (
                         <p className={s.riskOwner}>No changes recorded yet.</p>
                       )}
-                      <a className={s.linkButton} href="/app/tasks">
+                      <Link className={s.linkButton} href="/app/tasks">
                         Open in Tasks
-                      </a>
+                      </Link>
                     </div>
                   </motion.div>
                 )}

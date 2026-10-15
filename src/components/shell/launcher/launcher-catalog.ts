@@ -193,7 +193,7 @@ export const TOOL_ENTRIES: readonly ToolEntry[] = [
   {
     kind: "tool",
     slug: "wedding-planner",
-    name: "Wedding planner",
+    name: "Wedding hub",
     oneLiner: "Guests, suppliers and the day, in order.",
     shortLine: "Guests, suppliers, the day",
     bullets: [
@@ -201,10 +201,12 @@ export const TOOL_ENTRIES: readonly ToolEntry[] = [
       "One plan for the day, shared with suppliers",
       "Supplier contacts and deposits due, on your Timeline",
     ],
-    untilThen: ["tasks", "timeline"],
+    // Projects is the real route into a reader's Wedding Project. Its row
+    // exposes the built Guest list tool after that Project is selected.
+    untilThen: ["projects", "tasks", "timeline"],
     identity: 8,
     icon: "rings",
-    keywords: ["wedding", "guest list", "guests", "rsvp", "seating", "supplier", "venue", "marriage"],
+    keywords: ["wedding", "wedding planner", "guest list", "guests", "rsvp", "seating", "supplier", "venue", "marriage"],
   },
   {
     kind: "tool",
@@ -225,7 +227,7 @@ export const TOOL_ENTRIES: readonly ToolEntry[] = [
   {
     kind: "tool",
     slug: "teacher-toolkit",
-    name: "Teacher toolkit",
+    name: "Teacher hub",
     oneLiner: "Lessons, classes and marking, planned.",
     shortLine: "Lessons and classes",
     bullets: [
@@ -236,7 +238,7 @@ export const TOOL_ENTRIES: readonly ToolEntry[] = [
     untilThen: ["tasks", "timeline"],
     identity: 4,
     icon: "book",
-    keywords: ["teacher", "lesson", "class", "classroom", "marking", "school", "curriculum"],
+    keywords: ["teacher", "teacher toolkit", "lesson", "class", "classroom", "marking", "school", "curriculum"],
   },
   {
     kind: "tool",

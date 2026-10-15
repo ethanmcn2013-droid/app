@@ -9,10 +9,25 @@ import {
   parseProjectDestination,
   urlEmitsV2Vocabulary,
   withActiveProject,
+  readableProjectName,
   type ProjectDestination,
 } from "@/lib/projects/project-url";
 
 const A = assertProjectId("ws-a");
+
+test("readable project names never replace identity or change old links", () => {
+  const first = buildProjectUrl({ surface: "tasks", view: "calendar" }, A, "Ethan & Emma's Wedding");
+  const parsed = new URL(first, "https://app.signalstudio.ie");
+  assert.equal(parsed.searchParams.get("project"), "ethan-emma-s-wedding");
+  assert.equal(parsed.searchParams.get("workspaceId"), A);
+  assert.equal(parsed.pathname, "/app/tasks/calendar");
+  assert.equal(canonicaliseProjectUrl(first).workspaceId, A);
+  assert.equal(buildProjectUrl({ surface: "tasks" }, A), "/app/tasks?workspaceId=ws-a");
+  assert.equal(readableProjectName("<script> ??"), "script");
+  assert.equal(readableProjectName("\u00c9adaoin's plan"), "\u00e9adaoin-s-plan");
+  assert.equal(readableProjectName(" "), "");
+  assert.equal(new URL(buildProjectUrl({ surface: "tasks" }, assertProjectId("ws-b"), "Same name"), "https://app.signalstudio.ie").searchParams.get("workspaceId"), "ws-b");
+});
 
 test("every V3 destination carries workspaceId and no V2 vocabulary", () => {
   const destinations: ProjectDestination[] = [

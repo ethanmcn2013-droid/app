@@ -1,0 +1,331 @@
+.root {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.groups {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.group {
+  min-width: 0;
+}
+
+.groupLabel {
+  display: block;
+  min-height: 22px;
+  padding: 4px 8px 2px;
+  color: color-mix(in srgb, var(--v3-text) 50%, transparent);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.groupEntries {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-left: 6px;
+  padding-left: 5px;
+  border-left: 1px solid color-mix(in srgb, var(--v3-text) 12%, transparent);
+}
+
+.groupEntries > div {
+  min-width: 0;
+}
+
+.treeNode {
+  min-width: 0;
+}
+
+.parentRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 2px;
+}
+
+.parentRow > a {
+  min-width: 0;
+  flex: 1;
+}
+
+.nestedLink,
+.nestedItem {
+  min-width: 0;
+  padding-left: 12px;
+}
+
+.nestedItem {
+  cursor: default;
+}
+
+.children {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  margin: 1px 0 4px 17px;
+  padding-left: 7px;
+  border-left: 1px solid color-mix(in srgb, var(--v3-text) 12%, transparent);
+}
+
+.children > div {
+  min-width: 0;
+}
+
+.nestedToggle {
+  display: inline-flex;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--v3-text-3);
+  cursor: pointer;
+  transition: color 120ms var(--v3-ease), background-color 120ms var(--v3-ease), transform 120ms var(--v3-ease);
+}
+
+.nestedToggle[aria-expanded="true"] svg {
+  transform: rotate(0deg);
+}
+
+.nestedToggle[aria-expanded="false"] svg {
+  transform: rotate(-90deg);
+}
+
+.nestedToggle:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.entryStatus {
+  flex: none;
+  color: var(--v3-text-3);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.soonMarker {
+  width: 14px;
+  flex: none;
+  color: var(--v3-text-3);
+  text-align: center;
+}
+
+.nestedToggle:focus-visible,
+.nestedLink:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 2px;
+}
+
+.customizeTrigger {
+  min-width: 44px;
+  min-height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: color-mix(in srgb, var(--v3-text) 58%, transparent);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 560;
+  cursor: pointer;
+  transition: color 120ms var(--v3-ease), background-color 120ms var(--v3-ease);
+}
+
+.customizeTrigger:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.customizeTrigger:focus-visible,
+.doneButton:focus-visible,
+.restoreButton:focus-visible,
+.choice:focus-within {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 2px;
+}
+
+.collapsedCustomize {
+  display: none;
+}
+
+.customizePanel {
+  display: flex;
+  max-height: min(560px, calc(100dvh - 160px));
+  flex-direction: column;
+  padding: 12px 10px 10px;
+  border: 1px solid var(--v3-border);
+  border-radius: var(--v3-radius-lg);
+  background: var(--v3-surface);
+  box-shadow: var(--v3-shadow-pop);
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+.panelHeader {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px 8px;
+  border-bottom: 1px solid var(--v3-border);
+}
+
+.panelHeader h3 {
+  font-size: 12px;
+  line-height: 1.3;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.doneButton,
+.restoreButton {
+  min-height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--v3-text-2);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 580;
+  cursor: pointer;
+}
+
+.doneButton {
+  padding: 0 7px;
+  color: var(--v3-accent-text);
+}
+
+.doneButton:hover,
+.restoreButton:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.choices {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  color: var(--v3-text-2);
+  cursor: pointer;
+}
+
+.choice[data-depth="nested"] {
+  padding-left: 22px;
+}
+
+.choice:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.choice input {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--v3-accent);
+}
+
+.choiceLabel {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.choiceStatus {
+  flex: none;
+  color: var(--v3-text-3);
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.panelFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 8px 2px 0;
+  border-top: 1px solid var(--v3-border);
+}
+
+.panelFooter p {
+  color: var(--v3-text-3);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.restoreButton {
+  flex: none;
+  padding: 0 6px;
+}
+
+:global([data-collapsed]) .groupLabel {
+  display: none;
+}
+
+:global([data-collapsed]) .groups {
+  gap: 4px;
+}
+
+:global([data-collapsed]) .groupEntries {
+  gap: 2px;
+  margin-left: 0;
+  padding-left: 0;
+  border-left: 0;
+}
+
+:global([data-collapsed]) .children {
+  margin-left: 8px;
+  padding-left: 3px;
+}
+
+:global([data-collapsed]) .collapsedCustomize {
+  display: flex;
+}
+
+@media (max-width: 899px) {
+  .customizeTrigger {
+    min-height: 32px;
+  }
+
+  .customizePanel {
+    max-height: min(560px, calc(100dvh - 210px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customizeTrigger,
+  .nestedToggle,
+  .nestedToggle svg {
+    transition: none;
+  }
+}

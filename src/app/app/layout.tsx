@@ -109,8 +109,10 @@ const SKIP_LINK_CLASS =
  */
 export default function AppLayout({
   children,
+  overlay,
 }: {
   children: React.ReactNode;
+  overlay: React.ReactNode;
 }) {
   const shell = (
     <StudioChromeProvider>
@@ -134,7 +136,10 @@ export default function AppLayout({
           >
             <Suspense fallback={<SuiteLoading />}>
               <SharedAppGate>
-                <ConversationSessionRuntime><ProductWorkspaceShell>{children}</ProductWorkspaceShell></ConversationSessionRuntime>
+                <ConversationSessionRuntime>
+                  <ProductWorkspaceShell>{children}</ProductWorkspaceShell>
+                  {overlay}
+                </ConversationSessionRuntime>
               </SharedAppGate>
             </Suspense>
           </AppShell>

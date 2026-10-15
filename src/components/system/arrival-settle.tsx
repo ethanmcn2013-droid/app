@@ -29,7 +29,7 @@
  *     inline script swaps it out BEFORE the fallback subtree is hydrated.
  *     Measured on this build: the /app/tasks boot boundary yields at ~500ms,
  *     long before that. No component mounted, so no effect can fire; only a
- *     parse-time script is already running. It watches for its own removal —
+ *     parse-time script is already running. It watches its fallback marker —
  *     a MutationObserver callback is a microtask, so the settle starts in the
  *     same frame the swap lands in, with no flash at full opacity first.
  *
@@ -53,7 +53,11 @@
  * Render it inside a loading boundary, beside the loader's own markup.
  */
 
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useSyncExternalStore } from "react";
+
+const subscribe = () => () => {};
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
 
 /** The product canvas — the same element on all four /app products. */
 const SURFACE = "main#app-main-content,[data-product-canvas]";
@@ -122,16 +126,22 @@ function playSurfaceSettle(): void {
  * line — it is inlined into the document verbatim — and built from the
  * constants above so the two forms cannot disagree about what they animate.
  *
- * `document.currentScript` is the script itself, and its parent is the
- * container the boundary's fallback lives in; that container outlives the
- * fallback, which is what makes a childList observation on it the exact
- * signal for "the loader has been replaced".
+ * The hidden marker before the script stays mounted for the fallback's
+ * lifetime. Hydration removes the SSR-only script, so watching the script
+ * itself would announce arrival while the loader was still visible. The
+ * marker's parent outlives the fallback, and its removal announces the swap.
  */
-const ARRIVAL_SETTLE_SCRIPT = `(function(){var s=document.currentScript,p=s&&s.parentNode;if(!p||!window.matchMedia||matchMedia("(prefers-reduced-motion:reduce)").matches)return;var o=new MutationObserver(function(){if(s.isConnected)return;o.disconnect();var t=document.querySelector("${SURFACE}");if(!t||!t.animate)return;var L=Number(t.${SETTLE_STAMP}||0),N=performance.now();if(L>0&&N-L<${SETTLE_WINDOW_MS})return;t.${SETTLE_STAMP}=N;var c=getComputedStyle(document.documentElement),v=c.getPropertyValue("--motion-fast").trim(),d=parseFloat(v)||0,e=c.getPropertyValue("--ease-out").trim()||"ease-out";if(d&&v.slice(-2)!=="ms")d*=1000;if(!v)d=140;if(!(d>0))return;t.getAnimations().forEach(function(a){if(a.id==="${SETTLE_ID}")a.cancel()});var a=t.animate([{opacity:${FROM_OPACITY}},{opacity:1}],{duration:d,easing:e});a.id="${SETTLE_ID}"});o.observe(p,{childList:true})})();`;
+const ARRIVAL_SETTLE_SCRIPT = `(function(){var s=document.currentScript,m=s&&s.previousElementSibling,p=m&&m.parentNode;if(!p||!window.matchMedia||matchMedia("(prefers-reduced-motion:reduce)").matches)return;var o=new MutationObserver(function(){if(m.isConnected)return;o.disconnect();var t=document.querySelector("${SURFACE}");if(!t||!t.animate)return;var L=Number(t.${SETTLE_STAMP}||0),N=performance.now();if(L>0&&N-L<${SETTLE_WINDOW_MS})return;t.${SETTLE_STAMP}=N;var c=getComputedStyle(document.documentElement),v=c.getPropertyValue("--motion-fast").trim(),d=parseFloat(v)||0,e=c.getPropertyValue("--ease-out").trim()||"ease-out";if(d&&v.slice(-2)!=="ms")d*=1000;if(!v)d=140;if(!(d>0))return;t.getAnimations().forEach(function(a){if(a.id==="${SETTLE_ID}")a.cancel()});var a=t.animate([{opacity:${FROM_OPACITY}},{opacity:1}],{duration:d,easing:e});a.id="${SETTLE_ID}"});o.observe(p,{childList:true})})();`;
 
 export function ArrivalSettle() {
+  const client = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
   // The cleanup, not the effect: this component only ever exists inside a
   // loading fallback, so its unmount IS the arrival of the real surface.
   useLayoutEffect(() => () => playSurfaceSettle(), []);
-  return <script dangerouslySetInnerHTML={{ __html: ARRIVAL_SETTLE_SCRIPT }} />;
+  return (
+    <>
+      <span hidden aria-hidden="true" data-arrival-settle="" />
+      {client ? null : <script dangerouslySetInnerHTML={{ __html: ARRIVAL_SETTLE_SCRIPT }} />}
+    </>
+  );
 }

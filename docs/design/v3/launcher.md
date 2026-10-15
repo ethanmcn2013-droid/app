@@ -71,7 +71,7 @@ Top bar
 Apps and tools catalogue (one data source, three renderings: popover, sheet, page)
   Your apps     Tasks · Timeline · Notes · Files · Analytics · Messages* · Projects
   Works with    Google Drive (Coming soon | Set up in Settings) · Google Sheets (Coming soon)
-  Coming soon   Wedding planner · Student hub · Teacher toolkit · Process map ·
+  Coming soon   Wedding hub · Student hub · Teacher hub · Process map ·
                 Whiteboard · Docs · Forms          → /app/tools/[slug]
   Missing something?  → mailto hello@signalstudio.ie
 
@@ -80,6 +80,14 @@ Crumb for tool destinations: Signal Studio / Apps and tools / Notes
 ```
 
 `TOOL_DESTINATIONS` in `shell-nav.ts` owns `/app/notes` and `/app/tools/*`, so active state and crumbs still resolve. `LAUNCHER_NAME = "Apps and tools"` is exported from `launcher-catalog.ts` and imported by `shell-nav.ts`, so the name cannot drift.
+
+### Current Wedding hub truth (15 October 2026)
+
+The Wedding hub at `/app/tools/wedding-planner` is an active directory, not a Coming soon placeholder. It lists only wedding Projects from the reader's existing membership list, using the same context/domain/template predicate as the sidebar and Guest list route. Each Project opens its existing, project-authorized Guest list. Seating and Budget are visible as Coming soon text only; they have no route or action. Teacher hub and Student hub remain on the shared Coming soon page.
+
+### Sidebar More groups and customization (15 October 2026)
+
+More is a navigation arrangement, not a new product area: Development contains Automations; Wedding hub contains Guest list, Seating and Budget; Teacher hub contains Whiteboard, Lessons, Marking and Share a plan; Student hub contains Deadlines, Group work and Lecture notes. Guest list opens the Wedding hub directory so the reader chooses an authorized Wedding Project before opening its existing guest list. Planned children are static “Coming soon” rows with no invented route or action. Notes, Process map, Docs and Forms are optional and start hidden; enabling any one reveals the Other tools group. The Customize panel saves display choices in this browser only. Folding Workspace, Projects, More and Chat retains the existing `signal:v3:sidebar-folded` storage contract.
 
 ## 3. Layout per breakpoint
 
@@ -112,8 +120,8 @@ Right-aligned under the trigger, 8px gap, 432px wide, `max-height: calc(100dvh -
 │     Share task lists as a sheet            │
 │ ────────────────────────────────────────── │
 │ Coming soon                                │ 2-col rows, 48px, tinted tiles
-│ [◎] Wedding planner  [🎓] Student hub       │ (--v3-project-n, glyph --v3-project-ink)
-│ [📖] Teacher toolkit  [⇶] Process map        │ no status chip inside this section
+│ [◎] Wedding hub      [🎓] Student hub       │ (--v3-project-n, glyph --v3-project-ink)
+│ [📖] Teacher hub      [⇶] Process map        │ no status chip inside this section
 │ [▭] Whiteboard       [▤] Docs              │
 │ [☰] Forms                                  │
 │ ────────────────────────────────────────── │
@@ -185,7 +193,7 @@ At 390 the Coming soon cards become full-width 64px rows (tile, name, one line).
 A 720px reading column, centred, same page padding.
 
 ```
-← All apps and tools                        ‹ Teacher toolkit   Docs ›   ([ and ])
+← All apps and tools                        ‹ Teacher hub       Docs ›   ([ and ])
 [64px tinted tile]  Whiteboard   (Coming soon)          22/600 name · pill
                     A shared canvas for rough ideas.    15/400 --v3-text-2
 ────────────────────────────────────────────────────────

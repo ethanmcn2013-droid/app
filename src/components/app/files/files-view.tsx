@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { describeFiles, type ProjectFilesRead } from "@/lib/projects/project-files";
 import { ShellIcon } from "@/components/shell/shell-icons";
+import { buildProjectUrl } from "@/lib/projects/project-url";
+import { parseProjectId } from "@/lib/projects/project-ref";
 import { FilesExplorer } from "./files-explorer";
 import styles from "./files.module.css";
 
@@ -31,6 +33,8 @@ export function FilesView({
 }) {
   const { files } = read;
   const overview = describeFiles(files, read.readAt);
+  const projectId = parseProjectId(requestedProjectId);
+  const tasksHref = projectId ? buildProjectUrl({ surface: "tasks" }, projectId, projectName) : "/app/tasks";
   const archivedParams = new URLSearchParams();
   if (requestedProjectId) archivedParams.set("workspaceId", requestedProjectId);
   if (!read.includesArchived) archivedParams.set("archived", "1");
@@ -57,7 +61,7 @@ export function FilesView({
               )}
             </p>
           </div>
-          <Link href="/app/tasks" className={styles.btn}>
+          <Link href={tasksHref} className={styles.btn}>
             <ShellIcon.tasks size={14} />
             Open Tasks
           </Link>

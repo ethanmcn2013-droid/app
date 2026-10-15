@@ -7,21 +7,25 @@ import { AUTOMATIONS_APP_PATH, AUTOMATIONS_LABEL } from "@/lib/product-urls";
 import { CREATE_LABEL, createKindForPath } from "@/lib/shell-create";
 import {
   activeDestinationId,
-  BUILD_DESTINATIONS,
   crumbsForPath,
   FOOTER_DESTINATIONS,
   HOME_DESTINATION,
+  MORE_CUSTOMIZATION_ITEMS,
+  MORE_DESTINATIONS,
+  MORE_NAVIGATION_GROUPS,
+  PRIMARY_DESTINATIONS,
   sectionIsOpen,
   sectionStoreKey,
   SIDEBAR_GROUPS,
   TOOL_DESTINATIONS,
   UTILITY_DESTINATIONS,
+  visibleMoreNavigationGroups,
   WORKSPACE_DESTINATIONS,
 } from "./shell-nav";
 
 /**
- * Guards for the sidebar's shape (founder instruction, 6 Oct 2026): Home,
- * then Workspace, Projects, Build and Chat as named groups. Overview is a
+ * Guards for the sidebar's shape: Home, Analytics and Files, then Workspace,
+ * Projects, More and Chat as named groups. Overview is a
  * tab of Home, Automations has a row, and the "Initial setup" group is gone
  * with every place it held still reachable.
  */
@@ -42,27 +46,32 @@ const paletteSource = readFileSync(
 const rows = (destinations: readonly { label: string; href: string }[]) =>
   destinations.map((destination) => [destination.label, destination.href]);
 
-test("the groups are Workspace, Projects, Build and Chat, in that order", () => {
+test("the navigation orders the primary links and Workspace, Projects, More and Chat", () => {
   assert.deepEqual(
     SIDEBAR_GROUPS.map((group) => [group.id, group.label, group.folds]),
     [
-      ["workspace", "Workspace", false],
+      ["workspace", "Workspace", true],
       ["projects", "Projects", true],
-      ["build", "Build", false],
+      ["more", "More", true],
       ["chat", "Chat", true],
     ],
   );
-  // The sidebar draws them in the same order, Home first.
-  const order = ["link(HOME_DESTINATION)", 'groupById("workspace")', 'groupById("projects")', 'groupById("build")', 'groupById("chat")', "styles.footer"].map(
+  assert.deepEqual(rows(PRIMARY_DESTINATIONS), [
+    ["Home", "/app/home"],
+    ["Analytics", "/app/analytics"],
+    ["Files", "/app/files"],
+  ]);
+  // The sidebar draws them in the same order, followed by named groups.
+  const order = ['aria-label="Primary"', 'groupById("workspace")', 'groupById("projects")', 'groupById("more")', 'groupById("chat")', "styles.footer"].map(
     (literal) => sidebarSource.indexOf(literal, sidebarSource.indexOf("<aside")),
   );
   assert.ok(order.every((index) => index > 0), "every group renders");
   assert.deepEqual([...order].sort((a, b) => a - b), order);
 });
 
-test("Home stands alone and owns Overview; there is no Overview row", () => {
+test("Home owns Overview without a separate Overview row", () => {
   assert.deepEqual([HOME_DESTINATION.label, HOME_DESTINATION.href], ["Home", "/app/home"]);
-  const every = [HOME_DESTINATION, ...WORKSPACE_DESTINATIONS, ...BUILD_DESTINATIONS, ...UTILITY_DESTINATIONS, ...TOOL_DESTINATIONS, ...FOOTER_DESTINATIONS];
+  const every = [...PRIMARY_DESTINATIONS, ...WORKSPACE_DESTINATIONS, ...MORE_DESTINATIONS, ...UTILITY_DESTINATIONS, ...TOOL_DESTINATIONS, ...FOOTER_DESTINATIONS];
   assert.equal(every.some((destination) => destination.label === "Overview" || destination.href === "/app/home/briefing"), false);
   for (const inside of ["/app/home", "/app/home/briefing", "/app/signal"]) {
     assert.equal(activeDestinationId(inside), "home", inside);
@@ -71,24 +80,56 @@ test("Home stands alone and owns Overview; there is no Overview row", () => {
   assert.deepEqual(crumbsForPath("/app/home/briefing").map((crumb) => crumb.label), ["Signal Studio", "Home", "Overview"]);
 });
 
-test("Workspace is the five places of the work", () => {
+test("Workspace is the three places of the work", () => {
   assert.deepEqual(rows(WORKSPACE_DESTINATIONS), [
     ["Projects", "/app/project"],
     ["Tasks", "/app/tasks"],
     ["Timeline", "/app/timeline"],
-    ["Files", "/app/files"],
-    ["Analytics", "/app/analytics"],
   ]);
 });
 
-test("Build is Automations as a preview and Whiteboard as soon", () => {
-  assert.deepEqual(rows(BUILD_DESTINATIONS), [
+test("More groups destinations by work and honestly marks planned tools", () => {
+  assert.deepEqual(rows(MORE_DESTINATIONS), [
     [AUTOMATIONS_LABEL, AUTOMATIONS_APP_PATH],
     ["Whiteboard", "/app/tools/whiteboard"],
+    ["Wedding hub", "/app/tools/wedding-planner"],
+    ["Teacher hub", "/app/tools/teacher-toolkit"],
+    ["Student hub", "/app/tools/student-hub"],
+    ["Process map", "/app/tools/process-map"],
+    ["Docs", "/app/tools/docs"],
+    ["Forms", "/app/tools/forms"],
   ]);
-  assert.deepEqual(BUILD_DESTINATIONS.map((destination) => [destination.id, Boolean(destination.preview), Boolean(destination.soon)]), [
+  assert.deepEqual(MORE_DESTINATIONS.map((destination) => [destination.id, Boolean(destination.preview), Boolean(destination.soon)]), [
     ["automations", true, false],
     ["whiteboard", false, true],
+    ["wedding-hub", false, false],
+    ["teacher-hub", false, true],
+    ["student-hub", false, true],
+    ["process-map", false, true],
+    ["docs", false, true],
+    ["forms", false, true],
+  ]);
+  assert.deepEqual(MORE_NAVIGATION_GROUPS.map(({ id, label, entries }) => [id, label, entries.map(({ id: entryId, children }) => [entryId, children?.map(({ id: childId }) => childId) ?? []])]), [
+    ["development", "Development", [["automations", []]]],
+    ["wedding-hub", "", [["wedding-hub", ["wedding-guest-list", "wedding-seating", "wedding-budget"]]]],
+    ["teacher-hub", "", [["teacher-hub", ["whiteboard", "teacher-lessons", "teacher-marking", "teacher-share-plan"]]]],
+    ["student-hub", "", [["student-hub", ["student-deadlines", "student-group-work", "student-lecture-notes"]]]],
+    ["other-tools", "Other tools", [["notes", []], ["process-map", []], ["docs", []], ["forms", []]]],
+  ]);
+  assert.deepEqual(MORE_CUSTOMIZATION_ITEMS.filter(({ defaultVisible }) => defaultVisible === false).map(({ id }) => id), [
+    "notes", "process-map", "docs", "forms",
+  ]);
+  const hiddenByDefault = new Set(MORE_CUSTOMIZATION_ITEMS.filter(({ defaultVisible }) => defaultVisible === false).map(({ id }) => id));
+  assert.deepEqual(visibleMoreNavigationGroups(hiddenByDefault).map(({ id, entries }) => [id, entries.map(({ id: entryId }) => entryId)]), [
+    ["development", ["automations"]],
+    ["wedding-hub", ["wedding-hub"]],
+    ["teacher-hub", ["teacher-hub"]],
+    ["student-hub", ["student-hub"]],
+  ]);
+  assert.deepEqual(visibleMoreNavigationGroups(new Set([...hiddenByDefault, "wedding-hub", "whiteboard"])).map(({ id, entries }) => [id, entries.map(({ id: entryId }) => entryId)]), [
+    ["development", ["automations"]],
+    ["teacher-hub", ["teacher-hub"]],
+    ["student-hub", ["student-hub"]],
   ]);
   assert.equal(activeDestinationId(AUTOMATIONS_APP_PATH), "automations");
   assert.equal(activeDestinationId(`${AUTOMATIONS_APP_PATH}/draft-1`), "automations");
@@ -100,6 +141,11 @@ test("Build is Automations as a preview and Whiteboard as soon", () => {
   ]);
   assert.equal(activeDestinationId("/app/tools/whiteboard"), "whiteboard");
   assert.deepEqual(crumbsForPath("/app/tools/whiteboard").map((crumb) => crumb.label), ["Signal Studio", "Whiteboard"]);
+  assert.equal(activeDestinationId("/app/tools/wedding-planner"), "wedding-hub");
+  assert.deepEqual(crumbsForPath("/app/tools/wedding-planner").map((crumb) => crumb.label), ["Signal Studio", "Wedding hub"]);
+  assert.equal(activeDestinationId("/app/tools/teacher-toolkit"), "teacher-hub");
+  assert.equal(activeDestinationId("/app/tools/student-hub"), "student-hub");
+  assert.deepEqual(crumbsForPath("/app/wedding/guests").map((crumb) => crumb.label), ["Signal Studio", "Wedding tools", "Guest list"]);
 });
 
 test("no place the old group held is lost, and no row is listed twice", () => {
@@ -119,10 +165,10 @@ test("no place the old group held is lost, and no row is listed twice", () => {
   assert.match(shellSource, /<AppsLauncher/);
   assert.deepEqual(crumbsForPath("/app/inbox").map((crumb) => crumb.label), ["Signal Studio", "Inbox"]);
   assert.deepEqual(crumbsForPath("/app/your-work").map((crumb) => crumb.label), ["Signal Studio", "My tasks"]);
-  assert.deepEqual(crumbsForPath("/app/tools/docs").map((crumb) => crumb.label), ["Signal Studio", "Apps and tools", "Docs"]);
+  assert.deepEqual(crumbsForPath("/app/tools/docs").map((crumb) => crumb.label), ["Signal Studio", "Docs"]);
   assert.deepEqual(crumbsForPath("/app/notes").map((crumb) => crumb.label), ["Signal Studio", "Apps and tools", "Notes"]);
 
-  const ids = [HOME_DESTINATION, ...WORKSPACE_DESTINATIONS, ...BUILD_DESTINATIONS, ...UTILITY_DESTINATIONS, ...TOOL_DESTINATIONS, ...FOOTER_DESTINATIONS].map(
+  const ids = [...PRIMARY_DESTINATIONS, ...WORKSPACE_DESTINATIONS, ...MORE_DESTINATIONS, ...UTILITY_DESTINATIONS, ...TOOL_DESTINATIONS, ...FOOTER_DESTINATIONS].map(
     (destination) => destination.id,
   );
   assert.equal(new Set(ids).size, ids.length);
@@ -143,7 +189,8 @@ test("Projects lists the reader's own catalog with a project marker each and a d
   assert.match(sidebarSource, /const mark = marks\[row\.id\];/);
   assert.match(sidebarSource, /const dot = mark \? <span className=\{styles\.statusDot\} data-tone=\{mark\}/);
   // A row is a link to that Project; a plain click uses the guarded switch.
-  assert.match(sidebarSource, /href=\{buildProjectUrl\(\{ surface: "project" \}, row\.id\)\}/);
+  assert.match(sidebarSource, /href=\{buildProjectUrl\(\{ surface: "project" \}, row\.id, readableName\)\}/);
+  assert.match(sidebarSource, /const readableName = suiteContext\?\.version === 3 && verifiedProjectName && suiteContext\.workspaceId === row\.id/);
   assert.match(sidebarSource, /activeProject\.selectProject\(row\.project, \{ surface: "project" \}\)/);
   for (const literal of ["No projects yet", "Start one", "All {rows.length} projects", 'aria-label="Archived projects"', 'aria-label="All projects"']) {
     assert.ok(sidebarSource.includes(literal), literal);
