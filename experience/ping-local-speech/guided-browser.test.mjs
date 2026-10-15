@@ -63,7 +63,7 @@ async function guide(action, payload) {
 }
 async function waitFor(predicate, label) {
   const deadline = Date.now() + 15_000;
-  while (!predicate()) { assert.ok(Date.now() < deadline, label); await new Promise(resolve => setTimeout(resolve, 20)); }
+  while (!await predicate()) { assert.ok(Date.now() < deadline, label); await new Promise(resolve => setTimeout(resolve, 20)); }
 }
 async function waitOutcome(outcome) { await waitFor(() => state().outcome === outcome, `Expected guide outcome ${outcome}; received ${state().outcome}`); }
 async function closePing() {
@@ -103,7 +103,13 @@ async function applyCurrent({ double = false } = {}) {
   if (double) await page.getByTestId('ping-apply').evaluate(button => { button.click(); button.click(); });
   else await page.getByTestId('ping-apply').click();
 }
-async function advance() { await closePing(); await guide('next'); assert.equal(state().canStart, true); }
+async function advance() {
+  await waitFor(async () => {
+    await page.evaluate(() => window.pingGuide.getState());
+    return state().canNext;
+  }, 'Advancement requires the matching mounted projection acknowledgement');
+  await closePing(); await guide('next'); assert.equal(state().canStart, true);
+}
 async function newBrowser({ scriptedSpeech = false } = {}) {
   browser = await chromium.launch({ headless: true });
   context = await browser.newContext({ viewport: { width: 1440, height: 960 }, reducedMotion: 'reduce' });
