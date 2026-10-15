@@ -238,7 +238,7 @@ async function act(action, payload = undefined) {
     const value = await window.pingGuide.action(action, payload);
     snapshot = value?.snapshot ?? value;
     render();
-  } catch (error) {
+  } catch {
     el('error-copy').textContent = 'That guide action was not saved. Check the session status before trying again.';
     el('error-copy').hidden = false;
     if (snapshot) render();

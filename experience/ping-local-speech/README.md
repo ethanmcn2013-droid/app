@@ -4,6 +4,8 @@ This fixture mounts the real Tasks view and Ping overlay beside a session guide.
 It uses invented tasks and members in an explicitly marked local SQLite database.
 It is not a production route or a speech provider. The private scenario manifest
 is supplied by the session owner and never served to the browser.
+The fixture scopes the real product's body portals to its Tasks pane so its dock
+cannot cover the guide and Pause can disable all mounted product controls.
 
 From the owning clean App checkout, with Node 22 and existing dependencies:
 

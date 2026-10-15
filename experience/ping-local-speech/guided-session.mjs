@@ -326,7 +326,7 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       } else if(!c.inputObserved&&!original) {
         evidenceHash=verifyGuidedEffects({baseline:c.baseline,snapshot:snap,oracle:cases[state.index].oracle,identity,zero:true});outcome='aborted_before_input';
       } else outcome='unresolved';
-    }catch(error){outcome=custodyEstablished?'mismatch':'verification_failed';evidenceHash=digest({category:'oracle_failure'});}
+    }catch{outcome=custodyEstablished?'mismatch':'verification_failed';evidenceHash=digest({category:'oracle_failure'});}
     await append('verified',{outcome,evidenceHash:evidenceHash??digest({outcome}),projection});return projectionState();
   }
   const projectionState=()=>projection();
