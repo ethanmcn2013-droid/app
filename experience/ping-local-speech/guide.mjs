@@ -119,6 +119,20 @@ function phraseForPhase(phase) {
   })[phase];
 }
 
+function phraseForOutcome(outcome) {
+  return ({
+    matched: 'Ping saved the intended change, and the exact result was verified.',
+    mismatch: 'Ping returned, but the saved result did not match the goal.',
+    refused_verified_zero: 'Ping refused the request, and the runner verified that nothing changed.',
+    cancelled_not_invoked_verified_zero: 'Ping was cancelled before execution, and the runner verified that nothing changed.',
+    aborted_before_input: 'This case ended before a Ping input was observed.',
+    committed_projection_failed: 'Ping committed a result, but the refreshed view could not be verified.',
+    verification_failed: 'The saved state could not be verified.',
+    unresolved: 'The original result is still uncertain. Check its status before continuing.',
+    retired_not_invoked_verified_zero: 'The unsubmitted original was retired, and the runner verified no invocation or effect.',
+  })[outcome] ?? null;
+}
+
 function render() {
   if (!snapshot) return;
   const phase = phaseOf(snapshot);
@@ -132,7 +146,9 @@ function render() {
   el('unresolved-count').textContent = count(counts.unresolvedCount);
   el('skipped-count').textContent = count(counts.skippedCount);
   el('remaining-count').textContent = `${count(counts.remainingCount)} cases remaining`;
-  statusText.textContent = typeof snapshot.message === 'string' && snapshot.message ? snapshot.message : phraseForPhase(phase);
+  statusText.textContent = typeof snapshot.message === 'string' && snapshot.message
+    ? snapshot.message
+    : phraseForOutcome(snapshot.outcome) ?? phraseForPhase(phase);
 
   el('case-panel').hidden = !activeCase || phase === 'setup' || phase === 'ended';
   el('setup-steps').hidden = phase !== 'setup';
