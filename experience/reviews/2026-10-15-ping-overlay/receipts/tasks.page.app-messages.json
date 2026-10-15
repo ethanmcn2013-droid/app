@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-messages",
+  "source": "tasks/src/app/app/messages/page.tsx",
+  "materialityHash": "dacfebb578dd8234",
+  "reviewedAt": "2026-10-15",
+  "reviewer": "Codex root visual receiving and independent integration custody",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-6ed51bde0127fd7ca71954cb-118f63db6b7e027f.json",
+    "attestationSha256": "7cc8f483e3aa5d5eb1256c7f7368bb7ef9db79f9aad37dd0a595694cd20ed0a6",
+    "runId": "tasks-playwright-6ed51bde0127fd7ca71954cb",
+    "canonicalEvidenceSha256": "6ed51bde0127fd7ca71954cb9379dbcdf23df9496f320825c67cca4f480d64c5",
+    "rawArtifactSha256": "118f63db6b7e027f421fd0b1f385afbdc18d621f042d5448f55e399cc8692cf7",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-messages",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Exact capture source ee9a08c6a0681e6e1aa4d99140f7ae6e6f9e3f1e, fixture tasks.page.app-messages, case \"own surface in demo\". Root viewed this desktop representative; independent custody received all four actual viewport outcomes and images. Actual Chat main landmark and selected Project conversation controls in demo; no external message transmission or live chat-provider continuity is established. Later package-only test wiring at 809097e006128f084f4b22335cdb1e6df8e21336 is separately received and does not relabel the capture source.",
+  "decision": "ACCEPT bounded demo/component materiality after root visual receiving and independent 204-pair custody. No genuine speech recognition, microphone, authenticated/provider continuity, production or release qualification. Original voice G2 remains STOP."
+}
