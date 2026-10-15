@@ -212,7 +212,7 @@ function ToastCard({ t, onDismiss, onPause, onResume }: { t: Toast; onDismiss: (
         type="button"
         onClick={onDismiss}
         aria-label={`Dismiss ${t.title}`}
-        className="absolute right-1 top-1 inline-flex h-11 w-11 items-center justify-center rounded-lg text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft active:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-[-3px]"
+        className="absolute right-1 top-1 inline-flex h-[44px] w-[44px] items-center justify-center rounded-lg text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft active:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-[-3px]"
       >
         <svg
           width="14"
