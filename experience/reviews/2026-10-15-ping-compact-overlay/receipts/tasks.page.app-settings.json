@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-settings",
+  "source": "tasks/src/app/app/settings/page.tsx",
+  "materialityHash": "3fcba4d3b2bb4dcf",
+  "reviewedAt": "2026-10-15",
+  "reviewer": "Codex root visual receiving and independent integration custody",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-4a37b176c1ce85cc67a0eaef-14c83b30c563284c.json",
+    "attestationSha256": "195823fa352447cf0ae2dbb7f34055cacef37e828e30df91f6ca12bdbca6a3d9",
+    "runId": "tasks-playwright-4a37b176c1ce85cc67a0eaef",
+    "canonicalEvidenceSha256": "4a37b176c1ce85cc67a0eaef677d462f7cddfb428bbcd1f47926e8f58ea69060",
+    "rawArtifactSha256": "14c83b30c563284ccad2fe89fa7a548f1cc70f9f06819a2445315c41ff61d32d",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-settings",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Exact capture source 248451f0b87bb3312eb803910bea285b779af0b3, fixture tasks.page.app-settings, case \"own surface in demo\". Root received the current desktop representative by actual viewing or verified byte identity to its previously viewed representative; independent custody received all four actual viewport outcomes and images. Actual Settings demo route and its visible settings surface; no real account preference mutation is established. Fresh compact-overlay source pins and the normal complete capture are bound to this actual head and tree; prior capture receipts remain historical.",
+  "decision": "ACCEPT bounded demo/component materiality after root visual receiving and independent 204-pair custody. No genuine speech recognition, microphone, authenticated/provider continuity, production or release qualification. Original voice G2 remains STOP."
+}

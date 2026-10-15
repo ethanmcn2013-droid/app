@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { restorePingTypedTasks, sendPingTyped, pingTypedResponseMatches } from "@/lib/ping/typed-client";
@@ -11,11 +11,13 @@ import {
   sendPingVoice, type PingVoiceSendResult,
 } from "@/lib/ping/voice-client";
 import { PING_VOICE_VERSION, type PingVoiceBegin } from "@/lib/ping/voice-contract";
+import { PingDock, PingMic, PingOverlay } from "./ping-overlay";
+import styles from "./ping-overlay.module.css";
 
 const MARKER_VERSION = "ping.voice.intent.v1";
 const MARKER_PREFIX = "signal:ping-voice:intent:v1";
 type VoiceMarker = Readonly<{ version: typeof MARKER_VERSION; actorId: string; projectId: string; generationId: string; commandId: string; token: string; connectionEpoch: string; phase: "capturing" | "finishing" | "unknown" | "committed" }>;
-type Props = Readonly<{ projectId: string; projectName: string | null; selectedTaskIds: readonly string[]; tasks: readonly Task[]; actorId: string }>;
+type Props = Readonly<{ projectId: string; projectName: string | null; selectedTaskIds: readonly string[]; tasks: readonly Task[]; actorId: string; available: boolean; typedContent: ReactNode }>;
 type VoiceState = "idle" | "starting" | "listening" | "finishing" | "unknown" | "committed" | "not_invoked" | "error";
 
 function storageKey(actorId: string, projectId: string) { return `${MARKER_PREFIX}:${encodeURIComponent(actorId)}:${encodeURIComponent(projectId)}`; }
@@ -51,6 +53,23 @@ function statusCopy(state: VoiceState, phase: string): string {
 
 export function PingVoicePanel(props: Props) {
   const dispatch = useTasksDispatch();
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"voice" | "typed">("voice");
+  const typedRegion = useRef<HTMLDivElement>(null);
+  const previousOverlay = useRef({ open: false, mode });
+  const dismissEpoch = useRef(0);
+  const dismiss = useRef<() => void>(() => {});
+  const close = useCallback(() => dismiss.current(), []);
+  useLayoutEffect(() => {
+    const previous = previousOverlay.current;
+    previousOverlay.current = { open, mode };
+    if (open && previous.open && mode === "typed" && previous.mode !== "typed") {
+      const region = typedRegion.current;
+      const field = region?.querySelector<HTMLElement>("textarea:not(:disabled), input:not(:disabled)");
+      const fallback = region?.querySelector<HTMLElement>("button:not(:disabled):not([data-dialog-skip-focus])");
+      (field ?? fallback)?.focus({ preventScroll: true });
+    }
+  }, [open, mode]);
   const [marker, setMarker] = useState<VoiceMarker | null>(null);
   const [receipt, setReceipt] = useState<PingTypedReceipt | null>(null);
   const [state, setState] = useState<VoiceState>("idle");
@@ -223,7 +242,8 @@ export function PingVoicePanel(props: Props) {
   const selectedTasks = selectedIds.map((id) => props.tasks.find((task) => task.id === id)).filter((task): task is Task => Boolean(task));
   const validSelection = selectedTasks.length === selectedIds.length && selectedTasks.every((task) => scopeTask(task, props.projectId));
   const start = async () => {
-    if (!markerReady || busy || requestLatch.current || markerRef.current || !validSelection || !window.crypto?.randomUUID) return;
+    if (!props.available || !markerReady || busy || requestLatch.current || markerRef.current || !validSelection || !window.crypto?.randomUUID) return;
+    const openedAt = dismissEpoch.current;
     const owner = claimRequest(); setState("starting");
     const revision = current.current.revision;
     const request = beginRetry.current?.revision === revision ? beginRetry.current.request : makePingVoiceBegin(props.projectId, selectedIds,
@@ -231,12 +251,12 @@ export function PingVoicePanel(props: Props) {
     beginRetry.current = { request, revision };
     const sent = await sendPingVoice(request);
     const scope = current.current;
-    if (!mounted.current || requestOwner.current !== owner || scope.scopeKey !== scopeKey || scope.selectionKey !== selectionKey || scope.revision !== revision) {
+    if (!mounted.current || openedAt !== dismissEpoch.current || requestOwner.current !== owner || scope.scopeKey !== scopeKey || scope.selectionKey !== selectionKey || scope.revision !== revision) {
       if (sent.kind === "response" && sent.response.ok && sent.response.action === "begin" && sent.response.projectId === props.projectId) {
         void sendPingVoice({ version: PING_VOICE_VERSION, action: "cancel", generationId: sent.response.generationId, token: sent.response.token });
       }
       if (mounted.current && requestOwner.current === owner && scope.scopeKey === scopeKey && !markerRef.current) {
-        setState("idle"); setStatusText("The selection changed before capture started. Start a new request for the current selection.");
+        setState("idle"); setStatusText("Capture was closed or the selection changed before it started. No microphone was opened.");
       }
       releaseRequest(owner); return;
     }
@@ -304,35 +324,50 @@ export function PingVoicePanel(props: Props) {
   };
 
   const blockStart = !markerReady || Boolean(marker) || state === "starting" || busy || !validSelection;
-  const name = props.projectName?.trim() || "this Project";
+  useLayoutEffect(() => {
+    dismiss.current = () => {
+      dismissEpoch.current++;
+      capture.cancel();
+      if (markerRef.current && markerRef.current.phase !== "committed") void cancel();
+      setOpen(false);
+    };
+  });
+  const title = state === "unknown" ? "Let’s check the result" : state === "committed" ? "Your result is saved" : !props.available ? "Voice isn’t available here" : state === "listening" ? "I’m listening" : state === "starting" ? "Getting ready…" : state === "finishing" ? "Working on your request…" : state === "not_invoked" ? "No changes were made" : state === "error" ? "Voice couldn’t start" : "What should change?";
+  const seconds = Math.floor((capture.snapshot?.totalSamples ?? 0) / 24000);
   return (
-    <div ref={panelRef} className="mt-4 border-t border-[color:var(--v3-border)] pt-3" data-testid="ping-voice-panel"
+    <>
+    <PingDock selectedCount={selectedIds.length}>
+    <button type="button" className={styles.launch} data-testid="ping-voice-start" aria-haspopup="dialog" aria-expanded={open && mode === "voice"}
+      onClick={() => { setMode("voice"); setOpen(true); if (props.available) void start(); }}><PingMic />Talk to Ping</button>
+    <button type="button" className={styles.typeLaunch} data-testid="ping-type-open" aria-haspopup="dialog" aria-expanded={open && mode === "typed"}
+      onClick={() => { setMode("typed"); setOpen(true); }}>Type a request</button>
+    </PingDock>
+    <PingOverlay open={open} onClose={close} projectName={props.projectName} selectedCount={selectedIds.length}>
+    {mode === "typed" ? <div ref={typedRegion}>{props.typedContent}</div> : (
+    <div ref={panelRef} className={`${styles.voice} ${state === "listening" ? styles.listening : ""}`} data-testid="ping-voice-panel"
       onClickCapture={(event) => {
         const node = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
         if (node && node === document.activeElement) focusOrigin.current = { node, scope: current.current.scopeKey, revision: current.current.revision };
       }}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-[color:var(--v3-text)]">Voice capture</h3>
-          <p className="mt-1 max-w-[68ch] text-sm text-[color:var(--v3-text-2)]">Speak a change for the selected tasks—or a creation request when none are selected—in {name}, then choose Finish.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" data-testid="ping-voice-start" onClick={() => void start()} disabled={blockStart}
-            className="min-h-10 rounded-md bg-[color:var(--v3-accent)] px-3.5 text-sm font-semibold text-[color:var(--v3-on-accent)] disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)]">{state === "starting" ? "Starting…" : "Start voice capture"}</button>
-          {state === "listening" ? <button type="button" data-testid="ping-voice-finish" onClick={finish} disabled={busy || phase !== "listening"}
-            className="min-h-10 rounded-md px-3 text-sm font-medium text-[color:var(--v3-text)] underline underline-offset-4 disabled:opacity-60">Finish</button> : null}
-          {marker && !receipt && state !== "listening" ? <button type="button" data-testid="ping-voice-check-original" onClick={() => void checkOriginal()} disabled={busy}
-            className="min-h-10 rounded-md px-3 text-sm font-medium text-[color:var(--v3-accent-text)] underline underline-offset-4 disabled:opacity-60">{busy ? "Checking…" : "Check original result"}</button> : null}
-          {marker && (state === "starting" || state === "listening" || state === "finishing" || state === "unknown") ? <button type="button" data-testid="ping-voice-cancel" onClick={() => void cancel()} disabled={cancelling}
-            className="min-h-10 rounded-md px-3 text-sm font-medium text-[color:var(--v3-text)] underline underline-offset-4 disabled:opacity-60">Cancel capture</button> : null}
-          {receipt && !refreshReady ? <button type="button" data-testid="ping-voice-refresh-current" onClick={() => void refreshCurrent()} disabled={busy}
-            className="min-h-10 rounded-md px-3 text-sm font-medium text-[color:var(--v3-accent-text)] underline underline-offset-4 disabled:opacity-60">Refresh current Tasks</button> : null}
-        </div>
+      <div className={styles.signal}><PingMic /></div>
+      <h3 className={styles.title}>{title}</h3>
+      <p tabIndex={-1} className={styles.status} data-testid="ping-voice-status" role="status" aria-live="polite">{!props.available && state !== "unknown" && state !== "committed" ? "You can still type an exact request for this Project." : statusText || statusCopy(state, phase)}</p>
+      {state === "listening" ? <p className={styles.timer}>{`${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`} · Microphone on</p> : null}
+      <div className={styles.actions}>
+        {props.available && state === "listening" ? <button type="button" data-testid="ping-voice-finish" className={styles.primary} onClick={finish} disabled={busy || phase !== "listening"}>Finish and run</button> : null}
+        {props.available && state !== "listening" && !marker ? <button type="button" className={styles.primary} onClick={() => void start()} disabled={blockStart}>{state === "starting" ? "Starting…" : "Speak again"}</button> : null}
+        {marker && !receipt && state !== "listening" ? <button type="button" data-testid="ping-voice-check-original" className={styles.primary} onClick={() => void checkOriginal()} disabled={busy}>{busy ? "Checking…" : "Check original result"}</button> : null}
+        {marker && (state === "starting" || state === "listening" || state === "finishing" || state === "unknown") ? <button type="button" data-testid="ping-voice-cancel" className={styles.secondary} onClick={() => void cancel()} disabled={cancelling}>Cancel</button> : null}
+        {receipt && !refreshReady ? <button type="button" data-testid="ping-voice-refresh-current" className={styles.primary} onClick={() => void refreshCurrent()} disabled={busy}>Refresh current Tasks</button> : null}
+        {!marker && state !== "starting" ? <button type="button" className={props.available ? styles.secondary : styles.primary} onClick={() => setMode("typed")}>Type instead</button> : null}
       </div>
-      <p tabIndex={-1} className="mt-2 text-sm text-[color:var(--v3-text-2)]" data-testid="ping-voice-status" role="status" aria-live="polite">{statusText || statusCopy(state, phase)}</p>
       <p className="sr-only" data-testid="ping-voice-phase">{phase}</p>
       {receipt ? <div data-testid="ping-voice-receipt" className="mt-2 text-sm text-[color:var(--v3-text-2)]">Saved result: {receipt.changedCount} changed of {receipt.affectedCount} affected tasks.</div> : null}
       {capture.snapshot?.reason ? <p className="mt-1 text-xs text-[color:var(--v3-text-2)]">Capture ended safely. Check the original result before starting again.</p> : null}
+      <p className={styles.footnote}>{props.available ? "Finish runs your request in this Project. No task changes run while you’re speaking." : "Microphone access stays off."}</p>
     </div>
+    )}
+    </PingOverlay>
+    </>
   );
 }
