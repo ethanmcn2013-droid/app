@@ -2587,7 +2587,7 @@
     "src/components/shell/project-context-menu.module.css": "01775cb72088f3fcca272044f5ea2297d079aed53e87499b52e3333d1775aa87",
     "src/components/shell/project-context-menu.tsx": "33b648c3c84558937b1f5df286b8164a8ba66b720dfea3d6b0243129e3071828",
     "src/components/shell/shell-icons.tsx": "a10a02883fd5d4a1cc5305edd2aace5797c12b1cd98662e871365ef87a168094",
-    "src/components/shell/shell-nav.test.ts": "8ebde8f795872dc3893e101f18ecdaf1f8150a4d937941cd8355061bc784f3a6",
+    "src/components/shell/shell-nav.test.ts": "9b60046b2620b64bbc25419f81391c74df1d8ff37b62c34abb33cf22c04a9d85",
     "src/components/shell/shell-nav.ts": "d09281214a4ccd6838302e2552894f60f8c774cc75f0353270fc89ad2f350a92",
     "src/components/shell/shell.module.css": "f49763e73376b18eb9dbf75c5d4f5ac16fa972e391380c6b452965e62d573b58",
     "src/components/shell/sidebar-icon.tsx": "205e2ce815f67f4f701a06fe514f52ef4630e61320f222f938d04472f1ab35c2",

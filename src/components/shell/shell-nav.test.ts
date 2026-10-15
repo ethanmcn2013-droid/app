@@ -184,8 +184,9 @@ test("Projects lists the reader's own catalog with a project marker each and a d
   // One authorized read: the catalog action's rows, plus the status rule.
   assert.match(sidebarSource, /loadSidebarProjectsAction\(\)/);
   assert.doesNotMatch(sidebarSource, /loadProjectCatalogAction/);
-  // The approved sidebar set: every project wears the same marker in its own colour.
-  assert.match(sidebarSource, /<ProjectMarker color=\{projectColor\(row\.id\)\} \/>/);
+  // The approved sidebar identity retains each Project's colour. The rendered
+  // sidebar fixture checks that only the selected row has an outer ring.
+  assert.match(sidebarSource, /className=\{styles\.projectProgressCore\} style=\{\{ backgroundColor: projectColor\(row\.id\) \}\}/);
   assert.match(sidebarSource, /const mark = marks\[row\.id\];/);
   assert.match(sidebarSource, /const dot = mark \? <span className=\{styles\.statusDot\} data-tone=\{mark\}/);
   // A row is a link to that Project; a plain click uses the guarded switch.

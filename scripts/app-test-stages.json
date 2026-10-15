@@ -321,7 +321,11 @@
     "src/modules/timeline/server/couple-artifact-boundary.test.ts",
     "src/app/app/theme-resolver.test.ts",
     "src/server/actions/preferences-theme-allow-list.test.ts",
-    "src/components/app/settings/sections/appearance-radiogroup.test.ts"
+    "src/components/app/settings/sections/appearance-radiogroup.test.ts",
+    "src/components/app/settings/settings-overlay-drafts.test.ts",
+    "src/components/shell/more-preferences-model.test.ts",
+    "src/lib/readable-link.test.ts",
+    "src/components/system/arrival-settle.test.ts"
   ],
   [
     "node",
