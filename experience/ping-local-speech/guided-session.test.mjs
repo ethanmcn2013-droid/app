@@ -234,6 +234,23 @@ test('unfinished timing gestures keep absent duration and null statistics after 
   assert.equal(result.json.rows[0].timings.length,2);await s.close();
 });
 
+test('late timing uses its original generation mode after correction changes the same attempt input mode',async()=>{
+  const f=await setup();let s=f.session;await s.startCase();
+  await s.observeInput({mode:'scripted',evidence:'scripted',generationId:prepared.generationId});await s.observePrepareResponse(prepared);
+  await s.observeTerminal({...prepared,action:'cancel',knowledge:'not_invoked'});
+  const correction={...prepared,generationId:'typed-correction-generation',commandId:'00000000-0000-4000-8000-000000000002',token:'correction-token'};
+  await s.observeInput({mode:'typed',evidence:'automatic',generationId:correction.generationId});await s.observePrepareResponse(correction);
+  const sample={metric:'prepare-roundtrip',clock:'browser-monotonic',durationMs:10,attemptId:s.state().attemptId};
+  await s.recordTiming({...sample,generationId:prepared.generationId,evidence:'scripted'});
+  await s.recordTiming({...sample,generationId:correction.generationId,evidence:'automatic'});
+  let {json}=await s.exportResults();assert.deepEqual(json.rows[0].timings.map(t=>t.mode),['scripted','typed']);
+  await s.close();s=await createGuidedSession(f.options);
+  await s.recordTiming({...sample,generationId:prepared.generationId,evidence:'scripted',durationMs:30});
+  ({json}=await s.exportResults());assert.deepEqual(json.rows[0].timings.map(t=>t.mode),['scripted','typed','scripted']);
+  assert.equal(json.timingSummary.find(group=>group.mode==='scripted').count,2);assert.equal(json.timingSummary.find(group=>group.mode==='typed').count,1);
+  assert.equal(s.state().counts.started,1);await s.close();
+});
+
 test('real libSQL compound named/date/status effects, creation defaults and original recovery match independent oracle',async()=>{
   // This proof uses the incumbent executor and complete literal SQL rows; no browser/provider.
   const proofModule=await import('../../src/server/ping/proof-fixture.ts');const proof=proofModule.default??proofModule;
