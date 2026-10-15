@@ -188,7 +188,8 @@ try {
   assert.equal(runner.databasePath, retainedDatabasePath);
   assert.deepEqual(runner.identity, retainedIdentity);
   unchanged(lost, await snapshot());
-  await newBrowser(); await guide('verify'); await waitOutcome('matched');
+  assert.equal(state().status, 'paused', 'Owner close preserves a saved pause');
+  await newBrowser(); await guide('resume'); await guide('verify'); await waitOutcome('matched');
   unchanged(lost, await snapshot());
   assert.equal(state().currentCase.id, '03'); assert.equal(state().counts.started, 3);
   passed(activeLabel, { sameDatabase: true, sameIdentity: true, receiptCountDelta: 1 });
