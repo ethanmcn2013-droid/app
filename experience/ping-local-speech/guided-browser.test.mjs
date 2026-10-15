@@ -19,7 +19,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('@playwright/test');
 await fs.mkdir(output, { recursive: false });
 
-const hash = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value)).digest('hex');
+const hash = value => createHash('sha256').update(typeof value === 'string' || value instanceof Uint8Array ? value : JSON.stringify(value)).digest('hex');
 const root = path.resolve(import.meta.dirname, '../..');
 const report = {
   version: 'ping.guided.scripted-dry-run.v1', evidenceClass: 'scripted_invented_only',
