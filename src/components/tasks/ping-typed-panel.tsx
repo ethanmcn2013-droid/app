@@ -28,6 +28,8 @@ import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { isDemoMode } from "@/lib/access-mode";
 import { PingVoicePanel } from "./ping-voice-panel";
+import { PingDock, PingOverlay } from "./ping-overlay";
+import styles from "./ping-overlay.module.css";
 
 const PING_TYPED_ENABLED = process.env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED === "1";
 const STATUS_NAME: Record<string, string> = {
@@ -134,6 +136,8 @@ function PingTypedPanelFlow({
   selectedTaskIds,
   actorId,
 }: Props & { projectId: string; actorId: string }) {
+  const [typedOpen, setTypedOpen] = useState(false);
+  const closeTyped = useCallback(() => setTypedOpen(false), []);
   const { tasks } = useTasksState();
   const taskDispatch = useTasksDispatch();
   const [draft, setDraft] = useState("");
@@ -493,6 +497,14 @@ function PingTypedPanelFlow({
   const title = projectName?.trim() || "this Project";
 
   return (
+    <>
+    <PingDock>
+      <PingVoicePanel projectId={projectId} projectName={projectName} selectedTaskIds={selectedTaskIds}
+        tasks={tasks} actorId={actorId} available={process.env.NEXT_PUBLIC_PROJECT_PING_VOICE_ENABLED === "1"}
+        onTypeInstead={() => setTypedOpen(true)} />
+      <button type="button" className={styles.typeLaunch} data-testid="ping-type-open" aria-haspopup="dialog" aria-expanded={typedOpen} onClick={() => setTypedOpen(true)}>Type a request</button>
+    </PingDock>
+    <PingOverlay open={typedOpen} onClose={closeTyped} projectName={projectName} selectedCount={selectedSet.size}>
     <section
       ref={panelRef}
       onClickCapture={(event) => {
@@ -501,12 +513,12 @@ function PingTypedPanelFlow({
           focusOrigin.current = { node, scope: currentScope.current.scopeKey, epoch: currentScope.current.selectionEpoch };
       }}
       aria-labelledby="ping-typed-heading"
-      className="border-t border-[color:var(--v3-border)] py-3"
+      className={styles.typedFlow}
       data-testid="project-ping-typed-panel"
     >
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <h2 id="ping-typed-heading" className="text-sm font-semibold text-[color:var(--v3-text)]">Ping</h2>
+          <h2 id="ping-typed-heading" className="text-sm font-semibold text-[color:var(--v3-text)]">Type a request</h2>
           <p className="mt-1 max-w-[68ch] text-sm leading-5 text-[color:var(--v3-text-2)]">
             Make a small, exact change in {title}. This panel understands only the examples below.
           </p>
@@ -634,11 +646,9 @@ function PingTypedPanelFlow({
       {notice ? <p className="mt-2 text-sm text-[color:var(--v3-text-2)]" data-testid="ping-status" role="status">{notice}</p> : null}
       {error && !prepared ? <p className="mt-2 text-sm text-[color:var(--v3-danger-text)]" data-testid="ping-error" role="alert">{error}</p> : null}
       {!notice && !error && sendState !== "idle" ? <p className="sr-only" data-testid="ping-state" role="status" aria-live="polite">{statusLabel}</p> : null}
-      {process.env.NEXT_PUBLIC_PROJECT_PING_VOICE_ENABLED === "1" ? (
-        <PingVoicePanel projectId={projectId} projectName={projectName} selectedTaskIds={selectedTaskIds}
-          tasks={tasks} actorId={actorId} />
-      ) : null}
     </section>
+    </PingOverlay>
+    </>
   );
 }
 
