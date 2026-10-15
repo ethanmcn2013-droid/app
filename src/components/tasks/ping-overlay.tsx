@@ -12,9 +12,9 @@ export function PingMic({ className }: { className?: string }) {
   </svg>;
 }
 
-export function PingDock({ children }: { children: ReactNode }) {
+export function PingDock({ children, selectedCount = 0 }: { children: ReactNode; selectedCount?: number }) {
   if (typeof document === "undefined") return null;
-  return createPortal(<div className={styles.dock} aria-label="Ping commands">{children}</div>, document.body);
+  return createPortal(<div className={styles.dock} data-has-selection={selectedCount > 0} aria-label="Ping commands">{children}</div>, document.body);
 }
 
 export function PingOverlay({ open, onClose, projectName, selectedCount, children }: {

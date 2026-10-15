@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-15 · Internal candidate · Speak over your Tasks
+
+Ping opens in a compact floating box over the current Tasks workspace. Activate it, speak, then choose **Finish and run**. Closing stops capture; an uncertain save can be checked through its original result. The typed alternative keeps its review and apply steps. On narrow screens, Ping sits above the selection controls.
+
+The new English speech candidate requires supported on-device browser recognition and the existing exact command syntax. It stays off by default behind the internal typed and local-speech flags. Original voice qualification remains G2 STOP; genuine microphone use, broader qualification and programme acceptance are separate. No production activation, migration or paid speech provider is included.
+
 ## 2026-10-15 · Candidate · Keep the page while you chat
 
 - **Chat:** Open the circular chat button to message without leaving your page. Drafts stay through navigation. Personal chat keeps private notes and exports them as Markdown. Dictation fills an editable draft on supported browsers; sending remains your choice.

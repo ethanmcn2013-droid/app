@@ -208,7 +208,7 @@ export function PingLocalSpeechPanel<Capture>(props: Props<Capture>) {
   const seconds = Math.floor(snapshot.elapsedMs / 1000);
 
   return <>
-    <PingDock>
+    <PingDock selectedCount={props.selectedCount}>
       <button type="button" className={styles.launch} data-testid="ping-voice-start" aria-haspopup="dialog" aria-expanded={open && mode === "voice"} onClick={launchVoice}><PingMic />Talk to Ping</button>
       <button type="button" className={styles.typeLaunch} data-testid="ping-type-open" aria-haspopup="dialog" aria-expanded={open && mode === "typed"} onClick={launchTyped}>Type a request</button>
     </PingDock>

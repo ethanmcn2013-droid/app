@@ -336,7 +336,7 @@ export function PingVoicePanel(props: Props) {
   const seconds = Math.floor((capture.snapshot?.totalSamples ?? 0) / 24000);
   return (
     <>
-    <PingDock>
+    <PingDock selectedCount={selectedIds.length}>
     <button type="button" className={styles.launch} data-testid="ping-voice-start" aria-haspopup="dialog" aria-expanded={open && mode === "voice"}
       onClick={() => { setMode("voice"); setOpen(true); if (props.available) void start(); }}><PingMic />Talk to Ping</button>
     <button type="button" className={styles.typeLaunch} data-testid="ping-type-open" aria-haspopup="dialog" aria-expanded={open && mode === "typed"}
