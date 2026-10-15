@@ -146,10 +146,24 @@ try {
       else {res.writeHead(url.pathname==='/favicon.ico'?204:404);res.end();}
     } catch(error) {errors.push(error.message);res.writeHead(500);res.end();}
   });
-  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve)); origin='http://127.0.0.1:'+server.address().port;
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve)); origin='http://127.0.0.1:'+server.address().port;receipt.runtime={pid:process.pid,origin};
   browser=await chromium.launch({headless:true});
   const context=await browser.newContext({viewport:{width:1440,height:960},locale:'en-GB',timezoneId:'Europe/Dublin'});
   const page=await context.newPage();
+  const captureShot=async file=>{
+    await page.evaluate(()=>document.fonts.ready);
+    await page.waitForFunction(()=>{const el=document.querySelector('[role="dialog"][aria-label="Ping"]');return !el||getComputedStyle(el).opacity==='1';});
+    const settled=await page.evaluate(async()=>{
+      const el=document.querySelector('[role="dialog"][aria-label="Ping"]');if(!el)return {dialog:false};
+      const sample=()=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {opacity:s.opacity,transform:s.transform,x:r.x,y:r.y,width:r.width,height:r.height,background:s.backgroundColor};};
+      let previous=sample(),stable=0;
+      for(let i=0;i<90;i++){await new Promise(requestAnimationFrame);const current=sample();stable=JSON.stringify(current)===JSON.stringify(previous)?stable+1:0;previous=current;if(current.opacity==='1'&&stable>=2)return {dialog:true,stableFrames:stable,...current};}
+      throw Error('Overlay did not reach opacity1 and two stable transform/bounds frames');
+    });
+    (receipt.captureSettlements??=[]).push({file,...settled});
+    await page.screenshot({path:path.join(out,file),fullPage:true});
+  };
+
   page.on('pageerror',error=>errors.push(error.message));
   const consoleErrors=[];page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
   const notFoundResponses=[];page.on('response',response=>{if(response.status()===404)
@@ -167,18 +181,51 @@ try {
     }
     return route.continue();
   });
+  await page.addInitScript(()=>{window.overlayMicCalls=0;const native=navigator.mediaDevices?.getUserMedia?.bind(navigator.mediaDevices);if(native)navigator.mediaDevices.getUserMedia=constraints=>{window.overlayMicCalls++;return native(constraints);};});
   await page.goto(origin);
   await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).waitFor();
   const waitSavedView = async () => {
     await page.getByTestId('ping-status').filter({hasText:'current Tasks view now reflects it'}).waitFor();
   };
+  const closePing = async()=>{if(await page.getByRole('dialog',{name:'Ping',exact:true}).isVisible()){await page.keyboard.press('Escape');await page.getByRole('dialog',{name:'Ping',exact:true}).waitFor({state:'hidden'});}};
+  const openTyped = async()=>{if(!await page.getByTestId('project-ping-typed-panel').isVisible()){await closePing();await page.getByTestId('ping-type-open').click();await page.getByTestId('project-ping-typed-panel').waitFor();}};
   const prepare = async text => {
+    await openTyped();
     await page.getByTestId('ping-input').fill(text);
     await page.getByTestId('ping-review').click();
     await page.getByTestId('ping-apply').waitFor();
   };
+  assert.equal(state.requests.length,0);assert.equal(await page.evaluate(()=>window.overlayMicCalls),0);
+  assert.equal(await page.getByRole('dialog',{name:'Ping',exact:true}).count(),0);
+  await page.getByTestId('ping-voice-start').click();
+  await page.getByText('Voice isn’t available here',{exact:true}).waitFor();
+  assert.equal(state.requests.length,0);assert.equal(await page.evaluate(()=>window.overlayMicCalls),0);
+  assert.equal(await page.getByTestId('ping-voice-finish').count(),0);
+  assert.equal(await page.getByText('I’m listening',{exact:true}).count(),0);
+  await page.getByRole('button',{name:'Type instead',exact:true}).click();
+  await page.getByTestId('ping-input').waitFor();
+  assert.equal(await page.getByRole('dialog',{name:'Ping',exact:true}).count(),1);
+  await page.waitForFunction(()=>document.querySelector('[data-testid=ping-input]')===document.activeElement);
+  for(let i=0;i<12;i++){await page.keyboard.press(i<6?'Tab':'Shift+Tab');assert.equal(await page.getByRole('dialog',{name:'Ping',exact:true}).evaluate(el=>el.contains(document.activeElement)),true);}
+  assert.equal(state.requests.length,0);assert.equal(await page.evaluate(()=>window.overlayMicCalls),0);
+  await closePing();
+  await page.getByTestId('ping-type-open').focus();await page.keyboard.press('Enter');await page.getByTestId('ping-input').waitFor();
+  await page.waitForFunction(()=>document.querySelector('[data-testid=ping-input]')===document.activeElement);
+  await page.keyboard.press('Escape');await page.getByRole('dialog',{name:'Ping',exact:true}).waitFor({state:'hidden'});
+  await page.waitForFunction(()=>document.querySelector('[data-testid=ping-type-open]')===document.activeElement);
+  receipt.cases.push({name:'overlay activation has no request or mic before activation; unavailable voice stays honest; single-dialog typed switch traps keys and Escape returns focus',passed:true});
+  receipt.overlayRenders=[];
+  for(const theme of ['light','dark'])for(const viewport of [{width:1440,height:960},{width:390,height:844}]){
+    await page.setViewportSize(viewport);await page.emulateMedia({colorScheme:theme,reducedMotion:'reduce'});
+    await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);await openTyped();await page.evaluate(()=>document.fonts.ready);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+    const file=`overlay-typed-${theme}-${viewport.width}.png`;await captureShot(file);
+    receipt.overlayRenders.push({theme,viewport,file});await closePing();
+  }
+  await page.setViewportSize({width:1440,height:960});await page.emulateMedia({colorScheme:'light',reducedMotion:'reduce'});await page.evaluate(()=>{document.documentElement.dataset.theme='light';});
   const countReceipts = async () => Number((await fixture.client.execute('SELECT COUNT(*) AS n FROM ping_command_receipts')).rows[0].n);
   const targetRow = async () => (await fixture.client.execute("SELECT assignees,lane,due,start_day,duration_days FROM tasks WHERE id='target'")).rows[0];
+  await closePing();
   await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).check();
   await prepare('assign me and status doing');
   state.holdAction = 'execute';
@@ -200,6 +247,7 @@ try {
   await page.getByTestId('ping-status').filter({hasText:'not sent a second time'}).waitFor();
   assert.equal(executeCalls,2);assert.equal(await countReceipts(),2);
   await page.reload(); // sessionStorage restores original handle; reload does not execute.
+  await openTyped();
   await page.getByTestId('ping-check-original').waitFor();
   assert.equal(executeCalls,2);
   await page.getByTestId('ping-check-original').click();
@@ -208,6 +256,7 @@ try {
   assert.deepEqual(await page.evaluate(()=>window.pingObserved.find(task=>task.id==='target').assignees),['bob']);
   receipt.cases.push({name:'committed response loss and reload recover original receipt without second execution',passed:true});
 
+  await closePing();
   await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).check();
   await prepare('status review');
   state.failRefresh=true;
@@ -228,8 +277,10 @@ try {
   await page.getByTestId('ping-input').fill('assign me');
   await page.getByTestId('ping-review').click();
   await waitForHeldResponse(state);
-  await page.getByRole('checkbox',{name:'Select Synthetic other',exact:true}).check();
-  await page.getByRole('checkbox',{name:'Select Synthetic other',exact:true}).uncheck(); // A→B→A must still invalidate the pending capture.
+  // Explicit adversarial fixture state change through the real Hybrid checkbox handler;
+  // modal users cannot click the background. This preserves the original ABA race.
+  await page.getByRole('checkbox',{name:'Select Synthetic other',exact:true}).evaluate(el=>el.click());
+  await page.getByRole('checkbox',{name:'Select Synthetic other',exact:true}).evaluate(el=>el.click()); // A→B→A must still invalidate the pending capture.
   const releasedPrepare = page.waitForResponse(response => response.url() === origin+'/api/ping' && response.request().method()==='POST' && response.request().postDataJSON().action==='prepare');
   state.holdAction=null;state.release();state.release=null;
   const stalePreparedResponse=await releasedPrepare;
@@ -262,8 +313,9 @@ try {
   };
   for (const selected of [[floorTargets[0]],floorTargets.slice(1)]) {
     await page.reload(); // Fresh mounted selection, no command invocation.
-    await page.getByTestId('ping-input').waitFor();
+    await page.getByTestId('ping-type-open').waitFor();
     for (const id of selected) await page.getByRole('checkbox',{name:'Select Synthetic '+id,exact:true}).check();
+    await openTyped();
     assert.equal(await page.getByTestId('ping-selection-scope').textContent(),`${selected.length} selected task${selected.length===1?'':'s'} in this Project`);
     await page.getByTestId('ping-input').fill('status doing');
     const before={execute:executeCalls,read:receiptReadCalls,receipts:await countReceipts(),rows:await literalRows()};
@@ -341,7 +393,7 @@ try {
   receipt.pingRouterRefreshCount=0;
   receipt.currentControlObservations=[];
   for(const selected of [[controlTargets[0]],controlTargets.slice(1)]) {
-    await page.reload();await page.getByTestId('ping-input').waitFor();
+    await page.reload();await page.getByTestId('ping-type-open').waitFor();
     for(const id of selected)await page.getByRole('checkbox',{name:'Select Synthetic '+id,exact:true}).check();
     const before={calls:controlCalls.length,execute:executeCalls,read:receiptReadCalls,receipts:await countReceipts(),rows:await literalRows(),activities:Number((await fixture.client.execute('SELECT COUNT(*) AS n FROM activities')).rows[0].n)};
     const maxPosition=Math.max(0,...before.rows.filter(row=>row.workspace_id===PROOF_PROJECT&&row.lane==='doing').map(row=>Number(row.position??0)));
@@ -385,7 +437,8 @@ try {
     const ping=receipt.typedFloorObservations.find(item=>item.targetCount===selected.length);ping.currentControlComparator={outcome:'observed_local',observationIndex:receipt.currentControlObservations.length-1};
     receipt.cases.push({name:`actual Move menu ${selected.length}-target action fanout persists and confirms canonical mounted rows`,passed:true});
   }
-  await page.reload();await page.getByTestId('ping-input').waitFor();
+  await page.reload();await page.getByTestId('ping-type-open').waitFor();
+  await closePing();
   await page.getByRole('checkbox',{name:'Select Synthetic target',exact:true}).check();
   await prepare('status done');state.dropExecute=true;
   const beforeRestart=executeCalls;
@@ -393,7 +446,7 @@ try {
   await page.getByTestId('ping-status').filter({hasText:'not sent a second time'}).waitFor();
   assert.equal(executeCalls,beforeRestart+1);
   session=createPingTypedSession(fixture.adapter); // Actual loss of every in-process token/lane.
-  await page.reload();await page.getByTestId('ping-check-original').waitFor();
+  await page.reload();await openTyped();await page.getByTestId('ping-check-original').waitFor();
   await page.getByTestId('ping-check-original').click();
   await page.getByTestId('ping-receipt').waitFor();
   await page.getByTestId('ping-error').filter({hasText:'could not be refreshed'}).waitFor();
@@ -405,17 +458,19 @@ try {
   const accessibility = await new AxeBuilder({page}).include('[data-testid=project-ping-typed-panel]').analyze();
   assert.deepEqual(accessibility.violations.map(({id,impact,nodes})=>({id,impact,count:nodes.length})),[]);
   receipt.accessibility={scope:'typed panel',violations:0};
-  await page.screenshot({path:path.join(out,'typed-desktop.png'),fullPage:true});
+  await captureShot('typed-desktop.png');
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
-  await page.screenshot({path:path.join(out,'typed-phone.png'),fullPage:true});
+  await captureShot('typed-phone.png');
   assert.deepEqual(notFoundResponses,[{path:'/api/ping',action:'receipt'},{path:'/api/ping',action:'refresh'}]);
   receipt.expectedTransportDiagnostics={consoleErrors,failedRequests,notFoundResponses};
   assert.equal(consoleErrors.filter(message=>/status of 404/.test(message)).length,2);
   assert.ok(consoleErrors.every(message=>/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED|status of 503|status of 404/.test(message)), 'Unexpected browser console error');
   assert.ok(failedRequests.every(request=>request.path==='/api/ping' && /ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED/.test(request.error)), 'Unexpected failed browser request');
   receipt.executeCalls=executeCalls;receipt.receiptCount=await countReceipts();receipt.httpActions=state.requests;
+  assert.equal(page.url(),origin+'/','Overlay must not navigate away from the existing Tasks fixture route');
+  receipt.overlayNavigation={actualUrl:page.url(),expectedUrl:origin+'/',explicitTestReloadsOnly:true};
   receipt.status='passed';
 
 } catch(error) {receipt.status='failed';receipt.error=error.message;throw error;}
-finally {await fs.writeFile(path.join(out,'receipt.json'),JSON.stringify(receipt,null,2));await browser?.close();if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}fixture?.client.close();}
+finally {await fs.writeFile(path.join(out,'receipt.json'),JSON.stringify(receipt,null,2));await browser?.close();if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}fixture?.client.close();receipt.cleanup={browserClosed:!browser?.isConnected(),serverClosed:!server?.listening,clientClosed:fixture?.client.closed??null};await fs.writeFile(path.join(out,'receipt.json'),JSON.stringify(receipt,null,2));}
