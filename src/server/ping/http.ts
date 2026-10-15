@@ -4,6 +4,8 @@ import { PING_VOICE_VERSION, PING_VOICE_MAX_FRAME_BYTES, type PingVoiceResponse 
 import { dataRecord } from "@/lib/ping/input-validation";
 import type { PingTypedActor, createPingTypedSession } from "./typed-session";
 
+import { pingTelemetrySpan } from "./telemetry";
+
 const MAX_BYTES = 48_000;
 const headers = { "Cache-Control": "private, no-store, max-age=0", "CDN-Cache-Control": "no-store",
   "Vercel-CDN-Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff" };
@@ -46,15 +48,15 @@ export function createPingTypedHttp(deps: {
       if (request.method !== "POST") return response({ ok: false, code: "invalid_input" });
       if (request.headers.get("origin") !== new URL(request.url).origin || request.headers.get("sec-fetch-site") === "cross-site")
         return response({ ok: false, code: "unavailable" });
-      const actor = await deps.authenticate();
+      const actor = await pingTelemetrySpan("authenticate", deps.authenticate);
       if (!actor) return response({ ok: false, code: "unauthenticated" });
-      const value = await boundedPingJson(request);
+      const value = await pingTelemetrySpan("decode", () => boundedPingJson(request));
       if (value === null) return response({ ok: false, code: "invalid_input" });
       if (deps.typedOnly?.() && (!dataRecord(value) || value.version !== "ping.typed.v1"))
         return response({ ok: false, code: "invalid_input" });
-      const session = await deps.session();
+      const session = await pingTelemetrySpan("resolve", deps.session);
       return response(session ? dataRecord(value) && value.version === PING_VOICE_VERSION ?
-        await session.handleVoice(actor, value, deps.authenticate) : await session.handle(actor, value) : { ok: false, code: "unavailable" });
+        await pingTelemetrySpan("dispatch", () => session.handleVoice(actor, value, deps.authenticate)) : await pingTelemetrySpan("dispatch", () => session.handle(actor, value)) : { ok: false, code: "unavailable" });
     } catch { return response({ ok: false, code: "temporarily_unavailable" }); }
   };
 }
@@ -69,13 +71,13 @@ export function createPingAudioHttp(deps: {
       if (request.method !== "POST") return response({ ok: false, code: "invalid_input" });
       if (request.headers.get("origin") !== new URL(request.url).origin || request.headers.get("sec-fetch-site") === "cross-site")
         return response({ ok: false, code: "unavailable" });
-      const actor = await deps.authenticate();
+      const actor = await pingTelemetrySpan("authenticate", deps.authenticate);
       if (!actor) return response({ ok: false, code: "unauthenticated" });
       const declared = request.headers.get("content-length"), frame = request.headers.get("x-ping-frame");
       if (request.headers.get("content-type") !== "application/octet-stream" || request.headers.has("content-encoding") || !request.body ||
         !frame || !/^[1-9]\d{0,2}$/.test(frame) || (declared !== null && (!/^[1-9]\d{0,3}$/.test(declared) ||
           Number(declared) > PING_VOICE_MAX_FRAME_BYTES || Number(declared) % 2 !== 0))) return response({ ok: false, code: "invalid_input" });
-      const session = await deps.session(); if (!session) return response({ ok: false, code: "unavailable" });
+      const session = await pingTelemetrySpan("resolve", deps.session); if (!session) return response({ ok: false, code: "unavailable" });
       return response(await session.acceptVoiceAudio(actor, { version: request.headers.get("x-ping-version"),
         generationId: request.headers.get("x-ping-generation"), token: request.headers.get("x-ping-token"), ordinal: Number(frame) }, async signal => {
         if (signal.aborted) return null;

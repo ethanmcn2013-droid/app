@@ -1,4 +1,5 @@
 import "server-only";
+import { instrumentPingAdapter, pingTelemetryFact, pingTelemetrySpan } from "./telemetry";
 import { createClient } from "@libsql/client";
 import { createHash } from "node:crypto";
 import { auth } from "@clerk/nextjs/server";
@@ -39,13 +40,14 @@ export function createMaintainedPingRuntime(deps: {
     const target = current();
     if (!target || (cached && cached.key !== target.cacheKey)) return null;
     if (!cached) {
-      const adapter = createRemoteConversationDatabaseAdapter({ client: deps.client(target) });
+      const adapter = instrumentPingAdapter(createRemoteConversationDatabaseAdapter({ client: deps.client(target) }));
       if (!adapter.available) return null;
       const key = target.cacheKey;
       const service = createPingCommandService(adapter, { now: deps.now, admitNewCommand: admitPingCommittedAction });
       const session = createPingTypedSession(adapter, { now: deps.now, allowRemoteTyped: true, isNewWorkAllowed: () =>
         current()?.cacheKey === key && pingNewWorkAllowed(deps.env()), service: { ...service, execute: async original => {
-          const result = await service.execute(original); logPingCommittedUsage(result); return result;
+          const result = await pingTelemetrySpan("execute", () => service.execute(original)); logPingCommittedUsage(result);
+          pingTelemetryFact("execute", result.ok ? result.replayed ? "replayed" : result.receipt.changedCount > 0 ? "committed_changed" : "committed_no_changes" : "failed"); return result;
         } } });
       cached = { key, session: { ...session, handle: async (actor, value) => {
         if (dataRecord(value) && value.version === "ping.typed.v1" && value.action === "prepare") {
