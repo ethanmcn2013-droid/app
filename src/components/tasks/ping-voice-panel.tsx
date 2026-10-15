@@ -56,11 +56,14 @@ export function PingVoicePanel(props: Props) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"voice" | "typed">("voice");
   const typedRegion = useRef<HTMLDivElement>(null);
+  const previousOverlay = useRef({ open: false, mode });
   const dismissEpoch = useRef(0);
   const dismiss = useRef<() => void>(() => {});
   const close = useCallback(() => dismiss.current(), []);
   useLayoutEffect(() => {
-    if (open && mode === "typed") typedRegion.current?.querySelector<HTMLElement>("textarea:not(:disabled), input:not(:disabled), button:not(:disabled)")?.focus({ preventScroll: true });
+    const previous = previousOverlay.current;
+    previousOverlay.current = { open, mode };
+    if (open && previous.open && mode === "typed" && previous.mode !== "typed") typedRegion.current?.querySelector<HTMLElement>("textarea:not(:disabled), input:not(:disabled), button:not(:disabled)")?.focus({ preventScroll: true });
   }, [open, mode]);
   const [marker, setMarker] = useState<VoiceMarker | null>(null);
   const [receipt, setReceipt] = useState<PingTypedReceipt | null>(null);
