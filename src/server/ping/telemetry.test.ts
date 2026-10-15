@@ -56,3 +56,18 @@ test("throwing diagnostic wall clock invokes business once and preserves exact r
  const oldFlag=process.env.PING_TELEMETRY_ENABLED,oldNow=Date.now;process.env.PING_TELEMETRY_ENABLED="1";Date.now=()=>{throw Error("diagnostic clock");};
  try {let calls=0;const response=new Response("original");assert.equal(await withPingTelemetry(req({}),async()=>{calls++;return response;}),response);assert.equal(calls,1);const error=Error("original business error");calls=0;await assert.rejects(withPingTelemetry(req({}),async()=>{calls++;throw error;}),e=>e===error);assert.equal(calls,1);}finally{Date.now=oldNow;if(oldFlag===undefined)delete process.env.PING_TELEMETRY_ENABLED;else process.env.PING_TELEMETRY_ENABLED=oldFlag;}
 });
+
+test("physical authentication leases remain bounded after logical deadline and release only at settlement",async()=>{
+ const controls:{resolve:(value:unknown)=>void;reject:(error:unknown)=>void}[]=[];let calls=0,bodyReads=0,exports=0;
+ const handler=createPingTelemetryHttp({enabled:()=>true,authenticate:()=>{calls++;return new Promise((resolve,reject)=>controls.push({resolve,reject}));},emit:()=>{exports++;}});
+ const bad=req({});Object.defineProperty(bad,"headers",{value:new Headers({origin:"https://foreign.test","content-type":"application/json"})});assert.equal((await handler(bad)).status,404);assert.equal(calls,0);
+ const pending=Array.from({length:8},()=>{const r=req({});Object.defineProperty(r,"body",{get(){bodyReads++;throw Error("late body");}});return handler(r);});
+ for(let i=0;i<40;i++)assert.equal((await handler(req({}))).status,503);assert.equal(calls,8);
+ const results=await Promise.all(pending);assert.ok(results.every(r=>r.status===401));assert.equal((await handler(req({}))).status,503);assert.equal(calls,8);
+ controls[0].resolve({actor:true});await Promise.resolve();await Promise.resolve();assert.equal(bodyReads,0);assert.equal(exports,0);
+ const throwing=createPingTelemetryHttp({enabled:()=>true,authenticate:()=>{throw Error("private auth failure");}});assert.equal((await throwing(req({}))).status,503);
+ const next=handler(req({}));assert.equal(calls,9);assert.equal((await handler(req({}))).status,503);controls[8].reject(Error("late failure"));assert.equal((await next).status,503);
+ controls[1].reject(Error("late rejection"));await Promise.resolve();await Promise.resolve();assert.equal(bodyReads,0);assert.equal(exports,0);
+ const next2=handler(req({}));assert.equal(calls,10);controls[9].resolve(null);assert.equal((await next2).status,401);
+ for(const c of controls.slice(2,8))c.resolve(null);await Promise.resolve();await Promise.resolve();assert.equal(bodyReads,0);assert.equal(exports,0);
+});
