@@ -25,6 +25,14 @@
     "test:ping-voice"
   ],
   [
+    "pnpm",
+    "test:ping-telemetry"
+  ],
+  [
+    "pnpm",
+    "test:ping-session-guide"
+  ],
+  [
     "node",
     "--import",
     "tsx",
