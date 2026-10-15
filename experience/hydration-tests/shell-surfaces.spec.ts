@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 /**
  * The shell has its surfaces, on the PRODUCTION BUILD.
@@ -70,7 +72,64 @@ const contrast = (a: Rgba, b: Rgba) => {
   return (hi + 0.05) / (lo + 0.05);
 };
 
+/** Route styles can arrive after a visible streamed column. Read the three
+ * surfaces together until their authored fill transition has settled. Missing
+ * tokens and indistinguishable surfaces must still fail within the bound. */
+async function expectBoardSurfaces(page: Page, timeout = 8_000) {
+  await expect(async () => {
+    const sheet = await paint(page, '[data-shell="v3"] > div:last-of-type');
+    const lane = await paint(page, 'section[class*="board-module"][class*="__lane"]');
+    expect(opaque(lane.background), `a board column has a fill: ${JSON.stringify(lane.background)}`).toBe(true);
+    expect(same(lane.background, sheet.background), "a board column is a step away from the page").toBe(false);
+    const card = await paint(page, 'article[class*="board-module"][class*="__card"]');
+    expect(opaque(card.background), "a task card has a fill").toBe(true);
+    expect(same(card.background, lane.background), "a task card is a step away from its column").toBe(false);
+  }).toPass({ timeout, intervals: [20, 50, 100] });
+}
+
 test.use({ viewport: { width: 1440, height: 900 } });
+
+// Synthetic instrument controls use the unchanged authored styles; they do not
+// replace either theme's production-route check below.
+const tokenStyles = readFileSync(path.join(process.cwd(), "src/ds/v3.css"), "utf8");
+const boardStyles = readFileSync(path.join(process.cwd(), "src/components/tasks/board.module.css"), "utf8");
+async function boardControl(page: Page, styles = boardStyles) {
+  await page.setContent(`<html data-theme="dark"><head><style>${tokenStyles}</style><style>${styles}</style></head><body>
+    <div data-shell="v3"><div style="background:var(--v3-canvas);padding:24px">
+      <section class="lane board-module__lane" style="height:300px"><h2>In progress</h2>
+        <article class="card board-module__card">A board surface control</article>
+      </section>
+    </div></div></body></html>`);
+}
+
+test("board surface readiness accepts late route styles", async ({ page }) => {
+  await boardControl(page, "");
+  const initial = await paint(page, 'section[class*="board-module"][class*="__lane"]');
+  expect(opaque(initial.background), "the instrument first observes missing route styles").toBe(false);
+  await page.screenshot({ path: test.info().outputPath("board-before-styles.png") });
+  await page.evaluate((css) => {
+    requestAnimationFrame(() => {
+      const style = document.createElement("style");
+      style.textContent = css;
+      document.head.append(style);
+    });
+  }, boardStyles);
+  await expectBoardSurfaces(page, 2_000);
+  await page.screenshot({ path: test.info().outputPath("board-after-styles.png") });
+});
+
+for (const [name, styles, message] of [
+  ["missing route styles", "", "a board column has a fill"],
+  ["missing fill token", `${boardStyles}\n.lane{background:var(--missing-board-fill)}`, "a board column has a fill"],
+  ["column matching its page", `${boardStyles}\n.lane{background:var(--v3-canvas)}`, "a board column is a step away from the page"],
+  ["transparent task card", `${boardStyles}\n.card{background:transparent}`, "a task card has a fill"],
+  ["card matching its column", `${boardStyles}\n.card{background:var(--v3-sunken)}`, "a task card is a step away from its column"],
+] as const) {
+  test(`board surface readiness rejects ${name}`, async ({ page }) => {
+    await boardControl(page, styles);
+    await expect(expectBoardSurfaces(page, 250)).rejects.toThrow(message);
+  });
+}
 
 test("with no choice made, the app is dark on a light device", async ({ page }) => {
   await chooseTheme(page, null);
@@ -139,13 +198,8 @@ for (const theme of ["dark", "light"] as const) {
     test("the board's columns are surfaces", async ({ page }) => {
       await page.goto("/app/tasks");
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-      const sheet = await paint(page, '[data-shell="v3"] > div:last-of-type');
-      const lane = await paint(page, 'section[class*="board-module"][class*="__lane"]');
-      expect(opaque(lane.background), "a board column has a fill").toBe(true);
-      expect(same(lane.background, sheet.background), "a board column is a step away from the page").toBe(false);
-      const card = await paint(page, 'article[class*="board-module"][class*="__card"]');
-      expect(opaque(card.background), "a task card has a fill").toBe(true);
-      expect(same(card.background, lane.background), "a task card is a step away from its column").toBe(false);
+      await expectBoardSurfaces(page);
+      await page.screenshot({ path: test.info().outputPath("board-surfaces.png") });
     });
   });
 }

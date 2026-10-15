@@ -122,5 +122,7 @@ jobs:
             experience/output/recipient-project-work/wedding-date-readback
             experience/output/event-account-export
             experience/output/project-recovery
+            experience/output/settings-hydration-results/**/test-failed-*.png
+            experience/output/settings-hydration-results/**/error-context.md
           if-no-files-found: ignore
           retention-days: 14
