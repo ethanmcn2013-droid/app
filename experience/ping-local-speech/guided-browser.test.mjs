@@ -170,7 +170,8 @@ function verifyLatencies(result) {
   }
   const grouped = new Map();
   for (const row of result.rows) for (const sample of row.timings) {
-    assert.ok(Number.isFinite(sample.durationMs) && sample.durationMs >= 0, 'Measured latency must be finite and nonnegative');
+    if (sample.sampleOutcome === 'unfinished') assert.equal(Object.hasOwn(sample, 'durationMs'), false, 'An unfinished span has no fabricated duration');
+    else assert.ok(Number.isFinite(sample.durationMs) && sample.durationMs >= 0, 'Measured latency must be finite and nonnegative');
     assert.equal(sample.mode, 'scripted'); assert.equal(sample.evidence, 'scripted');
     assert.equal(sample.clock, sample.metric.endsWith('-server') ? 'server-monotonic' : 'browser-monotonic');
     if (sample.clock === 'browser-monotonic') assert.match(sample.pageId, /^[0-9a-f-]{36}$/i);
@@ -181,8 +182,12 @@ function verifyLatencies(result) {
   for (const summary of result.timingSummary) {
     const key = JSON.stringify([summary.metric, summary.mode, summary.sampleOutcome, summary.caseOutcome, summary.clock, summary.evidence]);
     assert.equal(summary.count, grouped.get(key), 'Summary denominator must match retained raw samples');
-    for (const field of ['medianMs', 'p95Ms', 'maxMs']) assert.ok(Number.isFinite(summary[field]) && summary[field] >= 0);
-    assert.ok(summary.medianMs <= summary.p95Ms && summary.p95Ms <= summary.maxMs);
+    if (summary.sampleOutcome === 'unfinished') {
+      for (const field of ['medianMs', 'p95Ms', 'maxMs']) assert.equal(summary[field], null, 'Unfinished samples cannot become speed statistics');
+    } else {
+      for (const field of ['medianMs', 'p95Ms', 'maxMs']) assert.ok(Number.isFinite(summary[field]) && summary[field] >= 0);
+      assert.ok(summary.medianMs <= summary.p95Ms && summary.p95Ms <= summary.maxMs);
+    }
   }
   const lost = result.rows.find(row => row.caseId === '03');
   assert.ok(lost.timings.some(sample => sample.metric === 'execute-roundtrip' && sample.sampleOutcome === 'failed'), 'Lost response timing remains a failed observation');
@@ -201,6 +206,7 @@ function verifyLatencies(result) {
   assert.deepEqual(coverage.missingOrUnfinished.map(row => row.caseId).sort(), started.filter(row => !visible(row)).map(row => row.caseId).sort());
   assert.ok(coverage.missingOrUnfinished.some(row => row.caseId === '03' && row.invoked));
   assert.ok(coverage.missingOrUnfinished.some(row => row.caseId === '99' && !row.invoked));
+  assert.equal(coverage.unfinishedSampleCount, result.rows.flatMap(row => row.timings).filter(sample => sample.sampleOutcome === 'unfinished').length);
   return { summary: result.timingSummary, coverage };
 }
 async function exportsAndPrivacy(directory) {
