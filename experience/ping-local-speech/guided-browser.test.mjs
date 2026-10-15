@@ -158,7 +158,7 @@ try {
   assert.deepEqual(target, { ...prior,
     assignees: JSON.stringify([...JSON.parse(prior.assignees), 'ping-guide-case-01-member-synthetic-member-01']),
     due: '2026-10-20', due_at: Date.parse('2026-10-20T09:00:00Z') / 1000,
-    start_day: null, duration_days: null, updated_at: receipt.committedAtSeconds });
+    updated_at: receipt.committedAtSeconds });
   assert.equal(handoff.activities.length, beforeHandoff.activities.length + 2);
   assert.equal(handoff.requestCounts.execute - (beforeHandoff.requestCounts.execute ?? 0), 1);
   assert.equal(await page.evaluate(id => window.pingObserved.find(task => task.id === id).due, targetId), '2026-10-20');
