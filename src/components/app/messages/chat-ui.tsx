@@ -12,6 +12,9 @@ import { shouldSendComposerKey } from "./conversation-client-model";
 import { activeMentionQuery, dayKey, fullStampLabel, groupMessages, initialsOf, linkLabel, mentionCandidates, mentionsPerson, timeLabel, tokenizeBody, toneOf, type ChatClock, type ChatMessage, type ChatPerson, type ChatTaskStatus } from "./chat-view-model";
 import { AvatarStack } from "@/components/app/presence/avatar-stack";
 import styles from "./chat.module.css";
+import { ConversationOptions } from "./conversation-options";
+import floatingStyles from "./floating-chat.module.css";
+import { readableLinkLabel } from "@/lib/readable-link";
 
 /* ── Icons: 16px, 1.5 stroke, inherit colour ─────────────────────────── */
 
@@ -92,6 +95,7 @@ export type ChatListItem = Readonly<{
   /** A row that navigates elsewhere (a task discussion in Tasks). */
   href?: string;
   accessibleName?: string;
+  onHide?: () => void;
 }>;
 
 export type ChatListSection = Readonly<{
@@ -153,7 +157,8 @@ function ChatListRow({ item, selected, onSelect }: { item: ChatListItem; selecte
     </span>
   </>;
   if (item.href) return <a aria-label={name} className={styles.row} href={item.href}>{inner}</a>;
-  return <button aria-current={selected ? "true" : undefined} aria-label={name} className={styles.row} data-conversation-row={item.id} data-unread={loud ? "" : undefined} onClick={() => onSelect(item.id)} type="button">{inner}</button>;
+  const row = <button aria-current={selected ? "true" : undefined} aria-label={name} className={styles.row} data-conversation-row={item.id} data-unread={loud ? "" : undefined} onClick={() => onSelect(item.id)} type="button">{inner}</button>;
+  return item.onHide ? <div className={floatingStyles.channelRow} onContextMenu={(event) => { event.preventDefault(); const details = event.currentTarget.querySelector("details"); if (details) { details.open = true; details.querySelector("button")?.focus(); } }}>{row}<ConversationOptions title={item.title} onHide={item.onHide} /></div> : row;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────── */
@@ -304,12 +309,12 @@ export function MessageStream({ label, messages, people, selfId, clock, intro, b
   </div>;
 }
 
-function MessageBody({ body, people, selfId }: { body: string; people: readonly ChatPerson[]; selfId: string | null }) {
+export function MessageBody({ body, people, selfId }: { body: string; people: readonly ChatPerson[]; selfId: string | null }) {
   const segments = tokenizeBody(body, people, selfId);
   return <>{segments.map((segment, index) => segment.kind === "mention"
     ? <span className={styles.mention} data-self={segment.self || undefined} key={index}>{segment.text}</span>
     : segment.kind === "link"
-      ? <a className={styles.link} href={segment.href} key={index} rel="noopener noreferrer nofollow" target="_blank">{segment.text}</a>
+      ? <a className={styles.link} href={segment.href} title={readableLinkLabel(segment.href)} key={index} rel="noopener noreferrer nofollow" target="_blank">{readableLinkLabel(segment.href)}</a>
       : <Fragment key={index}>{segment.text}</Fragment>)}</>;
 }
 
@@ -446,7 +451,7 @@ const EMOJI: readonly (readonly [string, string])[] = [
 
 export type ComposerHandle = Readonly<{ focus: () => void }>;
 
-export function Composer({ value, onChange, onSend, label, placeholder, people, selfId, mentionIds, onMentionIdsChange, unavailableMentionIds, sendDisabled, disabled, blocked, count, note, onArrowUpEmpty, onEscape, inputRef, autoFocus, showHint = true, toolbar }: {
+export function Composer({ value, onChange, onSend, label, placeholder, people, selfId, mentionIds, onMentionIdsChange, unavailableMentionIds, sendDisabled, disabled, blocked, count, note, onArrowUpEmpty, onEscape, inputRef, autoFocus, showHint = true, toolbar, additionalTools }: {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
@@ -471,6 +476,7 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
   showHint?: boolean;
   /** The full toolbar: an insert menu behind a round plus, then the tools. */
   toolbar?: "full";
+  additionalTools?: ReactNode;
 }) {
   const textareaRef = useAutosize(value);
   const [caret, setCaret] = useState<number | null>(null);
@@ -599,6 +605,7 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
           {toolbar === "full" ? <>
             <button aria-label="Add a link" className={styles.iconButton} disabled={disabled} onClick={addLink} title="Add a link" type="button"><ChatIcon.link /></button>
           </> : null}
+          {additionalTools}
           {count ?? null}
           {showHint ? <span className={styles.composerHint}><kbd>Enter</kbd> to send · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</span> : null}
           <button aria-label="Send message" className={styles.send} disabled={!canSend} onClick={onSend} title="Send (Enter)" type="button">{toolbar === "full" ? <ChatIcon.plane /> : <ChatIcon.send />}</button>

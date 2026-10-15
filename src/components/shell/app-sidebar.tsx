@@ -3,11 +3,13 @@
 /**
  * v3 sidebar: the one persistent navigation for the whole suite.
  *
- * Top to bottom (founder instruction, 6 Oct 2026): the brand, search, Home,
- * then four named groups with room between them. Workspace is the five
+ * Top to bottom: the brand, search, Home, Analytics and Files, then the
+ * Workspace trio and named groups with room between them. Workspace is the
  * places of the work. Projects lists every Project the reader can open,
- * each with its own colour tile and a dot only when it is late or at risk.
- * Build holds Automations (a preview) and Whiteboard (on its way). Chat
+ * each with its own project-coloured identity, an indigo ring on the active
+ * Project, and a status dot only when it is late or at risk.
+ * More groups tools by the kind of work; its visible rows can be customized
+ * and saved in this browser. Chat
  * lists the reader's real conversations, or one quiet "Coming soon" row for
  * a reader who does not have Chat. Projects and Chat fold, and the choice is
  * remembered per browser. One row at a time is the page you are on. The
@@ -29,17 +31,24 @@ import { ShellIcon } from "./shell-icons";
 import { useFaviconBadge } from "./favicon-badge";
 import { SIGNAL_INDIGO, suiteMarkMetrics } from "@/lib/brand/suite-mark";
 import { CHAT_ENABLED_ATTRIBUTE, openPalette, ThemeCycleButton, useShell, useShortcutLabel } from "./app-shell";
-import { ProjectMarker, SidebarIcon, type SidebarIconName } from "./sidebar-icon";
+import { SidebarIcon, type SidebarIconName } from "./sidebar-icon";
+import { ProjectContextMenu } from "./project-context-menu";
+import { useMorePreferences } from "./use-more-preferences";
+import moreStyles from "./sidebar-more.module.css";
 import {
   activeDestinationId,
-  BUILD_DESTINATIONS,
   FOOTER_DESTINATIONS,
-  HOME_DESTINATION,
+  MORE_DESTINATIONS,
+  MORE_CUSTOMIZATION_ITEMS,
+  PRIMARY_DESTINATIONS,
   sectionIsOpen,
   sectionStoreKey,
   SIDEBAR_GROUPS,
+  TOOL_DESTINATIONS,
   WEDDING_DESTINATIONS,
+  visibleMoreNavigationGroups,
   WORKSPACE_DESTINATIONS,
+  type MoreNavigationEntry,
   type ShellDestination,
 } from "./shell-nav";
 import styles from "./shell.module.css";
@@ -74,6 +83,22 @@ export function projectColor(id: string): string {
 const PROJECT_LIMIT = 8;
 const PROJECT_RAIL_LIMIT = 5;
 const BRAND_MARK = suiteMarkMetrics(24);
+const MORE_ENTRY_PARENT: Readonly<Record<string, string>> = {
+  automations: "development",
+  "wedding-guest-list": "wedding-hub",
+  "wedding-seating": "wedding-hub",
+  "wedding-budget": "wedding-hub",
+  whiteboard: "teacher-hub",
+  "teacher-lessons": "teacher-hub",
+  "teacher-marking": "teacher-hub",
+  "teacher-share-plan": "teacher-hub",
+  "student-deadlines": "student-hub",
+  "student-group-work": "student-hub",
+  "student-lecture-notes": "student-hub",
+  "process-map": "other-tools",
+  docs: "other-tools",
+  forms: "other-tools",
+};
 
 type SidebarGroup = (typeof SIDEBAR_GROUPS)[number];
 function groupById(id: SidebarGroup["id"]): SidebarGroup {
@@ -177,12 +202,22 @@ export function AppSidebar({
   const directory = useChatDirectory(messagesEnabled ? chatDirectory : null);
   const searchParams = useSearchParams();
   const here = `${pathname}${searchParams?.toString() ? `?${searchParams.toString()}` : ""}`;
-  const activeId = activeDestinationId(pathname);
+  const resolvedActiveId = activeDestinationId(pathname);
+  const activeId = resolvedActiveId === "tools" && (pathname === "/app/notes" || pathname.startsWith("/app/notes/"))
+    ? "notes"
+    : resolvedActiveId;
   const suiteContext = useSuiteContext();
   const activeProject = useActiveProject();
+  const verifiedProjectName = suiteContext?.version === 3 && activeProject?.enabled && activeProject.chrome.kind === "verified" && suiteContext.workspaceId === activeProject.chrome.project.id
+    ? activeProject.chrome.project.name
+    : undefined;
   const { collapsed, toggleCollapsed, setMobileOpen } = useShell();
   const { rows, marks, weddingIds, failed } = useProjectRows(Boolean(activeProject));
   const foldedSections = useFolded();
+  const morePreferences = useMorePreferences();
+  const hiddenMore = new Set(morePreferences.hidden);
+  const [moreCustomizeOpen, setMoreCustomizeOpen] = useState(false);
+  const moreCustomizeTrigger = useRef<HTMLButtonElement>(null);
   const shortcut = useShortcutLabel();
   const currentProjectId =
     activeProject?.chrome.kind === "verified"
@@ -190,10 +225,15 @@ export function AppSidebar({
       : activeProject?.chrome.kind === "pending"
         ? activeProject.chrome.showing.id
         : null;
-  const chatEntries = directory ? [...directory.channels, ...directory.direct] : [];
+  // Keep the sidebar focused on channels and people. Task discussions remain
+  // in their task views and still contribute to All conversations.
+  const chatEntries = directory
+    ? [...directory.channels, ...directory.direct].filter((entry) => entry.kind === "channel" || entry.kind === "dm")
+    : [];
   // An open conversation is the page you are on; "All conversations" stays
   // quiet then, so only one row reads as "here".
   const chatRowOpen = chatEntries.some((entry) => entry.href === here);
+  const moreDestinationsById = new Map([...MORE_DESTINATIONS, ...TOOL_DESTINATIONS].map((destination) => [destination.id, destination]));
 
   const openProject = useCallback(
     (event: React.MouseEvent, row: ChooserRow) => {
@@ -209,23 +249,32 @@ export function AppSidebar({
 
   const count = (value: number, noun: string) =>
     value > 0 ? (
-      <span className={styles.badge}>
-        {value > 99 ? "99+" : value}
-        <span className="sr-only"> {noun}</span>
-      </span>
+      <>
+        <span className={styles.sidebarUnreadDot} aria-hidden="true" />
+        {" "}<span className="sr-only">{value} {noun}</span>
+      </>
     ) : null;
 
-  const link = (destination: ShellDestination, extra?: React.ReactNode, current = activeId === destination.id) => {
+  const link = (destination: ShellDestination, extra?: React.ReactNode, current = activeId === destination.id, className = styles.item) => {
     const Icon = ShellIcon[destination.icon];
     const sidebarIcon = SIDEBAR_ICON[destination.icon];
-    const href = destination.id === "tasks" || destination.id === "notes" || destination.id === "timeline" || destination.id === "projects"
-      ? withSuiteContext(destination.href, suiteContext)
-      : destination.href;
+    const projectSurface = destination.id === "tasks" ? { surface: "tasks" as const }
+      : destination.id === "notes" ? { surface: "notes" as const }
+        : destination.id === "timeline" ? { surface: "timeline" as const }
+          : destination.id === "projects" ? { surface: "project" as const }
+            : null;
+    // Keep the V2 emitter intact for its period/filter context. Readable names
+    // are added only when the active Project is the verified V3 route target.
+    const href = suiteContext?.version === 3 && verifiedProjectName && projectSurface && activeProject?.chrome.kind === "verified"
+      ? buildProjectUrl(projectSurface, activeProject.chrome.project.id, verifiedProjectName)
+      : destination.id === "tasks" || destination.id === "notes" || destination.id === "timeline" || destination.id === "projects"
+        ? withSuiteContext(destination.href, suiteContext)
+        : destination.href;
     return (
       <SidebarIntentLink
         key={destination.id}
         href={href}
-        className={styles.item}
+        className={className}
         aria-current={current ? "page" : undefined}
         title={collapsed ? destination.label : undefined}
         onClick={() => setMobileOpen(false)}
@@ -257,9 +306,16 @@ export function AppSidebar({
               className={styles.labelToggle}
               aria-expanded={open}
               aria-controls={open ? bodyId : undefined}
-              onClick={() => setSectionOpen(id, !open)}
+              aria-label={id === "projects" && rows !== null && !failed ? `Projects, ${rows.length} total` : undefined}
+              onClick={() => {
+                if (id === "more" && open) setMoreCustomizeOpen(false);
+                setSectionOpen(id, !open);
+              }}
             >
-              <span>{label}</span>
+              <span>{id === "projects" ? "Projects" : label}</span>
+              {id === "projects" && rows !== null && !failed ? (
+                <span className={styles.projectGroupCount} aria-hidden="true">{rows.length}</span>
+              ) : null}
               <ShellIcon.chevronDown size={12} className={styles.labelChevron} />
             </button>
           ) : (
@@ -279,7 +335,14 @@ export function AppSidebar({
   const projectRow = (row: ChooserRow) => {
     const current = row.id === currentProjectId;
     const mark = marks[row.id];
-    const tile = <ProjectMarker color={projectColor(row.id)} />;
+    // SidebarProjectMark currently contains status only; it has no authorized
+    // completed/total task counts. The ring is decorative and must not imply
+    // completion or an empty project without those counts.
+    const tile = (
+      <span className={styles.projectProgress} aria-hidden="true">
+        <span className={styles.projectProgressCore} style={{ backgroundColor: projectColor(row.id) }} />
+      </span>
+    );
     const dot = mark ? <span className={styles.statusDot} data-tone={mark} title={SIDEBAR_MARK_LABEL[mark]} aria-hidden="true" /> : null;
     const name = `${row.accessibleName}${mark ? `, ${SIDEBAR_MARK_LABEL[mark].toLowerCase()}` : ""}${current ? ", open now" : ""}`;
     if (!row.selectable) {
@@ -291,22 +354,26 @@ export function AppSidebar({
         </span>
       );
     }
+    const readableName = suiteContext?.version === 3 && verifiedProjectName && suiteContext.workspaceId === row.id
+      ? row.name
+      : undefined;
     return (
-      <SidebarIntentLink
-        key={row.id}
-        href={buildProjectUrl({ surface: "project" }, row.id)}
-        className={styles.item}
-        data-project-row=""
-        data-current-project={current ? "" : undefined}
-        data-mark={mark}
-        aria-label={name}
-        title={collapsed ? row.name : mark ? SIDEBAR_MARK_LABEL[mark] : row.subtitle}
-        onClick={(event) => openProject(event, row)}
-      >
-        {tile}
-        <span className={styles.itemLabel}>{row.name}</span>
-        {dot}
-      </SidebarIntentLink>
+      <ProjectContextMenu key={row.id} projectId={row.id} projectName={row.name}>
+        <SidebarIntentLink
+          href={buildProjectUrl({ surface: "project" }, row.id, readableName)}
+          className={styles.item}
+          data-project-row=""
+          data-current-project={current ? "" : undefined}
+          data-mark={mark}
+          aria-label={name}
+          title={collapsed ? row.name : mark ? SIDEBAR_MARK_LABEL[mark] : row.subtitle}
+          onClick={(event) => openProject(event, row)}
+        >
+          {tile}
+          <span className={styles.itemLabel}>{row.name}</span>
+          {dot}
+        </SidebarIntentLink>
+      </ProjectContextMenu>
     );
   };
 
@@ -348,9 +415,12 @@ export function AppSidebar({
 
   const chatLink = (entry: ChatDirectoryEntry) => {
     const current = here === entry.href;
-    const trailing = entry.count > 0
-      ? count(entry.count, entry.kind === "dm" ? (entry.count === 1 ? "new message" : "new messages") : entry.count === 1 ? "mention" : "mentions")
-      : entry.request ? <span className={styles.chatTag}>Request</span> : null;
+    const unread = (entry.unread || entry.count > 0) && !current;
+    const trailing = <>
+      {unread ? <span className={styles.sidebarUnreadDot} aria-hidden="true" /> : null}
+      {entry.kind !== "dm" && entry.count > 0 ? <span className="sr-only">{` ${entry.count} ${entry.count === 1 ? "mention" : "mentions"}`}</span> : null}
+      {entry.request ? <span className={styles.chatTag}>Request</span> : null}
+    </>;
     return (
       <SidebarIntentLink
         key={entry.id}
@@ -358,12 +428,15 @@ export function AppSidebar({
         className={styles.item}
         data-chat-row=""
         aria-current={current ? "page" : undefined}
-        data-unread={entry.unread && !current ? "" : undefined}
+        data-unread={unread ? "" : undefined}
         onClick={() => setMobileOpen(false)}
       >
         {entry.kind === "dm" ? (
           <span className={styles.chatAvatarWrap} aria-hidden="true">
-            <span className={styles.chatAvatar} style={{ backgroundColor: projectColor(entry.personId ?? entry.id) }}>
+            <span
+              className={styles.chatAvatar}
+              style={{ backgroundColor: `color-mix(in srgb, ${projectColor(entry.personId ?? entry.id)} 38%, var(--v3-chrome))` }}
+            >
               {initialsOf(entry.title)}
             </span>
             {entry.online ? <span className={styles.presence} /> : null}
@@ -372,7 +445,9 @@ export function AppSidebar({
         <span className={styles.itemLabel}>
           {entry.title}
           {entry.online ? <span className="sr-only">, online</span> : null}
-          {entry.unread && entry.count === 0 ? <span className="sr-only">, unread</span> : null}
+          {entry.kind === "dm" && entry.count > 0 ? (
+            <span className="sr-only">, {entry.unread ? "unread, " : ""}{entry.count} new {entry.count === 1 ? "message" : "messages"}</span>
+          ) : entry.unread ? <span className="sr-only">, unread</span> : null}
         </span>
         {trailing}
       </SidebarIntentLink>
@@ -380,6 +455,154 @@ export function AppSidebar({
   };
 
   const projectLimit = collapsed ? PROJECT_RAIL_LIMIT : PROJECT_LIMIT;
+  const customizeMore = () => {
+    setSectionOpen("more", true);
+    setMoreCustomizeOpen((isOpen) => !isOpen);
+  };
+  const revealCustomizeMore = () => {
+    if (collapsed) toggleCollapsed();
+    setSectionOpen("more", true);
+    setMoreCustomizeOpen(true);
+  };
+  const moreCustomizeButton = collapsed ? null : (
+    <button
+      ref={moreCustomizeTrigger}
+      type="button"
+      className={moreStyles.customizeTrigger}
+      aria-label="Customize More"
+      aria-expanded={moreCustomizeOpen}
+      aria-controls={moreCustomizeOpen ? "more-customization" : undefined}
+      onClick={customizeMore}
+    >
+      Customize
+    </button>
+  );
+  const renderMoreEntry = (entry: MoreNavigationEntry): React.ReactNode => {
+    const destination = entry.destination;
+    const isSoon = entry.soon || destination?.soon === true;
+    const status = isSoon ? <span className={moreStyles.entryStatus}>Coming soon</span> : null;
+    const row = destination ? (
+      link(
+        destination.soon ? { ...destination, soon: false } : destination,
+        status,
+        entry.id === "wedding-guest-list" ? false : activeId === destination.id,
+        `${styles.item} ${entry.children ? moreStyles.parentLink : moreStyles.nestedLink}`,
+      )
+    ) : (
+      <span className={`${styles.item} ${moreStyles.nestedItem}`} aria-disabled="true">
+        <span className={moreStyles.soonMarker} aria-hidden="true">·</span>
+        <span className={styles.itemLabel}>{entry.label}</span>
+        {status}
+      </span>
+    );
+
+    if (!entry.children?.length) return row;
+    const foldId = `more:${entry.id}`;
+    const open = sectionIsOpen(foldedSections, foldId);
+    const childrenId = `more-children-${entry.id}`;
+    return (
+      <div className={moreStyles.treeNode}>
+        <div className={moreStyles.parentRow}>
+          {row}
+          <button
+            type="button"
+            className={moreStyles.nestedToggle}
+            aria-label={`${open ? "Collapse" : "Expand"} ${entry.label} tools`}
+            aria-expanded={open}
+            aria-controls={open ? childrenId : undefined}
+            onClick={() => setSectionOpen(foldId, !open)}
+          >
+            <ShellIcon.chevronDown size={12} aria-hidden="true" />
+          </button>
+        </div>
+        {open ? (
+          <div id={childrenId} className={moreStyles.children} role="group" aria-label={`${entry.label} tools`}>
+            {entry.children.map((child) => <div key={child.id}>{renderMoreEntry(child)}</div>)}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+  const moreBody = (
+    <div className={moreStyles.root}>
+      {collapsed ? (
+        <button
+          ref={moreCustomizeTrigger}
+          type="button"
+          className={`${styles.item} ${moreStyles.collapsedCustomize}`}
+          aria-label="Customize More"
+          title="Customize More"
+          aria-expanded={moreCustomizeOpen}
+          aria-controls={moreCustomizeOpen ? "more-customization" : undefined}
+          onClick={revealCustomizeMore}
+        >
+          <ShellIcon.settings size={15} />
+          <span className={styles.itemLabel}>Customize</span>
+        </button>
+      ) : null}
+      {moreCustomizeOpen ? (
+        <div
+          id="more-customization"
+          className={moreStyles.customizePanel}
+          role="region"
+          aria-labelledby="more-customization-title"
+          onKeyDown={(event) => {
+            if (event.key !== "Escape") return;
+            event.preventDefault();
+            setMoreCustomizeOpen(false);
+            moreCustomizeTrigger.current?.focus();
+          }}
+        >
+          <div className={moreStyles.panelHeader}>
+            <h3 id="more-customization-title">Show in More</h3>
+            <button
+              type="button"
+              className={moreStyles.doneButton}
+              onClick={() => {
+                setMoreCustomizeOpen(false);
+                moreCustomizeTrigger.current?.focus();
+              }}
+            >
+              Done
+            </button>
+          </div>
+          <fieldset className={moreStyles.choices}>
+            <legend className="sr-only">Choose which groups and tools appear in More</legend>
+            {MORE_CUSTOMIZATION_ITEMS.map((item) => {
+              const parent = MORE_ENTRY_PARENT[item.id];
+              const destination = moreDestinationsById.get(item.id);
+              const status = item.soon || destination?.soon ? "Coming soon" : destination?.preview ? "Preview" : null;
+              const toggleItem = () => {
+                if (parent && hiddenMore.has(parent)) morePreferences.toggle(parent);
+                morePreferences.toggle(item.id);
+              };
+              return (
+                <label key={item.id} className={moreStyles.choice} data-depth={parent ? "nested" : undefined}>
+                  <input type="checkbox" checked={!hiddenMore.has(item.id)} onChange={toggleItem} />
+                  <span className={moreStyles.choiceLabel}>{item.label}</span>
+                  {status ? <span className={moreStyles.choiceStatus}>{status}</span> : null}
+                </label>
+              );
+            })}
+          </fieldset>
+          <div className={moreStyles.panelFooter}>
+            <p aria-live="polite">Saved on this browser.</p>
+            <button type="button" className={moreStyles.restoreButton} onClick={morePreferences.restore}>
+              Restore defaults
+            </button>
+          </div>
+        </div>
+      ) : null}
+      <div className={moreStyles.groups}>
+        {visibleMoreNavigationGroups(hiddenMore).map((navigationGroup) => (
+          <div key={navigationGroup.id} className={moreStyles.group} role="group" aria-label={navigationGroup.label || navigationGroup.entries[0]?.label || "More tools"}>
+            {navigationGroup.label ? <span className={moreStyles.groupLabel} aria-hidden="true">{navigationGroup.label}</span> : null}
+            <div className={moreStyles.groupEntries}>{navigationGroup.entries.map((entry) => <div key={entry.id}>{renderMoreEntry(entry)}</div>)}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <aside className={styles.sidebar} aria-label="Signal Studio" {...{ [CHAT_ENABLED_ATTRIBUTE]: messagesEnabled ? "" : undefined }}>
@@ -414,8 +637,8 @@ export function AppSidebar({
       </button>
 
       <div className={styles.scroll}>
-        <nav className={styles.section} aria-label="Home" data-group="home">
-          {link(HOME_DESTINATION)}
+        <nav className={styles.section} aria-label="Primary" data-group="primary">
+          {PRIMARY_DESTINATIONS.map((destination) => link(destination))}
         </nav>
 
         {group(groupById("workspace"), WORKSPACE_DESTINATIONS.map((destination) => link(destination)))}
@@ -458,7 +681,7 @@ export function AppSidebar({
             )
           : null}
 
-        {group(groupById("build"), BUILD_DESTINATIONS.map((destination) => link(destination)))}
+        {group(groupById("more"), moreBody, moreCustomizeButton)}
 
         {messagesEnabled
           ? group(

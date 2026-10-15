@@ -1,3 +1,4 @@
+import Link from "next/link";
 import "server-only";
 
 import { redirect } from "next/navigation";
@@ -79,19 +80,19 @@ export async function SignalOnboardingPage() {
                   <p className={styles.settingValue}>Start in Tasks</p>
                   <p className={styles.settingBody}>
                     Once you have a project,{" "}
-                    <a href="/app/home/briefing/onboarding" className={styles.readLink}>
+                    <Link href="/app/home/briefing/onboarding" className={styles.readLink}>
                       come back to this page and try again
-                    </a>
+                    </Link>
                     .
                   </p>
                 </div>
               </div>
               <div className={styles.cardFoot}>
                 {/* S5: TASKS_URL rewritten to in-app /app/tasks. */}
-                <a href="/app/tasks" className={styles.button}>
+                <Link href="/app/tasks" className={styles.button}>
                   Open Tasks
                   <ShellIcon.arrowRight size={14} />
-                </a>
+                </Link>
               </div>
             </div>
           ) : (

@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     # The added fixtures cover 68 route states, three React lifecycle checks
     # and scoped Floor/project-label contrast after the built-browser matrix.
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       # Full history, because this job is the only one that runs the council,
       # and the council verifies that the commit its external baseline was
@@ -122,5 +122,7 @@ jobs:
             experience/output/recipient-project-work/wedding-date-readback
             experience/output/event-account-export
             experience/output/project-recovery
+            experience/output/settings-hydration-results/**/test-failed-*.png
+            experience/output/settings-hydration-results/**/error-context.md
           if-no-files-found: ignore
           retention-days: 14

@@ -23,13 +23,13 @@ export default async function FilesPage({ searchParams }: {
   const requested = typeof params.workspaceId === "string" ? params.workspaceId : null;
   const decision = await resolveProjectForRoute(requested);
   if (decision.kind === "unavailable" || decision.kind === "empty") {
-    return <>
+    return <main id="app-main-content" tabIndex={-1} className="flex min-h-0 flex-1 flex-col">
       <ActiveProjectRouteSync project={null} requestedProjectId={requested} />
       <FilesUnavailable />
-    </>;
+    </main>;
   }
   const read = await loadProjectFiles(decision.workspaceId, { includeArchived: params.archived === "1" });
-  return <>
+  return <main id="app-main-content" tabIndex={-1} className="flex min-h-0 flex-1 flex-col">
     <ActiveProjectRouteSync project={decision.project} requestedProjectId={requested} />
     <FilesView
       projectName={decision.name}
@@ -37,5 +37,5 @@ export default async function FilesPage({ searchParams }: {
       sample={isDemoMode()}
       requestedProjectId={requested}
     />
-  </>;
+  </main>;
 }

@@ -27,6 +27,7 @@ import {
   visibleApps,
   type LauncherEntry,
 } from "./launcher-catalog";
+import { MORE_DESTINATIONS, WEDDING_DESTINATIONS } from "../shell-nav";
 
 /**
  * Guards for the apps launcher catalogue (docs/design/v3/launcher.md §10, §13).
@@ -155,7 +156,7 @@ test("search finds the synonyms people actually type", () => {
   assert.equal(first("canvas"), "Whiteboard");
   assert.equal(first("spreadsheet"), "Google Sheets");
   assert.equal(first("drive"), "Google Drive");
-  assert.equal(first("wedding"), "Wedding planner");
+  assert.equal(first("wedding"), "Wedding hub");
   assert.equal(first("tim"), "Timeline");
   assert.equal(first("TIM"), "Timeline");
   assert.equal(first("  tim  "), "Timeline");
@@ -197,6 +198,21 @@ test("Messages is hidden unless allowed, and whiteboard falls back to Tasks", ()
   const whiteboard = toolBySlug("whiteboard")!;
   assert.deepEqual(untilThenApps(whiteboard, true).map((app) => app.id), ["notes", "messages"]);
   assert.deepEqual(untilThenApps(whiteboard, false).map((app) => app.id), ["notes", "tasks"]);
+});
+
+test("Wedding hub points people to real Projects and the existing work apps", () => {
+  const wedding = toolBySlug("wedding-planner")!;
+  assert.equal(wedding.name, "Wedding hub");
+  assert.deepEqual(untilThenApps(wedding, false).map((app) => [app.id, app.href]), [
+    ["projects", "/app/project"],
+    ["tasks", "/app/tasks"],
+    ["timeline", "/app/timeline"],
+  ]);
+  const navEntry = MORE_DESTINATIONS.find((destination) => destination.id === "wedding-hub");
+  assert.equal(navEntry?.href, "/app/tools/wedding-planner");
+  assert.equal(navEntry?.soon, false);
+  assert.equal(navEntry?.label, "Wedding hub");
+  assert.deepEqual(WEDDING_DESTINATIONS[0] && [WEDDING_DESTINATIONS[0].label, WEDDING_DESTINATIONS[0].href], ["Guest list", "/app/wedding/guests"]);
 });
 
 test("the current app follows the most specific path", () => {

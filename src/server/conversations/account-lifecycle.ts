@@ -36,6 +36,11 @@ export async function eraseConversationUserFootprint(database: Database, userId:
     .where(sql`${userId} IN (${conversations.dmLowUserId}, ${conversations.dmHighUserId})`).limit(1);
   if (dm.length) throw new Error("account erasure blocked: existing DM requires its separate retention decision");
 
+  // Private self-chat is owner-keyed and has no conversation/project parent.
+  // Delete it explicitly because the production libSQL connection cannot rely on FK cascades.
+  const [personalChatTable] = (await database.run(sql`SELECT name FROM sqlite_master WHERE type='table' AND name='personal_chat_messages'`)).rows;
+  if (personalChatTable) await database.run(sql`DELETE FROM personal_chat_messages WHERE owner_id=${userId}`);
+
   // Destination Tasks remain canonical; only source-derived links and replay
   // custody are removed. These statements also consume stale partial retries.
   await database.run(sql`DELETE FROM suite_outbox WHERE actor_user_id=${userId} OR

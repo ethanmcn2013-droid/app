@@ -1,10 +1,22 @@
 import { parseProjectId, type ProjectId } from "@/lib/projects/project-ref";
 import type { PendingSend, RecoveredDraft } from "@/lib/conversations/reducer";
+import type { ConversationClientState } from "@/lib/conversations/reducer";
 
 export type DraftCache = Map<string, string>;
 export type ScrollCache = Map<string, Readonly<{ top: number; bottomDistance: number }>>;
 export type OutgoingCache = Map<string, Readonly<{ pending: readonly PendingSend[]; recoveredDrafts: readonly RecoveredDraft[]; reviewedAudienceEpoch: number | null; draftMentionUserIds?: readonly string[]; scopeKind?: "project" | "dm" }>>;
 export type SavedConversationScope = Readonly<{ projectId: ProjectId; conversationId: string; rootId: string | null; kind: "project" | "dm" }>;
+
+/** Persist custody synchronously before navigation can abort an unknown send. */
+export function retainConversationState(drafts: DraftCache, outgoing: OutgoingCache, key: string, state: ConversationClientState, scopeKind: "project" | "dm") {
+  if (state.status === "unavailable") return;
+  rememberDraft(drafts, key, state.draft);
+  if (state.draft || state.draftMentionUserIds.length || state.pending.length || state.recoveredDrafts.length) outgoing.set(key, {
+    pending: state.pending, recoveredDrafts: state.recoveredDrafts, reviewedAudienceEpoch: state.reviewedAudienceEpoch,
+    draftMentionUserIds: state.draftMentionUserIds, scopeKind,
+  });
+  else outgoing.delete(key);
+}
 
 export function listSavedDrafts(actorId: string, drafts: DraftCache, outgoing: OutgoingCache) {
   return [...new Set([...drafts.keys(), ...outgoing.keys()])].flatMap((key) => {

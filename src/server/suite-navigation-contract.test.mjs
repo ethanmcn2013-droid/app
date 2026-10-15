@@ -279,26 +279,28 @@ test("the v3 shell is the one persistent navigation on every signed-in page", ()
   assert.doesNotMatch(v3Nav, /\/app\/(?:board|list|calendar|plan|brief)(?:|\/)/);
 });
 
-test("Notes lives in Apps and tools, and the launcher opens the same catalogue", () => {
-  // Founder brief (24 Sep 2026): a Google-apps style launcher for apps and
-  // the tools on the way. Notes leaves the sidebar but stays one step away.
-  // Revision 2 (25 Sep 2026): one name, "Apps and tools", everywhere.
-  // Revision 3 (2 Oct 2026, founder instruction): the sidebar's rows are the
-  // approved top level plus one "Initial setup" group; Notes is in neither.
-  // Revision 4 (6 Oct 2026, founder instruction): Home, then Workspace,
-  // Projects, Build and Chat; the "Initial setup" group is gone and the
-  // places it held keep their paths. Notes is still in none of them.
-  const studioSection = v3Nav.slice(
-    v3Nav.indexOf("export const HOME_DESTINATION"),
-    v3Nav.indexOf("export const TOOL_DESTINATIONS"),
-  );
-  assert.match(studioSection, /WORKSPACE_DESTINATIONS/);
-  assert.match(studioSection, /BUILD_DESTINATIONS/);
-  assert.match(studioSection, /UTILITY_DESTINATIONS/);
-  assert.doesNotMatch(studioSection, /\{ id: "notes"/);
-  assert.match(v3Nav, /\{ id: "tools", label: "Apps and tools", href: "\/app\/tools"/);
-  assert.doesNotMatch(v3Nav, /More tools/);
-  assert.match(v3Nav, /export const TOOL_DESTINATIONS[\s\S]*?href: "\/app\/notes"/);
+test("Notes is an optional More destination, and the launcher opens the same catalogue", () => {
+  // The approved More customization keeps Notes hidden by default, while a
+  // reader can restore it without changing its canonical route or launcher.
+  const script = [
+    'import * as loaded from "./src/components/shell/shell-nav.ts";',
+    "const nav = loaded.visibleMoreNavigationGroups ? loaded : loaded.default;",
+    "const hidden = nav.MORE_CUSTOMIZATION_ITEMS.filter((item) => item.defaultVisible === false).map((item) => item.id);",
+    "const hasNotes = (groups) => groups.some((group) => group.entries.some((entry) => entry.id === 'notes' && entry.destination?.href === '/app/notes'));",
+    "const defaultGroups = nav.visibleMoreNavigationGroups(new Set(hidden));",
+    "const customizedGroups = nav.visibleMoreNavigationGroups(new Set(hidden.filter((id) => id !== 'notes')));",
+    "const tools = nav.UTILITY_DESTINATIONS.find((destination) => destination.id === 'tools');",
+    "console.log(JSON.stringify({ hiddenNotes: hidden.includes('notes'), defaultNotes: hasNotes(defaultGroups), customizedNotes: hasNotes(customizedGroups), tools: tools?.href }));",
+  ].join("\n");
+  const output = execFileSync(process.execPath, ["--import", "tsx", "--input-type=module", "-e", script], {
+    cwd: fileURLToPath(new URL("../../", import.meta.url)),
+    encoding: "utf8",
+  });
+  const navigation = JSON.parse(output.trim().split("\n").pop());
+  assert.equal(navigation.hiddenNotes, true);
+  assert.equal(navigation.defaultNotes, false);
+  assert.equal(navigation.customizedNotes, true);
+  assert.equal(navigation.tools, "/app/tools");
   assert.match(v3Shell, /<AppsLauncher/);
   // The New menu still starts a note.
   assert.match(v3Shell, /<Link href="\/app\/notes" role="menuitem"/);

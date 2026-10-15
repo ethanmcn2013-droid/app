@@ -194,13 +194,23 @@ function destinationLocalParams(destination: ProjectDestination): [string, strin
 export function buildProjectUrl(
   destination: ProjectDestination,
   projectId: ProjectId,
+  projectName?: string,
 ): string {
   const params = new URLSearchParams();
+  // A readable hint is presentation only. Stable identity and authorization
+  // always use workspaceId, so renames and duplicate names cannot break links.
+  const name = readableProjectName(projectName);
+  if (name) params.set("project", name);
   params.set(PROJECT_URL_PARAM, projectId);
   for (const [key, value] of destinationLocalParams(destination)) {
     params.set(key, value);
   }
   return `${destinationPath(destination)}?${params.toString()}`;
+}
+
+export function readableProjectName(name?: string): string {
+  return (name ?? "").normalize("NFKC").toLowerCase().trim()
+    .replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 80).replace(/-+$/g, "");
 }
 
 /**

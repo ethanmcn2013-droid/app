@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-concepts",
+  "source": "tasks/src/app/app/concepts/page.tsx",
+  "materialityHash": "63e7924b683e8c06",
+  "reviewedAt": "2026-10-15",
+  "reviewer": "Codex selected_experience_receiving (technical receiving; retained independent rendered reviews)",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-15cf156c8c431130bdd83fc3-96aca426e29e97a3.json",
+    "attestationSha256": "20e858c0dfec9327cb56f2800f881b3450af0ff0cec46b47108536731c15ecfd",
+    "runId": "tasks-playwright-15cf156c8c431130bdd83fc3",
+    "canonicalEvidenceSha256": "15cf156c8c431130bdd83fc390641c423630a35d43540342f5914dfc32403de7",
+    "rawArtifactSha256": "96aca426e29e97a326f3faad798ce5768d208df8bf099d0ab11550f52d0f46c0",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-concepts",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Technical source/capture receiving at exact source da89c6d7141df4b63e629d6c39321bb5322fa239, hosted run38681067768,204/204 cases and four passing own-target viewports for \"own surface in demo\". 4/4 PNGs are byte-identical to prior independent rendered review; any remaining raster delta was independently viewed and limited to the documented5/39 pixels. Actual sample-data/unpicked concept route; prior preview/launcher overlap and full-page geometry observations retained. No prototype design selection implied.",
+  "decision": "REVIEWED WITH FINDINGS - technical synthetic materiality received; retained rendered observations are not waived. No aesthetic/9.5 certification, authenticated/provider/production continuity or release acceptance."
+}

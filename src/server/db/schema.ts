@@ -1900,3 +1900,18 @@ export const weddingGuests = sqliteTable("wedding_guests", {
   check("wedding_guest_meal", sql`${table.meal} IN ('not_provided', 'no_preference', 'vegetarian', 'vegan', 'pescatarian', 'child')`),
   check("wedding_guest_named", sql`${table.firstName} IS NOT NULL OR ${table.plusOneOf} IS NOT NULL`),
 ]);
+
+/** Private self-chat rows; no Project membership or shared-conversation link. */
+export const personalChatMessages = sqliteTable("personal_chat_messages", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull().references(() => users.id),
+  body: text("body").notNull(),
+  clientRequestId: text("client_request_id").notNull(),
+  requestHash: text("request_hash").notNull(),
+  createdAt: integer("created_at").notNull(),
+  editedAt: integer("edited_at"),
+}, table => [
+  uniqueIndex("idx_personal_chat_owner_request").on(table.ownerId, table.clientRequestId),
+  index("idx_personal_chat_owner_created").on(table.ownerId, table.createdAt, table.id),
+  check("personal_chat_request_hash", sql`length(${table.requestHash}) = 64`),
+]);

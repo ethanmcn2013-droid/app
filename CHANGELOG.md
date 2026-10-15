@@ -1,5 +1,15 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-15 · Candidate · Keep the page while you chat
+
+- **Chat:** Open the circular chat button to message without leaving your page. Drafts stay through navigation. Personal chat keeps private notes and exports them as Markdown. Dictation fills an editable draft on supported browsers; sending remains your choice.
+- **Navigation:** Analytics and Files sit below Home. More groups Development, Wedding, Teacher and Student tools, with browser-local customisation and collapsible sections. Planned tools remain labelled Coming soon. Project menus offer the same actions from right-click and the visible more button.
+- **Settings:** Open Settings over your current page, with protection for unsaved edits and direct links retained.
+- **Files:** Browse task folders as cards, open their files and keep the existing preview beside them.
+- **Details:** Quieter scroll indicators, notification timers that pause while you interact, fewer persistent chat counters, readable message links and optional project names in project URLs.
+
+Candidate only: receiving verification, migration `0043_personal_chat`, integration and production release remain pending. More customisation and hidden conversations are saved in this browser; they do not change project permissions or archive projects. Images, file attachments, personal AI assistance and complete Teacher/Student products are outside this candidate.
+
 ## 2026-10-14 · Released · A clearer Tasks workspace, with Wedding guests
 
 - **Workspace:** Pages use the space beside the sidebar. Projects no longer repeat the open project's overview below the list.

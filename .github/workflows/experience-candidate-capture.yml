@@ -1,0 +1,103 @@
+name: Experience candidate capture
+
+# Bounded evidence collection for the selected sprint. This workflow does not
+# replace Design quality, refresh reviewed hashes, issue review receipts, or
+# qualify release. Every existing required gate remains unchanged.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: experience-candidate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  capture-candidate:
+    if: github.event.pull_request.head.ref == 'feat/selected-product-sprint-20261015' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Record exact candidate source and evidence boundary
+        env:
+          CANDIDATE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          node --input-type=module <<'JS'
+          import { execFileSync } from 'node:child_process';
+          import { mkdirSync, writeFileSync } from 'node:fs';
+          const git = (ref) => execFileSync('git', ['rev-parse', ref], { encoding: 'utf8' }).trim();
+          const head = git('HEAD');
+          if (head !== process.env.CANDIDATE_HEAD_SHA) throw Error('Candidate checkout is not the exact PR head');
+          mkdirSync('experience/output', { recursive: true });
+          writeFileSync('experience/output/candidate-source.json', JSON.stringify({
+            schemaVersion: 'signal-experience-candidate-source/1', head, tree: git('HEAD^{tree}'),
+            captureOnly: true, reviewedRegistryOrReceipts: false,
+            boundary: 'Synthetic Preview browser capture only. Existing required registry, fixture, review, quality and release gates remain required. A capture or candidate attestation does not establish receiving acceptance.',
+          }, null, 2) + '\n');
+          JS
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prove maintained evidence gates still reject drift
+        run: pnpm experience:self-test
+
+      - name: Install isolated CI Chromium
+        id: browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Call the maintained capture directly. experience:test also verifies old
+      # linked receipts, which cannot qualify a new candidate before receiving.
+      - name: Capture every canonical rendered case and viewport
+        run: pnpm exec playwright test --config experience/playwright.config.ts
+
+      # This writer rejects missing, skipped, duplicate or failed outcome pairs.
+      # It issues a candidate run record only; it does not verify old reviews.
+      - name: Bind fully passing candidate raw report to the current contract
+        run: node scripts/experience/attest-playwright.mjs --write-record
+
+      # The real sidebar over the existing seven synthetic readers proves the
+      # Projects presentation which the V3-off App preview cannot render.
+      # Declared provider/action ports do not establish authenticated continuity.
+      - name: Capture isolated sidebar readers and project rows
+        if: always() && steps.browser.outcome == 'success'
+        run: node experience/sidebar/fixture-run.mjs --capture experience/output/sidebar-fixture
+
+      - name: Upload candidate evidence, including unsuccessful runs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tasks-selected-candidate-${{ github.event.pull_request.head.sha }}
+          path: |
+            experience/output/candidate-source.json
+            experience/output/critical-evidence.json
+            experience/output/evidence-attestation.json
+            experience/output/materiality-source-fixtures
+            experience/output/playwright-report
+            experience/output/playwright-results
+            experience/output/sidebar-fixture
+            experience/evidence-runs
+            experience/critical-fixtures.json
+            experience/browser-contract.json
+            experience/playwright.config.ts
+            experience/tests/critical-experiences.spec.ts
+            experience/sidebar/fixture.tsx
+            experience/sidebar/fixture-run.mjs
+          if-no-files-found: error
+          retention-days: 14

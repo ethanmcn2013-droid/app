@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -43,33 +44,6 @@ type Ctx = {
 
 const ToastContext = createContext<Ctx | null>(null);
 
-const TONE_STYLES: Record<Toast["tone"], { bg: string; ring: string; ink: string; eyebrow: string }> = {
-  info: {
-    bg: "bg-bg-elevated",
-    ring: "border-line-soft",
-    ink: "text-ink",
-    eyebrow: "text-ink-quiet",
-  },
-  success: {
-    bg: "bg-emerald-50/80",
-    ring: "border-emerald-200",
-    ink: "text-ink",
-    eyebrow: "text-emerald-700",
-  },
-  warn: {
-    bg: "bg-amber-50/80",
-    ring: "border-amber-200",
-    ink: "text-ink",
-    eyebrow: "text-amber-700",
-  },
-  error: {
-    bg: "bg-rose-50/80",
-    ring: "border-rose-200",
-    ink: "text-ink",
-    eyebrow: "text-rose-700",
-  },
-};
-
 /**
  * `<ToastRoot>` mounts the queue + portal. Use `useToast().toast(...)`
  * from any client component. Replaces the `console.warn` calls in
@@ -79,42 +53,85 @@ const TONE_STYLES: Record<Toast["tone"], { bg: string; ring: string; ink: string
  */
 export function ToastRoot({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastsRef = useRef<Toast[]>([]);
+  const timers = useRef(new Map<string, { handle: ReturnType<typeof setTimeout>; startedAt: number; remaining: number }>());
+
+  const dismiss = useCallback((id: string) => {
+    const timer = timers.current.get(id);
+    if (timer) clearTimeout(timer.handle);
+    timers.current.delete(id);
+    const next = toastsRef.current.filter((item) => item.id !== id);
+    toastsRef.current = next;
+    setToasts(next);
+  }, []);
+
+  const pause = useCallback((id: string) => {
+    const timer = timers.current.get(id);
+    if (!timer) return;
+    clearTimeout(timer.handle);
+    timer.remaining = Math.max(0, timer.remaining - (Date.now() - timer.startedAt));
+    timers.current.delete(id);
+    // Keep the remaining duration while paused; the card may resume it later.
+    pausedDurations.current.set(id, timer.remaining);
+  }, []);
+  const pausedDurations = useRef(new Map<string, number>());
+
+  const resume = useCallback((id: string) => {
+    if (timers.current.has(id)) return;
+    const duration = pausedDurations.current.get(id);
+    if (duration === undefined) return;
+    pausedDurations.current.delete(id);
+    const entry = { remaining: duration, startedAt: Date.now(), handle: setTimeout(() => dismiss(id), duration) };
+    timers.current.set(id, entry);
+  }, [dismiss]);
+
+  useEffect(() => () => {
+    for (const timer of timers.current.values()) clearTimeout(timer.handle);
+    timers.current.clear();
+    pausedDurations.current.clear();
+  }, []);
 
   const toast = useCallback<Ctx["toast"]>((title, opts) => {
     const id = Math.random().toString(36).slice(2, 9);
+    const tone = opts?.tone ?? "info";
     const next: Toast = {
       id,
       title,
       body: opts?.body,
-      tone: opts?.tone ?? "info",
-      duration: opts?.duration ?? 4000,
+      tone,
+      // Errors stay until dismissed so recovery instructions remain available.
+      duration: opts?.duration ?? (tone === "error" ? 0 : tone === "warn" ? 6500 : 5000),
       action: opts?.action,
     };
-    setToasts((q) => [...q.slice(-3), next]);
-    if (next.duration > 0) {
-      setTimeout(() => {
-        setToasts((q) => q.filter((t) => t.id !== id));
-      }, next.duration);
+    const current = toastsRef.current;
+    const dropped = current.slice(0, Math.max(0, current.length - 3));
+    for (const old of dropped) {
+      const timer = timers.current.get(old.id);
+      if (timer) clearTimeout(timer.handle);
+      timers.current.delete(old.id);
+      pausedDurations.current.delete(old.id);
     }
-  }, []);
+    const updated = [...current.slice(-3), next];
+    toastsRef.current = updated;
+    setToasts(updated);
+    if (next.duration > 0) {
+      const timer = { remaining: next.duration, startedAt: Date.now(), handle: setTimeout(() => dismiss(id), next.duration) };
+      timers.current.set(id, timer);
+    }
+  }, [dismiss]);
 
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        className="pointer-events-none fixed bottom-4 right-4 z-[80] flex w-[340px] flex-col gap-2"
-      >
+      <div className="signal-toast-viewport pointer-events-none fixed z-[80] flex w-[min(380px,calc(100vw-32px))] flex-col gap-2">
         <AnimatePresence initial={false}>
           {toasts.map((t) => (
             <ToastCard
               key={t.id}
               t={t}
-              onDismiss={() =>
-                setToasts((q) => q.filter((x) => x.id !== t.id))
-              }
+              onDismiss={() => dismiss(t.id)}
+              onPause={() => pause(t.id)}
+              onResume={() => resume(t.id)}
             />
           ))}
         </AnimatePresence>
@@ -123,9 +140,13 @@ export function ToastRoot({ children }: { children: ReactNode }) {
   );
 }
 
-function ToastCard({ t, onDismiss }: { t: Toast; onDismiss: () => void }) {
-  const styles = TONE_STYLES[t.tone];
+function ToastCard({ t, onDismiss, onPause, onResume }: { t: Toast; onDismiss: () => void; onPause: () => void; onResume: () => void }) {
   const reduceMotion = useReducedMotion();
+  const hovered = useRef(false);
+  const focused = useRef(false);
+  const resumeIfClear = () => {
+    if (!hovered.current && !focused.current) onResume();
+  };
   return (
     <motion.div
       layout
@@ -133,19 +154,21 @@ function ToastCard({ t, onDismiss }: { t: Toast; onDismiss: () => void }) {
       animate={{ opacity: 1, transform: "translateX(0)" }}
       exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateX(8px)" }}
       transition={{ duration: reduceMotion ? 0.12 : Math.min(MOTION_BASE, 0.18), ease: EASE_OUT_EXPO }}
-      className={
-        "pointer-events-auto relative rounded-xl border px-4 py-3 shadow-[0_24px_60px_-30px_rgba(20,21,26,0.32)] " +
-        styles.bg +
-        " " +
-        styles.ring
-      }
+      onMouseEnter={() => { hovered.current = true; onPause(); }}
+      onMouseLeave={() => { hovered.current = false; resumeIfClear(); }}
+      onFocusCapture={() => { focused.current = true; onPause(); }}
+      onBlurCapture={(event) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+        focused.current = false;
+        resumeIfClear();
+      }}
+      role={t.tone === "error" ? "alert" : "status"}
+      aria-live={t.tone === "error" ? "assertive" : "polite"}
+      aria-atomic="true"
+      data-tone={t.tone}
+      className="signal-toast pointer-events-auto relative rounded-xl border bg-bg-elevated px-4 py-3 pr-12 text-ink shadow-[0_24px_60px_-30px_rgba(20,21,26,0.32)]"
     >
-      <div
-        className={
-          "text-[10.5px] font-semibold uppercase tracking-[0.16em] " +
-          styles.eyebrow
-        }
-      >
+      <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[var(--signal-toast-tone)]">
         {t.tone === "success"
           ? "Done"
           : t.tone === "warn"
@@ -154,7 +177,7 @@ function ToastCard({ t, onDismiss }: { t: Toast; onDismiss: () => void }) {
               ? "Something broke"
               : "FYI"}
       </div>
-      <div className={"mt-0.5 text-[13.5px] font-medium " + styles.ink}>
+      <div className="mt-0.5 text-[13.5px] font-medium">
         {t.title}
       </div>
       {t.body ? (
@@ -188,12 +211,12 @@ function ToastCard({ t, onDismiss }: { t: Toast; onDismiss: () => void }) {
       <button
         type="button"
         onClick={onDismiss}
-        aria-label="Dismiss"
-        className="absolute right-2 top-2 inline-flex h-5 w-5 items-center justify-center rounded text-ink-quiet hover:bg-bg-sunken hover:text-ink-soft"
+        aria-label={`Dismiss ${t.title}`}
+        className="absolute right-1 top-1 inline-flex h-[44px] w-[44px] items-center justify-center rounded-lg text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft active:bg-bg-sunken focus-visible:outline-2 focus-visible:outline-offset-[-3px]"
       >
         <svg
-          width="11"
-          height="11"
+          width="14"
+          height="14"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

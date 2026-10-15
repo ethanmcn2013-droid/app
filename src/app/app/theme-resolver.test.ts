@@ -43,9 +43,13 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { describe, it } from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { RESOLVER, applyMode } from "@/app/app/theme-runtime";
+import { ThemeBootstrap } from "./theme-bootstrap";
 import { APP_BAR_DARK, APP_BAR_LIGHT } from "@/lib/document-paper";
 import { THEME_EVENT, THEME_STORAGE_KEY, resolveThemeChoice } from "@/lib/theme-mode";
+import { APP_THEME_CONFIGURATION, applyAppThemeChoice, installAppTheme, type AppThemeHost } from "@/lib/app-theme-bootstrap";
 
 type Listener = () => void;
 
@@ -112,14 +116,16 @@ function makeDocument(options: {
   // The head: an ordered list of metas. The layout's own static theme-color
   // is already there when the resolver runs, as it is in the real document.
   type Meta = { attrs: Map<string, string> };
-  const makeMeta = (): Meta & { setAttribute: (n: string, v: string) => void } => {
+  const head: Meta[] = [];
+  const makeMeta = (): Meta & { setAttribute: (n: string, v: string) => void; remove: () => void } => {
     const attrs = new Map<string, string>();
-    return { attrs, setAttribute: (n, v) => void attrs.set(n, String(v)) };
+    const meta = { attrs, setAttribute: (n: string, v: string) => void attrs.set(n, String(v)), remove: () => { const at = head.indexOf(meta); if (at >= 0) head.splice(at, 1); } };
+    return meta;
   };
   const staticMeta = makeMeta();
   staticMeta.setAttribute("name", "theme-color");
   staticMeta.setAttribute("content", APP_BAR_DARK);
-  const head: Meta[] = [staticMeta];
+  head.push(staticMeta);
 
   const sandbox = {
     document: {
@@ -130,6 +136,7 @@ function makeDocument(options: {
           if (name === "data-theme") themeWrites += 1;
           attributes.set(name, String(value));
         },
+        removeAttribute: (name: string) => { attributes.delete(name); },
         classList: {
           add: (name: string) => classes.add(name),
           remove: (name: string) => classes.delete(name),
@@ -188,6 +195,10 @@ function makeDocument(options: {
       list.push(fn);
       globalListeners.set(type, list);
     },
+    removeEventListener(type: string, fn: Listener) {
+      const next = (globalListeners.get(type) ?? []).filter((listener) => listener !== fn);
+      if (next.length) globalListeners.set(type, next); else globalListeners.delete(type);
+    },
     dispatchEvent: (event: { type: string }) => {
       for (const fn of [...(globalListeners.get(event.type) ?? [])]) fn();
       return true;
@@ -202,6 +213,7 @@ function makeDocument(options: {
   vm.createContext(sandbox);
 
   return {
+    host: sandbox as unknown as AppThemeHost,
     /** Run a script string the way the document would: as a bare inline script. */
     run: (code: string) => vm.runInContext(code, sandbox),
     /** What the resolver decided. */
@@ -245,6 +257,8 @@ function makeDocument(options: {
     mediaQueriesAsked,
     changeListenerCount: (query: string) => (changeListeners.get(query) ?? []).length,
     globalListenerTypes: () => [...globalListeners.keys()],
+    globalListenerCount: (type: string) => (globalListeners.get(type) ?? []).length,
+    removeOwnMeta: () => { const at = head.findIndex((meta) => meta.attrs.has("data-app-theme")); if (at >= 0) head.splice(at, 1); },
     /** Every theme-color meta, in document order: the browser reads the first. */
     barColours: () =>
       head.filter((meta) => meta.attrs.get("name") === "theme-color").map((meta) => meta.attrs.get("content")),
@@ -527,9 +541,8 @@ describe("applyMode: the streamed correction", () => {
     // The controls (src/lib/theme-mode.ts applyThemeChoice) and this script
     // must set the same attribute, the same storage key and fire the same
     // event name, or one of the two paths silently stops re-resolving.
-    assert.match(applyMode("dark"), /setAttribute\("data-theme-mode","dark"\)/);
-    assert.match(applyMode("dark"), /new Event\("signal:theme"\)/);
-    assert.match(applyMode("dark"), /localStorage\.setItem\("signal:theme-mode","dark"\)/);
+    assert.ok(applyMode("dark").includes(JSON.stringify(THEME_EVENT)));
+    assert.ok(applyMode("dark").includes(JSON.stringify(THEME_STORAGE_KEY)));
     assert.doesNotMatch(applyMode("dark"), /"data-theme"/);
 
     const lib = source("src", "lib", "theme-mode.ts");
@@ -552,9 +565,68 @@ describe("applyMode: the streamed correction", () => {
     // The server component sends the resolved value for every signed-in
     // user, including the default, so a stale copy from another account on
     // a shared browser is corrected rather than trusted.
-    assert.match(themeRuntimeSource, /applyMode\(resolveThemeChoice\(stored\)\)/);
+    assert.match(themeRuntimeSource, /const mode = resolveThemeChoice\(stored\)/);
+    assert.match(themeRuntimeSource, /<ThemeBootstrap script=\{applyMode\(mode\)\} mode=\{mode\}/);
     assert.doesNotMatch(themeRuntimeSource, /if \(mode === "system"\) return null;/);
-    assert.match(themeRuntimeSource, /applyMode = \(mode: ThemeChoice\)/);
+    assert.match(themeRuntimeSource, /applyMode = appThemeChoiceScript/);
+  });
+});
+
+describe("the shared SSR and client bootstrap", () => {
+  it("keeps a parser script in SSR HTML and puts both entry paths behind the client boundary", () => {
+    const html = renderToStaticMarkup(createElement(ThemeBootstrap, { script: RESOLVER }));
+    assert.ok(html.includes(`<script>${RESOLVER}</script>`));
+    assert.doesNotMatch(themeRuntimeSource, /<script[\s>]/);
+    const boundary = source("src", "app", "app", "theme-bootstrap.tsx");
+    assert.match(boundary, /useSyncExternalStore\(subscribe, clientSnapshot, serverSnapshot\)/);
+    assert.match(boundary, /const clientSnapshot = \(\) => true/);
+    assert.match(boundary, /const serverSnapshot = \(\) => false/);
+    assert.match(boundary, /return client \? null : <script/);
+    assert.doesNotMatch(boundary, /\beval\(|new Function\(/);
+  });
+
+  it("repeated parser scripts and client entry share one listener, meta and owned lifetime", () => {
+    const dom = makeDocument({ stored: "light" });
+    const parsed = dom.run(RESOLVER);
+    const repeated = dom.run(RESOLVER);
+    const client = installAppTheme(dom.host, APP_THEME_CONFIGURATION, resolveThemeChoice);
+    assert.equal(parsed, repeated); assert.equal(parsed, client);
+    const releaseShell = client.retain(); const releasePreference = client.retain();
+    assert.equal(dom.theme(), "light"); assert.equal(dom.themeWrites(), 1);
+    assert.equal(dom.globalListenerCount(THEME_EVENT), 1); assert.equal(dom.ownMetaCount(), 1);
+    releasePreference(); releasePreference();
+    assert.equal(dom.globalListenerCount(THEME_EVENT), 1, "one remaining owner keeps the resolver active");
+    dom.chooseMode("dark"); dom.run(FIRE);
+    assert.equal(dom.theme(), "dark"); assert.equal(dom.pendingTimers(), 1);
+    releaseShell();
+    assert.equal(dom.pendingTimers(), 0); assert.equal(dom.resolving(), false);
+    assert.equal(dom.globalListenerCount(THEME_EVENT), 0); assert.equal(dom.ownMetaCount(), 0);
+    assert.equal(dom.theme(), null); assert.equal(dom.mode(), null);
+    assert.equal(dom.stored(), "light", "leaving the app keeps the browser preference");
+    const enteredAgain = installAppTheme(dom.host, APP_THEME_CONFIGURATION, resolveThemeChoice);
+    const releaseAgain = enteredAgain.retain();
+    assert.notEqual(enteredAgain, client); assert.equal(dom.theme(), "light");
+    assert.equal(dom.globalListenerCount(THEME_EVENT), 1); assert.equal(dom.ownMetaCount(), 1);
+    releaseAgain();
+  });
+
+  it("the client account correction matches the exact streamed script, including blocked storage", () => {
+    for (const storageThrows of [false, true]) {
+      const server = makeDocument({ stored: "dark", storageThrows });
+      const client = makeDocument({ stored: "dark", storageThrows });
+      server.run(RESOLVER); installAppTheme(client.host, APP_THEME_CONFIGURATION, resolveThemeChoice);
+      server.run(applyMode("light")); applyAppThemeChoice(client.host, "light", APP_THEME_CONFIGURATION);
+      assert.equal(client.theme(), server.theme()); assert.equal(client.mode(), server.mode());
+      assert.equal(client.stored(), server.stored()); assert.deepEqual(client.barColours(), server.barColours());
+    }
+  });
+
+  it("repairs missing browser-bar metadata on a no-op resolve without a theme transition", () => {
+    const dom = makeDocument({ mode: "light" });
+    const runtime = installAppTheme(dom.host, APP_THEME_CONFIGURATION, resolveThemeChoice);
+    dom.removeOwnMeta(); runtime.apply();
+    assert.equal(dom.themeWrites(), 1); assert.equal(dom.resolving(), false);
+    assert.equal(dom.ownMetaCount(), 1); assert.equal(dom.barColours()[0], APP_BAR_LIGHT);
   });
 });
 

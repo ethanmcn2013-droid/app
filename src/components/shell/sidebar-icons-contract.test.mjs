@@ -1,6 +1,7 @@
 // The approved sidebar icon set ("solid when selected", 12 Oct 2026) stays
 // the sidebar's set: every row draws from it, the component and the source
-// SVGs name the same icons, and selection never turns indigo.
+// SVGs name the same icons, icon selection stays monochrome, and the separate
+// Project identity ring gains an outer selected state without changing status.
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
@@ -40,15 +41,31 @@ test("every sidebar row draws from the approved set", () => {
   assert.match(shell, /sidebar \? <SidebarIcon name="theme" \/>/);
 });
 
-test("projects use the one project marker, never letter tiles", () => {
-  assert.match(sidebar, /<ProjectMarker color=\{projectColor\(row\.id\)\} \/>/);
+test("project identity keeps its indigo ring, project colour and status without letter tiles", () => {
+  assert.match(sidebar, /<span className=\{styles\.projectProgress\} aria-hidden="true">/);
+  assert.match(sidebar, /<span className=\{styles\.projectProgressCore\} style=\{\{ backgroundColor: projectColor\(row\.id\) \}\} \/>/);
   assert.doesNotMatch(sidebar, /row\.monogram\.slice\(0, 1\)/);
+  assert.match(sidebar, /data-mark=\{mark\}/);
+  assert.match(sidebar, /SIDEBAR_MARK_LABEL\[mark\]/);
   assert.doesNotMatch(sidebar, /<ShellIcon\.(sidebar|search|help|hash) /);
+
+  const details = css.slice(css.indexOf("Approved sidebar detail"));
+  const identity = details.match(/\.projectProgress \{([^}]+)\}/);
+  assert.ok(identity, "the Project identity has one base ring rule");
+  assert.match(identity[1], /border:\s*1\.25px solid transparent/);
+  const selected = details.match(/\.item\[data-current-project\] \.projectProgress \{([^}]+)\}/);
+  assert.ok(selected, "the open Project receives its selected-only indigo ring");
+  assert.match(selected[1], /border-color:\s*var\(--v3-accent\)/);
+  assert.match(css, /\.statusDot\[data-tone="late"\]/);
+  assert.match(css, /\.statusDot\[data-tone="risk"\]/);
+  assert.match(css, /\.item\[data-current-project\] \{ background:/, "project selection retains its row highlight");
 });
 
-test("selection is the solid fill and the row highlight, not indigo", () => {
-  const block = css.slice(css.indexOf("Approved sidebar icons"));
+test("selected navigation icons keep their solid foreground treatment, separate from the Project ring", () => {
+  const start = css.indexOf("Approved sidebar icons");
+  const end = css.indexOf("A project: a square tinted", start);
+  const block = css.slice(start, end);
   assert.ok(block.length > 0);
   assert.doesNotMatch(block, /--v3-accent/);
-  assert.match(block, /\.item\[data-current-project\] \{ background:/);
+  assert.match(block, /\.item svg\[data-selected\] \{ color: var\(--v3-text\); \}/);
 });

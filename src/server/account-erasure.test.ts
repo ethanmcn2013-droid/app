@@ -65,6 +65,10 @@ async function seed(client: Client, probePath: string) {
       ('u-target','clerk_target','#111','TT'),
       ('u-bystander','clerk_bystander','#222','BB');
 
+    INSERT INTO personal_chat_messages (id, owner_id, body, client_request_id, request_hash, created_at) VALUES
+      ('pc-target','u-target','target private note','request_target_private_0001','${"a".repeat(64)}',1756800000),
+      ('pc-bystander','u-bystander','bystander private note','request_bystander_private_0001','${"b".repeat(64)}',1756800001);
+
     INSERT INTO workspaces (id, slug, name, owner_user_id) VALUES
       ('ws-a','ws-a-slug','A','u-target'),
       ('ws-b','ws-b-slug','B','u-bystander');
@@ -283,6 +287,7 @@ test("erasure removes every target row across every table, leaves the bystander 
     // ── Invariant 1: ZERO residual rows for the target or ws-a ──────────
     const residual: Array<[string, string]> = [
       ["users", "users WHERE id='u-target'"],
+      ["personal_chat_messages", "personal_chat_messages WHERE owner_id='u-target'"],
       ["workspaces", "workspaces WHERE id='ws-a' OR owner_user_id='u-target'"],
       ["tasks", "tasks WHERE workspace_id='ws-a'"],
       ["comments", "comments WHERE user_id='u-target' OR workspace_id='ws-a' OR task_id='task-a1'"],
@@ -320,6 +325,7 @@ test("erasure removes every target row across every table, leaves the bystander 
     // ── Invariant 2: bystander account/product data + globals intact ───
     const survivors: Array<[string, number]> = [
       ["users", 1], // only u-bystander
+      ["personal_chat_messages", 1], // only the bystander's private self-chat
       ["workspaces", 1], // only ws-b
       ["tasks", 2], // shared artifact + unrelated Notes task
       ["comments", 2], // c-b2 and an identity-free c-b1 structural tombstone

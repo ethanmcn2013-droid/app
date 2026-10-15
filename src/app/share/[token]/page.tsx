@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { buildProjectUrl } from "@/lib/projects/project-url";
+import { parseProjectId } from "@/lib/projects/project-ref";
 import { notFound } from "next/navigation";
 import {
   resolveShareLink,
@@ -30,18 +33,19 @@ export default async function SharePage({
   // Owner-preview affordance only; never rendered for ordinary recipients.
   // The check never throws for anonymous visitors.
   const viewerIsMember = await viewerIsWorkspaceMember(data.workspaceId);
+  const projectId = parseProjectId(data.workspaceId);
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-bg">
       {viewerIsMember ? (
         <div className="flex items-center justify-center gap-2 border-b border-line-soft bg-bg-sunken px-6 py-1.5 text-[12px] text-ink-soft">
           You are viewing the shared version.
-          <a
-            href="/app/tasks"
+          <Link
+            href={projectId ? buildProjectUrl({ surface: "tasks" }, projectId, data.workspaceTitle) : "/app/tasks"}
             className="font-medium text-ink underline underline-offset-2 hover:text-ink-soft"
           >
             Return to workspace
-          </a>
+          </Link>
         </div>
       ) : null}
       <header className="flex items-center justify-between border-b border-line-soft px-6 py-3">
@@ -68,7 +72,7 @@ export default async function SharePage({
             Read-only · Shared link
           </span>
           {!viewerIsMember ? (
-            <a
+            <Link
               href="/app/tasks"
               className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1 text-[12px] font-medium text-white transition-transform hover:-translate-y-px"
             >
@@ -85,7 +89,7 @@ export default async function SharePage({
               >
                 <path d="M5 12h14M13 5l7 7-7 7" />
               </svg>
-            </a>
+            </Link>
           ) : null}
         </div>
       </header>

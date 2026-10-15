@@ -15,8 +15,13 @@ import { hasDraftCapacity, listSavedDrafts, type SavedConversationScope } from "
 import { DirectMessageControls, DirectMessageDirectory, type DirectMessageScope } from "./direct-message-directory";
 import { resolveTaskOutcome, type TaskOutcomeSubmission } from "./task-outcome-client";
 import { TaskOutcomeForm, type TaskOutcomeRequest, type TaskOutcomeResult } from "./task-outcome-form";
-import { anchoredScrollTop, resolveScrollAnchor, type ScrollAnchor, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, forgetConversationDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey, type DraftCache, type OutgoingCache, type ScrollCache } from "./conversation-client-model";
+import { anchoredScrollTop, resolveScrollAnchor, type ScrollAnchor, audienceResponseMatches, conversationHeaders, draftKey, forgetProjectDrafts, forgetConversationDrafts, needsFreshAudienceSend, rememberDraft, shouldSendComposerKey, type DraftCache, type OutgoingCache, type ScrollCache, retainConversationState } from "./conversation-client-model";
 import styles from "./conversation-workspace.module.css";
+import { ConversationOptions } from "./conversation-options";
+import { useHiddenConversations } from "./use-hidden-conversations";
+import { ChatDictationTools, ChatDraftCounter } from "./chat-composer-tools";
+import { appendDictatedText } from "./chat-composer-model";
+import { chatNavigationKey, shouldFocusChatTarget } from "./chat-navigation";
 
 type ProjectOption = Readonly<{ id: ProjectId; name: string }>;
 type ConversationScope = Readonly<{ conversationId: string; projectId: ProjectId; kind: "project"; audienceEpoch: number; lifecycle: "active" | "archived" }> | DirectMessageScope;
@@ -30,7 +35,7 @@ type GeneratedAction =
   | Readonly<{ type: "refused"; failure: ConversationFailure; requestId?: string }>
   | Readonly<{ type: "offline" }>;
 
-export type ConversationWorkspaceProps = Readonly<{ actorId: string; projects: readonly ProjectOption[]; initialProjectId?: ProjectId; initialRootId?: string; initialMessageId?: string; initialMessageSeq?: number; fixtureActor?: string; directMessagesEnabled?: boolean }>;
+export type ConversationWorkspaceProps = Readonly<{ actorId: string; projects: readonly ProjectOption[]; initialProjectId?: ProjectId; initialRootId?: string; initialMessageId?: string; initialMessageSeq?: number; fixtureActor?: string; directMessagesEnabled?: boolean; visible?: boolean; navigationVersion?: number }>;
 
 const failureCopy: Record<ConversationFailure["code"], string> = {
   unauthenticated: "Your session is no longer available.", unavailable: "This conversation is unavailable.",
@@ -59,30 +64,56 @@ export function ConversationWorkspace(props: ConversationWorkspaceProps) {
   return <ConversationWorkspaceActor key={props.actorId} {...props} />;
 }
 
-function ConversationWorkspaceActor({ actorId, projects, initialProjectId, initialRootId, initialMessageId, initialMessageSeq, fixtureActor, directMessagesEnabled = Boolean(fixtureActor) }: ConversationWorkspaceProps) {
+function ConversationWorkspaceActor({ actorId, projects, initialProjectId, initialRootId, initialMessageId, initialMessageSeq, fixtureActor, directMessagesEnabled = Boolean(fixtureActor), visible = true, navigationVersion = 0 }: ConversationWorkspaceProps) {
   const initial = projects.some((project) => project.id === initialProjectId) ? initialProjectId! : projects[0]?.id;
   const [projectId, setProjectId] = useState<ProjectId | undefined>(initial);
   const [view, setView] = useState<"full" | "context">("full");
   const [direct, setDirect] = useState<DirectMessageScope | null>(null);
   const [savedScope, setSavedScope] = useState<SavedConversationScope | null>(null);
+  const hidden = useHiddenConversations(actorId);
+  const requestKey = chatNavigationKey(navigationVersion, { projectId: initialProjectId, rootId: initialRootId, messageId: initialMessageId, messageSeq: initialMessageSeq });
+  const [followedRequest, setFollowedRequest] = useState(requestKey);
+  if (requestKey !== followedRequest) { setFollowedRequest(requestKey); if (initialProjectId) { setProjectId(initialProjectId); setDirect(null); setSavedScope(null); } }
   const { drafts: draftCache, scroll: scrollCache, outgoing: outgoingCache } = useConversationCaches(actorId);
-  if (!projectId || projects.length === 0) return <main className={styles.noProjects}><h1>Chat</h1><p>Add a Project before starting a Project conversation.</p></main>;
+  if (!projectId || projects.length === 0) return <section className={styles.noProjects}><h1>Chat</h1><p>Add a Project before starting a Project conversation.</p></section>;
   const selected = projects.find((project) => project.id === projectId) ?? { id: projectId, name: "Project" };
   const directId = directMessagesEnabled ? (savedScope?.kind === "dm" ? savedScope.conversationId : direct?.conversationId) : undefined;
   const openSavedScope = (next: SavedConversationScope) => { if (next.kind === "dm" && !directMessagesEnabled) return; setDirect(null); setProjectId(next.projectId); setSavedScope(next); };
   return <section className={styles.workspace} data-view={view}>
     <aside className={styles.projectList}>
       <div className={styles.listHeading}><h1>Chat</h1><span>Project conversations</span></div>
-      {projects.map((project) => <button aria-current={project.id === selected.id ? "page" : undefined} aria-label={project.name} key={project.id} onClick={() => { setSavedScope(null); setDirect(null); setProjectId(project.id); }} type="button"><span>{project.name.slice(0, 2).toUpperCase()}</span><strong>{project.name}</strong></button>)}
+      {projects.filter((project) => !hidden.hidden.includes(project.id)).map((project) => <div className={styles.projectRow} key={project.id} onContextMenu={(event) => { event.preventDefault(); const details = event.currentTarget.querySelector("details"); if (details) { details.open = true; details.querySelector("button")?.focus(); } }}><button aria-current={project.id === selected.id ? "page" : undefined} aria-label={project.name} onClick={() => { setSavedScope(null); setDirect(null); setProjectId(project.id); }} type="button"><span>{project.name.slice(0, 2).toUpperCase()}</span><strong>{project.name}</strong></button><ConversationOptions title={project.name} onHide={() => hidden.hide(project.id)} /></div>)}
+      {projects.some((project) => hidden.hidden.includes(project.id)) ? <details className={styles.hiddenConversations}><summary>Hidden conversations</summary>{projects.filter((project) => hidden.hidden.includes(project.id)).map((project) => <button key={project.id} onClick={() => { hidden.restore(project.id); setProjectId(project.id); setDirect(null); setSavedScope(null); }} type="button">Show {project.name}</button>)}</details> : null}
       {directMessagesEnabled ? <DirectMessageDirectory key={selected.id} actorId={actorId} projectId={selected.id} fixtureActor={fixtureActor} selectedId={directId} onSelect={(next) => { setSavedScope(null); setDirect(next); }} /> : null}
       <TaskDiscussionDirectory key={`tasks:${selected.id}`} projectId={selected.id} fixtureActor={fixtureActor} />
       <p>Messages stay inside their named Project.</p>
     </aside>
-    <ProjectConversationSession directId={directId} initialRootId={savedScope?.rootId ?? initialRootId} initialMessageId={initialMessageId} initialMessageSeq={initialMessageSeq} onOpenSavedScope={openSavedScope} actorId={actorId} outgoingCache={outgoingCache} draftCache={draftCache} fixtureActor={fixtureActor} key={`${actorId}:${selected.id}:${directId ?? "project"}:${savedScope?.rootId ?? initialRootId ?? ""}`} onToggleView={() => setView((current) => current === "full" ? "context" : "full")} project={selected} projects={projects} scrollCache={scrollCache} view={view} />
+    <ProjectConversationSession navigationRequestKey={requestKey} visible={visible} directId={directId} initialRootId={savedScope?.rootId ?? initialRootId} initialMessageId={initialMessageId} initialMessageSeq={initialMessageSeq} onOpenSavedScope={openSavedScope} actorId={actorId} outgoingCache={outgoingCache} draftCache={draftCache} fixtureActor={fixtureActor} key={`${actorId}:${selected.id}:${directId ?? "project"}:${savedScope?.rootId ?? ""}`} onToggleView={() => setView((current) => current === "full" ? "context" : "full")} project={selected} projects={projects} scrollCache={scrollCache} view={view} />
   </section>;
 }
 
-function ProjectConversationSession({ actorId, project, projects, fixtureActor, directId, rootId = null, initialRootId, initialMessageId, initialMessageSeq, onOpenSavedScope, onCloseThread, draftCache, outgoingCache, scrollCache, view, onToggleView }: Readonly<{ actorId: string; project: ProjectOption; projects: readonly ProjectOption[]; fixtureActor?: string; directId?: string; rootId?: string | null; initialRootId?: string; initialMessageId?: string; initialMessageSeq?: number; onOpenSavedScope: (scope: SavedConversationScope) => void; onCloseThread?: () => void; draftCache: DraftCache; outgoingCache: OutgoingCache; scrollCache: ScrollCache; view: "full" | "context"; onToggleView: () => void }>) {
+type ProjectConversationSessionProps = Readonly<{
+  actorId: string;
+  project: ProjectOption;
+  projects: readonly ProjectOption[];
+  fixtureActor?: string;
+  directId?: string;
+  rootId?: string | null;
+  initialRootId?: string;
+  initialMessageId?: string;
+  initialMessageSeq?: number;
+  onOpenSavedScope: (scope: SavedConversationScope) => void;
+  onCloseThread?: () => void;
+  draftCache: DraftCache;
+  outgoingCache: OutgoingCache;
+  scrollCache: ScrollCache;
+  view: "full" | "context";
+  onToggleView: () => void;
+  visible?: boolean;
+  navigationRequestKey?: string;
+}>;
+
+function ProjectConversationSession({ actorId, project, projects, fixtureActor, directId, rootId = null, initialRootId, initialMessageId, initialMessageSeq, onOpenSavedScope, onCloseThread, draftCache, outgoingCache, scrollCache, view, onToggleView, visible = true, navigationRequestKey = "" }: ProjectConversationSessionProps) {
   const [state, dispatch] = useReducer(conversationReducer, undefined, () => emptyConversationState(actorId, `${project.id}:pending`, 1));
   const draftMentionUserIds = state.draftMentionUserIds;
   const setDraftMentionUserIds = (ids: readonly string[]) => {
@@ -146,6 +177,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   }
   function clearAudience() { audienceRef.current = null; setAudience(null); }
   function advanceSession(scopeKey: string) {
+    if (scope && outgoingHydrated) retainConversationState(draftCache, outgoingCache, scopeCacheKey(scope), stateRef.current, scope.kind);
     rememberScroll();
     sessionControllerRef.current?.abort();
     pollerRef.current?.stop();
@@ -154,6 +186,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     generationRef.current = generation;
     sessionControllerRef.current = controller;
     historyEpochRef.current = null; setBootstrapReady(false); setOutgoingHydrated(false);
+    targetScrolledRef.current = false; scrollLoadedFor.current = null; scrollAnchorRef.current = null;
     clearAudience(); setEditing(null); setTaskSource(null); setCreatedTasks({}); setMutationError(null); setSendsOff(false); setHasOlder(false); setOlderCursor(null); setCatchingUp(false);
     dispatch({ type: "reset", actorId, scopeKey, generation });
     return { generation, controller };
@@ -215,10 +248,15 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   }
 
   useEffect(() => {
-    const generation = generationRef.current;
-    sessionControllerRef.current?.abort();
-    const controller = new AbortController();
-    sessionControllerRef.current = controller;
+    let cancelled = false;
+    let requestController: AbortController | null = null;
+    // Begin the external request after the current commit. A superseding
+    // request can cancel this startup before it clears the visible state.
+    queueMicrotask(() => {
+    if (cancelled) return;
+    const { generation, controller } = advanceSession(`${project.id}:pending`);
+    requestController = controller;
+    setScope(undefined); setStartFailure(null); setOpenedRoot(initialRootId ?? null);
     void apiResult<ConversationScope | null>(apiUrl(directId ? "dm-scope" : "project", project.id, directId ? { conversationId: directId } : {}), fixtureActor, { signal: controller.signal }).then(async (result) => {
       if (!isCurrent(generation, controller.signal)) return;
       if (!result.ok) { setStartFailure(result.code); handleFailure(result, generation); return; }
@@ -237,12 +275,14 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
         if (!acceptAudience(audienceResult.value, generation, page.value.audienceEpoch)) await refreshAudience(page.value.audienceEpoch, generation, controller.signal);
       } else handleFailure(audienceResult, generation);
     }).catch(() => { if (isCurrent(generation, controller.signal)) { setStartFailure("temporarily_unavailable"); dispatchAt(generation, { type: "offline" }); } });
-    return () => { controller.abort(); if (sessionControllerRef.current === controller) sessionControllerRef.current = null; };
-  // Project-keyed session reruns only for an explicit retry.
+    });
+    return () => { cancelled = true; requestController?.abort(); if (sessionControllerRef.current === requestController) sessionControllerRef.current = null; };
+  // A new explicit request creates a fresh generation in this same mounted
+  // session. Outgoing custody is cached before aborting the old transport.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bootstrapAttempt]);
+  }, [bootstrapAttempt, navigationRequestKey]);
 
-  function retryBootstrap() { advanceSession(`${project.id}:pending`); setScope(undefined); setStartFailure(null); setBootstrapAttempt((current) => current + 1); }
+  function retryBootstrap() { setBootstrapAttempt((current) => current + 1); }
 
   useEffect(() => {
     if (!directId) return;
@@ -301,9 +341,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   useEffect(() => {
     if (!scope || !outgoingHydrated || state.status === "unavailable") return;
     const key = scopeCacheKey(scope);
-    rememberDraft(draftCache, key, state.draft);
-    if (state.draft || draftMentionUserIds.length || state.pending.length || state.recoveredDrafts.length) outgoingCache.set(key, { pending: state.pending, recoveredDrafts: state.recoveredDrafts, reviewedAudienceEpoch: state.reviewedAudienceEpoch, draftMentionUserIds, scopeKind: scope.kind });
-    else outgoingCache.delete(key);
+    retainConversationState(draftCache, outgoingCache, key, state, scope.kind);
   // Only this session owns the scope tuple.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, outgoingHydrated, outgoingCache, draftCache, state.draft, state.pending, state.recoveredDrafts, state.reviewedAudienceEpoch, state.status, draftMentionUserIds]);
@@ -371,15 +409,17 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   }
 
   useEffect(() => {
-    if (!initialMessageId || targetScrolledRef.current || !scope || state.status !== "ready" ||
-        (initialRootId && !rootId) || !state.messages.some(message => message.id === initialMessageId)) return;
+    if (!scope || historyEpochRef.current === null || !shouldFocusChatTarget({ visible, ready: state.status === "ready" && bootstrapReady, targetId: initialMessageId, found: state.messages.some(message => message.id === initialMessageId),
+      alreadyFocused: targetScrolledRef.current, requestedRoot: initialRootId, currentRoot: rootId })) return;
+    const generation = generationRef.current;
     const frame = requestAnimationFrame(() => {
+      if (!isCurrent(generation) || historyEpochRef.current === null) return;
       const target = [...(feedRef.current?.querySelectorAll<HTMLElement>("[data-message-id]") ?? [])]
         .find(node => node.dataset.messageId === initialMessageId);
       if (target) { target.scrollIntoView({ block: "center" }); target.focus({ preventScroll: true }); targetScrolledRef.current = true; }
     });
     return () => cancelAnimationFrame(frame);
-  }, [initialMessageId, initialRootId, rootId, scope, state.messages, state.status]);
+  }, [initialMessageId, initialRootId, rootId, scope, state.messages, state.status, visible, navigationRequestKey, bootstrapReady]);
 
   useEffect(() => {
     if (fixtureActor || !scope || scope.kind !== "project" || state.status !== "ready") return;
@@ -399,11 +439,11 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   }, [fixtureActor, scope, state.messages, state.status]);
 
   useEffect(() => {
-    if (fixtureActor || !scope || scope.kind !== "project" || state.status !== "ready" || !feedRef.current ||
+    if (!visible || fixtureActor || !scope || scope.kind !== "project" || state.status !== "ready" || !feedRef.current ||
         typeof IntersectionObserver === "undefined") return;
     const visibleMessages = new Map(state.messages.filter(message => message.body !== null).map(message => [message.id, message]));
     const observer = new IntersectionObserver((entries) => {
-      if (document.visibilityState !== "visible") return;
+      if (!visible || document.visibilityState !== "visible") return;
       const items = entries.filter(entry => entry.isIntersecting && entry.intersectionRatio >= 0.6)
         .map(entry => visibleMessages.get((entry.target as HTMLElement).dataset.observeMessageId ?? ""))
         .filter((message): message is MessageRecord => message !== undefined && !observedMessagesRef.current.has(message.id));
@@ -425,7 +465,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     };
     document.addEventListener("visibilitychange", resample);
     return () => { document.removeEventListener("visibilitychange", resample); observer.disconnect(); };
-  }, [fixtureActor, scope, state.messages, state.status]);
+  }, [fixtureActor, scope, state.messages, state.status, visible]);
 
   function restoreForFreshAudience(pending: PendingSend, generation: number) {
     if (!isCurrent(generation) || !scope) return;
@@ -455,6 +495,8 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     const input: SendInput = { projectId: project.id, conversationId: scope.conversationId, clientRequestId: newRequestId(), expectedAudienceEpoch: state.audienceEpoch, body: normalizeMessageBody(state.draft), rootId, mentionUserIds: draftMentionUserIds };
     const next = conversationReducer(state, { type: "submit", input });
     if (next === state) return;
+    stateRef.current = next;
+    retainConversationState(draftCache, outgoingCache, scopeCacheKey(scope), next, scope.kind);
     scrollAnchorRef.current = { top: 0, bottomDistance: 0, mode: "live" }; dispatch({ type: "submit", input }); rememberDraft(draftCache, scopeCacheKey(scope), ""); await resolveSend(next.pending[next.pending.length - 1]);
   }
 
@@ -496,7 +538,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   const unavailableMention = audienceReady && draftMentionUserIds.some((id) => !members.some((member) => member.id === id));
   const removedRoot = rootId !== null && state.messages.some((message) => message.id === rootId && message.body === null);
   const bodyValid = validMessageBody(state.draft); const bodyBytes = new TextEncoder().encode(state.draft).byteLength;
-  const SessionContainer = rootId ? "section" : "main";
+  const SessionContainer = "section";
   const title = rootId ? "Replies" : scope?.kind === "dm" ? scope.other.name : project.name;
   const audienceDescription = scope?.kind === "dm" ? `Private conversation in ${project.name} · exactly two people` : audienceReady ? `Visible to ${members.length} current members · ${members.map((member) => member.name).join(", ")}` : "Visible to current Project members · membership list updating";
   if (state.status === "unavailable") return <ConversationStatus title={title} message="This conversation is unavailable. It may have been removed or you may no longer have access." />;
@@ -530,9 +572,10 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
       <textarea disabled={!hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope))} aria-label={rootId ? "Write a reply" : `Message ${title}`} maxLength={CONVERSATION_LIMITS.bodyCharacters} onChange={(event) => updateDraft(event.target.value)} onKeyDown={(event) => { const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches; if (shouldSendComposerKey({ key: event.key, shiftKey: event.shiftKey, composing: event.nativeEvent.isComposing, mobileReturn })) { event.preventDefault(); void send(); } }} placeholder={rootId ? "Write a reply" : `Message ${title}`} rows={3} value={state.draft} />
       {unavailableMention ? <p>A selected person is no longer available. Remove them from Notify people before sending.</p> : null}
       {audienceReady ? <MemberMentionPicker actorId={actorId} members={members} selected={draftMentionUserIds} onChange={setDraftMentionUserIds} /> : null}
-      <div><span data-invalid={state.draft.length > 0 && (!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes) || undefined}>{Array.from(state.draft).length.toLocaleString()} / {CONVERSATION_LIMITS.bodyCharacters.toLocaleString()}</span><button disabled={!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes || audienceNeedsReview || unavailableMention} onClick={() => void send()} type="button">Send</button></div>
+      <ChatDictationTools active={visible && !openedRoot && !audienceNeedsReview && !unavailableMention} contextKey={`${actorId}:${scope.conversationId}:${rootId ?? "root"}`} append={(text) => { const next = appendDictatedText(stateRef.current.draft, text); if (next === null) return false; stateRef.current = { ...stateRef.current, draft: next }; updateDraft(next); return true; }} />
+      <div><ChatDraftCounter value={state.draft} /><button disabled={!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes || audienceNeedsReview || unavailableMention} onClick={() => void send()} type="button">Send</button></div>
     </>}</section>
-    {openedRoot && !rootId ? <ThreadFrame onClose={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }}><ProjectConversationSession key={openedRoot} rootId={openedRoot} initialMessageId={initialMessageId} initialMessageSeq={initialMessageSeq} onOpenSavedScope={onOpenSavedScope} onCloseThread={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }} directId={directId} actorId={actorId} project={project} projects={projects} fixtureActor={fixtureActor} draftCache={draftCache} outgoingCache={outgoingCache} scrollCache={scrollCache} view="context" onToggleView={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }} /></ThreadFrame> : null}
+    {openedRoot && !rootId ? <ThreadFrame visible={visible} onClose={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }}><ProjectConversationSession navigationRequestKey={navigationRequestKey} visible={visible} key={openedRoot} rootId={openedRoot} initialMessageId={initialMessageId} initialMessageSeq={initialMessageSeq} onOpenSavedScope={onOpenSavedScope} onCloseThread={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }} directId={directId} actorId={actorId} project={project} projects={projects} fixtureActor={fixtureActor} draftCache={draftCache} outgoingCache={outgoingCache} scrollCache={scrollCache} view="context" onToggleView={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }} /></ThreadFrame> : null}
     {taskSource ? <TaskOutcomeForm open actorId={actorId} fixture={Boolean(fixtureActor)} source={taskSource} projects={projects} onClose={closeTaskOutcome} loadDestination={(destinationId, signal) => apiResult(apiUrl("task-destination", destinationId), fixtureActor, { signal })} submit={submitTask} onCreated={(result) => { if (result.taskAvailable !== false) setCreatedTasks((current) => ({ ...current, [taskSource.messageId]: result.taskId })); }} /> : null}
   </SessionContainer>;
 }
@@ -545,12 +588,12 @@ function LiveMessage({ canMutate, unread, onReply, actorId, message, members, ed
   return <li className={styles.message} data-message-id={message.id} tabIndex={-1}><span aria-hidden data-message-observe data-observe-message-id={message.id} className={styles.observeSentinel} /><span className={styles.avatar}>{initials}</span><div><div className={styles.messageMeta}><strong>{name}</strong><time dateTime={new Date(message.createdAt).toISOString()}>{new Date(message.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</time>{unread && message.body !== null ? <span className={styles.unreadBadge}>Unread</span> : null}{message.editedAt ? <span>Edited</span> : null}</div>{message.body === null ? <p className={styles.deleted}>Message removed</p> : editing?.id === message.id ? <div className={styles.editForm}><textarea aria-label="Edit message" autoFocus onChange={(event) => setEditing({ ...editing, body: event.target.value })} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); cancelAndRestoreFocus(); } }} value={editing.body} /><div><button onClick={cancelAndRestoreFocus} type="button">Cancel</button><button disabled={!validMessageBody(editing.body)} onClick={() => onEdit(editing.body)} type="button">Save edit</button></div></div> : <p>{message.body}</p>}{message.body === null && onReply ? <div className={styles.messageActions}><button onClick={onReply} type="button">View replies</button></div> : null}{message.body !== null && editing?.id !== message.id ? <div className={styles.messageActions}>{onReply ? <button onClick={onReply} type="button">{message.replyCount ? `${message.replyCount} ${message.replyCount === 1 ? "reply" : "replies"}` : "Reply"}</button> : null}{onCreateTask ? <button onClick={onCreateTask} type="button">Create task</button> : null}{taskCreated ? <span>Task created</span> : null}{canMutate && message.authorId === actorId ? <><button onClick={onStartEdit} ref={editButtonRef} type="button">Edit</button><button onClick={onDelete} type="button">Delete</button></> : null}</div> : null}</div></li>;
 }
 
-function ThreadFrame({ children, onClose }: Readonly<{ children: ReactNode; onClose: () => void }>) {
+function ThreadFrame({ children, onClose, visible = true }: Readonly<{ children: ReactNode; onClose: () => void; visible?: boolean }>) {
   const dialog = useRef<HTMLDialogElement | null>(null);
-  useEffect(() => { const node = dialog.current; if (node && !node.open) node.showModal(); return () => node?.close(); }, []);
+  useEffect(() => { const node = dialog.current; if (node && visible && !node.open) node.showModal(); else if (node && !visible) node.close(); return () => node?.close(); }, [visible]);
   return <dialog ref={dialog} className={styles.threadPanel} aria-label="Message replies" onCancel={(event) => { event.preventDefault(); onClose(); }}>{children}</dialog>;
 }
 
 function ConversationStatus({ title, message, action, actionLabel, error }: Readonly<{ title: string; message: string; action?: () => void; actionLabel?: string; error?: string | null }>) {
-  return <main className={styles.main}><div className={styles.status}><Icon size={22}><path d="M4 5h16v12H9l-5 4Z" /></Icon><h1>{title}</h1><p>{message}</p>{error ? <span role="alert">{error}</span> : null}{action && actionLabel ? <button onClick={action} type="button">{actionLabel}</button> : null}</div></main>;
+  return <section className={styles.main}><div className={styles.status}><Icon size={22}><path d="M4 5h16v12H9l-5 4Z" /></Icon><h1>{title}</h1><p>{message}</p>{error ? <span role="alert">{error}</span> : null}{action && actionLabel ? <button onClick={action} type="button">{actionLabel}</button> : null}</div></section>;
 }
