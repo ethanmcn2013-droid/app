@@ -14,15 +14,16 @@ export function createPingTelemetryCollector(options: {
   const limit = Math.max(1, Math.min(64, options.maxQueued ?? 64));
   let scheduled = false, running = false, disposed = false, dropped = 0, pendingDrops = 0, unknownDelivery = 0, acceptedByReceiver = 0;
   let abort: AbortController | null = null;
+  let physicalInFlight = false, quarantined = false;
   const drop = (n = 1) => { dropped += n; pendingDrops = Math.min(65535, pendingDrops + n); };
   const body = (events: PingTelemetryEvent[]) => JSON.stringify({ version: BATCH_VERSION, events });
   function schedule() {
-    if (scheduled || running || disposed || !queue.length) return;
+    if (scheduled || running || physicalInFlight || quarantined || disposed || !queue.length) return;
     scheduled = true;
     queueMicrotask(() => { scheduled = false; void drain(); });
   }
   async function drain() {
-    if (running || disposed || !queue.length) return;
+    if (running || physicalInFlight || quarantined || disposed || !queue.length) return;
     running = true;
     const batch: PingTelemetryEvent[] = [];
     while (queue.length && batch.length < 16) {
@@ -35,14 +36,27 @@ export function createPingTelemetryCollector(options: {
     }
     if (!batch.length) { running = false; schedule(); return; }
     const controller = new AbortController(); abort = controller;
-    let timeout: ReturnType<typeof setTimeout> | undefined;
+    let timeout: ReturnType<typeof setTimeout> | undefined, timedOut = false;
+    physicalInFlight = true;
+    const physical = Promise.resolve().then(() => fetcher(ENDPOINT, {
+      method: "POST", credentials: "same-origin", cache: "no-store", signal: controller.signal,
+      headers: { "content-type": "application/json" }, body: body(batch),
+    }));
+    const settled = () => {
+      physicalInFlight = false;
+      if (timedOut) quarantined = false;
+      if (abort === controller) abort = null;
+      schedule();
+    };
+    // Handle both settlements without creating an unhandled rejected finally promise.
+    void physical.then(settled, settled);
     try {
-      const deadline = new Promise<never>((_, reject) => { timeout = setTimeout(() => { controller.abort(); disposed = true; drop(queue.length); queue.length = 0; reject(new Error("diagnostic deadline")); }, Math.max(1, Math.min(5000, options.timeoutMs ?? 2000))); });
-      // Promise.race also bounds a fetch implementation which ignores AbortSignal.
-      const response = await Promise.race([Promise.resolve().then(() => fetcher(ENDPOINT, {
-        method: "POST", credentials: "same-origin", cache: "no-store", signal: controller.signal,
-        headers: { "content-type": "application/json" }, body: body(batch),
-      })), deadline]);
+      const deadline = new Promise<never>((_, reject) => { timeout = setTimeout(() => {
+        timedOut = true; quarantined = true; drop(queue.length); queue.length = 0;
+        controller.abort(); reject(new Error("diagnostic deadline"));
+      }, Math.max(1, Math.min(5000, options.timeoutMs ?? 2000))); });
+      // Logical timeout never grants a second physical request while abort is unconfirmed.
+      const response = await Promise.race([physical, deadline]);
       if (response.ok) acceptedByReceiver += batch.length;
       else { unknownDelivery += batch.length; drop(batch.length); }
     } catch { unknownDelivery += batch.length; drop(batch.length); }
@@ -52,7 +66,7 @@ export function createPingTelemetryCollector(options: {
     emit(value: PingTelemetryEvent) {
       try {
         const event = validatePingTelemetryEvent(value);
-        if (!event || event.source !== "client" || disposed || queue.length >= limit) { drop(); return; }
+        if (!event || event.source !== "client" || disposed || quarantined || queue.length >= limit) { drop(); return; }
         if (pendingDrops) {
           const summary = validatePingTelemetryEvent({ ...event, requestId: crypto.randomUUID(), spanId: crypto.randomUUID(), parentSpanId: null, sequence: 0, stage: "attempt", outcome: "overflow", durationMs: null,
             droppedCount: Math.min(65535, event.droppedCount + pendingDrops) });
@@ -62,7 +76,7 @@ export function createPingTelemetryCollector(options: {
         queue.push(event); schedule();
       } catch { drop(); }
     },
-    coverage: () => ({ queued: queue.length, inFlight: running, acceptedByReceiver, dropped, unknownDelivery }),
+    coverage: () => ({ queued: queue.length, inFlight: physicalInFlight, quarantined, acceptedByReceiver, dropped, unknownDelivery }),
     dispose() { disposed = true; drop(queue.length); queue.length = 0; abort?.abort(); },
   };
 }
@@ -116,4 +130,13 @@ export function observePingTelemetryCommit(options: {
   try { frame = options.requestFrame(() => { if (current()) pingTelemetryRecord(options.recorder, { stage: "render-opportunity", outcome: "completed" }); }); }
   catch { return () => { disposed = true; }; }
   return () => { disposed = true; try { options.cancelFrame(frame); } catch { /* diagnostic only */ } };
+}
+
+/** Terminal local capture states do not establish any command execution or Task success. */
+export function pingLocalSpeechTerminalOutcome(snapshot: { phase: string; reason: string | null }): "unavailable" | "failed" | "cancelled" | "context_invalidated" | "expired" | "not_invoked" | null {
+  if (snapshot.phase === "needs_install" || snapshot.phase === "unavailable") return "unavailable";
+  if (snapshot.phase === "error") return "failed";
+  if (snapshot.phase !== "closed") return null;
+  return snapshot.reason === "cancelled" || snapshot.reason === "disposed" ? "cancelled" :
+    snapshot.reason === "context_changed" ? "context_invalidated" : snapshot.reason?.includes("timeout") ? "expired" : "not_invoked";
 }

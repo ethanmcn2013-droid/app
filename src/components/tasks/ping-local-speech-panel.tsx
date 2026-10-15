@@ -5,6 +5,7 @@ import { createBrowserPingLocalSpeech, type PingLocalSpeech, type PingLocalSpeec
 import { PingDock, PingMic, PingOverlay } from "./ping-overlay";
 import styles from "./ping-overlay.module.css";
 
+import { pingLocalSpeechTerminalOutcome } from "@/lib/ping/telemetry-client";
 import type { PingTelemetryRecorder, PingTelemetryOutcome } from "@/lib/ping/telemetry";
 
 type Outcome = "committed" | "unknown" | "refused" | "cancelled";
@@ -69,7 +70,15 @@ export function PingLocalSpeechPanel<Capture>(props: Props<Capture>) {
     const engine = createBrowserPingLocalSpeech({
       telemetry: () => { try { return latest.current.telemetry?.() ?? null; } catch { return null; } },
       isContextCurrent: () => { const owned = operation.current; return Boolean(owned && isActive(owned)); },
-      onState: (next) => { if (mounted.current && controller.current === engine) setSnapshot(next); },
+      onState: (next) => {
+        if (mounted.current && controller.current === engine) {
+          setSnapshot(next);
+          const owned = operation.current, terminal = pingLocalSpeechTerminalOutcome(next);
+          if (terminal && owned?.kind === "capture" && !owned.handedOff) {
+            try { latest.current.onDiagnosticAbandon?.(terminal); } catch { /* diagnostics only */ }
+          }
+        }
+      },
       onFinal: async (text) => {
         const owned = operation.current;
         if (!owned || owned.kind !== "capture" || owned.capture === null || !owned.finishRequested || owned.handedOff || !isActive(owned)) return;

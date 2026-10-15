@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createPingTelemetryRecorder, type PingTelemetryEvent } from "./telemetry";
-import { createPingTelemetryCollector, createBrowserPingTelemetry, pingTelemetryBegin, observePingTelemetryCommit } from "./telemetry-client";
+import { createPingTelemetryCollector, createBrowserPingTelemetry, pingTelemetryBegin, observePingTelemetryCommit, pingLocalSpeechTerminalOutcome } from "./telemetry-client";
 const tick = () => new Promise<void>(resolve => setImmediate(resolve));
 async function event(): Promise<PingTelemetryEvent> {
   const events: PingTelemetryEvent[] = [];
@@ -56,7 +56,7 @@ test("collector bounds queue and quarantines a sink that ignores abort; disposal
   collector.emit(e); collector.emit(e); collector.emit(e);
   assert.equal(collector.coverage().queued, 2); assert.equal(collector.coverage().dropped, 1);
   await new Promise(resolve => setTimeout(resolve, 20));
-  assert.equal(collector.coverage().inFlight, false); assert.equal(collector.coverage().unknownDelivery, 2);
+  assert.equal(collector.coverage().inFlight, true); assert.equal(collector.coverage().quarantined, true); assert.equal(collector.coverage().unknownDelivery, 2);
   collector.emit(e); await tick(); assert.equal(calls, 1);
   collector.dispose();
   const disposed = createPingTelemetryCollector({ fetcher: (async () => { calls++; return new Response(); }) as typeof fetch });
@@ -82,4 +82,34 @@ test("accepted React commit and frame opportunity stay separate; stale or dispos
   current = true; observe(); frame.callback?.(); await tick();
   assert.equal(events.filter(e => e.stage === "render-opportunity").length, 1);
   assert.ok(!JSON.stringify(events).includes("painted"));
+});
+
+
+for (const settlement of ["resolve", "reject"] as const) test(`timed-out export resumes only after physical ${settlement}; old batches are never retried`, async () => {
+  const e = await event(), batches: PingTelemetryEvent[][] = [];
+  let resolve!: (response: Response) => void, reject!: (error: Error) => void, calls = 0;
+  const physical = new Promise<Response>((yes, no) => { resolve = yes; reject = no; });
+  const collector = createPingTelemetryCollector({ timeoutMs: 5, fetcher: (async (_url, init) => {
+    batches.push(JSON.parse(String(init?.body)).events);
+    calls++; return calls === 1 ? physical : new Response(null, { status: 202 });
+  }) as typeof fetch });
+  collector.emit(e); await tick(); collector.emit({ ...e, sequence: 1 });
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert.equal(collector.coverage().quarantined, true); assert.equal(collector.coverage().inFlight, true);
+  collector.emit({ ...e, sequence: 2 }); await tick(); assert.equal(calls, 1);
+  assert.equal(collector.coverage().unknownDelivery, 1);
+  if (settlement === "resolve") resolve(new Response(null, { status: 202 })); else reject(new Error("late failure"));
+  await tick(); await tick();
+  assert.equal(collector.coverage().quarantined, false); assert.equal(collector.coverage().inFlight, false);
+  assert.equal(collector.coverage().acceptedByReceiver, 0); assert.equal(calls, 1);
+  collector.emit({ ...e, sequence: 3 }); await tick(); await tick();
+  assert.equal(calls, 2); assert.ok(batches[1].every(sample => sample.outcome === "overflow" || sample.sequence === 3));
+  assert.ok(collector.coverage().acceptedByReceiver > 0); collector.dispose();
+});
+test("local readiness and pre-handoff failures terminate attempts without claiming Task success", () => {
+  for (const phase of ["unavailable", "needs_install"]) assert.equal(pingLocalSpeechTerminalOutcome({ phase, reason: null }), "unavailable");
+  assert.equal(pingLocalSpeechTerminalOutcome({ phase: "error", reason: "recognition_error" }), "failed");
+  assert.equal(pingLocalSpeechTerminalOutcome({ phase: "closed", reason: "end_before_finish" }), "not_invoked");
+  assert.equal(pingLocalSpeechTerminalOutcome({ phase: "closed", reason: "context_changed" }), "context_invalidated");
+  for (const phase of ["processing", "finished", "closing", "listening"]) assert.equal(pingLocalSpeechTerminalOutcome({ phase, reason: null }), null);
 });
