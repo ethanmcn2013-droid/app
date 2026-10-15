@@ -3805,9 +3805,9 @@
     "src/test/register-invite-arrival.mjs": "57b400208b3db680cb860264a4eb04e94e4d7b045e98796451bcaa871c956f2f",
     "src/test/register-server-only.mjs": "41e99faf9a56545fcb42495f71ddddcbe1ecbf116e52dc1c749813f7e64f6518",
     "src/test/server-only-stub.cjs": "8222b8169ee86f25cdccd84d340340060ae3f0cff55e2ea9d344d7c332733b71",
-    "src/components/tasks/ping-local-speech-panel.tsx": "81249e871f7a5cf3c7727592b0870f6a5f41a72c370576544ca70fc617cba7c5",
-    "src/components/tasks/ping-overlay.module.css": "b53a06810af579b42524721def114f5f3cbd3b0082b25477de16c9d08133198c",
-    "src/components/tasks/ping-overlay.tsx": "6d3f26856bbd69a5f0616eebd46994a4511feb68db6f16b7b6dc1aab67156cfa",
+    "src/components/tasks/ping-local-speech-panel.tsx": "8ce7a6f5c3060dc8cc1429480a45c3a727c9c84000bc29b68247261d4d2a9bad",
+    "src/components/tasks/ping-overlay.module.css": "03fa0ee0363bc0ba5af645de9c8e5b228814f6645bffcacea504377cc859e6f5",
+    "src/components/tasks/ping-overlay.tsx": "aabad1af4b88724d55edd2e68a6e593455c00c8733538f9f2972bbe345e02cc0",
     "src/lib/ping/local-speech.test.ts": "2f683617829ad4c5455bb1f4e96c182b27356e6507dff700e119bfbc98c94813",
     "src/lib/ping/local-speech.ts": "4b8b49aad0719ff17e95afea097d43b8f0839d70f1a0b795df16e4f296fec494"
   }
