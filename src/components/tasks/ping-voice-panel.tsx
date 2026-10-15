@@ -55,9 +55,13 @@ export function PingVoicePanel(props: Props) {
   const dispatch = useTasksDispatch();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"voice" | "typed">("voice");
+  const typedRegion = useRef<HTMLDivElement>(null);
   const dismissEpoch = useRef(0);
   const dismiss = useRef<() => void>(() => {});
   const close = useCallback(() => dismiss.current(), []);
+  useLayoutEffect(() => {
+    if (open && mode === "typed") typedRegion.current?.querySelector<HTMLElement>("textarea:not(:disabled), input:not(:disabled), button:not(:disabled)")?.focus({ preventScroll: true });
+  }, [open, mode]);
   const [marker, setMarker] = useState<VoiceMarker | null>(null);
   const [receipt, setReceipt] = useState<PingTypedReceipt | null>(null);
   const [state, setState] = useState<VoiceState>("idle");
@@ -320,18 +324,18 @@ export function PingVoicePanel(props: Props) {
       setOpen(false);
     };
   });
-  const title = !props.available ? "Voice isn’t available here" : state === "listening" ? "I’m listening" : state === "starting" ? "Getting ready…" : state === "finishing" ? "Working on your request…" : state === "committed" ? "Your result is saved" : state === "unknown" ? "Let’s check the result" : state === "not_invoked" ? "No changes were made" : state === "error" ? "Voice couldn’t start" : "What should change?";
+  const title = state === "unknown" ? "Let’s check the result" : state === "committed" ? "Your result is saved" : !props.available ? "Voice isn’t available here" : state === "listening" ? "I’m listening" : state === "starting" ? "Getting ready…" : state === "finishing" ? "Working on your request…" : state === "not_invoked" ? "No changes were made" : state === "error" ? "Voice couldn’t start" : "What should change?";
   const seconds = Math.floor((capture.snapshot?.totalSamples ?? 0) / 24000);
   return (
     <>
     <PingDock>
-    <button type="button" className={styles.launch} data-testid="ping-voice-start" aria-haspopup="dialog" aria-expanded={open}
+    <button type="button" className={styles.launch} data-testid="ping-voice-start" aria-haspopup="dialog" aria-expanded={open && mode === "voice"}
       onClick={() => { setMode("voice"); setOpen(true); if (props.available) void start(); }}><PingMic />Talk to Ping</button>
     <button type="button" className={styles.typeLaunch} data-testid="ping-type-open" aria-haspopup="dialog" aria-expanded={open && mode === "typed"}
       onClick={() => { setMode("typed"); setOpen(true); }}>Type a request</button>
     </PingDock>
     <PingOverlay open={open} onClose={close} projectName={props.projectName} selectedCount={selectedIds.length}>
-    {mode === "typed" ? props.typedContent : (
+    {mode === "typed" ? <div ref={typedRegion}>{props.typedContent}</div> : (
     <div ref={panelRef} className={`${styles.voice} ${state === "listening" ? styles.listening : ""}`} data-testid="ping-voice-panel"
       onClickCapture={(event) => {
         const node = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
@@ -339,7 +343,7 @@ export function PingVoicePanel(props: Props) {
       }}>
       <div className={styles.signal}><PingMic /></div>
       <h3 className={styles.title}>{title}</h3>
-      <p tabIndex={-1} className={styles.status} data-testid="ping-voice-status" role="status" aria-live="polite">{!props.available ? "You can still type an exact request for this Project." : statusText || statusCopy(state, phase)}</p>
+      <p tabIndex={-1} className={styles.status} data-testid="ping-voice-status" role="status" aria-live="polite">{!props.available && state !== "unknown" && state !== "committed" ? "You can still type an exact request for this Project." : statusText || statusCopy(state, phase)}</p>
       {state === "listening" ? <p className={styles.timer}>{`${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`} · Microphone on</p> : null}
       <div className={styles.actions}>
         {props.available && state === "listening" ? <button type="button" data-testid="ping-voice-finish" className={styles.primary} onClick={finish} disabled={busy || phase !== "listening"}>Finish and run</button> : null}
