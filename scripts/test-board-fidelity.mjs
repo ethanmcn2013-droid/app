@@ -23,7 +23,7 @@ export function runBoardFidelityTests({
   let childError;
   try {
     result = execute(process.execPath, [
-      "--import", "tsx", "--test", "src/server/actions/board-fidelity.persisted.test.mjs",
+      "--import", "tsx", "--test", "scripts/db/waiting-proof-board-action.test.mjs",
     ], {
       cwd: appRoot,
       env: { ...env, BOARD_FIDELITY_TEST_ROOT: created },

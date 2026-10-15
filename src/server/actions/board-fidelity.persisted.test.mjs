@@ -253,25 +253,6 @@ test("card move advances the persisted proxy and active read; no-op and refused 
   globalThis.__boardFidelity.actor = "owner_actor";
 });
 
-test("default Waiting claims retain canonical lanes without requiring stored config", async () => {
-  const { resolveBoardColumns } = await import("../../lib/board-columns.ts");
-  await project("waiting_default_ws");
-  assert.ok(resolveBoardColumns(null).some(column => column.key === "waiting" && !column.isSystem));
-  for (const lane of ["todo", "review", "done"]) {
-    const id = `waiting_default_${lane}`;
-    await task("waiting_default_ws", id, { lane, completed: lane === "done" ? old : null });
-    await board.moveTaskToColumnAction(id, "waiting");
-    const claimed = await raw(id);
-    assert.equal(claimed.lane, lane);
-    assert.equal(claimed.board_column_key, "waiting");
-    assert.equal(claimed.completed_at, null, "Waiting is an open column, including a move out of Done");
-    assert.equal((await execute("SELECT value FROM meta WHERE key='board:waiting_default_ws:columns'")).length, 0);
-    await board.moveTaskToColumnAction(id, "doing");
-    assert.equal((await raw(id)).lane, "doing");
-    assert.equal((await raw(id)).board_column_key, null, "a system move clears the custom claim");
-  }
-});
-
 test("card custom done, done-to-done and reopen transitions preserve their stamp rules", async () => {
   await project("card_done_ws", config(["col-open", "col-paid"], ["done", "col-paid"]));
   await task("card_done_ws", "card_done_task", { lane: "doing", column: "col-open" });
