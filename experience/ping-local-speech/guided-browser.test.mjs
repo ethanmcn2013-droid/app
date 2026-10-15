@@ -104,10 +104,23 @@ async function applyCurrent({ double = false } = {}) {
   else await page.getByTestId('ping-apply').click();
 }
 async function advance() { await closePing(); await guide('next'); assert.equal(state().canStart, true); }
-async function newBrowser() {
+async function newBrowser({ scriptedSpeech = false } = {}) {
   browser = await chromium.launch({ headless: true });
   context = await browser.newContext({ viewport: { width: 1440, height: 960 }, reducedMotion: 'reduce' });
   // A fresh owned context, without microphone permission or any existing browser profile.
+  if (scriptedSpeech) await context.addInitScript(() => {
+    const counters = { starts: 0, aborts: 0, stops: 0, localStarts: 0 };
+    class ScriptedRecognition {
+      static async available() { return 'available'; }
+      static async install() { throw Error('Scripted fixture never installs a recognizer'); }
+      start() { counters.starts++; if (this.processLocally === true) counters.localStarts++; queueMicrotask(() => this.onstart?.()); }
+      stop() { counters.stops++; }
+      abort() { counters.aborts++; queueMicrotask(() => this.onend?.()); }
+    }
+    Object.defineProperty(ScriptedRecognition.prototype, 'processLocally', { writable: true, value: false });
+    window.SpeechRecognition = ScriptedRecognition;
+    window.pingScriptedSpeechCounters = counters;
+  });
   page = await context.newPage(); page.on('pageerror', error => runtimeErrors.push(error.name + ': ' + error.message));
   await page.goto(runner.url); await page.waitForFunction(() => typeof window.pingGuide?.action === 'function');
   await page.getByRole('heading', { name: 'Ping session guide', exact: true }).waitFor();
@@ -231,6 +244,31 @@ try {
   runner.testHooks.failRefresh(false); await page.getByTestId('ping-refresh-current').click(); await waitOutcome('matched');
   assert.equal((await snapshot()).receipts.length, beforeRefresh.receipts.length + 1);
   passed(activeLabel);
+  await context.close(); await browser.close(); browser = context = page = null; await runner.close(); runner = null;
+
+  activeLabel = 'scripted listening is disposed by Pause and End without product input';
+  const captureDirectory = path.join(output, 'scripted-capture-lifecycle-session');
+  await launch(captureDirectory); await newBrowser({ scriptedSpeech: true }); await startCase('01');
+  const beforeCapture = await snapshot();
+  const listen = async () => {
+    await page.getByTestId('ping-voice-start').click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="ping-local-state"]')?.getAttribute('data-phase') === 'listening');
+  };
+  await listen(); await guide('pause');
+  await page.waitForFunction(() => window.pingScriptedSpeechCounters.aborts === 1 && document.getElementById('root').inert);
+  assert.equal(state().status, 'paused'); unchanged(beforeCapture, await snapshot());
+  await guide('resume');
+  await page.waitForFunction(() => document.getElementById('root').inert === false);
+  await page.getByRole('checkbox', { name: 'Select ' + state().currentCase.taskNames[0], exact: true }).check();
+  await listen(); await guide('end');
+  await page.waitForFunction(() => window.pingScriptedSpeechCounters.aborts === 2 && document.getElementById('root').inert);
+  const captureCounters = await page.evaluate(() => window.pingScriptedSpeechCounters);
+  assert.deepEqual(captureCounters, { starts: 2, aborts: 2, stops: 0, localStarts: 2 });
+  assert.equal(state().status, 'ended'); assert.equal(state().outcome, 'aborted_before_input');
+  unchanged(beforeCapture, await snapshot());
+  assert.equal((await snapshot()).requestCounts.prepare ?? 0, beforeCapture.requestCounts.prepare ?? 0);
+  assert.equal(state().counts.inputObserved, 0);
+  passed(activeLabel, { injectedRecognizerOnly: true, captureCounters });
   await context.close(); await browser.close(); browser = context = page = null; await runner.close(); runner = null;
 
   activeLabel = 'journal failure before forwarding Execute fails closed';
