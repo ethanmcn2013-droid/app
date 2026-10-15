@@ -558,6 +558,7 @@ for (const fixture of manifest.supplementalMaterialityRendered) {
       // Require actual route-specific content, rather than only the App shell.
       const names: Record<string,string> = {"tasks.page.app-settings":"Settings", "tasks.page.app-project":"The Orchard, events", "tasks.page.app-analytics":"Analytics", "tasks.page.app-concepts":"Concepts", "tasks.page.app-files":"Files", "tasks.page.welcome":"That project isn’t available.", "tasks.page.app-tools-by-slug":"Wedding hub"};
       if (fixture.id === "tasks.page.app-messages") {
+        await expect(page.getByRole("main", { name: "Chat", exact: true })).toBeVisible();
         // A phone opens the directory first. Enter the real selected Project
         // conversation through the same row control as its reader.
         if (!await page.getByRole("navigation", { name: "Conversation views" }).isVisible()) {
@@ -585,7 +586,26 @@ for (const fixture of manifest.supplementalMaterialityRendered) {
       } else if (fixture.id === "tasks.page.app-files") {
         const files = page.getByRole("region", { name: "Files", exact: true });
         await expect(files).toBeVisible();
-        await expect(files.getByRole("button", { name: /^Run-sheet, Saturday v3\.pdf Document/ })).toBeVisible();
+        // Files now begins with real task folders. Enter the exact owning task
+        // before checking its file and the sample preview's task custody.
+        const folder = files.getByRole("list", { name: "Folders in this project", exact: true })
+          .getByRole("button", { name: "Build the Saturday run-sheet, 1 file", exact: true });
+        await expect(folder).toBeVisible();
+        await folder.click();
+        await expect(files.getByRole("navigation", { name: "File location", exact: true })).toContainText("Build the Saturday run-sheet");
+        const file = files.getByRole("button", { name: /^Run-sheet, Saturday v3\.pdf Document/ });
+        await expect(file).toBeVisible();
+        await file.click();
+        const sheet = page.getByRole("dialog", { name: "Run-sheet, Saturday v3.pdf", exact: true });
+        const preview = sheet.or(page.getByRole("complementary", { name: "Run-sheet, Saturday v3.pdf", exact: true }));
+        await expect(preview).toBeVisible();
+        await expect(preview.getByRole("heading", { name: "Run-sheet, Saturday v3.pdf", exact: true })).toBeVisible();
+        await expect(preview.getByRole("link", { name: "Build the Saturday run-sheet", exact: true })).toHaveAttribute("href", "/app/task/demo-t-05");
+        await expect(preview.getByText("A sample file. In your own projects it opens from here.", { exact: true })).toBeVisible();
+        if (await sheet.isVisible()) {
+          await sheet.getByRole("button", { name: "Close", exact: true }).click();
+          await expect(file).toBeFocused();
+        }
       } else if (fixture.id === "tasks.page.app-concepts") {
         const overview = page.getByRole("region", { name: "Overview", exact: true });
         await expect(overview).toBeVisible();

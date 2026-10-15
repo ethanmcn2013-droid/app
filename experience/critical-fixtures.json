@@ -414,7 +414,7 @@
               "kind": "role",
               "role": "link",
               "name": "Return to workspace",
-              "href": "/app/tasks",
+              "href": "/app/tasks?project=the-orchard-events&workspaceId=demo-ws",
               "proves": [
                 "read-only"
               ]
@@ -1542,7 +1542,7 @@
       "kind": "route",
       "caseName": "own surface in demo",
       "path": "/app/messages",
-      "selector": "main",
+      "selector": "[role=\"main\"][aria-label=\"Chat\"][data-full]",
       "states": [
         "default"
       ]
@@ -2589,11 +2589,11 @@
     "src/components/shell/shell-icons.tsx": "a10a02883fd5d4a1cc5305edd2aace5797c12b1cd98662e871365ef87a168094",
     "src/components/shell/shell-nav.test.ts": "9b60046b2620b64bbc25419f81391c74df1d8ff37b62c34abb33cf22c04a9d85",
     "src/components/shell/shell-nav.ts": "d09281214a4ccd6838302e2552894f60f8c774cc75f0353270fc89ad2f350a92",
-    "src/components/shell/shell.module.css": "f49763e73376b18eb9dbf75c5d4f5ac16fa972e391380c6b452965e62d573b58",
+    "src/components/shell/shell.module.css": "77742b4674d0f94645bffbd5f0e6e874d996422d2eed7d1e1be0161f859e2ef0",
     "src/components/shell/sidebar-icon.tsx": "205e2ce815f67f4f701a06fe514f52ef4630e61320f222f938d04472f1ab35c2",
     "src/components/shell/sidebar-icons-contract.test.mjs": "3234a2a196b423c91b83e6f1b0b13bd2d7137e6885c832e2fb25353a06d6b797",
     "src/components/shell/sidebar-intent-link.tsx": "a4ecf433cda74f63841606ab79b340272003f08605d62019dca0c9b44b32a32c",
-    "src/components/shell/sidebar-more.module.css": "d9af38245538a54dbfb16ed7fd8ba597a9a9858deafaf8fa8df780119790d107",
+    "src/components/shell/sidebar-more.module.css": "8bc5bca3bb09863bfbc1496a46590ed4c3f1fc81ea59f2381742ea15552ca041",
     "src/components/shell/use-more-preferences.ts": "47bbe536f4d24371bcbdb0e295e192afd34e8ad4d0f291e52a00c465d165b694",
     "src/components/showcase/activity-feed.tsx": "818fc2c65e3573a7989fa520f91a2f975261450e00fa8eb1f8db402e7083295d",
     "src/components/showcase/ai-nudge.tsx": "92edb8cbc645b84ffd172148cadb78ee5bc1eff3b264937a91fe5d6048ffa899",
