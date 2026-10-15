@@ -22,6 +22,8 @@ const keys = (value, allowed) => value && typeof value === 'object' && !Array.is
 const id = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
 const hash = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const modes = ['typed','genuine-microphone','scripted'];
+const timingMetrics=['prepare-server','execute-server','prepare-roundtrip','execute-roundtrip','apply-to-visible','finish-to-visible'];
+const visibleMetrics=['apply-to-visible','finish-to-visible'];
 const mutable = ['assignees','due','due_at','lane','board_column_key','idle_days','completed_at','updated_at'];
 const fields = {
   opened:['identity'], preparing:['caseId'], armed:['caseId','baseline'], started:['attemptId'], mode:['mode'],
@@ -29,8 +31,36 @@ const fields = {
   invocation:['generationId','commandId','projectId','tokenHash','ordinal'],
   terminal:['category','code','stage','projection','source'], verified:['outcome','evidenceHash','projection'],
   projection_observed:['projection','source'],
+  timing:['caseId','attemptId','metric','durationMs','clock','evidence','mode','pageId','sampleOutcome'],
   retired:[], advanced:[], skipped:[], paused:[], resumed:[], ended:[], feedback:['clarity','ease','confidence','correction'],
 };
+function latencySummary(rows) {
+  const grouped=new Map();
+  for(const row of rows)for(const sample of row.timings) {
+    const group={metric:sample.metric,mode:sample.mode,sampleOutcome:sample.sampleOutcome,
+      caseOutcome:row.outcome,clock:sample.clock,evidence:sample.evidence};
+    const key=stable(group);if(!grouped.has(key))grouped.set(key,{...group,durations:[]});
+    grouped.get(key).durations.push(sample.durationMs);
+  }
+  return [...grouped.values()].map(({durations,...group})=>{
+    const sorted=durations.sort((a,b)=>a-b),count=sorted.length,mid=Math.floor(count/2);
+    return {...group,count,medianMs:count%2?sorted[mid]:(sorted[mid-1]+sorted[mid])/2,
+      p95Ms:sorted[Math.ceil(count*0.95)-1],maxMs:sorted.at(-1)};
+  }).sort((a,b)=>stable(a).localeCompare(stable(b)));
+}
+function latencyCoverage(rows) {
+  const attempts=rows.filter(row=>row.started).map(row=>({caseId:row.caseId,attemptId:row.attemptId,
+    invoked:row.originals.some(original=>original.invoked),
+    completedVisible:row.timings.some(sample=>visibleMetrics.includes(sample.metric)&&sample.sampleOutcome==='completed')}));
+  const invoked=attempts.filter(row=>row.invoked);
+  return {startedAttempts:attempts.length,invokedAttempts:invoked.length,
+    startedWithCompletedVisible:attempts.filter(row=>row.completedVisible).length,
+    startedMissingOrUnfinished:attempts.filter(row=>!row.completedVisible).length,
+    invokedWithCompletedVisible:invoked.filter(row=>row.completedVisible).length,
+    invokedMissingOrUnfinished:invoked.filter(row=>!row.completedVisible).length,
+    missingOrUnfinished:attempts.filter(row=>!row.completedVisible).map(({completedVisible,...row})=>row),
+    scope:'Isolated fixture measurements; absent or unfinished page-local spans are missing, never zero. No cross-page clock subtraction.'};
+}
 function alive(pid) {
   try {process.kill(pid,0);return true;}catch(error){if(error.code==='ESRCH')return false;return true;}
 }
@@ -197,6 +227,10 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       }
       case 'verified':c.outcome=d.outcome;c.evidenceHash=d.evidenceHash;c.projection=d.projection;c.status='outcome';break;
       case 'projection_observed':c.projection=d.projection;break;
+      case 'timing': {
+        const owner=state.cases[d.caseId];assert.equal(owner?.attemptId,d.attemptId,'Timing attempt identity mismatch');
+        (owner.timings??=[]).push({...d,recordedAt:event.time,sequence:event.seq});break;
+      }
       case 'retired':if(c.originals.length)c.originals.at(-1).terminal='retired';break;
       case 'advanced':state.index++;break;
       case 'skipped':state.cases[cases[state.index].id]={status:'skipped',attempts:[],inputObserved:false,originals:[],outcome:null};state.index++;break;
@@ -384,15 +418,31 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
     recordFeedback:serial(async feedback=>{active();assert.ok(keys(feedback,fields.feedback));
       for(const [key,value] of Object.entries(feedback))assert.ok(key==='correction'?typeof value==='boolean':['low','medium','high'].includes(value));
       await append('feedback',feedback);return projectionState();}),
+    recordTiming:serial(async value=>{
+      assert.ok(keys(value,['metric','durationMs','clock','evidence','pageId','sampleOutcome','attemptId']),'Unsupported timing metadata');
+      const {metric,durationMs,clock,evidence,pageId,attemptId,sampleOutcome='completed'}=value;
+      assert.ok(timingMetrics.includes(metric)&&Number.isFinite(durationMs)&&durationMs>=0&&durationMs<=8*60*60*1000,'Invalid timing metric or duration');
+      assert.equal(clock,metric.endsWith('-server')?'server-monotonic':'browser-monotonic','Timing clock does not match metric');
+      assert.ok(['automatic','scripted'].includes(evidence)&&['completed','failed'].includes(sampleOutcome));
+      if(pageId!==undefined)assert.match(pageId,/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+      if(attemptId!==undefined)assert.ok(id(attemptId));
+      const owner=attemptId?Object.entries(state.cases).find(([,record])=>record.attemptId===attemptId):
+        current()?.attemptId?[cases[state.index].id,current()]:null;
+      assert.ok(owner,'Started immutable attempt required for timing metadata');
+      const [caseId,c]=owner;
+      await append('timing',{caseId,attemptId:c.attemptId,metric,durationMs,clock,evidence,mode:c.inputMode??state.mode,sampleOutcome,
+        ...(pageId!==undefined?{pageId}:{})});return projectionState();
+    }),
     exportResults:serial(async()=>{
       const rows=cases.map(record=>{const c=state.cases[record.id];return {caseId:record.id,attemptId:c?.attemptId??null,started:!!c?.attemptId,
         inputObserved:!!c?.inputObserved,inputMode:c?.inputMode??null,inputEvidence:c?.inputEvidence??null,outcome:c?.outcome??null,
         skipped:c?.status==='skipped',projection:c?.projection??'unknown',originalCount:c?.originals?.length??0,
-        evidenceHash:c?.evidenceHash??null,feedback:c?.feedback??null,
+        evidenceHash:c?.evidenceHash??null,feedback:c?.feedback??null,timings:structuredClone(c?.timings??[]),
         originals:(c?.originals??[]).map(o=>({generationId:o.generationId,commandId:o.commandId,projectId:o.projectId,ordinal:o.ordinal,invoked:o.invoked,terminal:o.terminal}))};});
-      const json={version:'ping.guided.results.v1',identity,counts:projectionState().counts,ledgerHash:chain,rows};
-      const columns=['caseId','attemptId','started','inputObserved','inputMode','inputEvidence','outcome','skipped','projection','originalCount','evidenceHash'];
-      const csv=[columns.join(','),...rows.map(row=>columns.map(k=>'"'+String(row[k]??'').replaceAll('"','""')+'"').join(','))].join('\n')+'\n';
+      const json={version:'ping.guided.results.v1',identity,counts:projectionState().counts,ledgerHash:chain,rows,
+        timingSummary:latencySummary(rows),latencyCoverage:latencyCoverage(rows),timingStatistics:{percentile:'nearest-rank',median:'midpoint for even sample counts'}};
+      const columns=['caseId','attemptId','started','inputObserved','inputMode','inputEvidence','outcome','skipped','projection','originalCount','evidenceHash','timings'];
+      const csv=[columns.join(','),...rows.map(row=>columns.map(k=>'"'+String(k==='timings'?JSON.stringify(row.timings):row[k]??'').replaceAll('"','""')+'"').join(','))].join('\n')+'\n';
       return {json,csv};}),
     close:serial(async()=>{if(closed)return;try{await file.datasync();}finally{closed=true;await file.close();await releaseWriter();}}),
   };

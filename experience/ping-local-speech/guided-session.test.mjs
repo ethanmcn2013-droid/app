@@ -155,6 +155,55 @@ test('fixture scope refusal is metadata-only and stage is observed, never inferr
   assert.equal(g.session.state().outcome,'mismatch');await g.session.close();
 });
 
+test('timing metadata retains failures, exact statistics, modes, attempt identity and privacy across reopen',async()=>{
+  const f=await setup({kind:'zero'});let s=f.session;await s.startCase();await s.observeInput({mode:'scripted',evidence:'scripted'});
+  const firstAttempt=s.state().attemptId,pageId='00000000-0000-4000-8000-000000000099';
+  const base={metric:'prepare-roundtrip',clock:'browser-monotonic',evidence:'scripted',pageId,attemptId:firstAttempt};
+  for(let durationMs=1;durationMs<=20;durationMs++)await s.recordTiming({...base,durationMs});
+  for(const durationMs of [70,130])await s.recordTiming({...base,durationMs,sampleOutcome:'failed'});
+  for(const invalid of [
+    {...base,durationMs:-1},{...base,durationMs:Infinity},{...base,durationMs:28_800_001},
+    {...base,durationMs:1,clock:'server-monotonic'},{...base,durationMs:1,pageId:'C:/private/session'},
+    {...base,durationMs:1,token:prepared.token},{...base,durationMs:1,attemptId:'unknown-attempt'},
+    {...base,durationMs:1,metric:'raw-transcript'},{...base,durationMs:1,evidence:'participant-reported'}
+  ])await assert.rejects(s.recordTiming(invalid));
+  await s.observePrepareResponse({ok:false,code:'unsupported'},{stage:'parse'});await s.next();await s.startCase();await s.observeInput({mode:'typed',evidence:'automatic'});
+  await s.recordTiming({metric:'prepare-roundtrip',durationMs:200,clock:'browser-monotonic',evidence:'automatic'});
+  // Delayed telemetry stays with its captured immutable attempt after case advance.
+  await s.recordTiming({...base,metric:'execute-server',clock:'server-monotonic',durationMs:9,sampleOutcome:'failed'});
+  await s.close();s=await createGuidedSession(f.options);
+  const {json,csv}=await s.exportResults();const groups=json.timingSummary;
+  const complete=groups.find(g=>g.metric==='prepare-roundtrip'&&g.mode==='scripted'&&g.sampleOutcome==='completed');
+  assert.deepEqual({count:complete.count,medianMs:complete.medianMs,p95Ms:complete.p95Ms,maxMs:complete.maxMs},{count:20,medianMs:10.5,p95Ms:19,maxMs:20});
+  assert.equal(complete.caseOutcome,'refused_verified_zero');
+  const failed=groups.find(g=>g.metric==='prepare-roundtrip'&&g.sampleOutcome==='failed');
+  assert.deepEqual({count:failed.count,medianMs:failed.medianMs,p95Ms:failed.p95Ms,maxMs:failed.maxMs},{count:2,medianMs:100,p95Ms:130,maxMs:130});
+  assert.equal(groups.find(g=>g.mode==='typed').count,1);assert.equal(json.rows[0].timings.length,23);assert.equal(json.rows[1].timings.length,1);
+  assert.ok(json.rows[0].timings.every(sample=>sample.attemptId===firstAttempt));assert.equal(json.latencyCoverage.startedMissingOrUnfinished,2);
+  const ledger=await readFile(path.join(f.directory,'session.jsonl'),'utf8');assert.ok(!ledger.includes(prepared.token));assert.ok(!ledger.includes('raw-transcript'));assert.ok(!csv.includes('PRIVATE SYNTHETIC TITLE'));
+  assert.ok(csv.includes('prepare-roundtrip'));await s.close();
+});
+
+test('timing coverage keeps lost-page invocation spans missing and failed samples separate from completions',async()=>{
+  const f=await setup();let s=f.session;await arm(s);await s.beforeExecute(request);const attemptId=s.state().attemptId;
+  await s.recordTiming({metric:'execute-server',durationMs:2,clock:'server-monotonic',evidence:'scripted',attemptId});
+  await s.recordTiming({metric:'execute-roundtrip',durationMs:10,clock:'browser-monotonic',evidence:'scripted',attemptId,sampleOutcome:'failed'});
+  await s.close();s=await createGuidedSession(f.options);
+  let result=await s.exportResults();assert.equal(result.json.latencyCoverage.invokedAttempts,1);assert.equal(result.json.latencyCoverage.invokedMissingOrUnfinished,1);
+  assert.equal(result.json.latencyCoverage.invokedWithCompletedVisible,0);assert.equal(result.json.timingSummary.length,2);
+  assert.ok(result.json.rows[0].timings.every(sample=>!sample.metric.endsWith('-to-visible')));
+  await s.recordTiming({metric:'apply-to-visible',durationMs:5,clock:'browser-monotonic',evidence:'scripted',attemptId,sampleOutcome:'failed'});
+  result=await s.exportResults();assert.equal(result.json.latencyCoverage.invokedMissingOrUnfinished,1);
+  assert.equal(result.json.timingSummary.filter(group=>group.sampleOutcome==='failed').length,2);
+  assert.equal(result.json.latencyCoverage.invokedWithCompletedVisible,0);await s.close();
+  // A separate same-page span demonstrates completed coverage; never extend the lost span across restart.
+  const g=await setup();s=g.session;await arm(s);await s.beforeExecute(request);
+  await s.recordTiming({metric:'apply-to-visible',durationMs:11,clock:'browser-monotonic',evidence:'scripted',attemptId:s.state().attemptId,pageId:'00000000-0000-4000-8000-000000000100'});
+  result=await s.exportResults();assert.equal(result.json.latencyCoverage.invokedWithCompletedVisible,1);assert.equal(result.json.latencyCoverage.invokedMissingOrUnfinished,0);
+  // Timing observations never manufacture a mutation verification or permit Next.
+  assert.equal(s.state().outcome,'unresolved');assert.equal(s.state().canNext,false);await s.close();
+});
+
 test('real libSQL compound named/date/status effects, creation defaults and original recovery match independent oracle',async()=>{
   // This proof uses the incumbent executor and complete literal SQL rows; no browser/provider.
   const proofModule=await import('../../src/server/ping/proof-fixture.ts');const proof=proofModule.default??proofModule;
