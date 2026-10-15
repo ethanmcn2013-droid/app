@@ -4,6 +4,25 @@ import { bindPingProposal, normalizePingCapture } from "./proposal";
 import { syntheticCapture, syntheticPlan } from "./input-test-fixture";
 
 const seal = () => ({ generationId: "synthetic-generation", inputItemId: "synthetic-whole-input", state: "complete" });
+test("named proposal has no identity authority; trusted binding captures exact name and the whole assignee readset", () => {
+  const proposal = { version: "ping.proposal.v1", outcome: "plan", operation: { kind: "edit_selected", effects: { memberName: "éLODIE" } } };
+  const member = { userId: "synthetic-member", name: "E\u0301lodie" };
+  assert.equal(bindPingProposal(proposal, syntheticCapture(), seal()).ok, false);
+  const bound = bindPingProposal(proposal, syntheticCapture(), seal(), member); assert.ok(bound.ok);
+  assert.deepEqual(bound.command.operation.effects, { namedAssignment: member });
+  assert.deepEqual(bound.context.captured.namedAssignment, member);
+  assert.ok(Object.isFrozen(bound.context.captured.namedAssignment));
+  assert.ok(bound.proposal.outcome === "plan");
+  assert.deepEqual(bound.proposal.operation.effects, { memberName: member.name });
+  assert.ok(bound.command.operation.kind === "edit_selected");
+  assert.deepEqual(bound.command.operation.expected["synthetic-task"].assignees, ["synthetic-other"]);
+  for (const effects of [{ memberName: "Different" }, { memberName: "éLODIE", userId: "forged" },
+    { namedAssignment: member }, { memberName: "éLODIE", selfAssignment: "add" }]) {
+    assert.equal(bindPingProposal({ ...proposal, operation: { ...proposal.operation, effects } }, syntheticCapture(), seal(), member).ok, false);
+  }
+  assert.equal(bindPingProposal({ ...proposal, operation: { kind: "create_placeholders", count: 1, effects: { memberName: "éLODIE" } } },
+    { ...syntheticCapture(), selectedTaskIds: [], snapshots: {} }, seal(), member).ok, false);
+});
 test("operation-only compound binds captured identities and relevant preconditions without model authority", () => {
   const capture = syntheticCapture(); const result = bindPingProposal(syntheticPlan(), capture, seal()); assert.ok(result.ok);
   assert.equal(result.command.commandId, capture.commandId); assert.equal(result.command.projectId, capture.projectId);

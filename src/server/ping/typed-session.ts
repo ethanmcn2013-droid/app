@@ -3,7 +3,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import type { Task } from "@/lib/data";
-import { normalizePingCommandId, pingProofDueAtSeconds, validPingId, type PingCommand } from "@/lib/ping/command";
+import { normalizePingCommandId, pingProofDueAtSeconds, validPingId, type PingCommand, type PingNamedAssignee } from "@/lib/ping/command";
 import { dataRecord, exactKeys, jsonArray } from "@/lib/ping/input-validation";
 import { bindPingProposal, normalizePingCapture, type PingCapture } from "@/lib/ping/proposal";
 import { parsePingTypedCommand } from "@/lib/ping/typed-command";
@@ -19,6 +19,7 @@ import { readCanonicalTasks } from "@/server/db/task-read";
 import * as schema from "@/server/db/schema";
 import { opLog } from "@/server/operational-log";
 import { createPingCommandService, type PingExecutionContext } from "./command-service";
+import { resolvePingNamedAssignee } from "./named-assignee";
 
 export type PingTypedActor = Readonly<{ actorId: string; sessionId: string }>;
 type Original = Readonly<{ command: PingCommand; context: PingExecutionContext }>;
@@ -72,6 +73,8 @@ function currentMatches(lane: Lane, rows: readonly Task[]): boolean {
     const pre = lane.capture.snapshots[effect.taskId];
     const assignees = operation.kind === "create_placeholders" ? [] : [...pre.assignees];
     if (operation.effects.selfAssignment === "add" && !assignees.includes(lane.actor.actorId)) assignees.push(lane.actor.actorId);
+    const namedId = operation.effects.namedAssignment?.userId;
+    if (namedId && !assignees.includes(namedId)) assignees.push(namedId);
     if (operation.effects.selfAssignment === "remove") {
       const index = assignees.indexOf(lane.actor.actorId); if (index >= 0) assignees.splice(index, 1);
     }
@@ -421,8 +424,15 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
       if (lanes.size + preparing.size >= 32 || preparing.has(key(actor))) return fail("busy");
       preparing.add(key(actor));
       try {
+        let namedMember: PingNamedAssignee | undefined;
+        let memberFailure: "unsupported" | "ambiguous" | "unavailable" | undefined;
         const capture = await adapter.transaction("read", async (tx) => {
           if (!await authorized(tx, actor.actorId, request.projectId, true)) return null;
+          if (proposal.operation.effects.memberName !== undefined) {
+            const resolved = await resolvePingNamedAssignee(tx, request.projectId, proposal.operation.effects.memberName);
+            if (!resolved.ok) { memberFailure = resolved.code; return null; }
+            namedMember = resolved.member;
+          }
           const raw = (await tx.execute({ sql: "SELECT value FROM meta WHERE key=?", args: [`board:${request.projectId}:columns`] })).rows[0];
           // Typed baseline deliberately uses default system columns, not custom configuration.
           if (raw?.value != null) return null;
@@ -438,9 +448,9 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
           const normalized = normalizePingCapture({ ...tentative, snapshots });
           return normalized ? { ...normalized, snapshots } : null;
         });
-        if (!capture) return fail("stale_capture");
+        if (!capture) return fail(memberFailure ?? "stale_capture");
         if (!newWorkAllowed("prepare") || admittedEpoch !== pauseEpoch) return fail("unavailable");
-        const bound = bindPingProposal(proposal, capture, { generationId: capture.generationId, inputItemId: capture.inputItemId, state: "complete" });
+        const bound = bindPingProposal(proposal, capture, { generationId: capture.generationId, inputItemId: capture.inputItemId, state: "complete" }, namedMember);
         if (!bound.ok) return fail("invalid_input");
         const token = options.token?.() ?? randomBytes(24).toString("base64url");
         if (lanes.has(token)) return fail("temporarily_unavailable");

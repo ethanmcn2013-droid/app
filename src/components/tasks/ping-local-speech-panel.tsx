@@ -203,7 +203,8 @@ export function PingLocalSpeechPanel<Capture>(props: Props<Capture>) {
     phase === "finishing" ? "Waiting for the complete voice result. No task change has been confirmed yet." :
     phase === "unavailable" ? "This browser cannot use English voice on this device. You can still type an exact request." :
     outcome === "refused" ? "This request could not be applied. Use Type instead to review the supported commands." :
-    reasonCopy || (!props.canStart ? "Select supported tasks or clear the selection to create tasks." : "Say “status doing” for selected tasks."));
+    reasonCopy || (!props.canStart ? "Select supported tasks or clear the selection to create tasks." : props.selectedCount > 0
+      ? "Try “assign these to me and mark them in progress”." : 'Try “create 1 task called "Follow up"”.'));
   const canListen = props.canStart && !recovering && !busy && !listening && phase !== "unavailable" && phase !== "needs_install";
   const seconds = Math.floor(snapshot.elapsedMs / 1000);
 

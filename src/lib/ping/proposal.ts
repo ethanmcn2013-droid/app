@@ -1,8 +1,11 @@
 import { normalizePingCommand, normalizePingCommandId, PING_COMMAND_VERSION, PING_PROOF_TIME_ZONE,
-  validPingId, type PingCommand, type PingEffects, type PingTaskPrecondition } from "./command";
+  validPingId, normalizePingNamedAssignee, pingMemberNameKey, type PingCommand, type PingEffects,
+  type PingNamedAssignee, type PingTaskPrecondition } from "./command";
 import { dataRecord, exactKeys, freeze, jsonArray } from "./input-validation";
 
 export const PING_PROPOSAL_VERSION = "ping.proposal.v1" as const;
+/** An interpreter/request names a person; only the server binds their identity. */
+export type PingProposalEffects = Omit<PingEffects, "namedAssignment"> & Readonly<{ memberName?: string }>;
 export type PingCapture = Readonly<{
   generationId: string; connectionEpoch: string; contextKey: string; sessionId: string;
   actorId: string; inputItemId: string; commandId: string; projectId: string;
@@ -11,14 +14,14 @@ export type PingCapture = Readonly<{
 }>;
 export type PingProposal =
   | Readonly<{ version: typeof PING_PROPOSAL_VERSION; outcome: "plan"; operation:
-      Readonly<{ kind: "edit_selected"; effects: PingEffects }> |
-      Readonly<{ kind: "create_placeholders"; count: number; title?: string; effects: PingEffects }> }>
+      Readonly<{ kind: "edit_selected"; effects: PingProposalEffects }> |
+      Readonly<{ kind: "create_placeholders"; count: number; title?: string; effects: PingProposalEffects }> }>
   | Readonly<{ version: typeof PING_PROPOSAL_VERSION; outcome: "refusal" | "clarification";
       reason: "unsupported" | "ambiguous" | "incomplete" }>;
 export type PingBoundContext = Readonly<{ actorId: string; captured: Readonly<{
   commandId: string; projectId: string; selectedTaskIds: readonly string[];
   referenceInstant: string; timeZone: typeof PING_PROOF_TIME_ZONE; expectedColumnConfig: string | null;
-  inputItemId: string; expected: Readonly<Record<string, PingTaskPrecondition>> }>;
+  inputItemId: string; expected: Readonly<Record<string, PingTaskPrecondition>>; namedAssignment?: PingNamedAssignee }>;
   input: Readonly<{ itemId: string; state: "complete" }> }>;
 export type PingBinding = Readonly<{ ok: true; proposal: PingProposal; command: PingCommand; context: PingBoundContext }> |
   Readonly<{ ok: false; reason: "invalid_proposal" | "invalid_capture" | "incomplete_input" | "refusal" | "clarification" }>;
@@ -62,7 +65,7 @@ function expectedFor(capture: PingCapture, effects: Record<string, unknown>) {
   for (const id of capture.selectedTaskIds) {
     const snapshot = capture.snapshots[id];
     expected[id] = {
-      ...(Object.hasOwn(effects, "selfAssignment") ? { assignees: snapshot.assignees } : {}),
+      ...(Object.hasOwn(effects, "selfAssignment") || Object.hasOwn(effects, "memberName") ? { assignees: snapshot.assignees } : {}),
       ...(Object.hasOwn(effects, "dueDate") ? { due: snapshot.due, dueAtSeconds: snapshot.dueAtSeconds,
         startDay: snapshot.startDay, durationDays: snapshot.durationDays } : {}),
       ...(Object.hasOwn(effects, "statusColumnKey") ? { lane: snapshot.lane, boardColumnKey: snapshot.boardColumnKey,
@@ -73,7 +76,7 @@ function expectedFor(capture: PingCapture, effects: Record<string, unknown>) {
 }
 
 /** A completed seal comes from the application reducer, never the proposal. It is not an auth certificate. */
-export function bindPingProposal(proposal: unknown, captured: unknown, seal: unknown): PingBinding {
+export function bindPingProposal(proposal: unknown, captured: unknown, seal: unknown, trustedMember?: unknown): PingBinding {
   try {
     const capture = normalizePingCapture(captured);
     if (!capture) return { ok: false, reason: "invalid_capture" };
@@ -87,25 +90,34 @@ export function bindPingProposal(proposal: unknown, captured: unknown, seal: unk
     }
     if (!exactKeys(proposal, ["version", "outcome", "operation"]) || proposal.outcome !== "plan" ||
       !dataRecord(proposal.operation) || !dataRecord(proposal.operation.effects) ||
-      !exactKeys(proposal.operation.effects, [], ["selfAssignment", "dueDate", "statusColumnKey"])) return { ok: false, reason: "invalid_proposal" };
+      !exactKeys(proposal.operation.effects, [], ["selfAssignment", "memberName", "dueDate", "statusColumnKey"])) return { ok: false, reason: "invalid_proposal" };
     const operation = proposal.operation;
+    const requested = operation.effects as Record<string, unknown>;
+    const named = Object.hasOwn(requested, "memberName");
+    const member = named ? normalizePingNamedAssignee(trustedMember) : null;
+    if (named ? !member || operation.kind !== "edit_selected" || Object.hasOwn(requested, "selfAssignment") ||
+      pingMemberNameKey(requested.memberName) === null || pingMemberNameKey(requested.memberName) !== pingMemberNameKey(member.name)
+      : trustedMember !== undefined) return { ok: false, reason: "invalid_proposal" };
+    const ordinaryEffects = { ...requested }; delete ordinaryEffects.memberName;
+    const boundEffects = member ? { ...ordinaryEffects, namedAssignment: member } : ordinaryEffects;
     let rawOperation: unknown;
     if (operation.kind === "edit_selected" && exactKeys(operation, ["kind", "effects"])) {
-      rawOperation = { kind: "edit_selected", taskIds: capture.selectedTaskIds, effects: operation.effects,
+      rawOperation = { kind: "edit_selected", taskIds: capture.selectedTaskIds, effects: boundEffects,
         expected: expectedFor(capture, operation.effects as Record<string, unknown>) };
     } else if (operation.kind === "create_placeholders" && exactKeys(operation, ["kind", "count", "effects"], ["title"])) {
-      rawOperation = { ...operation };
+      rawOperation = { ...operation, effects: boundEffects };
     } else return { ok: false, reason: "invalid_proposal" };
     const normalized = normalizePingCommand(envelope(capture, rawOperation));
     if (!normalized.ok) return { ok: false, reason: "invalid_proposal" };
     // Normalize operation-only output independently of all capture fields.
+    const normalizedEffects = { ...normalized.value.operation.effects }; delete normalizedEffects.namedAssignment;
     const normalizedOperation = normalized.value.operation.kind === "edit_selected"
-      ? { kind: "edit_selected" as const, effects: normalized.value.operation.effects }
+      ? { kind: "edit_selected" as const, effects: member ? { ...normalizedEffects, memberName: member.name } : normalizedEffects }
       : { ...normalized.value.operation };
     return freeze({ ok: true, proposal: { version: PING_PROPOSAL_VERSION, outcome: "plan", operation: normalizedOperation },
       command: normalized.value, context: { actorId: capture.actorId, captured: {
         commandId: capture.commandId, projectId: capture.projectId, selectedTaskIds: capture.selectedTaskIds,
         referenceInstant: capture.referenceInstant, timeZone: capture.timeZone, expectedColumnConfig: capture.expectedColumnConfig,
-        inputItemId: capture.inputItemId, expected: capture.snapshots }, input: { itemId: capture.inputItemId, state: "complete" } } });
+        inputItemId: capture.inputItemId, expected: capture.snapshots, ...(member ? { namedAssignment: member } : {}) }, input: { itemId: capture.inputItemId, state: "complete" } } });
   } catch { return { ok: false, reason: "invalid_proposal" }; }
 }
