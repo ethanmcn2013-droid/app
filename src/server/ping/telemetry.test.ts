@@ -37,3 +37,17 @@ test("receiver enforces process batch budget with one queued drop summary",async
  for(let i=0;i<10;i++)assert.equal((await handler(req({version:"ping.telemetry.batch.v1",events}))).status,429);
  await Promise.resolve();assert.equal(exported.filter(e=>e.outcome==="overflow").length,1);
 });
+
+test("exhausted budget skips header/recorder work, preserves result/error, rolls over and bounds summary",async()=>{
+ const {emitPingTelemetry}=await import("./telemetry");const oldFlag=process.env.PING_TELEMETRY_ENABLED,oldNow=Date.now,oldWarn=console.warn;let clock=oldNow()+60000;Date.now=()=>clock;const lines:string[]=[];console.warn=(line:unknown)=>{lines.push(String(line));};process.env.PING_TELEMETRY_ENABLED="1";
+ try {
+  const events:PingTelemetryEvent[]=[];createPingTelemetryRecorder({source:"server",randomId:()=>id,emit:e=>events.push(e)}).record({stage:"attempt",outcome:"completed"});await Promise.resolve();for(let i=0;i<512;i++)emitPingTelemetry(events[0]);assert.equal(lines.length,512);
+  let headerReads=0,calls=0;const request=req({});Object.defineProperty(request,"headers",{get(){headerReads++;throw Error("PRIVATE_HEADER");}});const response=new Response("unchanged");
+  for(let i=0;i<40;i++)assert.equal(await withPingTelemetry(request,async()=>{calls++;return response;}),response);
+  assert.equal(headerReads,0);assert.equal(calls,40);assert.equal(response.headers.has("X-Ping-Telemetry-Request"),false);assert.equal(lines.length,513);const summary=JSON.parse(lines[512].slice("[ping.telemetry] ".length));assert.equal(summary.stage,"request");assert.equal(summary.outcome,"overflow");assert.equal(summary.droppedCount,0);assert.ok(!lines.join("").includes("PRIVATE_"));
+  const error=Error("business");await assert.rejects(withPingTelemetry(request,async()=>{throw error;}),e=>e===error);
+  clock+=60000;const fresh=new Response("fresh");assert.equal(await withPingTelemetry(req({}),async()=>fresh),fresh);assert.equal(fresh.headers.has("X-Ping-Telemetry-Request"),true);await Promise.resolve();assert.equal(lines.length,515);
+  // A summary logger failure is queued and contained; no change to task result.
+  clock+=60000;for(let i=0;i<512;i++)emitPingTelemetry(events[0]);console.warn=()=>{throw Error("logger unavailable");};assert.equal(await withPingTelemetry(request,async()=>response),response);await Promise.resolve();
+ } finally {Date.now=oldNow;console.warn=oldWarn;if(oldFlag===undefined)delete process.env.PING_TELEMETRY_ENABLED;else process.env.PING_TELEMETRY_ENABLED=oldFlag;}
+});
