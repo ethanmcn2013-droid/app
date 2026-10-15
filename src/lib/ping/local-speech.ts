@@ -1,3 +1,5 @@
+import { pingTelemetryBegin } from "./telemetry-client";
+import type { PingTelemetryRecorder, PingTelemetryStage, PingTelemetryEnd, PingTelemetryOutcome } from "./telemetry";
 /** Browser-local dictation, not the PCM/provider finality protocol or a Task receipt. */
 export const PING_LOCAL_SPEECH_LANGUAGE = "en-US";
 export const PING_LOCAL_SPEECH_MAX_MS = 30_000;
@@ -43,6 +45,7 @@ export type PingLocalSpeechOptions = Readonly<{
   onState: (snapshot: PingLocalSpeechSnapshot) => void;
   /** Text exists only at this handoff. Its completion is NOT a confirmed Task result. */
   onFinal: (text: string) => Promise<void>;
+  telemetry?: () => PingTelemetryRecorder | null;
   now?: () => number;
   /** Returns cancellation for the one owned deadline. */
   setTimer?: (callback: () => void, milliseconds: number) => () => void;
@@ -74,7 +77,23 @@ export function createPingLocalSpeech(options: PingLocalSpeechOptions): PingLoca
   const getSnapshot = (): PingLocalSpeechSnapshot => Object.freeze({ phase, reason,
     elapsedMs: active ? Math.max(0, Math.min(PING_LOCAL_SPEECH_MAX_MS, now() - active.startedAt)) : elapsedMs });
   const current = () => { try { return options.isContextCurrent() === true; } catch { return false; } };
+  let observed: { stage: PingTelemetryStage; end: PingTelemetryEnd } | null = null;
+  let activation: PingTelemetryEnd | null = null;
+  const observer = () => { try { return options.telemetry?.() ?? null; } catch { return null; } };
+  function observation(next: PingLocalSpeechPhase, why: string | null) {
+    const stage: PingTelemetryStage | null = next === "checking" ? "capability" : next === "installing" ? "install" :
+      next === "listening" ? "recognition" : next === "finishing" ? "finish-final" : next === "closing" ? "close" : null;
+    const outcome: PingTelemetryOutcome = why === "context_changed" ? "context_invalidated" : why === "cancelled" || why === "disposed" ? "cancelled" :
+      why?.includes("timeout") ? "expired" : next === "error" || why?.includes("error") || why?.includes("failed") || why === "native_closure_unconfirmed" ? "failed" : next === "unavailable" || next === "needs_install" ? "unavailable" :
+      next === "closed" ? "unfinished" : "completed";
+    if (observed && observed.stage !== stage) { observed.end(outcome); observed = null; }
+    if (stage && !observed) observed = { stage, end: pingTelemetryBegin(observer(), stage) };
+    if (activation && (next === "listening" || next === "needs_install" || next === "closed" || next === "error" || next === "unavailable")) {
+      activation(outcome); activation = null;
+    }
+  }
   function state(next: PingLocalSpeechPhase, why: string | null = null) {
+    observation(next, why);
     phase = next; reason = why;
     try { options.onState(getSnapshot()); } catch { /* A view observer cannot restart capture. */ }
   }
@@ -169,6 +188,7 @@ export function createPingLocalSpeech(options: PingLocalSpeechOptions): PingLoca
   async function query(install: boolean): Promise<boolean> {
     if (disposed || pendingQuery || pendingFinal || active || closing || !current()) return false;
     const token = ++generation; elapsedMs = 0; pendingQuery = true;
+    activation = install ? null : pingTelemetryBegin(observer(), "activation");
     state("checking");
     try {
       if (disposed || token !== generation) return false;

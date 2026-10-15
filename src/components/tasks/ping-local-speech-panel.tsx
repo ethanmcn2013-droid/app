@@ -5,6 +5,8 @@ import { createBrowserPingLocalSpeech, type PingLocalSpeech, type PingLocalSpeec
 import { PingDock, PingMic, PingOverlay } from "./ping-overlay";
 import styles from "./ping-overlay.module.css";
 
+import type { PingTelemetryRecorder, PingTelemetryOutcome } from "@/lib/ping/telemetry";
+
 type Outcome = "committed" | "unknown" | "refused" | "cancelled";
 type Props<Capture> = Readonly<{
   projectName: string | null;
@@ -16,6 +18,9 @@ type Props<Capture> = Readonly<{
   isCurrent: (capture: Capture) => boolean;
   run: (capture: Capture, text: string, isActive: () => boolean) => Promise<Outcome>;
   hasRecovery: boolean;
+  telemetry?: () => PingTelemetryRecorder | null;
+  onDiagnosticFinish?: () => void;
+  onDiagnosticAbandon?: (outcome: PingTelemetryOutcome) => void;
 }>;
 type Operation<Capture> = {
   epoch: number;
@@ -62,6 +67,7 @@ export function PingLocalSpeechPanel<Capture>(props: Props<Capture>) {
   useEffect(() => {
     mounted.current = true;
     const engine = createBrowserPingLocalSpeech({
+      telemetry: () => { try { return latest.current.telemetry?.() ?? null; } catch { return null; } },
       isContextCurrent: () => { const owned = operation.current; return Boolean(owned && isActive(owned)); },
       onState: (next) => { if (mounted.current && controller.current === engine) setSnapshot(next); },
       onFinal: async (text) => {
@@ -84,12 +90,14 @@ export function PingLocalSpeechPanel<Capture>(props: Props<Capture>) {
     controller.current = engine;
     return () => {
       mounted.current = false; operation.current = null;
+      try { latest.current.onDiagnosticAbandon?.("unfinished"); } catch { /* diagnostics only */ }
       engine.dispose();
       if (controller.current === engine) controller.current = null;
     };
   }, [isActive]);
 
   const invalidate = useCallback((message: string) => {
+    try { latest.current.onDiagnosticAbandon?.(message.includes("Project") ? "context_invalidated" : "cancelled"); } catch { /* diagnostics only */ }
     epoch.current++; operation.current = null;
     controller.current?.cancel();
     setNotice(executionPending.current
@@ -162,6 +170,7 @@ export function PingLocalSpeechPanel<Capture>(props: Props<Capture>) {
   const finish = () => {
     const owned = operation.current;
     if (!owned || owned.finishRequested || !isActive(owned) || controller.current?.getSnapshot().phase !== "listening") return;
+    try { latest.current.onDiagnosticFinish?.(); } catch { /* diagnostics only */ }
     owned.finishRequested = true;
     controller.current.finish();
   };
