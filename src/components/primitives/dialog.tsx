@@ -51,7 +51,7 @@ export function Dialog({
     // somewhere to start, or focus is still standing in the inert page.
     requestAnimationFrame(() => {
       const focusable = dialogRef.current?.querySelector<HTMLElement>(
-        "input, textarea, [tabindex]:not([tabindex='-1']), button:not([data-dialog-skip-focus])",
+        "input:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex='-1']):not(:disabled), button:not(:disabled):not([data-dialog-skip-focus])",
       );
       (focusable ?? dialogRef.current)?.focus({ preventScroll: true });
     });

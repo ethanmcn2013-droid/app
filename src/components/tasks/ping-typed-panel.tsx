@@ -28,7 +28,6 @@ import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { isDemoMode } from "@/lib/access-mode";
 import { PingVoicePanel } from "./ping-voice-panel";
-import { PingDock, PingOverlay } from "./ping-overlay";
 import styles from "./ping-overlay.module.css";
 
 const PING_TYPED_ENABLED = process.env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED === "1";
@@ -136,8 +135,6 @@ function PingTypedPanelFlow({
   selectedTaskIds,
   actorId,
 }: Props & { projectId: string; actorId: string }) {
-  const [typedOpen, setTypedOpen] = useState(false);
-  const closeTyped = useCallback(() => setTypedOpen(false), []);
   const { tasks } = useTasksState();
   const taskDispatch = useTasksDispatch();
   const [draft, setDraft] = useState("");
@@ -497,14 +494,9 @@ function PingTypedPanelFlow({
   const title = projectName?.trim() || "this Project";
 
   return (
-    <>
-    <PingDock>
-      <PingVoicePanel projectId={projectId} projectName={projectName} selectedTaskIds={selectedTaskIds}
-        tasks={tasks} actorId={actorId} available={process.env.NEXT_PUBLIC_PROJECT_PING_VOICE_ENABLED === "1"}
-        onTypeInstead={() => setTypedOpen(true)} />
-      <button type="button" className={styles.typeLaunch} data-testid="ping-type-open" aria-haspopup="dialog" aria-expanded={typedOpen} onClick={() => setTypedOpen(true)}>Type a request</button>
-    </PingDock>
-    <PingOverlay open={typedOpen} onClose={closeTyped} projectName={projectName} selectedCount={selectedSet.size}>
+    <PingVoicePanel projectId={projectId} projectName={projectName} selectedTaskIds={selectedTaskIds}
+      tasks={tasks} actorId={actorId} available={process.env.NEXT_PUBLIC_PROJECT_PING_VOICE_ENABLED === "1"}
+      typedContent={(
     <section
       ref={panelRef}
       onClickCapture={(event) => {
@@ -647,8 +639,7 @@ function PingTypedPanelFlow({
       {error && !prepared ? <p className="mt-2 text-sm text-[color:var(--v3-danger-text)]" data-testid="ping-error" role="alert">{error}</p> : null}
       {!notice && !error && sendState !== "idle" ? <p className="sr-only" data-testid="ping-state" role="status" aria-live="polite">{statusLabel}</p> : null}
     </section>
-    </PingOverlay>
-    </>
+    )} />
   );
 }
 

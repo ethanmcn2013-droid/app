@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { restorePingTypedTasks, sendPingTyped, pingTypedResponseMatches } from "@/lib/ping/typed-client";
@@ -11,13 +11,13 @@ import {
   sendPingVoice, type PingVoiceSendResult,
 } from "@/lib/ping/voice-client";
 import { PING_VOICE_VERSION, type PingVoiceBegin } from "@/lib/ping/voice-contract";
-import { PingMic, PingOverlay } from "./ping-overlay";
+import { PingDock, PingMic, PingOverlay } from "./ping-overlay";
 import styles from "./ping-overlay.module.css";
 
 const MARKER_VERSION = "ping.voice.intent.v1";
 const MARKER_PREFIX = "signal:ping-voice:intent:v1";
 type VoiceMarker = Readonly<{ version: typeof MARKER_VERSION; actorId: string; projectId: string; generationId: string; commandId: string; token: string; connectionEpoch: string; phase: "capturing" | "finishing" | "unknown" | "committed" }>;
-type Props = Readonly<{ projectId: string; projectName: string | null; selectedTaskIds: readonly string[]; tasks: readonly Task[]; actorId: string; available: boolean; onTypeInstead: () => void }>;
+type Props = Readonly<{ projectId: string; projectName: string | null; selectedTaskIds: readonly string[]; tasks: readonly Task[]; actorId: string; available: boolean; typedContent: ReactNode }>;
 type VoiceState = "idle" | "starting" | "listening" | "finishing" | "unknown" | "committed" | "not_invoked" | "error";
 
 function storageKey(actorId: string, projectId: string) { return `${MARKER_PREFIX}:${encodeURIComponent(actorId)}:${encodeURIComponent(projectId)}`; }
@@ -54,6 +54,7 @@ function statusCopy(state: VoiceState, phase: string): string {
 export function PingVoicePanel(props: Props) {
   const dispatch = useTasksDispatch();
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"voice" | "typed">("voice");
   const dismissEpoch = useRef(0);
   const dismiss = useRef<() => void>(() => {});
   const close = useCallback(() => dismiss.current(), []);
@@ -323,9 +324,14 @@ export function PingVoicePanel(props: Props) {
   const seconds = Math.floor((capture.snapshot?.totalSamples ?? 0) / 24000);
   return (
     <>
+    <PingDock>
     <button type="button" className={styles.launch} data-testid="ping-voice-start" aria-haspopup="dialog" aria-expanded={open}
-      onClick={() => { setOpen(true); if (props.available) void start(); }}><PingMic />Talk to Ping</button>
+      onClick={() => { setMode("voice"); setOpen(true); if (props.available) void start(); }}><PingMic />Talk to Ping</button>
+    <button type="button" className={styles.typeLaunch} data-testid="ping-type-open" aria-haspopup="dialog" aria-expanded={open && mode === "typed"}
+      onClick={() => { setMode("typed"); setOpen(true); }}>Type a request</button>
+    </PingDock>
     <PingOverlay open={open} onClose={close} projectName={props.projectName} selectedCount={selectedIds.length}>
+    {mode === "typed" ? props.typedContent : (
     <div ref={panelRef} className={`${styles.voice} ${state === "listening" ? styles.listening : ""}`} data-testid="ping-voice-panel"
       onClickCapture={(event) => {
         const node = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
@@ -341,13 +347,14 @@ export function PingVoicePanel(props: Props) {
         {marker && !receipt && state !== "listening" ? <button type="button" data-testid="ping-voice-check-original" className={styles.primary} onClick={() => void checkOriginal()} disabled={busy}>{busy ? "Checking…" : "Check original result"}</button> : null}
         {marker && (state === "starting" || state === "listening" || state === "finishing" || state === "unknown") ? <button type="button" data-testid="ping-voice-cancel" className={styles.secondary} onClick={() => void cancel()} disabled={cancelling}>Cancel</button> : null}
         {receipt && !refreshReady ? <button type="button" data-testid="ping-voice-refresh-current" className={styles.primary} onClick={() => void refreshCurrent()} disabled={busy}>Refresh current Tasks</button> : null}
-        {!marker && state !== "starting" ? <button type="button" className={props.available ? styles.secondary : styles.primary} onClick={() => { close(); props.onTypeInstead(); }}>Type instead</button> : null}
+        {!marker && state !== "starting" ? <button type="button" className={props.available ? styles.secondary : styles.primary} onClick={() => setMode("typed")}>Type instead</button> : null}
       </div>
       <p className="sr-only" data-testid="ping-voice-phase">{phase}</p>
       {receipt ? <div data-testid="ping-voice-receipt" className="mt-2 text-sm text-[color:var(--v3-text-2)]">Saved result: {receipt.changedCount} changed of {receipt.affectedCount} affected tasks.</div> : null}
       {capture.snapshot?.reason ? <p className="mt-1 text-xs text-[color:var(--v3-text-2)]">Capture ended safely. Check the original result before starting again.</p> : null}
-      <p className={styles.footnote}>{props.available ? "Finish runs your request in this Project. Nothing runs while you’re speaking." : "Microphone access stays off."}</p>
+      <p className={styles.footnote}>{props.available ? "Finish runs your request in this Project. No task changes run while you’re speaking." : "Microphone access stays off."}</p>
     </div>
+    )}
     </PingOverlay>
     </>
   );
