@@ -33,7 +33,7 @@ type SidebarAnswer =
 
 declare global {
   interface Window {
-    sidebarFixture: { answer: SidebarAnswer | null; currentProjectId: string | null; selected: string[] };
+    sidebarFixture: { answer: SidebarAnswer | null; currentProjectId: string | null; currentProject: { id: string; name: string } | null; selected: string[] };
   }
 }
 
@@ -94,9 +94,12 @@ const answers: Record<string, SidebarAnswer | null> = {
   loading: null,
 };
 
+const currentProjectId = state === "none" ? null : state === "many" ? "p-launch" : "p-orchard";
+const currentProject = MANY.find((item) => item.id === currentProjectId)?.project ?? null;
 window.sidebarFixture = {
   answer: state in answers ? (answers[state] ?? null) : answers.one!,
-  currentProjectId: state === "none" ? null : state === "many" ? "p-launch" : "p-orchard",
+  currentProjectId,
+  currentProject: currentProject ? { id: currentProject.id, name: currentProject.name } : null,
   selected: [],
 };
 
@@ -105,7 +108,11 @@ function chat(id: string, kind: ChatDirectoryEntry["kind"], title: string, count
 }
 
 const DIRECTORY: ChatDirectory = {
-  channels: [chat("c-orchard", "channel", "The Orchard, events", 1), chat("c-runsheet", "task", "Build the Saturday run-sheet", 1)],
+  channels: [
+    chat("c-orchard", "channel", "The Orchard, events", 1),
+    chat("c-logistics", "channel", "Saturday logistics", 0, { unread: true }),
+    chat("c-runsheet", "task", "Build the Saturday run-sheet", 1),
+  ],
   direct: [
     chat("d-niamh", "dm", "Niamh Kelly", 1, { personId: "u-niamh", online: true }),
     chat("d-dara", "dm", "Dara Quinn", 0, { personId: "u-dara" }),

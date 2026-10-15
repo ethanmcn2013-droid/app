@@ -171,11 +171,30 @@ function kebab(value) {
 
 function visibleRouteSegments(relativeDirectory) {
   if (!relativeDirectory || relativeDirectory === ".") return [];
-  return relativeDirectory
-    .split(path.sep)
-    .filter(Boolean)
-    .filter((segment) => !(segment.startsWith("(") && segment.endsWith(")")))
-    .filter((segment) => !segment.startsWith("@"));
+  const visible = [];
+  for (let segment of relativeDirectory.split(path.sep).filter(Boolean)) {
+    if (segment.startsWith("@") || /^\([^)]*\)$/.test(segment)) continue;
+    if (segment.startsWith("(...)")) {
+      visible.length = 0;
+      segment = segment.slice(5);
+    } else {
+      while (segment.startsWith("(..)")) {
+        visible.pop();
+        segment = segment.slice(4);
+      }
+      if (segment.startsWith("(.)")) segment = segment.slice(3);
+    }
+    if (segment) visible.push(segment);
+  }
+  return visible;
+}
+
+function parallelRouteContext(source) {
+  return source.split("/").filter((segment) => segment.startsWith("@")).join("/");
+}
+
+function registeredRouteKey(entry) {
+  return `${entry.route}|${entry.surfaceType}|${parallelRouteContext(entry.source)}`;
 }
 
 function normalizeRoute(appRoot, sourceFile) {
@@ -240,6 +259,7 @@ function discoverRoutes(repoRoot) {
       source: sourceRelative(repoRoot, file),
       surfaceType: SPECIAL_FILES.get(basename),
       discoveryContext: discoveryContext || "default",
+      parallel: Boolean(parallelRouteContext(sourceRelative(repoRoot, file))),
       materialityHash: hashFile(file),
     });
   }
@@ -247,10 +267,10 @@ function discoverRoutes(repoRoot) {
   const idCounts = new Map();
   for (const entry of discovered) idCounts.set(entry.id, (idCounts.get(entry.id) ?? 0) + 1);
   return discovered
-    .map(({ discoveryContext, ...entry }) => ({
+    .map(({ discoveryContext, parallel, ...entry }) => ({
       ...entry,
       id:
-        (idCounts.get(entry.id) ?? 0) > 1
+        parallel || ((idCounts.get(entry.id) ?? 0) > 1 && discoveryContext !== "default")
           ? `${entry.id}-${discoveryContext}`
           : entry.id,
     }))
@@ -422,7 +442,7 @@ function validateRegistry({ registry, repoRoot }) {
     if (sourceKeys.has(sourceKey)) errors.push(`${label}: duplicate registered source ${entry.source}`);
     sourceKeys.add(sourceKey);
     if (entry.route) {
-      const routeKey = `${entry.route}|${entry.surfaceType}`;
+      const routeKey = registeredRouteKey(entry);
       if (routeKeys.has(routeKey)) errors.push(`${label}: duplicate registered route ${entry.route}`);
       routeKeys.add(routeKey);
     }
@@ -487,6 +507,47 @@ function runSelfTest() {
     writeFileSync(path.join(appRoot, "page.tsx"), "export default function Page(){return null}\n");
     const registered = discoverRoutes(repoRoot);
 
+    const appDirectory = path.join(appRoot, "app");
+    const settingsDirectory = path.join(appDirectory, "settings");
+    const overlayDirectory = path.join(appDirectory, "@overlay");
+    for (const directory of [appDirectory, settingsDirectory, overlayDirectory,
+      path.join(overlayDirectory, "(.)settings"), path.join(overlayDirectory, "[...catchAll]")]) {
+      mkdirSync(directory, { recursive: true });
+      writeFileSync(path.join(directory, "page.tsx"), "export default function Page(){return null}\n");
+    }
+    const withSlots = discoverRoutes(repoRoot);
+    for (const [id, source, route] of [
+      ["tasks.page.app", "tasks/src/app/app/page.tsx", "/app"],
+      ["tasks.page.app-settings", "tasks/src/app/app/settings/page.tsx", "/app/settings"],
+      ["tasks.page.app-overlay", "tasks/src/app/app/@overlay/page.tsx", "/app"],
+      ["tasks.page.app-settings-overlay", "tasks/src/app/app/@overlay/(.)settings/page.tsx", "/app/settings"],
+      ["tasks.page.app-by-catch-all-overlay", "tasks/src/app/app/@overlay/[...catchAll]/page.tsx", "/app/[...catchAll]"],
+    ]) {
+      if (!withSlots.some((entry) => entry.id === id && entry.source === source && entry.route === route)) {
+        throw new Error(`self-test failed: slot route discovery lost ${id}`);
+      }
+    }
+    if (!compareRouteCoverage(registered, withSlots).some((error) =>
+      error.includes("tasks.page.app-overlay: discovered experience is not registered"))) {
+      throw new Error("self-test failed: null slot fallback escaped registration");
+    }
+    const primary = withSlots.find((entry) => entry.id === "tasks.page.app-settings");
+    const overlay = withSlots.find((entry) => entry.id === "tasks.page.app-settings-overlay");
+    if (registeredRouteKey(primary) === registeredRouteKey(overlay) ||
+        registeredRouteKey(overlay) !== registeredRouteKey({ ...overlay, id: "duplicate" })) {
+      throw new Error("self-test failed: route uniqueness must distinguish slots but reject duplicates within a slot");
+    }
+    for (const [directory, expected] of [
+      ["app/(group)/@overlay/(.)settings", ["app", "settings"]],
+      ["app/feed/@overlay/(..)settings", ["app", "settings"]],
+      ["app/feed/nested/@overlay/(..)(..)settings", ["app", "settings"]],
+      ["app/feed/@overlay/(...)settings", ["settings"]],
+    ]) {
+      if (JSON.stringify(visibleRouteSegments(directory.split("/").join(path.sep))) !== JSON.stringify(expected)) {
+        throw new Error(`self-test failed: incorrect intercepted URL for ${directory}`);
+      }
+    }
+
     const unregisteredRoot = path.join(appRoot, "deliberately-unregistered");
     mkdirSync(unregisteredRoot, { recursive: true });
     writeFileSync(
@@ -541,7 +602,7 @@ function runSelfTest() {
   }
   if (existsSync(root)) throw new Error("self-test failed: temporary route fixture was not removed");
   console.log(
-    "experience:self-test: pass - line-ending hashes match; unregistered route, stale evidence waiver, and inexact receipt were rejected",
+    "experience:self-test: pass - stable primary/slot IDs, intercepted URLs and slot uniqueness; line-ending hashes match; unregistered route, stale evidence waiver, and inexact receipt were rejected",
   );
 }
 

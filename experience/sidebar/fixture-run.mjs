@@ -3,6 +3,7 @@
  *
  *   node experience/sidebar/fixture-run.mjs                  # checks only
  *   node experience/sidebar/fixture-run.mjs --capture [dir]  # checks, then screenshots
+ *   node experience/sidebar/fixture-run.mjs --serve-only    # CUA preview; no browser launch
  *
  * Bundles `fixture.tsx` with the real AppShell and AppSidebar, their real
  * styles and the v3 tokens. Every server action is replaced at the module
@@ -16,6 +17,9 @@
 
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { BANNED, VIEWPORTS, captureArgs, createRunner, root, text } from "../home-overview/harness.mjs";
@@ -32,7 +36,7 @@ const stubs = new Map([
   ["@clerk/nextjs", `export const useUser=()=>({isLoaded:true,isSignedIn:true,user:{id:"u-orla",firstName:"Orla",fullName:"Orla Doyle"}});export const useAuth=()=>({isLoaded:true,isSignedIn:true,userId:"u-orla"});export const useClerk=()=>({signOut(){}});export const UserButton=Object.assign(()=>null,{MenuItems:()=>null,Link:()=>null,Action:()=>null});`],
   [
     "@/components/app/active-project-provider",
-    `export const useActiveProject=()=>{const f=window.sidebarFixture,id=f.currentProjectId;return {chrome:id?{kind:"verified",project:{id}}:{kind:"none"},selectProject(project){f.selected.push(project.id)}}};`,
+    `export const useActiveProject=()=>{const f=window.sidebarFixture;return {enabled:true,chrome:f.currentProject?{kind:"verified",project:f.currentProject}:{kind:"none"},selectProject(project){f.selected.push(project.id)}}};`,
   ],
 ]);
 
@@ -72,6 +76,7 @@ const bundle = await esbuild.build({
   outdir: path.join(root, "experience/output/sidebar-fixture/bundle"),
   bundle: true,
   write: false,
+  metafile: true,
   platform: "browser",
   format: "iife",
   jsx: "automatic",
@@ -84,6 +89,43 @@ const bundle = await esbuild.build({
 });
 const js = bundle.outputFiles.find((file) => file.path.endsWith(".js")).text;
 const css = bundle.outputFiles.find((file) => file.path.endsWith(".css")).text;
+if (process.argv.includes("--serve-only")) {
+  const portIndex = process.argv.indexOf("--port");
+  const port = portIndex < 0 ? 49276 : Number(process.argv[portIndex + 1]);
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) throw Error("Invalid sidebar fixture port");
+  const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Sidebar synthetic component fixture</title><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><link rel="stylesheet" href="/app.css"></head><body><div id="root"></div><script src="/app.js"></script></body></html>';
+  const fonts = new Map([
+    ["/fonts/Geist-Variable.woff2", "node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2"],
+    ["/fonts/GeistMono-Variable.woff2", "node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2"],
+  ]);
+  const digest = (value) => createHash("sha256").update(value).digest("hex");
+  const receipt = {
+    scope: "Actual AppShell/AppSidebar/styles with declared synthetic provider, navigation and server-action ports; no provider continuity or production flag change; no browser launched",
+    origin: `http://127.0.0.1:${port}`,
+    jsSha256: digest(js), cssSha256: digest(css),
+    sourceInputs: Object.keys(bundle.metafile.inputs).sort(),
+    declaredModulePorts: [...stubs.keys()],
+  };
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(path.join(outDir, "serve-only-build.json"), JSON.stringify(receipt, null, 2) + "\n");
+  const server = createServer(async (request, response) => {
+    try {
+      const url = new URL(request.url, receipt.origin);
+      if (request.method !== "GET" || url.origin !== receipt.origin) { response.writeHead(404); response.end(); return; }
+      response.setHeader("Cache-Control", "no-store");
+      if (url.pathname === "/") { response.setHeader("Content-Type", "text/html; charset=utf-8"); response.end(html); }
+      else if (url.pathname === "/app.js") { response.setHeader("Content-Type", "application/javascript"); response.end(js); }
+      else if (url.pathname === "/app.css") { response.setHeader("Content-Type", "text/css"); response.end(css); }
+      else if (fonts.has(url.pathname)) { response.setHeader("Content-Type", "font/woff2"); response.end(await readFile(path.join(root, fonts.get(url.pathname)))); }
+      else { response.writeHead(404); response.end(); }
+    } catch { response.writeHead(500); response.end("Sidebar fixture unavailable"); }
+  });
+  await new Promise((resolve, reject) => { server.once("error", reject); server.listen(port, "127.0.0.1", resolve); });
+  console.log(`Sidebar synthetic component fixture: ${receipt.origin}/?state=many&theme=dark`);
+  console.log(receipt.scope);
+  // The serve-only path deliberately cannot reach the browser runner below.
+  await new Promise(() => {});
+}
 const run = createRunner({ js, css, origin: "http://127.0.0.1:49276", title: "Sidebar", capture, outDir });
 
 const projectsNav = (aside) => aside.locator('nav[aria-label="Projects"]');
@@ -105,8 +147,43 @@ try {
 
         // Groups in order, every reader.
         const groups = await aside.locator("nav[data-group]").evaluateAll((navs) => navs.map((nav) => nav.dataset.group));
-        assert.deepEqual(groups, ["home", "workspace", "projects", "build", "chat"], `${label}: groups`);
+        assert.deepEqual(groups, ["primary", "workspace", "projects", "more", "chat"], `${label}: groups`);
         run.checks += 1;
+
+        if (state !== "none" && state !== "no-chat") {
+          const chat = aside.locator('nav[aria-label="Chat"]');
+          // DIRECTORY deliberately retains a typed task discussion. The actual
+          // sidebar must filter that row while keeping both channels and DMs.
+          assert.deepEqual(await chat.locator('a[data-chat-row]').evaluateAll((rows) => rows.map((row) => row.getAttribute("href"))), [
+            "/app/messages?c=c-orchard", "/app/messages?c=c-logistics", "/app/messages?c=d-niamh", "/app/messages?c=d-dara", "/app/messages?c=d-ciaran",
+          ], `${label}: only channel and direct-message rows`);
+          assert.equal(await chat.locator('a[href="/app/messages?c=c-runsheet"]').count(), 0, `${label}: task discussions stay in the full view`);
+          const ordinaryUnread = chat.locator('a[href="/app/messages?c=c-logistics"]');
+          assert.notEqual(await ordinaryUnread.getAttribute("data-unread"), null, `${label}: channel unread does not require a mention count`);
+          const unreadDot = await ordinaryUnread.locator(':scope > span[aria-hidden="true"]').evaluate((dot) => {
+            const style = getComputedStyle(dot);
+            return { width: style.width, height: style.height, color: style.backgroundColor };
+          });
+          const dmDotColor = await chat.locator('a[href="/app/messages?c=d-niamh"] > span[aria-hidden="true"]').last().evaluate((dot) => getComputedStyle(dot).backgroundColor);
+          assert.deepEqual(unreadDot, { width: "6px", height: "6px", color: dmDotColor }, `${label}: ordinary unread channel retains its indigo dot`);
+          assert.doesNotMatch(await ordinaryUnread.innerText(), /\d/, `${label}: ordinary unread has no invented count`);
+          assert.equal(await chat.getByRole("link", { name: /The Orchard, events.*1 mention/ }).count(), 1, `${label}: channel mention count remains accessible`);
+          for (const id of ["d-niamh", "d-dara", "d-ciaran"]) {
+            const avatar = await chat.locator(`a[href="/app/messages?c=${id}"] > span[aria-hidden="true"]`).first().evaluate((wrap) => {
+              const style = getComputedStyle(wrap.firstElementChild);
+              return { width: style.width, height: style.height, shadow: style.boxShadow, outline: style.outlineStyle,
+                border: [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth] };
+            });
+            assert.deepEqual(avatar, { width: "22px", height: "22px", shadow: "none", outline: "none", border: ["0px", "0px", "0px", "0px"] }, `${label}: ${id} avatar is 22px without an outline`);
+          }
+          const presence = await chat.locator('a[href="/app/messages?c=d-niamh"] > span[aria-hidden="true"]').first().evaluate((wrap) => {
+            const dot = wrap.lastElementChild;
+            const style = getComputedStyle(dot);
+            return { parts: wrap.children.length, position: style.position, width: style.width, height: style.height, visible: style.visibility };
+          });
+          assert.deepEqual(presence, { parts: 2, position: "absolute", width: "8px", height: "8px", visible: "visible" }, `${label}: existing online presence remains`);
+          run.checks += 10;
+        }
 
         if (state === "many") {
           await projectRows(aside).first().waitFor();
@@ -172,6 +249,21 @@ try {
           assert.equal(await projectRows(aside).count(), 1);
           assert.equal(await projectsNav(aside).locator("[data-tone]").count(), 0, `${label}: no status, no dot`);
           run.checks += 2;
+        }
+
+        if (["many", "one", "no-chat", "wedding"].includes(state)) {
+          const rings = await projectRows(aside).evaluateAll((rows) => rows.map((row) => {
+            const ring = row.querySelector(':scope > span[aria-hidden="true"]');
+            const style = getComputedStyle(ring);
+            return { current: row.hasAttribute("data-current-project"), color: style.borderTopColor, outline: style.outlineStyle };
+          }));
+          assert.equal(rings.filter((ring) => ring.current).length, 1, `${label}: one selected Project`);
+          for (const ring of rings) {
+            if (ring.current) assert.notEqual(ring.color, "rgba(0, 0, 0, 0)", `${label}: selected Project has its indigo outer ring`);
+            else assert.equal(ring.color, "rgba(0, 0, 0, 0)", `${label}: unselected Projects have no outer ring`);
+            assert.equal(ring.outline, "none", `${label}: Project ring has no additional light outline`);
+          }
+          run.checks += 1 + rings.length * 2;
         }
 
         const words = text(await aside.innerText());

@@ -556,7 +556,7 @@ for (const fixture of manifest.supplementalMaterialityRendered) {
     await expect(page.locator(fixture.selector).first()).toBeVisible();
     if (fixture.kind === "route") {
       // Require actual route-specific content, rather than only the App shell.
-      const names: Record<string,string> = {"tasks.page.app-settings":"Settings", "tasks.page.app-project":"The Orchard, events", "tasks.page.app-analytics":"Analytics", "tasks.page.app-concepts":"Concepts", "tasks.page.app-files":"Files"};
+      const names: Record<string,string> = {"tasks.page.app-settings":"Settings", "tasks.page.app-project":"The Orchard, events", "tasks.page.app-analytics":"Analytics", "tasks.page.app-concepts":"Concepts", "tasks.page.app-files":"Files", "tasks.page.welcome":"That project isn’t available.", "tasks.page.app-tools-by-slug":"Wedding hub"};
       if (fixture.id === "tasks.page.app-messages") {
         // A phone opens the directory first. Enter the real selected Project
         // conversation through the same row control as its reader.
@@ -566,7 +566,19 @@ for (const fixture of manifest.supplementalMaterialityRendered) {
         await expect(page.getByRole("navigation", { name: "Conversation views" })).toBeVisible();
         await expect(page.getByRole("navigation", { name: "Conversation views" }).getByRole("button", { name: "Chat", exact: true })).toBeVisible();
       } else await expect(page.getByRole("heading", { name: names[fixture.id], exact: true }).first()).toBeVisible();
-      if (fixture.id === "tasks.page.app-analytics") {
+      if (fixture.id === "tasks.page.welcome") {
+        // Empty explicit identity is refused before a membership query. This
+        // proves the real route's recovery surface, not completed onboarding.
+        await expect(page.getByRole("link", { name: "Open Home", exact: true })).toHaveAttribute("href", "/app/home");
+        await expect(page.getByText("Open Home to choose a project you can use.", { exact: true })).toBeVisible();
+      } else if (fixture.id === "tasks.page.app-tools-by-slug") {
+        const projects = page.getByRole("region", { name: "Your wedding Projects", exact: true });
+        await expect(projects).toBeVisible();
+        const guestList = projects.getByRole("link", { name: /Open guest list/ }).first();
+        await expect(guestList).toBeVisible();
+        await expect(guestList).toHaveAttribute("href", /^\/app\/wedding\/guests\?workspaceId=/);
+        await expect(page.getByRole("heading", { name: "More planning tools", exact: true })).toBeVisible();
+      } else if (fixture.id === "tasks.page.app-analytics") {
         const standing = page.getByRole("region", { name: "Where we stand", exact: true });
         await expect(standing).toBeVisible();
         await expect(standing.getByRole("link", { name: /^Are we on track\?/ })).toBeVisible();

@@ -6,7 +6,8 @@
  * Top to bottom: the brand, search, Home, Analytics and Files, then the
  * Workspace trio and named groups with room between them. Workspace is the
  * places of the work. Projects lists every Project the reader can open,
- * each with its own colour tile and a dot only when it is late or at risk.
+ * each with its own project-coloured identity, an indigo ring on the active
+ * Project, and a status dot only when it is late or at risk.
  * More groups tools by the kind of work; its visible rows can be customized
  * and saved in this browser. Chat
  * lists the reader's real conversations, or one quiet "Coming soon" row for
@@ -30,7 +31,7 @@ import { ShellIcon } from "./shell-icons";
 import { useFaviconBadge } from "./favicon-badge";
 import { SIGNAL_INDIGO, suiteMarkMetrics } from "@/lib/brand/suite-mark";
 import { CHAT_ENABLED_ATTRIBUTE, openPalette, ThemeCycleButton, useShell, useShortcutLabel } from "./app-shell";
-import { ProjectMarker, SidebarIcon, type SidebarIconName } from "./sidebar-icon";
+import { SidebarIcon, type SidebarIconName } from "./sidebar-icon";
 import { ProjectContextMenu } from "./project-context-menu";
 import { useMorePreferences } from "./use-more-preferences";
 import moreStyles from "./sidebar-more.module.css";
@@ -224,7 +225,11 @@ export function AppSidebar({
       : activeProject?.chrome.kind === "pending"
         ? activeProject.chrome.showing.id
         : null;
-  const chatEntries = directory ? [...directory.channels, ...directory.direct] : [];
+  // Keep the sidebar focused on channels and people. Task discussions remain
+  // in their task views and still contribute to All conversations.
+  const chatEntries = directory
+    ? [...directory.channels, ...directory.direct].filter((entry) => entry.kind === "channel" || entry.kind === "dm")
+    : [];
   // An open conversation is the page you are on; "All conversations" stays
   // quiet then, so only one row reads as "here".
   const chatRowOpen = chatEntries.some((entry) => entry.href === here);
@@ -244,10 +249,10 @@ export function AppSidebar({
 
   const count = (value: number, noun: string) =>
     value > 0 ? (
-      <span className={styles.badge}>
-        {value > 99 ? "99+" : value}
-        <span className="sr-only"> {noun}</span>
-      </span>
+      <>
+        <span className={styles.sidebarUnreadDot} aria-hidden="true" />
+        {" "}<span className="sr-only">{value} {noun}</span>
+      </>
     ) : null;
 
   const link = (destination: ShellDestination, extra?: React.ReactNode, current = activeId === destination.id, className = styles.item) => {
@@ -301,12 +306,16 @@ export function AppSidebar({
               className={styles.labelToggle}
               aria-expanded={open}
               aria-controls={open ? bodyId : undefined}
+              aria-label={id === "projects" && rows !== null && !failed ? `Projects, ${rows.length} total` : undefined}
               onClick={() => {
                 if (id === "more" && open) setMoreCustomizeOpen(false);
                 setSectionOpen(id, !open);
               }}
             >
-              <span>{label}</span>
+              <span>{id === "projects" ? "Projects" : label}</span>
+              {id === "projects" && rows !== null && !failed ? (
+                <span className={styles.projectGroupCount} aria-hidden="true">{rows.length}</span>
+              ) : null}
               <ShellIcon.chevronDown size={12} className={styles.labelChevron} />
             </button>
           ) : (
@@ -326,7 +335,14 @@ export function AppSidebar({
   const projectRow = (row: ChooserRow) => {
     const current = row.id === currentProjectId;
     const mark = marks[row.id];
-    const tile = <ProjectMarker color={projectColor(row.id)} />;
+    // SidebarProjectMark currently contains status only; it has no authorized
+    // completed/total task counts. The ring is decorative and must not imply
+    // completion or an empty project without those counts.
+    const tile = (
+      <span className={styles.projectProgress} aria-hidden="true">
+        <span className={styles.projectProgressCore} style={{ backgroundColor: projectColor(row.id) }} />
+      </span>
+    );
     const dot = mark ? <span className={styles.statusDot} data-tone={mark} title={SIDEBAR_MARK_LABEL[mark]} aria-hidden="true" /> : null;
     const name = `${row.accessibleName}${mark ? `, ${SIDEBAR_MARK_LABEL[mark].toLowerCase()}` : ""}${current ? ", open now" : ""}`;
     if (!row.selectable) {
@@ -399,9 +415,12 @@ export function AppSidebar({
 
   const chatLink = (entry: ChatDirectoryEntry) => {
     const current = here === entry.href;
-    const trailing = entry.count > 0
-      ? count(entry.count, entry.kind === "dm" ? (entry.count === 1 ? "new message" : "new messages") : entry.count === 1 ? "mention" : "mentions")
-      : entry.request ? <span className={styles.chatTag}>Request</span> : null;
+    const unread = (entry.unread || entry.count > 0) && !current;
+    const trailing = <>
+      {unread ? <span className={styles.sidebarUnreadDot} aria-hidden="true" /> : null}
+      {entry.kind !== "dm" && entry.count > 0 ? <span className="sr-only">{` ${entry.count} ${entry.count === 1 ? "mention" : "mentions"}`}</span> : null}
+      {entry.request ? <span className={styles.chatTag}>Request</span> : null}
+    </>;
     return (
       <SidebarIntentLink
         key={entry.id}
@@ -409,12 +428,15 @@ export function AppSidebar({
         className={styles.item}
         data-chat-row=""
         aria-current={current ? "page" : undefined}
-        data-unread={entry.unread && !current ? "" : undefined}
+        data-unread={unread ? "" : undefined}
         onClick={() => setMobileOpen(false)}
       >
         {entry.kind === "dm" ? (
           <span className={styles.chatAvatarWrap} aria-hidden="true">
-            <span className={styles.chatAvatar} style={{ backgroundColor: projectColor(entry.personId ?? entry.id) }}>
+            <span
+              className={styles.chatAvatar}
+              style={{ backgroundColor: `color-mix(in srgb, ${projectColor(entry.personId ?? entry.id)} 38%, var(--v3-chrome))` }}
+            >
               {initialsOf(entry.title)}
             </span>
             {entry.online ? <span className={styles.presence} /> : null}
@@ -423,7 +445,9 @@ export function AppSidebar({
         <span className={styles.itemLabel}>
           {entry.title}
           {entry.online ? <span className="sr-only">, online</span> : null}
-          {entry.unread && entry.count === 0 ? <span className="sr-only">, unread</span> : null}
+          {entry.kind === "dm" && entry.count > 0 ? (
+            <span className="sr-only">, {entry.unread ? "unread, " : ""}{entry.count} new {entry.count === 1 ? "message" : "messages"}</span>
+          ) : entry.unread ? <span className="sr-only">, unread</span> : null}
         </span>
         {trailing}
       </SidebarIntentLink>

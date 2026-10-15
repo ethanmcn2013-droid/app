@@ -1099,3 +1099,65 @@ a.nestedItem:hover { background: var(--v3-hover); color: var(--v3-text); }
 .nestedItem[aria-current="page"] { background: var(--v3-selected); color: var(--v3-text); font-weight: 550; }
 .nestedItem[data-soon] { color: var(--v3-text-3); cursor: default; }
 .nestedItem:focus-visible { outline: 2px solid var(--v3-text-2); outline-offset: -2px; }
+
+/* Approved sidebar detail: compact people markers, indigo notification dots,
+   and a Projects-only identity ring. Progress totals are not available in
+   SidebarProjectMark, so the ring stays decorative rather than implying 0%. */
+.sidebar .item[data-chat-row] .chatAvatar {
+  width: 22px;
+  height: 22px;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0;
+  color: var(--v3-text);
+  background-image: none;
+  box-shadow: none;
+  text-shadow: none;
+}
+.sidebarUnreadDot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  margin-inline-start: 4px;
+  border-radius: 50%;
+  background: var(--v3-accent);
+}
+.section[data-group="projects"] .labelToggle {
+  gap: 6px;
+}
+.section[data-group="projects"] .labelToggle > span:first-child {
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", Consolas, monospace);
+  font-size: 10.5px;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+}
+.projectGroupCount {
+  color: var(--v3-accent-text);
+  font-family: var(--font-mono, ui-monospace, "SFMono-Regular", Consolas, monospace);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.projectProgress {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1.25px solid transparent;
+  border-radius: 50%;
+}
+.projectProgressCore {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.item[data-current-project] .projectProgress {
+  border-color: var(--v3-accent);
+}
+.statusDot[data-tone="late"] {
+  width: 6px;
+  height: 6px;
+  background: var(--v3-danger);
+  box-shadow: none;
+}

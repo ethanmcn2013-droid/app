@@ -1,6 +1,6 @@
 {
   "schemaVersion": "signal-experience/1",
-  "generatedAt": "2026-10-11",
+  "generatedAt": "2026-10-15",
   "breakpoints": {
     "mobile": {
       "width": 390,
@@ -5034,6 +5034,146 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "7d654091e4047d66"
+    },
+    {
+      "id": "tasks.page.app-overlay",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app",
+      "source": "tasks/src/app/app/@overlay/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "settings-and-administration",
+      "primaryJob": "Clear the Settings overlay at the App root.",
+      "primaryAction": "Return to the underlying App without an overlay.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [
+        "parallel-route-overlay"
+      ],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "00bb8e99b5768849"
+    },
+    {
+      "id": "tasks.page.app-by-catch-all-overlay",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/[...catchAll]",
+      "source": "tasks/src/app/app/@overlay/[...catchAll]/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "settings-and-administration",
+      "primaryJob": "Clear the Settings overlay when navigating to another App route.",
+      "primaryAction": "Continue to the requested App route without retaining Settings.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [
+        "parallel-route-overlay"
+      ],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "526eb9063a7a4d22"
+    },
+    {
+      "id": "tasks.page.app-settings-overlay",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/settings",
+      "source": "tasks/src/app/app/@overlay/(.)settings/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "settings-and-administration",
+      "primaryJob": "Edit Settings while retaining the current App context.",
+      "primaryAction": "Review Settings and close the overlay with unsaved-input protection.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "long-content",
+        "unsaved",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "tasks/src/app/app/settings/page.tsx",
+        "tasks/src/components/app/settings/settings-overlay.tsx"
+      ],
+      "patternDependencies": [
+        "parallel-route-overlay"
+      ],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "4ef87cb5c7246170"
     }
   ]
 }
