@@ -132,7 +132,7 @@ export async function proofEditCommand(client: Client, ids: string[], effects: P
   for (const id of ids) {
     const row = (await client.execute({ sql: "SELECT * FROM tasks WHERE id=?", args: [id] })).rows[0];
     const value: Record<string, unknown> = {};
-    if (effects.selfAssignment) value.assignees = JSON.parse(String(row.assignees));
+    if (effects.selfAssignment || effects.namedAssignment) value.assignees = JSON.parse(String(row.assignees));
     if (Object.hasOwn(effects, "dueDate")) Object.assign(value, { due: row.due, dueAtSeconds: row.due_at,
       startDay: row.start_day, durationDays: row.duration_days });
     if (effects.statusColumnKey) Object.assign(value, { lane: row.lane, boardColumnKey: row.board_column_key, completedAtSeconds: row.completed_at });

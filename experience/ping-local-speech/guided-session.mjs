@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
-import { open, mkdir, readFile } from 'node:fs/promises';
+import { open, mkdir, readFile, unlink, lstat } from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 
 // Fixture-only backend. Callbacks never reach the participant:
 // cases: [{id, oracle:{kind:'edit'|'create'|'zero',taskIds,effects,count?,title?,expectedStage?}}]
 // snapshot(): {tasks:[complete SQL rows],activities:[complete SQL rows],receipts:[complete SQL rows]}
-// lookupReceipt({actorId,commandId,projectId}): canonical receipt or null; read-only.
+// lookupReceipt({actorId,commandId,projectId}): canonical receipt/{receipt}/explicit absent/null; read-only.
+// Null means confirmed absent; inaccessible/failed lookup MUST throw or return {ok:false}.
 // prepareCase(case): seed a new unique synthetic case; called only before participant start.
 // publicCase(case): participant allowlist {id,goal,taskNames,modeInfo}.
 // All mutation-observation calls must complete BEFORE forwarding the corresponding HTTP response/request.
@@ -24,11 +25,41 @@ const modes = ['typed','genuine-microphone','scripted'];
 const mutable = ['assignees','due','due_at','lane','board_column_key','idle_days','completed_at','updated_at'];
 const fields = {
   opened:['identity'], preparing:['caseId'], armed:['caseId','baseline'], started:['attemptId'], mode:['mode'],
-  input:['mode','evidence'], prepared:['generationId','commandId','projectId','tokenHash','ordinal'],
+  input:['mode','evidence','generationId','requestId'], prepared:['generationId','commandId','projectId','tokenHash','ordinal'],
   invocation:['generationId','commandId','projectId','tokenHash','ordinal'],
-  terminal:['category','code','stage','projection'], verified:['outcome','evidenceHash','projection'],
+  terminal:['category','code','stage','projection','source'], verified:['outcome','evidenceHash','projection'],
+  projection_observed:['projection','source'],
   retired:[], advanced:[], skipped:[], paused:[], resumed:[], ended:[], feedback:['clarity','ease','confidence','correction'],
 };
+function alive(pid) {
+  try {process.kill(pid,0);return true;}catch(error){if(error.code==='ESRCH')return false;return true;}
+}
+/** A recovery guard prevents competing stale-owner removals. Incomplete recovery fails closed. */
+async function acquireWriter(directory) {
+  const filename=path.join(directory,'writer.lock'), recovery=path.join(directory,'writer-recovery.lock');
+  const owner=JSON.stringify({version:1,pid:process.pid,nonce:randomUUID()});
+  async function claim() {const handle=await open(filename,'wx');try{await handle.writeFile(owner);await handle.sync();}finally{await handle.close();}}
+  try {await claim();}catch(error) {
+    if(error.code!=='EEXIST')throw error;
+    const guard=await open(recovery,'wx').catch(()=>{throw Error('Writer admission recovery is incomplete or already running');});
+    try {
+      await guard.writeFile(JSON.stringify({pid:process.pid}));await guard.sync();
+      const info=await lstat(filename);assert.ok(info.isFile()&&!info.isSymbolicLink(),'Unsafe writer admission file');
+      const previous=JSON.parse(await readFile(filename,'utf8'));
+      assert.ok(keys(previous,['version','pid','nonce'])&&previous.version===1&&Number.isSafeInteger(previous.pid)&&previous.pid>0&&id(previous.nonce),'Corrupt writer admission evidence');
+      assert.ok(!alive(previous.pid),'Another live session writer owns this directory');
+      await unlink(filename);
+      // A normal contender may claim the empty slot first; wx then fails safely.
+      await claim();
+    }finally {await guard.close();await unlink(recovery);}
+  }
+  let released=false;
+  return async()=>{
+    if(released)return;
+    assert.equal(await readFile(filename,'utf8'),owner,'Writer ownership changed; preserve admission evidence');
+    await unlink(filename);released=true;
+  };
+}
 function safeIdentity(value) {
   assert.ok(keys(value,['sessionId','sourceRevision','manifestSha256','actorId','projectId']));
   assert.ok(id(value.sessionId) && id(value.actorId) && id(value.projectId));
@@ -147,7 +178,8 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
   assert.ok(path.isAbsolute(directory));assert.ok(Array.isArray(cases)&&cases.length&&new Set(cases.map(c=>c.id)).size===cases.length);
   for(const c of cases){assert.ok(id(c.id));assert.ok(['edit','create','zero'].includes(c.oracle?.kind));}
   await mkdir(directory,{recursive:true});const journalPath=path.join(directory,'session.jsonl');
-  let file, events=[], poisoned=false, chain='0'.repeat(64), seq=0, state={index:0,paused:false,ended:false,mode:'typed',cases:{}};
+  const releaseWriter=await acquireWriter(directory);
+  let file, poisoned=false, closed=false, reopened=false, chain='0'.repeat(64), seq=0, state={index:0,paused:false,ended:false,mode:'typed',cases:{}};
   function current(){return state.cases[cases[state.index]?.id];}
   function apply(event) {
     const d=event.data,c=current();
@@ -156,15 +188,16 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       case 'armed':Object.assign(state.cases[d.caseId],{status:'armed',baseline:d.baseline});break;
       case 'started':c.status='started';c.attemptId=d.attemptId;c.attempts.push(d.attemptId);break;
       case 'mode':state.mode=d.mode;break;
-      case 'input':c.inputObserved=true;c.inputMode=d.mode;c.inputEvidence=d.evidence;break;
-      case 'prepared':c.originals.push({...d,invoked:false,terminal:null});c.outcome=null;break;
+      case 'input':c.inputObserved=true;c.inputMode=d.mode;c.inputEvidence=d.evidence;c.pendingInput=d;c.outcome=null;c.terminal=null;c.status='started';break;
+      case 'prepared':c.originals.push({...d,invoked:false,terminal:null});c.pendingInput=null;c.outcome=null;break;
       case 'invocation':c.originals.at(-1).invoked=true;c.outcome='unresolved';break;
       case 'terminal': {
         if(c.originals.length)c.originals.at(-1).terminal=d.category;
-        c.terminal=d;c.projection=d.projection??c.projection;break;
+        c.terminal=d;c.pendingInput=null;c.projection=d.projection??c.projection;break;
       }
       case 'verified':c.outcome=d.outcome;c.evidenceHash=d.evidenceHash;c.projection=d.projection;c.status='outcome';break;
-      case 'retired':c.originals.at(-1).terminal='retired';break;
+      case 'projection_observed':c.projection=d.projection;break;
+      case 'retired':if(c.originals.length)c.originals.at(-1).terminal='retired';break;
       case 'advanced':state.index++;break;
       case 'skipped':state.cases[cases[state.index].id]={status:'skipped',attempts:[],inputObserved:false,originals:[],outcome:null};state.index++;break;
       case 'paused':state.paused=true;break;case 'resumed':state.paused=false;break;case 'ended':state.ended=true;break;
@@ -172,6 +205,7 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
     }
   }
   try {
+    const info=await lstat(journalPath);assert.ok(info.isFile()&&!info.isSymbolicLink(),'Unsafe session journal');
     const bytes=await readFile(journalPath);
     assert.ok(bytes.length&&bytes.at(-1)===10,'Partial ledger: original bytes preserved');
     for(const line of new TextDecoder('utf-8',{fatal:true}).decode(bytes).split('\n').slice(0,-1)) {
@@ -181,15 +215,16 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       const {hash:recordHash,...body}=e;assert.equal(recordHash,digest(body),'Ledger integrity failure');chain=recordHash;
       if(seq===1){assert.equal(e.type,'opened');assert.deepEqual(e.data.identity,identity,'Session pin mismatch');}
       else assert.notEqual(e.type,'opened');
-      events.push(e);apply(e);
+      apply(e);
     }
+    reopened=true;
     file=await open(journalPath,'r+');
   } catch(error) {
-    if(error.code!=='ENOENT')throw error;
-    file=await open(journalPath,'wx+');
+    if(error.code!=='ENOENT'){await releaseWriter();throw error;}
+    try{file=await open(journalPath,'wx+');}catch(error){await releaseWriter();throw error;}
   }
   async function append(type,data={}) {
-    assert.ok(!poisoned,'Ledger unavailable; forwarding forbidden');assert.ok(keys(data,fields[type]));
+    assert.ok(!poisoned&&!closed,'Ledger unavailable; forwarding forbidden');assert.ok(keys(data,fields[type]));
     const body={version:1,seq:seq+1,time:now(),type,data,previous:chain};const event={...body,hash:digest(body)};
     try {
       if(io.beforeWrite)await io.beforeWrite(event);
@@ -197,31 +232,38 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       while(written<bytes.length){const result=await file.write(bytes,written,bytes.length-written,null);assert.ok(result.bytesWritten>0);written+=result.bytesWritten;}
       await file.datasync();
     } catch(error){poisoned=true;throw error;}
-    seq++;chain=event.hash;events.push(event);apply(event);
+    seq++;chain=event.hash;apply(event);
   }
   // r+ opens at byte zero. Explicitly position subsequent writes after validated history.
-  if(seq){await file.close();file=await open(journalPath,'a');}
-  if(!seq)await append('opened',{identity});
-  function admitted(){assert.ok(!poisoned&&!state.ended&&!state.paused,'Session is not active');assert.ok(state.index<cases.length);}
+  try {
+    if(seq){await file.close();file=await open(journalPath,'a');}
+    if(!seq)await append('opened',{identity});
+  } catch(error){await file?.close();await releaseWriter();throw error;}
+  function admitted(){assert.ok(!poisoned&&!closed&&!state.ended&&!state.paused,'Session is not active');assert.ok(state.index<cases.length);}
   function active(){admitted();const c=current();assert.ok(c?.attemptId,'Explicit participant Start required');return c;}
-  function settled(c){return c?.outcome && !['unresolved','verification_failed'].includes(c.outcome);}
+  function settled(c){return c?.outcome==='matched'?c.projection==='matches':
+    ['refused_verified_zero','cancelled_not_invoked_verified_zero','aborted_before_input','retired_not_invoked_verified_zero'].includes(c?.outcome);}
   function projection(){
-    const c=current(),safe=cases[state.index]?publicCase(cases[state.index]):null;
-    assert.ok(safe===null||keys(safe,['id','goal','taskNames','modeInfo']),'Unsafe participant projection');
+    const c=current(),offered=cases[state.index]?publicCase(cases[state.index]):null;
+    assert.ok(offered===null||keys(offered,['id','goal','taskNames','modeInfo'])&&id(offered.id)&&typeof offered.goal==='string'&&
+      typeof offered.modeInfo==='string'&&Array.isArray(offered.taskNames)&&offered.taskNames.every(name=>typeof name==='string'),'Unsafe participant projection');
+    const safe=structuredClone(offered);
     const values=Object.values(state.cases);
-    return {sessionId:identity.sessionId,status:poisoned?'blocked':state.ended?'ended':state.paused?'paused':c?.status??'ready',saved:!poisoned,
+    return {sessionId:identity.sessionId,status:closed?'closed':poisoned?'blocked':state.ended?'ended':state.paused?'paused':c?.status??'ready',saved:!poisoned,
       mode:state.mode,currentCase:safe,attemptId:c?.attemptId??null,outcome:c?.outcome??null,projection:c?.projection??'unknown',
-      canStart:!poisoned&&!state.ended&&!state.paused&&!c&&state.index<cases.length,
-      canNext:!poisoned&&!state.ended&&!state.paused&&!!settled(c),
-      canVerify:!poisoned&&!!c?.attemptId,
+      canStart:!closed&&!poisoned&&!state.ended&&!state.paused&&(!c||c.status==='armed'&&!c.attemptId)&&state.index<cases.length,
+      canNext:!closed&&!poisoned&&!state.ended&&!state.paused&&!!settled(c),
+      canVerify:!closed&&!poisoned&&!!c?.attemptId,
+      canRetirePrepared:!closed&&!poisoned&&!state.paused&&!state.ended&&!!c?.attemptId&&
+        (c.originals.length?!c.originals.at(-1).invoked&&(reopened||c.originals.at(-1).terminal==='cancelled_not_invoked'):reopened&&!!c.pendingInput),
       counts:{planned:cases.length,armed:values.filter(c=>c.baseline).length,started:values.filter(c=>c.attemptId).length,
-        inputObserved:values.filter(c=>c.inputObserved).length,verified:values.filter(c=>['matched','refused_verified_zero','cancelled_not_invoked_verified_zero'].includes(c.outcome)).length,
+        inputObserved:values.filter(c=>c.inputObserved).length,verified:values.filter(c=>['matched','refused_verified_zero','cancelled_not_invoked_verified_zero','retired_not_invoked_verified_zero'].includes(c.outcome)).length,
         skipped:values.filter(c=>c.status==='skipped').length,unresolved:values.filter(c=>['unresolved','verification_failed'].includes(c.outcome)).length,
         remaining:cases.length-values.filter(c=>c.attemptId||c.status==='skipped').length}};
   }
   async function verify() {
     const c=current();assert.ok(c?.attemptId);const original=c.originals.at(-1);
-    let receipt=null,projection=c.projection??'unknown',outcome,evidenceHash;
+    let receipt=null,custodyEstablished=false,projection=c.projection??'unknown',outcome,evidenceHash;
     try {
       const snap=await snapshot();snap.projectId=identity.projectId;
       if(original?.invoked) {
@@ -234,39 +276,47 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
           persisted&&persisted.committed_at===receipt.committedAtSeconds&&same(JSON.parse(persisted.receipt_json),receipt);
         if(!bound){receipt=null;outcome='unresolved';}
         else {
+          custodyEstablished=true;
           evidenceHash=verifyGuidedEffects({baseline:c.baseline,snapshot:snap,oracle:cases[state.index].oracle,receipt,identity,original});
           outcome=['failed','diverged'].includes(projection)?'committed_projection_failed':'matched';
         }
-      } else if(c.terminal?.category==='refused'||c.terminal?.category==='cancelled_not_invoked') {
+      } else if(['refused','cancelled_not_invoked','retired_not_invoked'].includes(c.terminal?.category)) {
         evidenceHash=verifyGuidedEffects({baseline:c.baseline,snapshot:snap,oracle:cases[state.index].oracle,identity,zero:true});
         const expectedStage=cases[state.index].oracle.expectedStage;
         outcome=c.terminal.category==='refused' && (cases[state.index].oracle.kind!=='zero'||(expectedStage&&expectedStage!==c.terminal.stage)) ? 'mismatch':
-          c.terminal.category==='refused'?'refused_verified_zero':'cancelled_not_invoked_verified_zero';
+          c.terminal.category==='refused'?'refused_verified_zero':c.terminal.category==='retired_not_invoked'?'retired_not_invoked_verified_zero':'cancelled_not_invoked_verified_zero';
       } else if(!c.inputObserved&&!original) {
         evidenceHash=verifyGuidedEffects({baseline:c.baseline,snapshot:snap,oracle:cases[state.index].oracle,identity,zero:true});outcome='aborted_before_input';
       } else outcome='unresolved';
-    }catch(error){outcome=receipt?'mismatch':'verification_failed';evidenceHash=digest({category:'oracle_failure'});}
+    }catch(error){outcome=custodyEstablished?'mismatch':'verification_failed';evidenceHash=digest({category:'oracle_failure'});}
     await append('verified',{outcome,evidenceHash:evidenceHash??digest({outcome}),projection});return projectionState();
   }
   const projectionState=()=>projection();
   let queue=Promise.resolve();const serial=fn=>(...args)=>{const result=queue.then(()=>fn(...args));queue=result.catch(()=>{});return result;};
   return {
     state:projectionState,
-    startCase:serial(async()=>{admitted();assert.ok(!current(),'Case cannot be reset');const record=cases[state.index];
-      await append('preparing',{caseId:record.id});await prepareCase(record);
-      const snap=await snapshot();snap.projectId=identity.projectId;
-      await append('armed',{caseId:record.id,baseline:snapshotMetadata(snap,record.oracle)});
+    startCase:serial(async()=>{admitted();const existing=current();assert.ok(!existing||existing.status==='armed'&&!existing.attemptId,'Case cannot be reset');const record=cases[state.index];
+      if(existing)verifyGuidedEffects({baseline:existing.baseline,snapshot:await snapshot(),oracle:record.oracle,identity,zero:true});
+      else {
+        await append('preparing',{caseId:record.id});await prepareCase(record);
+        const snap=await snapshot();snap.projectId=identity.projectId;
+        await append('armed',{caseId:record.id,baseline:snapshotMetadata(snap,record.oracle)});
+      }
       await append('started',{attemptId:randomUUID()});return projectionState();}),
     recordMode:serial(async mode=>{admitted();assert.ok(modes.includes(mode));await append('mode',{mode});return projectionState();}),
-    observeInput:serial(async({mode=state.mode,evidence='participant-reported'}={})=>{
+    observeInput:serial(async({mode=state.mode,evidence='participant-reported',generationId,requestId}={})=>{
       const c=active();assert.ok(modes.includes(mode)&&['participant-reported','automatic','scripted'].includes(evidence));
+      assert.ok(!c.pendingInput||generationId&&!c.pendingInput.generationId,'Previous input observation has not settled');
       assert.ok(!c.originals.some(o=>o.invoked&&!settled(c)),'Original may have invoked; no new input');
       // Multiple prepared revisions require original Cancel/retirement first.
       const original=c.originals.at(-1);assert.ok(!original||['cancelled_not_invoked','refused','retired'].includes(original.terminal),'Prepared original must settle first');
-      await append('input',{mode,evidence});return projectionState();}),
-    observePrepareResponse:serial(async(response,{stage='parse'}={})=>{
-      const c=active();
+      if(generationId!==undefined)assert.ok(id(generationId));if(requestId!==undefined)assert.ok(id(requestId));
+      await append('input',{mode,evidence,...(generationId?{generationId}:{}),...(requestId?{requestId}:{})});return projectionState();}),
+    observePrepareResponse:serial(async(response,{stage='prepare',generationId}={})=>{
+      const c=current();assert.ok(c?.attemptId&&c.pendingInput,'Admitted input observation required');
+      if(generationId!==undefined)assert.equal(generationId,c.pendingInput.generationId);
       if(response?.ok===true&&response.action==='prepare') {
+        if(c.pendingInput.generationId)assert.equal(response.generationId,c.pendingInput.generationId);
         assert.ok(c.inputObserved);assert.ok(id(response.generationId)&&id(response.commandId));assert.equal(response.projectId,identity.projectId);
         assert.ok(typeof response.token==='string'&&response.token.length>0);
         const prior=c.originals.at(-1);assert.ok(!prior||['cancelled_not_invoked','refused','retired'].includes(prior.terminal),'Unsettled original');
@@ -279,6 +329,14 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
         await append('terminal',{category:known?'refused':'unresolved',code,stage});if(known)await verify();
       } else throw Error('Unexpected Prepare response');
       return projectionState();}),
+    observeRefusal:serial(async({code,stage,source,generationId}={})=>{
+      const c=active();assert.ok(c.inputObserved&&c.pendingInput,'Observed product input required');
+      const parser=stage==='parse'&&source==='client-parser'&&['unsupported','ambiguous','incomplete','invalid_input'].includes(code);
+      const selection=stage==='prepare'&&source==='fixture-selection'&&['stale_capture','invalid_input'].includes(code);
+      assert.ok(parser||selection,'Unsupported refusal observation');
+      assert.ok(!c.originals.at(-1)?.invoked,'Invoked originals cannot become parser refusals');
+      if(generationId!==undefined)assert.equal(generationId,c.pendingInput.generationId);
+      await append('terminal',{category:'refused',code,stage,source});return verify();}),
     beforeExecute:serial(async request=>{const c=active(),o=c.originals.at(-1);assert.ok(o&&!o.terminal&&!o.invoked,'Original invocation cannot be replayed');
       assert.equal(request.generationId,o.generationId);assert.equal(digest(request.token),o.tokenHash);assert.equal(request.action,'execute');
       await append('invocation',{generationId:o.generationId,commandId:o.commandId,projectId:o.projectId,tokenHash:o.tokenHash,ordinal:o.ordinal});return projectionState();}),
@@ -295,10 +353,28 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
         await append('terminal',{category:'refused',code:response.code,stage});
       else await append('terminal',{category:'unresolved'});
       return verify();}),
+    observeProjection:serial(async value=>{
+      assert.ok(keys(value,['matches','source'])&&typeof value.matches==='boolean'&&value.source==='fixture-canonical-mounted','Invalid canonical projection observation');
+      const c=current();assert.ok(c?.attemptId&&c.originals.at(-1)?.invoked,'Original invocation required for projection reconciliation');
+      await append('projection_observed',{projection:value.matches?'matches':'diverged',source:value.source});return verify();
+    }),
     verify:serial(verify),
-    retirePrepared:serial(async()=>{const c=active(),o=c.originals.at(-1);assert.ok(o&&!o.invoked,'Possibly invoked original cannot retire');
-      assert.equal(o.terminal,'cancelled_not_invoked','Product cancellation acknowledgement required');await append('retired');return projectionState();}),
-    next:serial(async()=>{admitted();assert.ok(settled(current()),'Unresolved original blocks advancement');await append('advanced');return projectionState();}),
+    retirePrepared:serial(async()=>{const c=active(),o=c.originals.at(-1);assert.ok(!o?.invoked,'Possibly invoked original cannot retire');
+      if(!o){
+        assert.ok(reopened&&c.pendingInput,'Only interrupted uninvoked input can retire');
+        const snap=await snapshot();verifyGuidedEffects({baseline:c.baseline,snapshot:snap,oracle:cases[state.index].oracle,identity,zero:true});
+        await append('terminal',{category:'retired_not_invoked',source:'restart-ledger'});await verify();await append('retired');return projectionState();
+      }
+      if(o.terminal!=='cancelled_not_invoked') {
+        assert.ok(reopened,'Active product lane must acknowledge Cancel before retirement');
+        const found=await lookupReceipt({actorId:identity.actorId,commandId:o.commandId,projectId:identity.projectId});
+        assert.ok(found===null||found?.ok===true&&found.state==='absent','Original receipt custody is not confirmed absent');
+        const snap=await snapshot();verifyGuidedEffects({baseline:c.baseline,snapshot:snap,oracle:cases[state.index].oracle,identity,zero:true});
+        await append('terminal',{category:'retired_not_invoked',source:'restart-ledger'});await verify();
+      }
+      await append('retired');return projectionState();}),
+    next:serial(async()=>{admitted();assert.ok(settled(current()),'Unresolved or unaccepted result blocks advancement');await verify();
+      assert.ok(settled(current()),'Current verification blocks advancement');await append('advanced');return projectionState();}),
     skip:serial(async()=>{admitted();assert.ok(!current(),'Started cases remain in attempted denominator');await append('skipped');return projectionState();}),
     pause:serial(async()=>{assert.ok(!state.ended);await append('paused');return projectionState();}),
     resume:serial(async()=>{assert.ok(!state.ended);await append('resumed');return projectionState();}),
@@ -310,11 +386,12 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       const rows=cases.map(record=>{const c=state.cases[record.id];return {caseId:record.id,attemptId:c?.attemptId??null,started:!!c?.attemptId,
         inputObserved:!!c?.inputObserved,inputMode:c?.inputMode??null,inputEvidence:c?.inputEvidence??null,outcome:c?.outcome??null,
         skipped:c?.status==='skipped',projection:c?.projection??'unknown',originalCount:c?.originals?.length??0,
-        evidenceHash:c?.evidenceHash??null,feedback:c?.feedback??null};});
+        evidenceHash:c?.evidenceHash??null,feedback:c?.feedback??null,
+        originals:(c?.originals??[]).map(o=>({generationId:o.generationId,commandId:o.commandId,projectId:o.projectId,ordinal:o.ordinal,invoked:o.invoked,terminal:o.terminal}))};});
       const json={version:'ping.guided.results.v1',identity,counts:projectionState().counts,ledgerHash:chain,rows};
       const columns=['caseId','attemptId','started','inputObserved','inputMode','inputEvidence','outcome','skipped','projection','originalCount','evidenceHash'];
       const csv=[columns.join(','),...rows.map(row=>columns.map(k=>'"'+String(row[k]??'').replaceAll('"','""')+'"').join(','))].join('\n')+'\n';
       return {json,csv};}),
-    close:serial(async()=>{await file.datasync();await file.close();}),
+    close:serial(async()=>{if(closed)return;try{await file.datasync();}finally{closed=true;await file.close();await releaseWriter();}}),
   };
 }
