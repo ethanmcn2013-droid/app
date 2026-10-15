@@ -227,10 +227,15 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       if(original?.invoked) {
         try{const found=await lookupReceipt({actorId:identity.actorId,commandId:original.commandId,projectId:identity.projectId});
           receipt=found?.receipt??(found?.version==='ping.receipt.v1'?found:null);}catch{/* inaccessible remains unresolved */}
-        if(!receipt)outcome='unresolved';
+        // Only an exact persisted original establishes committed custody. A lookup
+        // returning a different/malformed receipt cannot make advancement safe.
+        const persisted=receipt&&snap.receipts.find(row=>row.actor_id===identity.actorId&&row.command_id===original.commandId&&row.project_id===identity.projectId);
+        const bound=receipt?.version==='ping.receipt.v1'&&receipt.commandId===original.commandId&&receipt.projectId===identity.projectId&&
+          persisted&&persisted.committed_at===receipt.committedAtSeconds&&same(JSON.parse(persisted.receipt_json),receipt);
+        if(!bound){receipt=null;outcome='unresolved';}
         else {
           evidenceHash=verifyGuidedEffects({baseline:c.baseline,snapshot:snap,oracle:cases[state.index].oracle,receipt,identity,original});
-          outcome=projection==='failed'?'committed_projection_failed':'matched';
+          outcome=['failed','diverged'].includes(projection)?'committed_projection_failed':'matched';
         }
       } else if(c.terminal?.category==='refused'||c.terminal?.category==='cancelled_not_invoked') {
         evidenceHash=verifyGuidedEffects({baseline:c.baseline,snapshot:snap,oracle:cases[state.index].oracle,identity,zero:true});

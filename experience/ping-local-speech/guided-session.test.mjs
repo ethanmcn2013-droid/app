@@ -51,6 +51,8 @@ test('displayed cases do not count; durable invoke, read-only restart, exact eff
 test('missing original remains unresolved after restart and blocks reset, replay and next',async()=>{
   const f=await setup();await arm(f.session);await f.session.beforeExecute(request);await f.session.close();
   const s=await createGuidedSession(f.options);assert.equal((await s.verify()).outcome,'unresolved');
+  f.setResult({version:'ping.receipt.v1',commandId:'different-original',projectId:identity.projectId});
+  assert.equal((await s.verify()).outcome,'unresolved');assert.equal(s.state().canNext,false);
   await assert.rejects(s.next(),/Unresolved/);await assert.rejects(s.startCase(),/reset/);await assert.rejects(s.beforeExecute(request),/replayed/);
   await s.pause();await s.resume();assert.equal(s.state().counts.started,1);assert.equal(f.prepares(),1);await s.close();
 });
