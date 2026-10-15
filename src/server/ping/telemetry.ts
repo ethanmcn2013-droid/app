@@ -36,12 +36,16 @@ export function emitPingTelemetry(event: PingTelemetryEvent) {
 }
 export async function withPingTelemetry(request: Request, operation: () => Promise<Response>): Promise<Response> {
   if(!pingTelemetryEnabled()) return operation();
+  try {
   refreshBudgetWindow();
   if(emitted>=512){
     // request/overflow means at least one whole request omitted. No events were
     // constructed, so droppedCount=0 is NOT an exact missing-event count or a
     // claim of complete coverage. Concurrent accepted recorders may still drop.
     queueOverflow("request",0);
+    return context.getStore() ? context.run(undefined,operation) : operation();
+  }
+  } catch {
     return context.getStore() ? context.run(undefined,operation) : operation();
   }
   let recorder: PingTelemetryRecorder;

@@ -51,3 +51,8 @@ test("exhausted budget skips header/recorder work, preserves result/error, rolls
   clock+=60000;for(let i=0;i<512;i++)emitPingTelemetry(events[0]);console.warn=()=>{throw Error("logger unavailable");};assert.equal(await withPingTelemetry(request,async()=>response),response);await Promise.resolve();
  } finally {Date.now=oldNow;console.warn=oldWarn;if(oldFlag===undefined)delete process.env.PING_TELEMETRY_ENABLED;else process.env.PING_TELEMETRY_ENABLED=oldFlag;}
 });
+
+test("throwing diagnostic wall clock invokes business once and preserves exact response/error",async()=>{
+ const oldFlag=process.env.PING_TELEMETRY_ENABLED,oldNow=Date.now;process.env.PING_TELEMETRY_ENABLED="1";Date.now=()=>{throw Error("diagnostic clock");};
+ try {let calls=0;const response=new Response("original");assert.equal(await withPingTelemetry(req({}),async()=>{calls++;return response;}),response);assert.equal(calls,1);const error=Error("original business error");calls=0;await assert.rejects(withPingTelemetry(req({}),async()=>{calls++;throw error;}),e=>e===error);assert.equal(calls,1);}finally{Date.now=oldNow;if(oldFlag===undefined)delete process.env.PING_TELEMETRY_ENABLED;else process.env.PING_TELEMETRY_ENABLED=oldFlag;}
+});
