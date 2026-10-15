@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-15 · Internal candidate · Measure Ping from activation to confirmed changes
+
+Ping can record where time goes through speech readiness, command preparation, saving, recovery and the refreshed result. The optional diagnostics use fixed categories and random correlation values; they exclude speech, task content and account identities. Collection is off by default, bounded and separate from command execution. A delayed telemetry service cannot repeat a task action.
+
+The guided test runner retains observations across reloads, reports missing or unfinished measurements, and keeps user review time separate. Offline reports preserve failures and compare like workloads. Preparing a command now reads selected task snapshots in one bounded query while retaining permission and stale-data checks. Local paired measurements show fewer database calls for larger selections; production performance and operating alert delivery remain unverified. Operator procedure: `docs/PING_TELEMETRY.md`. Existing voice, real-input and production holds remain.
+
 ## 2026-10-15 · Internal fixture · A guided Ping session
 
 The isolated Ping runner places a case guide beside the real Tasks view. It records actual attempts, checks saved effects and original receipts, preserves uncertain results across restart, and exports structured results. Pause and End stop capture while keeping the record. This is an invented-data test tool; human speech, founder experience, pilot use and production activation remain separate.

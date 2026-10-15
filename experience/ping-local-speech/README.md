@@ -75,3 +75,39 @@ corepack pnpm test:ping-session-guide:browser
 The browser check requires explicit `PING_GUIDED_BROWSER_RUN=1`,
 `PING_GUIDED_BROWSER_OUTPUT` and `PING_GUIDED_MANIFEST` admission. Its failure
 injection controls are in-process test hooks and have no HTTP endpoint.
+
+Guided measurement extension `ping.guided.measurement.v1` adds metadata without
+changing `ping.guided.latency.v2` boundaries or old packets. Page registrations
+fence retired-page metadata, sequence replay is idempotent, and bounded registries
+fail closed. Server and browser request samples share a span ID (and the original
+request/generation IDs when available). A deliberate business refusal is completed
+server handler processing; thrown handlers fail; deliberately dropped replies stay
+labelled even when the handler completed. No request or mutation is replayed.
+
+Durable gesture-start records expose missing completion per gesture, alongside
+existing attempt coverage and raw unfinished samples. Observer delivery counters
+are the last successfully reported page snapshot; a closed/crashed page can leave
+later delivery unknown. Exported correlation lists unpaired observed spans and
+never combines browser/server clocks. Matching Tasks model observation is not a
+paint or physical-display measurement. Observation still adds overhead.
+
+Exports include allowlisted Node/platform/architecture metadata. An optional
+`benchmark` argument to `createGuidedRunner` pins a complete comparison receipt:
+`runtime`, `platform`, `architecture`, `browser`, `viewport`, `buildMode`,
+`cachePolicy`, `warmupPolicy`, `cohort`, `harnessSha256`,
+`fixtureManifestSha256`, and `observerMode` (short strings; both hashes SHA-256).
+The receipt is preserved in host config and must match on reopen. Do not include
+paths, names, command content, audio or transcripts. Omission leaves `benchmark`
+null and makes comparison ineligible. `compareGuidedResults` from
+`guided-measurement.mjs` rejects incompatible or incomplete receipts, protocols,
+statistics, planned cases or measured mode/evidence/outcome cohorts. It returns
+raw denominator/coverage context plus median/p95 deltas; it does not declare a
+speed win. Source revisions may differ intentionally while the harness and
+measurement definitions remain fixed. Runtime metadata alone does not establish
+matched machine load or cache state: record the actual benchmark conditions.
+
+Run the extension's dependency-free regression tests with:
+
+```powershell
+node --test experience/ping-local-speech/guided-measurement.test.mjs
+```

@@ -1,3 +1,4 @@
+import { createPingTelemetryRecorder, type PingTelemetryEvent, type PingTelemetryRecorder } from "./telemetry";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -13,7 +14,7 @@ function deferred<T>() {
   const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
   return { promise, resolve, reject };
 }
-function fixture(settings: { availability?: string[]; installResult?: boolean; onFinal?: (text: string) => Promise<void> } = {}) {
+function fixture(settings: { availability?: string[]; installResult?: boolean; onFinal?: (text: string) => Promise<void>; telemetry?: () => PingTelemetryRecorder | null } = {}) {
   const instances: Native[] = [], queries: unknown[] = [], installs: unknown[] = [];
   const finals: string[] = [], states: PingLocalSpeechSnapshot[] = [];
   const deadlines = new Map<number, { at: number; callback: () => void }>();
@@ -48,6 +49,7 @@ function fixture(settings: { availability?: string[]; installResult?: boolean; o
     isContextCurrent: () => context,
     onState: value => states.push(value),
     onFinal: async text => { finals.push(text); await settings.onFinal?.(text); },
+    telemetry: settings.telemetry,
     now: () => clock,
     setTimer: (callback, ms) => {
       const id = ++timerId; deadlines.set(id, { at: clock + ms, callback });
@@ -336,4 +338,36 @@ test("hung explicit install times out at 120 seconds without a microphone or aut
   assert.equal(f.queries.length, 1); assert.equal(f.installs.length, 1);
   assert.equal(f.instances[0].starts, 0); assert.deepEqual(f.finals, []);
   assert.equal(f.deadlines.size, 0);
+});
+
+
+test("speech diagnostics distinguish local finality from Task outcome and never include native content", async () => {
+  const events: PingTelemetryEvent[] = []; let now = 0;
+  const recorder = createPingTelemetryRecorder({ source: "client", inputMode: "local-speech", now: () => now, emit: e => events.push(e) });
+  const f = fixture({ telemetry: () => recorder });
+  await f.controller.start(); now = 25.5;
+  f.instances[0].result([["PRIVATE transcript", true]]); f.controller.finish(); now = 40.25; f.instances[0].onend?.();
+  await flush(); await flush();
+  assert.equal(f.finals.length, 1);
+  assert.ok(events.some(e => e.stage === "activation" && e.outcome === "completed"));
+  assert.ok(events.some(e => e.stage === "recognition" && e.durationMs === 25.5));
+  assert.ok(events.some(e => e.stage === "finish-final" && e.durationMs === 14.75));
+  assert.ok(!events.some(e => e.stage === "receipt" || e.outcome.startsWith("committed")));
+  assert.ok(!JSON.stringify(events).includes("PRIVATE"));
+  f.controller.dispose();
+});
+test("throwing speech observer cannot change final handoff or teardown; cancelled finals remain cancelled", async () => {
+  const broken = { begin() { throw Error("observer failed"); } } as unknown as PingTelemetryRecorder;
+  const f = fixture({ telemetry: () => broken }); await f.controller.start();
+  f.instances[0].result([["allowed request", true]]); f.controller.finish(); f.instances[0].onend?.(); await flush();
+  assert.deepEqual(f.finals, ["allowed request"]); f.controller.dispose(); assert.equal(f.deadlines.size, 0);
+  const events: PingTelemetryEvent[] = [];
+  const recorder = createPingTelemetryRecorder({ source: "client", emit: e => events.push(e) });
+  const cancelled = fixture({ telemetry: () => recorder }); await cancelled.controller.start();
+  cancelled.instances[0].result([["PRIVATE cancelled", true]]); const late = cancelled.instances[0].onend;
+  cancelled.controller.cancel(); late?.(); await flush();
+  assert.equal(cancelled.finals.length, 0);
+  assert.ok(events.some(e => e.stage === "recognition" && e.outcome === "cancelled"));
+  assert.ok(!events.some(e => e.stage === "finish-final" && e.outcome === "completed"));
+  cancelled.controller.dispose();
 });

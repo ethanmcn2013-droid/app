@@ -30,6 +30,8 @@ import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { isDemoMode } from "@/lib/access-mode";
 import { PingVoicePanel } from "./ping-voice-panel";
 import { PingLocalSpeechPanel } from "./ping-local-speech-panel";
+import { createBrowserPingTelemetry, pingTelemetryBegin, pingTelemetryRecord, observePingTelemetryCommit } from "@/lib/ping/telemetry-client";
+import type { PingTelemetryRecorder, PingTelemetryEnd, PingTelemetryOutcome, PingTelemetryInputMode } from "@/lib/ping/telemetry";
 import styles from "./ping-overlay.module.css";
 
 const PING_TYPED_ENABLED = process.env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED === "1";
@@ -161,6 +163,11 @@ function PingTypedPanelFlow({
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [examplesOpen, setExamplesOpen] = useState(false);
   const [markerLoaded, setMarkerLoaded] = useState(false);
+  type Diagnostic = { recorder: PingTelemetryRecorder | null; end: PingTelemetryEnd; commit: PingTelemetryEnd | null;
+    review: PingTelemetryEnd | null; invoked: boolean; invalidated: boolean; scope: string; selectionEpoch: number };
+  const diagnostic = useRef<Diagnostic | null>(null);
+  const commitObservation = useRef<{ owner: Diagnostic; outcome: "matched" | "diverged" } | null>(null);
+  const [commitRevision, setCommitRevision] = useState(0);
   const submitLatch = useRef(false);
   const mounted = useRef(false);
   const selectionKey = useMemo(() => [...new Set(selectedTaskIds)].sort().join("\u001f"), [selectedTaskIds]);
@@ -168,6 +175,23 @@ function PingTypedPanelFlow({
   const selectionEpoch = useRef(0);
   const currentScope = useRef({ scopeKey, selectionKey, selectionEpoch: 0 });
   const previousSelectionKey = useRef(selectionKey);
+  const closeDiagnostic = useCallback((outcome: PingTelemetryOutcome) => {
+    const owned = diagnostic.current;
+    if (!owned) return;
+    const terminal = owned.invoked && (outcome === "cancelled" || outcome === "unfinished") ? "unknown" : outcome;
+    owned.invalidated = true;
+    owned.review?.(terminal); owned.review = null;
+    owned.commit?.(terminal); owned.commit = null;
+    owned.end(terminal);
+  }, []);
+  const startDiagnostic = (inputMode: PingTelemetryInputMode) => {
+    closeDiagnostic("unfinished");
+    const recorder = createBrowserPingTelemetry(inputMode);
+    const owner: Diagnostic = { recorder, end: pingTelemetryBegin(recorder, "attempt"), commit: null, review: null,
+      invoked: false, invalidated: false, scope: scopeKey, selectionEpoch: selectionEpoch.current };
+    diagnostic.current = owner;
+    return owner;
+  };
   const panelRef = useRef<HTMLElement>(null);
   const focusOrigin = useRef<{ node: HTMLElement; scope: string; epoch: number } | null>(null);
   const selectedSet = useMemo(() => new Set(selectedTaskIds), [selectedTaskIds]);
@@ -184,8 +208,8 @@ function PingTypedPanelFlow({
       catch { setMarker(null); }
       setMarkerLoaded(true);
     }, 0);
-    return () => { window.clearTimeout(timer); mounted.current = false; };
-  }, [actorId, projectId]);
+    return () => { window.clearTimeout(timer); mounted.current = false; closeDiagnostic("unfinished"); };
+  }, [actorId, projectId, closeDiagnostic]);
 
   useLayoutEffect(() => {
     const selectionChanged = previousSelectionKey.current !== selectionKey;
@@ -193,6 +217,7 @@ function PingTypedPanelFlow({
     if (selectionChanged) selectionEpoch.current += 1;
     currentScope.current = { scopeKey, selectionKey, selectionEpoch: selectionEpoch.current };
     if (!selectionChanged) return;
+    closeDiagnostic("context_invalidated");
     setDraft("");
     setError(null);
     setNotice("Your selection changed, so the draft was cleared. Review a new request for the current selection.");
@@ -203,7 +228,20 @@ function PingTypedPanelFlow({
       if (current.marker.phase === "prepared") setSendState("idle");
       return null;
     });
-  }, [scopeKey, selectionKey]);
+  }, [scopeKey, selectionKey, closeDiagnostic]);
+  useLayoutEffect(() => {
+    const observation = commitObservation.current;
+    if (!observation) return;
+    const owned = observation.owner;
+    if (owned.invalidated || diagnostic.current !== owned || owned.scope !== currentScope.current.scopeKey || owned.selectionEpoch !== currentScope.current.selectionEpoch) return;
+    return observePingTelemetryCommit({ recorder: owned.recorder, outcome: observation.outcome,
+      endCommit: owned.commit, endAttempt: owned.end,
+      isCurrent: () => mounted.current && !owned.invalidated && diagnostic.current === owned &&
+        owned.scope === currentScope.current.scopeKey && owned.selectionEpoch === currentScope.current.selectionEpoch,
+      requestFrame: callback => window.requestAnimationFrame(callback), cancelFrame: handle => window.cancelAnimationFrame(handle),
+    });
+  }, [commitRevision]);
+
 
   const busy = busyAction !== null;
   useLayoutEffect(() => {
@@ -244,6 +282,7 @@ function PingTypedPanelFlow({
     if (!captureEligible || submitLatch.current || prepareRequestRef.current || !window.crypto?.randomUUID ||
       currentScope.current.scopeKey !== scopeKey || currentScope.current.selectionKey !== selectionKey ||
       readPingIntentMarker(window.sessionStorage, actorId, projectId)) return null;
+    startDiagnostic("local-speech");
     const snapshots: Record<string, PingTypedSnapshot> = Object.create(null);
     for (const task of selectedTasks) {
       const snapshot = snapshotTask(task);
@@ -263,6 +302,9 @@ function PingTypedPanelFlow({
       currentScope.current.scopeKey !== scopeKey || currentScope.current.selectionKey !== selectionKey ||
       (speech && (!speech.isActive() || !isLocalCaptureCurrent(speech.capture) || !speech.text.trim() ||
         [...speech.text].length > PING_TYPED_MAX_TEXT_POINTS))) return { kind: "cancelled" };
+    const observed = speech ? diagnostic.current : startDiagnostic("typed");
+    const endPrepare = pingTelemetryBegin(observed?.recorder, "prepare");
+    let prepareOutcome: PingTelemetryOutcome = "unknown";
     submitLatch.current = true;
     setBusyAction("prepare");
     setSendState("preparing");
@@ -293,9 +335,9 @@ function PingTypedPanelFlow({
     }
     prepareRequestRef.current = request;
     try {
-      const sent = await sendPingTyped(request);
+      const sent = await sendPingTyped(request, fetch, observed?.recorder);
       if (!mounted.current || currentScope.current.scopeKey !== scopeKey || currentScope.current.selectionKey !== selectionKey ||
-        currentScope.current.selectionEpoch !== requestedSelectionEpoch) return { kind: "cancelled" };
+        currentScope.current.selectionEpoch !== requestedSelectionEpoch) { prepareOutcome = "context_invalidated"; return { kind: "cancelled" }; }
       if (sent.kind === "unknown") {
         setSendState("prepare_unknown");
         setError("We could not confirm that request was understood. No task change was started. You can safely check the same request again.");
@@ -303,6 +345,7 @@ function PingTypedPanelFlow({
       }
       const response = sent.response;
       if (!response.ok) {
+        prepareOutcome = "refused";
         prepareRequestRef.current = null;
         setSendState("idle");
         setError(safeErrorCopy(response.code));
@@ -335,12 +378,16 @@ function PingTypedPanelFlow({
       setPrepared(intent);
       setSendState("prepared");
       if (!wroteMarker) setError("This browser could not keep a private recovery note. You may review or cancel, but changes will not be sent.");
+      prepareOutcome = wroteMarker ? "completed" : "refused";
+      if (wroteMarker && observed && diagnostic.current === observed) diagnostic.current.review = pingTelemetryBegin(observed.recorder, "review");
       return wroteMarker ? { kind: "prepared", intent } : { kind: "refused" };
     } catch {
       setSendState("prepare_unknown");
       setError("We could not check this request. No task change was started. You can safely check the same request again.");
       return { kind: "unknown" };
     } finally {
+      endPrepare(prepareOutcome);
+      if (prepareOutcome !== "completed") { observed?.commit?.(prepareOutcome); if (observed) observed.commit = null; observed?.end(prepareOutcome); }
       submitLatch.current = false;
       setBusyAction(null);
     }
@@ -349,6 +396,9 @@ function PingTypedPanelFlow({
   const refreshCurrent = useCallback(async (intent: PingTypedIntentMarker) => {
     if (!mounted.current || submitLatch.current) return;
     submitLatch.current = true;
+    const observed = diagnostic.current;
+    const endRefresh = pingTelemetryBegin(observed?.recorder, "refresh");
+    let refreshOutcome: PingTelemetryOutcome = "unknown";
     setBusyAction("refresh");
     setRefreshState("loading");
     setError(null);
@@ -357,8 +407,9 @@ function PingTypedPanelFlow({
     };
     const refreshFence = taskDispatch.capturePingRefreshFence();
     try {
-      const sent = await sendPingTyped(request);
+      const sent = await sendPingTyped(request, fetch, observed?.recorder);
       if (!mounted.current || currentScope.current.scopeKey !== scopeKey) {
+        refreshOutcome = "stale";
         setRefreshState("stale");
         return;
       }
@@ -375,10 +426,18 @@ function PingTypedPanelFlow({
         return;
       }
       setReceipt(sent.response.receipt);
+      const endHydration = pingTelemetryBegin(observed?.recorder, "hydration");
       if (currentScope.current.scopeKey !== scopeKey || !taskDispatch.hydratePingRefresh(intent.projectId, actorId, currentTasks, refreshFence)) {
+        endHydration("stale"); refreshOutcome = "stale";
         setRefreshState("stale");
         setError("The current Tasks view changed before this refresh could finish. Check again after other changes finish, or reopen this Project.");
         return;
+      }
+      endHydration(sent.response.projection === "matches" ? "matched" : "diverged");
+      refreshOutcome = sent.response.projection === "matches" ? "matched" : "diverged";
+      if (observed?.recorder && !observed.invalidated && diagnostic.current === observed) {
+        commitObservation.current = { owner: observed, outcome: refreshOutcome };
+        setCommitRevision(revision => revision + 1);
       }
       setRefreshState(sent.response.projection);
       clearPingIntentMarker(window.sessionStorage, actorId, intent.projectId);
@@ -394,6 +453,8 @@ function PingTypedPanelFlow({
       setRefreshState("unavailable");
       setError("The saved result is known, but the current Tasks view could not be refreshed.");
     } finally {
+      endRefresh(refreshOutcome);
+      if (refreshOutcome !== "matched" && refreshOutcome !== "diverged") { observed?.commit?.(refreshOutcome); if (observed) observed.commit = null; observed?.end(refreshOutcome); }
       submitLatch.current = false;
       setBusyAction(null);
     }
@@ -419,15 +480,22 @@ function PingTypedPanelFlow({
       current.selectionEpoch !== currentScope.current.selectionEpoch || currentScope.current.scopeKey !== scopeKey ||
       (speech ? !speech.isActive() || !isLocalCaptureCurrent(speech.capture) : busy) || !window.crypto?.randomUUID) return "cancelled";
     if (current.expiresAt <= Date.now()) {
+      closeDiagnostic("expired");
       setPrepared(null);
       setSendState("idle");
       setError("This review has expired. Check the original request before starting over.");
       return "refused";
     }
     if (!updatePingIntentPhase(window.sessionStorage, actorId, originalMarker, "invoking")) {
+      closeDiagnostic("refused");
       setError("This browser could not update the recovery note, so no change was sent.");
       return "refused";
     }
+    const observed = diagnostic.current;
+    observed?.review?.("completed"); if (observed) { observed.review = null; observed.invoked = true;
+      observed.commit ??= pingTelemetryBegin(observed.recorder, "apply-to-react-commit"); }
+    const endExecute = pingTelemetryBegin(observed?.recorder, "execute");
+    let executeOutcome: PingTelemetryOutcome = "unknown";
     const invokingMarker = { ...originalMarker, phase: "invoking" as const };
     submitLatch.current = true;
     setBusyAction("execute");
@@ -440,7 +508,7 @@ function PingTypedPanelFlow({
       version: PING_TYPED_VERSION, action: "execute", generationId: invokingMarker.generationId, token: invokingMarker.token,
     };
     try {
-      const sent = await sendPingTyped(request);
+      const sent = await sendPingTyped(request, fetch, observed?.recorder);
       if (!mounted.current || currentScope.current.scopeKey !== scopeKey) return "unknown";
       if (sent.kind === "unknown" || !pingTypedResponseMatches(sent.response, request, invokingMarker.projectId) ||
         !sent.response.ok || sent.response.commandId !== invokingMarker.commandId || sent.response.action !== "execute") {
@@ -449,6 +517,8 @@ function PingTypedPanelFlow({
         return "unknown";
       }
       if (sent.response.knowledge === "committed") {
+        executeOutcome = sent.response.receipt.changedCount ? "committed_changed" : "committed_no_changes";
+        pingTelemetryRecord(observed?.recorder, { stage: "receipt", outcome: executeOutcome });
         acceptCommitted(invokingMarker, sent.response.receipt);
         return "committed";
       }
@@ -462,6 +532,8 @@ function PingTypedPanelFlow({
       setNotice("We could not confirm the save. It was not sent a second time. Check the original result below.");
       return "unknown";
     } finally {
+      endExecute(executeOutcome);
+      if (executeOutcome === "unknown") { observed?.commit?.("unknown"); if (observed) observed.commit = null; observed?.end("unknown"); }
       submitLatch.current = false;
       setBusyAction(null);
     }
@@ -471,13 +543,16 @@ function PingTypedPanelFlow({
     const original = marker ?? prepared?.marker;
     if (submitLatch.current || !original) return;
     submitLatch.current = true;
+    const observed = startDiagnostic("unknown");
+    const endRecovery = pingTelemetryBegin(observed.recorder, "recovery");
+    let recoveryOutcome: PingTelemetryOutcome = "unknown";
     setBusyAction("receipt");
     setError(null);
     const request: PingTypedTokenRequest = {
       version: PING_TYPED_VERSION, action: "receipt", generationId: original.generationId, token: original.token,
     };
     try {
-      const sent = await checkPingTypedOriginalResult(original);
+      const sent = await checkPingTypedOriginalResult(original, fetch, observed.recorder);
       if (!mounted.current || currentScope.current.scopeKey !== scopeKey) return;
       if (sent.kind === "unknown" || !pingTypedResponseMatches(sent.response, request, original.projectId) ||
         !sent.response.ok || sent.response.commandId !== original.commandId || sent.response.action !== "receipt") {
@@ -486,6 +561,8 @@ function PingTypedPanelFlow({
         return;
       }
       if (sent.response.knowledge === "committed") {
+        recoveryOutcome = sent.response.receipt.changedCount ? "committed_changed" : "committed_no_changes";
+        pingTelemetryRecord(observed.recorder, { stage: "receipt", outcome: recoveryOutcome });
         acceptCommitted({ ...original, phase: "invoking" }, sent.response.receipt);
       } else {
         setSendState(original.phase === "invoking" ? "unknown" : "prepare_unknown");
@@ -494,6 +571,7 @@ function PingTypedPanelFlow({
           : "This prepared request has not been confirmed. Cancel it before writing a new request.");
       }
     } finally {
+      endRecovery(recoveryOutcome); if (recoveryOutcome === "unknown") observed.end("unknown");
       submitLatch.current = false;
       setBusyAction(null);
     }
@@ -504,13 +582,16 @@ function PingTypedPanelFlow({
     if (submitLatch.current || !original ||
       (receipt?.commandId === original.commandId && receipt.projectId === original.projectId)) return;
     submitLatch.current = true;
+    const observed = diagnostic.current;
+    const endCancel = pingTelemetryBegin(observed?.recorder, "cancel");
+    let cancelOutcome: PingTelemetryOutcome = "unknown";
     setBusyAction("cancel");
     setError(null);
     const request: PingTypedTokenRequest = {
       version: PING_TYPED_VERSION, action: "cancel", generationId: original.generationId, token: original.token,
     };
     try {
-      const sent = await sendPingTyped(request);
+      const sent = await sendPingTyped(request, fetch, observed?.recorder);
       if (!mounted.current || currentScope.current.scopeKey !== scopeKey) return;
       if (sent.kind === "unknown" || !pingTypedResponseMatches(sent.response, request, original.projectId) ||
         !sent.response.ok || sent.response.commandId !== original.commandId || sent.response.action !== "cancel") {
@@ -519,6 +600,7 @@ function PingTypedPanelFlow({
         return;
       }
       if (sent.response.knowledge === "not_invoked") {
+        cancelOutcome = "not_invoked"; closeDiagnostic("not_invoked");
         clearPingIntentMarker(window.sessionStorage, actorId, original.projectId);
         setMarker(null);
         setPrepared(null);
@@ -527,12 +609,14 @@ function PingTypedPanelFlow({
         prepareRequestRef.current = null;
         setNotice("No task change was started. You can write a new request.");
       } else if (sent.response.knowledge === "committed") {
+        cancelOutcome = sent.response.receipt.changedCount ? "committed_changed" : "committed_no_changes";
         acceptCommitted(original, sent.response.receipt);
       } else {
         setSendState("unknown");
         setNotice("The original request is unresolved. Check its result; do not send it again.");
       }
     } finally {
+      endCancel(cancelOutcome);
       submitLatch.current = false;
       setBusyAction(null);
     }
@@ -690,6 +774,9 @@ function PingTypedPanelFlow({
   return PING_LOCAL_SPEECH_ENABLED ? (
     <PingLocalSpeechPanel projectName={projectName} selectedCount={selectedSet.size}
       contextKey={`${scopeKey}\u001f${selectionKey}`} canStart={captureEligible && sendState !== "prepare_unknown"}
+      telemetry={() => diagnostic.current?.recorder ?? null}
+      onDiagnosticFinish={() => { const owned = diagnostic.current; if (owned) owned.commit ??= pingTelemetryBegin(owned.recorder, "finish-to-react-commit"); }}
+      onDiagnosticAbandon={closeDiagnostic}
       hasRecovery={Boolean(marker) || sendState === "prepare_unknown"} typedContent={typedContent}
       capture={captureLocalRequest} isCurrent={isLocalCaptureCurrent}
       run={async (capture, text, isActive) => {

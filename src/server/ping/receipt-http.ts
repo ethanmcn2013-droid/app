@@ -1,4 +1,5 @@
 import "server-only";
+import { pingTelemetrySpan, pingTelemetryFact } from "./telemetry";
 import { normalizePingCommandId, validPingId } from "@/lib/ping/command";
 import { dataRecord, exactKeys } from "@/lib/ping/input-validation";
 import type { PingTypedActor } from "./typed-session";
@@ -17,12 +18,13 @@ export function createPingReceiptHttp(deps: {
     try {
       if (request.method !== "POST" || request.headers.get("origin") !== new URL(request.url).origin ||
           request.headers.get("sec-fetch-site") === "cross-site") return fail(404);
-      const actor = await deps.authenticate(); if (!actor) return fail(401);
-      const value = await boundedPingJson(request, 1024);
+      const actor = await pingTelemetrySpan("authenticate", deps.authenticate); if (!actor) return fail(401);
+      const value = await pingTelemetrySpan("decode", () => boundedPingJson(request, 1024));
       if (!dataRecord(value) || !exactKeys(value, ["version", "commandId", "projectId"]) ||
           value.version !== "ping.receipt.lookup.v1" || normalizePingCommandId(value.commandId) !== value.commandId ||
           !validPingId(value.projectId)) return fail(400);
-      const found = await deps.receipt(actor.actorId, value.commandId as string, value.projectId as string);
+      const found = await pingTelemetrySpan("recovery", () => deps.receipt(actor.actorId, value.commandId as string, value.projectId as string));
+      pingTelemetryFact("receipt",found ? "matched":"not_found");
       return found ? Response.json({ ok: true, knowledge: "committed", receipt: found }, { headers }) : fail(404);
     } catch { return fail(503); }
   };

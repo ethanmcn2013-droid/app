@@ -437,8 +437,16 @@ export function createPingTypedSession(adapter: ConversationDatabaseAdapter, opt
           // Typed baseline deliberately uses default system columns, not custom configuration.
           if (raw?.value != null) return null;
           const snapshots: Record<string, PingTypedSnapshot> = {};
-          for (const id of tentative.selectedTaskIds) {
-            const row = (await tx.execute({ sql: "SELECT * FROM tasks WHERE id=? AND workspace_id=?", args: [id, request.projectId] })).rows[0];
+          const selectedIds = tentative.selectedTaskIds;
+          const selectedRows = selectedIds.length ? (await tx.execute({
+            sql: `SELECT * FROM tasks WHERE workspace_id=? AND id IN (${selectedIds.map(() => "?").join(",")})`,
+            args: [request.projectId, ...selectedIds],
+          })).rows : [];
+          if (selectedRows.length !== selectedIds.length) return null;
+          const rowsById = new Map(selectedRows.map(row => [String(row.id), row]));
+          if (rowsById.size !== selectedIds.length) return null;
+          for (const id of selectedIds) {
+            const row = rowsById.get(id);
             if (!row || row.archived_at != null || row.parent_task_id != null || row.recurrence != null || Number(row.is_milestone) !== 0 ||
               row.board_column_key != null) return null;
             const actual = snapshot(row);

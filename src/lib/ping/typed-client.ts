@@ -1,3 +1,5 @@
+import { createPingTelemetryRequest, pingTelemetryBegin, pingTelemetryHeaders } from "./telemetry-client";
+import type { PingTelemetryRecorder, PingTelemetryEnd } from "./telemetry";
 import {
   PING_TYPED_ENDPOINT,
   PING_TYPED_VERSION,
@@ -167,40 +169,54 @@ export function restorePingTypedTasks(value: readonly PingTypedTask[], projectId
 export async function sendPingTyped(
   request: PingTypedRequest,
   fetcher: typeof fetch = fetch,
+  telemetry?: PingTelemetryRecorder | null,
 ): Promise<PingTypedSendResult> {
+  const observer = createPingTelemetryRequest(telemetry);
+  const end = pingTelemetryBegin(observer, "request");
+  let decode: PingTelemetryEnd | null = null;
   try {
     const response = await fetcher(PING_TYPED_ENDPOINT, {
       method: "POST",
       credentials: "same-origin",
       cache: "no-store",
-      headers: { "content-type": "application/json", accept: "application/json" },
+      headers: { "content-type": "application/json", accept: "application/json",
+        ...pingTelemetryHeaders(observer) },
       body: JSON.stringify(request),
     });
+    decode = pingTelemetryBegin(observer, "decode");
     const decoded = decodePingTypedResponse(await response.json());
+    decode(decoded ? "completed" : "invalid_input");
+    end(decoded ? (decoded.ok ? "completed" : "refused") : "unknown");
     return decoded ? { kind: "response", response: decoded } : { kind: "unknown" };
   } catch {
+    decode?.("unknown");
+    end("unknown");
     return { kind: "unknown" };
   }
 }
 
 /** Only original-result reads may fall back to durable recovery after process loss. */
 export async function checkPingTypedOriginalResult(
-  marker: PingTypedIntentMarker, fetcher: typeof fetch = fetch,
+  marker: PingTypedIntentMarker, fetcher: typeof fetch = fetch, telemetry?: PingTelemetryRecorder | null,
 ): Promise<PingTypedSendResult> {
   const sent = await sendPingTyped({ version: PING_TYPED_VERSION, action: "receipt",
-    generationId: marker.generationId, token: marker.token }, fetcher);
+    generationId: marker.generationId, token: marker.token }, fetcher, telemetry);
   if (marker.phase !== "invoking" || (sent.kind === "response" &&
       (sent.response.ok || !["unavailable", "stale_capture"].includes(sent.response.code)))) return sent;
+  const recovered = createPingTelemetryRequest(telemetry);
+  const end = pingTelemetryBegin(recovered, "recovery");
   try {
     const response = await fetcher("/api/ping/receipt", { method: "POST", credentials: "same-origin", cache: "no-store",
-      headers: { "content-type": "application/json", accept: "application/json" },
+      headers: { "content-type": "application/json", accept: "application/json",
+        ...pingTelemetryHeaders(recovered) },
       body: JSON.stringify({ version: "ping.receipt.lookup.v1", commandId: marker.commandId, projectId: marker.projectId }) });
     const value: unknown = await response.json();
     if (!response.ok || !record(value) || !exactKeys(value, ["ok", "knowledge", "receipt"]) || value.ok !== true ||
-        value.knowledge !== "committed" || !validReceipt(value.receipt, marker.commandId, marker.projectId)) return { kind: "unknown" };
+        value.knowledge !== "committed" || !validReceipt(value.receipt, marker.commandId, marker.projectId)) { end("unknown"); return { kind: "unknown" }; }
+    end("completed");
     return { kind: "response", response: { ok: true, action: "receipt", generationId: marker.generationId,
       commandId: marker.commandId, projectId: marker.projectId, knowledge: "committed", receipt: value.receipt as PingTypedReceipt } };
-  } catch { return { kind: "unknown" }; }
+  } catch { end("unknown"); return { kind: "unknown" }; }
 }
 
 export function pingIntentStorageKey(actorId: string, projectId: string): string {

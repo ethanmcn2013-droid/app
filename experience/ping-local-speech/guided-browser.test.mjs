@@ -165,6 +165,10 @@ async function waitForMounted() {
 }
 function verifyLatencies(result) {
   const completed = result.rows.find(row => row.caseId === '01');
+  assert.equal(result.timingProtocol,'ping.guided.latency.v2');assert.equal(result.timingExtension,'ping.guided.measurement.v1');
+  assert.ok(result.latencyCoverage.requestCorrelation.paired>=2);
+  assert.ok(result.latencyCoverage.droppedReplyCount>=1);
+  assert.ok(result.latencyCoverage.gestureCoverage.started>=2);
   for (const metric of ['prepare-server', 'execute-server', 'prepare-roundtrip', 'execute-roundtrip', 'apply-to-visible']) {
     assert.ok(completed.timings.some(sample => sample.metric === metric && sample.sampleOutcome === 'completed'), `Missing completed ${metric} observation`);
   }
@@ -239,8 +243,24 @@ try {
   safeParticipant(await (await fetch(new URL('/guide/state', runner.url))).json());
   passed(activeLabel);
 
+  activeLabel = 'reload sequence fencing before input';
+  await startCase('01');
+  const pageOld='00000000-0000-4000-8000-000000000401',pageNew='00000000-0000-4000-8000-000000000402';
+  const metadataAttempt=state().attemptId;
+  const metadataPost=async(route,data)=>page.evaluate(async({route,data})=>(await fetch(route,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)})).ok,{route,data});
+  assert.equal(await metadataPost('/guide/page',{attemptId:metadataAttempt,pageId:pageOld}),true);
+  const observation={attemptId:metadataAttempt,source:'canonical-projection',projectionHash:'a'.repeat(64)};
+  assert.equal(await metadataPost('/guide/metadata',{...observation,pageId:pageOld,sequence:20}),true);
+  assert.equal(await metadataPost('/guide/page',{attemptId:metadataAttempt,pageId:pageNew}),true);
+  assert.equal(await metadataPost('/guide/metadata',{...observation,pageId:pageNew,sequence:1}),true);
+  assert.equal(await metadataPost('/guide/metadata',{...observation,pageId:pageOld,sequence:21}),false);
+  assert.equal(await metadataPost('/guide/page',{attemptId:metadataAttempt,pageId:pageOld}),false);
+  await page.reload();await page.getByRole('heading',{name:'Ping session guide',exact:true}).waitFor();
+  await page.evaluate(()=>window.pingGuide.getState());
+  for(const name of state().currentCase.taskNames)await page.getByRole('checkbox',{name:'Select '+name,exact:true}).check();
+  passed(activeLabel);
   activeLabel = 'compound handoff and duplicate real Apply';
-  await startCase('01'); const beforeHandoff = await snapshot();
+  const beforeHandoff = await snapshot();
   await applyCurrent({ double: true }); await waitOutcome('matched');
   const handoff = await snapshot(); const targetId = 'ping-guide-case-01-task-01';
   oldRowsUnchanged(beforeHandoff, handoff, [targetId]);

@@ -1,3 +1,4 @@
+import { createPingTelemetryRecorder, type PingTelemetryEvent, type PingTelemetryRecorder } from "./telemetry";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { PING_TYPED_ENDPOINT, PING_TYPED_VERSION, type PingTypedRequest } from "./typed-contract";
@@ -230,4 +231,23 @@ test("canonical refresh rows restore Date values and reject another Project", ()
   assert.equal(restored?.[0]?.dueAt?.toISOString(), "2026-10-08T09:00:00.000Z");
   assert.equal(restorePingTypedTasks(rows, "project-2"), null);
   assert.equal(restorePingTypedTasks([{ ...rows[0], updatedAt: "not-a-date" }], "project-1"), null);
+});
+
+
+test("optional transport diagnostics add only random correlation headers and cannot change an unknown result", async () => {
+  const events: PingTelemetryEvent[] = [];
+  const observer = createPingTelemetryRecorder({ source: "client", emit: e => events.push(e) });
+  const request: PingTypedRequest = { version: PING_TYPED_VERSION, action: "receipt", generationId: "PRIVATE_GENERATION", token: "PRIVATE_TOKEN" };
+  const result = await sendPingTyped(request, (async (_url, init) => {
+    assert.equal((init?.headers as Record<string, string>)["X-Ping-Telemetry-Attempt"], observer.attemptId);
+    assert.equal((init?.headers as Record<string, string>)["X-Ping-Telemetry-Request"], observer.requestId);
+    assert.deepEqual(JSON.parse(String(init?.body)), request);
+    return Response.json({ private: "PRIVATE CONTENT" });
+  }) as typeof fetch, observer);
+  assert.deepEqual(result, { kind: "unknown" }); await new Promise(resolve => setImmediate(resolve));
+  assert.ok(events.some(e => e.stage === "decode" && e.outcome === "invalid_input"));
+  assert.ok(events.some(e => e.stage === "request" && e.outcome === "unknown"));
+  assert.ok(!JSON.stringify(events).includes("PRIVATE"));
+  const broken = { begin() { throw Error("PRIVATE OBSERVER"); } } as unknown as PingTelemetryRecorder;
+  assert.deepEqual(await sendPingTyped(request, (async () => { throw Error("PRIVATE NETWORK"); }) as typeof fetch, broken), { kind: "unknown" });
 });

@@ -1,3 +1,4 @@
+import { withPingTelemetry } from "@/server/ping/telemetry";
 import { createPingTypedHttp } from "@/server/ping/http";
 import { authenticatePingTypedActor, getPingTypedSession } from "@/server/ping/runtime";
 import { authenticateMaintainedPingActor, getMaintainedPingSession } from "@/server/ping/maintained-runtime";
@@ -5,7 +6,7 @@ import { authenticateMaintainedPingActor, getMaintainedPingSession } from "@/ser
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // A configured maintained mode never falls back to the fixture, including malformed flags.
-export const POST = async (request: Request) => {
+export const POST = async (request: Request) => withPingTelemetry(request, async () => {
   const flag = process.env.PING_MAINTAINED_TYPED_ENABLED;
   const maintained = flag !== undefined;
   const unchanged = () => process.env.PING_MAINTAINED_TYPED_ENABLED === flag;
@@ -20,4 +21,4 @@ export const POST = async (request: Request) => {
       return unchanged() ? session : null;
     },
   })(request);
-};
+});

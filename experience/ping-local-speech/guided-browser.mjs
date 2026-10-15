@@ -7,6 +7,7 @@ import { createRequire } from 'node:module';
 import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { buildGuidedCases, participantCase, GUIDED_MANIFEST_SHA256 } from './guided-cases.mjs';
+import { createMetadataFence, validateBenchmark } from './guided-measurement.mjs';
 import { createGuidedSession } from './guided-session.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -47,19 +48,24 @@ const bridge = `window.EventSource=undefined;
  const nativeFetch=window.fetch.bind(window);
  const pageId=crypto.randomUUID();
  const suspend=s=>{const paused=['paused','ended'].includes(s.phase)||!s.saved;document.getElementById('root').inert=paused;document.getElementById('tasks-pane').inert=paused;};
+ let registeredAttempt=null;
+ const register=async()=>{if(attempt&&registeredAttempt!==attempt){await post('/guide/page',{attemptId:attempt,pageId});registeredAttempt=attempt;}};
  let attempt=null, sequence=0, observed=null, projection=null, metadataError=false, chain=Promise.resolve(),timingChain=Promise.resolve(),pendingAction=null,currentGeneration=null;
- const timing=(sample,captured=attempt)=>{if(!captured)return;timingChain=timingChain.then(()=>post('/guide/timing',{...sample,attemptId:captured,pageId,clock:'browser-monotonic'})).catch(()=>{});};
+ const health=new Map();
+ const observedPost=async(path,value)=>{const captured=value.attemptId;if(!health.has(captured))health.set(captured,{attempted:0,delivered:0,failed:0});const counts=health.get(captured);counts.attempted++;try{const result=await post(path,value);counts.delivered++;return result;}catch(error){counts.failed++;throw error;}};
+ const flushHealth=async()=>{for(const [attemptId,counts] of health)await post('/guide/observer',{attemptId,pageId,...counts});};
+ const timing=(sample,captured=attempt)=>{if(!captured)return;timingChain=timingChain.then(()=>observedPost('/guide/timing',{...sample,attemptId:captured,pageId,clock:'browser-monotonic'})).catch(()=>{});};
  const abandon=(captured,generation)=>{if(!pendingAction||captured&&pendingAction.attemptId!==captured||generation&&pendingAction.generationId&&pendingAction.generationId!==generation)return;timing({metric:pendingAction.metric,sampleOutcome:'unfinished',gestureId:pendingAction.gestureId,...(pendingAction.generationId?{generationId:pendingAction.generationId}:{})},pendingAction.attemptId);pendingAction=null;};
- window.fetch=async(input,options)=>{const target=new URL(input instanceof Request?input.url:String(input),location.href);if(target.origin===location.origin&&target.pathname==='/api/ping'&&options?.method==='POST'){const request=JSON.parse(options.body),action=request.action,captured=attempt,capturedGesture=pendingAction?.gestureId;const metric=action==='prepare'?'prepare-roundtrip':action==='execute'?'execute-roundtrip':null;const started=performance.now();if(action==='prepare'){currentGeneration=request.generationId;if(pendingAction?.attemptId===captured&&pendingAction.metric==='finish-to-visible'&&!pendingAction.generationId)pendingAction.generationId=currentGeneration;}await chain;if(metadataError&&['prepare','execute'].includes(action))throw Error('Runner observation unavailable');try{const response=await nativeFetch(input,options);if(metric){await response.clone().arrayBuffer();timing({metric,durationMs:performance.now()-started,sampleOutcome:response.ok?'completed':'failed',generationId:request.generationId},captured);}if(action==='prepare'&&!response.ok&&pendingAction?.gestureId===capturedGesture)abandon(captured,request.generationId);if(action==='cancel'){const value=await response.clone().json();if(value.knowledge==='not_invoked'&&pendingAction?.gestureId===capturedGesture)abandon(captured,request.generationId);}return response;}catch(error){if(metric)timing({metric,durationMs:performance.now()-started,sampleOutcome:'failed',generationId:request.generationId},captured);throw error;}}return nativeFetch(input,options);};
+ window.fetch=async(input,options)=>{const target=new URL(input instanceof Request?input.url:String(input),location.href);if(target.origin===location.origin&&target.pathname==='/api/ping'&&options?.method==='POST'){const request=JSON.parse(options.body),action=request.action,captured=attempt,capturedGesture=pendingAction?.gestureId;const metric=action==='prepare'?'prepare-roundtrip':action==='execute'?'execute-roundtrip':null;const spanId=crypto.randomUUID();const timingIdentity={spanId,...(request.requestId?{requestId:request.requestId}:{}),generationId:request.generationId};const started=performance.now();if(action==='prepare'){currentGeneration=request.generationId;if(pendingAction?.attemptId===captured&&pendingAction.metric==='finish-to-visible'&&!pendingAction.generationId)pendingAction.generationId=currentGeneration;}await chain;if(metadataError&&['prepare','execute'].includes(action))throw Error('Runner observation unavailable');try{const response=await nativeFetch(input,{...options,headers:{...options.headers,'x-ping-guide-span':spanId}});if(metric){await response.clone().arrayBuffer();timing({metric,durationMs:performance.now()-started,sampleOutcome:response.ok?'completed':'failed',delivery:'response',...timingIdentity},captured);}if(action==='prepare'&&!response.ok&&pendingAction?.gestureId===capturedGesture)abandon(captured,request.generationId);if(action==='cancel'){const value=await response.clone().json();if(value.knowledge==='not_invoked'&&pendingAction?.gestureId===capturedGesture)abandon(captured,request.generationId);}return response;}catch(error){if(metric)timing({metric,durationMs:performance.now()-started,sampleOutcome:'failed',delivery:'transport-failed',...timingIdentity},captured);throw error;}}return nativeFetch(input,options);};
  const post=async(path,value)=>{const r=await fetch(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(value),cache:'no-store'});if(!r.ok)throw Error('Session action unavailable');return r.json();};
- const state=async()=>{const r=await fetch('/guide/state',{cache:'no-store'});if(!r.ok)throw Error('Session unavailable');const s=await r.json();attempt=s.attemptId;suspend(s);if(s.outcome==='matched'&&!s.canNext)projection=null;if(Array.isArray(window.pingObserved))window.pingGuideObserveProjection?.(window.pingObserved);return s;};
+ const state=async()=>{const r=await fetch('/guide/state',{cache:'no-store'});if(!r.ok)throw Error('Session unavailable');const s=await r.json();attempt=s.attemptId;await register();suspend(s);if(s.outcome==='matched'&&!s.canNext)projection=null;if(Array.isArray(window.pingObserved))window.pingGuideObserveProjection?.(window.pingObserved);return s;};
  const remount=async()=>{const r=await fetch('/fixture/initial',{cache:'no-store'});if(!r.ok)throw Error('Fixture unavailable');const p=await r.json();if(window.pingMount)window.pingMount(p);};
- window.pingGuide={getState:state,action:async(action,payload)=>{if(['pause','end','retire'].includes(action))abandon();await chain;await timingChain;const s=await post('/guide/action',{action,...(payload?{payload}:{})});attempt=s.attemptId;if(['verify','resume'].includes(action))projection=null;if(['start','next','skip','resume','retire','pause','end'].includes(action))await remount();suspend(s);return s;}};
- const emit=source=>{if(!attempt||observed===attempt)return;observed=attempt;const captured=attempt;const refusal=document.querySelector('[data-ping-scope-refusal]')?.getAttribute('data-ping-scope-refusal');chain=chain.then(async()=>{await post('/guide/metadata',{attemptId:captured,sequence:++sequence,source});if(source==='typed-input'&&['unsupported_targets','too_many_targets'].includes(refusal))await post('/guide/metadata',{attemptId:captured,sequence:++sequence,source:refusal});}).catch(()=>{metadataError=true;observed=null;});};
+ window.pingGuide={getState:state,action:async(action,payload)=>{if(['pause','end','retire'].includes(action))abandon();await chain;await timingChain;await flushHealth();const s=await post('/guide/action',{action,...(payload?{payload}:{})});attempt=s.attemptId;await register();if(['verify','resume'].includes(action))projection=null;if(['start','next','skip','resume','retire','pause','end'].includes(action))await remount();suspend(s);return s;}};
+ const emit=source=>{if(!attempt||observed===attempt)return;observed=attempt;const captured=attempt;const refusal=document.querySelector('[data-ping-scope-refusal]')?.getAttribute('data-ping-scope-refusal');chain=chain.then(async()=>{await observedPost('/guide/metadata',{attemptId:captured,pageId,sequence:++sequence,source});if(source==='typed-input'&&['unsupported_targets','too_many_targets'].includes(refusal))await observedPost('/guide/metadata',{attemptId:captured,pageId,sequence:++sequence,source:refusal});}).catch(()=>{metadataError=true;observed=null;});};
  document.addEventListener('input',event=>{if(event.target?.matches('[data-testid="ping-input"]'))emit('typed-input');},true);
- document.addEventListener('click',event=>{const button=event.target?.closest('button');const id=button?.getAttribute('data-testid');if(!attempt||!['ping-apply','ping-local-finish'].includes(id)||button.disabled)return;const at=performance.now();if(pendingAction?.attemptId===attempt&&at-pendingAction.at<100)return;abandon();pendingAction={attemptId:attempt,metric:id==='ping-apply'?'apply-to-visible':'finish-to-visible',at,gestureId:crypto.randomUUID(),generationId:id==='ping-apply'?currentGeneration:null};},true);
+ document.addEventListener('click',event=>{const button=event.target?.closest('button');const id=button?.getAttribute('data-testid');if(!attempt||!['ping-apply','ping-local-finish'].includes(id)||button.disabled)return;const at=performance.now();if(pendingAction?.attemptId===attempt&&at-pendingAction.at<100)return;abandon();pendingAction={attemptId:attempt,metric:id==='ping-apply'?'apply-to-visible':'finish-to-visible',at,gestureId:crypto.randomUUID(),generationId:id==='ping-apply'?currentGeneration:null};const gesture={attemptId:attempt,pageId,gestureId:pendingAction.gestureId,metric:pendingAction.metric};timingChain=timingChain.then(()=>observedPost('/guide/gesture',gesture)).catch(()=>{metadataError=true;});},true);
  window.pingGuideObserveFinal=()=>emit('local-final');
- window.pingGuideObserveProjection=tasks=>{if(!attempt)return;const captured=attempt,model=JSON.stringify(projectionModel(tasks)),visibleAt=performance.now();if(projection===captured+model)return;projection=captured+model;const visibleMetric=pendingAction?.attemptId===captured&&pendingAction.generationId?{metric:pendingAction.metric,durationMs:visibleAt-pendingAction.at,pageId,gestureId:pendingAction.gestureId,generationId:pendingAction.generationId}:undefined;chain=chain.then(async()=>{const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(model));const projectionHash=Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,'0')).join('');const result=await post('/guide/metadata',{attemptId:captured,sequence:++sequence,source:'canonical-projection',projectionHash,...(visibleMetric?{visibleMetric}:{})});if(result.timingSaved&&pendingAction?.gestureId===visibleMetric?.gestureId)pendingAction=null;}).catch(()=>{projection=null;});};
+ window.pingGuideObserveProjection=tasks=>{if(!attempt)return;const captured=attempt,model=JSON.stringify(projectionModel(tasks)),visibleAt=performance.now();if(projection===captured+model)return;projection=captured+model;const visibleMetric=pendingAction?.attemptId===captured&&pendingAction.generationId?{metric:pendingAction.metric,durationMs:visibleAt-pendingAction.at,pageId,gestureId:pendingAction.gestureId,generationId:pendingAction.generationId}:undefined;chain=chain.then(async()=>{const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(model));const projectionHash=Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,'0')).join('');const result=await observedPost('/guide/metadata',{attemptId:captured,pageId,sequence:++sequence,source:'canonical-projection',projectionHash,...(visibleMetric?{visibleMetric}:{})});if(result.timingSaved&&pendingAction?.gestureId===visibleMetric?.gestureId)pendingAction=null;}).catch(()=>{projection=null;});};
 })();`;
 
 function publicState(session) {
@@ -100,17 +106,18 @@ async function sourceIdentity() {
 }
 
 /** Owned loopback-only synthetic host. Importing this file starts no server or browser. */
-export async function createGuidedRunner({directory,manifestPath,mode,sessionId=randomUUID(),scripted=false,io={}}) {
+export async function createGuidedRunner({directory,manifestPath,mode,sessionId=randomUUID(),scripted=false,io={},benchmark}) {
   assert.ok(['create','reopen'].includes(mode),'Explicit create/reopen required');
   assert.ok(path.isAbsolute(directory)&&path.relative(scratch,directory)&&!path.relative(scratch,directory).startsWith('..')&&!path.isAbsolute(path.relative(scratch,directory)),'Owned absolute scratch session required');
   const bytes=await fs.readFile(manifestPath);assert.equal(sha(bytes),GUIDED_MANIFEST_SHA256,'Wrong private scenario manifest');
   const cases=buildGuidedCases(JSON.parse(bytes),sha(bytes));
   const source=await sourceIdentity();
+  if(benchmark!==undefined)benchmark=validateBenchmark(benchmark);
   let config;
   if(mode==='create') {
     await fs.mkdir(directory,{recursive:false});
     config={version:1,identity:{sessionId,sourceRevision:source.sourceRevision,manifestSha256:sha(bytes),actorId:'alice',projectId:'synthetic-ping-project'},
-      sourceInputs:source.sourceInputs,scripted};
+      sourceInputs:source.sourceInputs,scripted,benchmark:benchmark??null};
     const handle=await fs.open(path.join(directory,'host.json'),'wx');
     try{await handle.writeFile(JSON.stringify(config));await handle.datasync();}finally{await handle.close();}
   } else {
@@ -118,6 +125,7 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
     assert.equal(config.version,1);assert.equal(config.identity.sourceRevision,source.sourceRevision,'Session source changed');
     assert.equal(config.identity.manifestSha256,sha(bytes));assert.deepEqual(config.sourceInputs,source.sourceInputs,'Session source bytes changed');
     assert.equal(config.scripted,scripted,'Session evidence class cannot change');
+    assert.deepEqual(config.benchmark??null,benchmark??null,'Benchmark identity cannot change');
   }
   const schema=unwrap(await import('../../src/server/db/schema.ts'));
   const {readCanonicalTasks}=unwrap(await import('../../src/server/db/task-read.ts'));
@@ -170,7 +178,7 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
         await tx.commit();
       }catch(error){await tx.rollback();throw error;}
     };
-    session=await createGuidedSession({directory,identity:config.identity,cases,snapshot,lookupReceipt,prepareCase,publicCase:participantCase,
+    session=await createGuidedSession({directory,identity:config.identity,cases,snapshot,lookupReceipt,prepareCase,publicCase:participantCase,benchmark:config.benchmark??undefined,
       io:{beforeWrite:async event=>{if(test.journalFailure&&event.type==='invocation'){test.journalFailure=false;throw Error('Injected durable write failure');}await io.beforeWrite?.(event);}}});
     const esbuild=createRequire(require.resolve('tsx/package.json'))('esbuild');
     const localSpeechPath=path.join(root,'src/lib/ping/local-speech.ts');
@@ -201,7 +209,7 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
     html=html.replace('<div id="root" inert aria-label="Signal Tasks"></div>',
       '<section id="tasks-pane" inert><div id="root" inert aria-label="Signal Tasks"></div><div id="fixture-portals"></div></section>')
       .replace('</head>','<style>#tasks-pane{position:relative;transform:translateZ(0);container-type:size;min-width:0;min-height:0;height:100%;overflow:hidden;border-radius:12px}#fixture-portals div:has(>[role="dialog"]){padding-top:16px}#fixture-portals [role="dialog"]{max-width:calc(100cqw - 24px);max-height:calc(100cqh - 32px)}#fixture-portals [data-testid="ping-overlay"]{max-height:min(680px,calc(100cqh - 34px))}</style></head>');
-    const metadataSequences=new Map(),inputPaths=new Map();
+    const metadataFence=createMetadataFence(),inputPaths=new Map();
     const readJson=async(req,max=48000)=>{assert.equal(req.headers['content-type']?.split(';')[0],'application/json');assert.ok(!req.headers['content-encoding']);let length=0;const chunks=[];
       req.setTimeout(10000,()=>req.destroy());for await(const chunk of req){length+=chunk.length;assert.ok(length<=max);chunks.push(chunk);}return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));};
     const send=(res,value,status=200)=>{res.writeHead(status,jsonHeaders);res.end(JSON.stringify(value));};
@@ -220,19 +228,24 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
               else {assert.equal(payload,undefined);const method={start:'startCase',next:'next',skip:'skip',pause:'pause',resume:'resume',end:'end',verify:'verify',retire:'retirePrepared'}[input.action];await session[method]();}
               return send(res,publicState(session));
             }
+            if(pathname==='/guide/page') {
+              assert.ok(input&&Object.keys(input).every(key=>['attemptId','pageId'].includes(key)));assert.equal(input.attemptId,session.state().attemptId);
+              metadataFence.register(input.attemptId,input.pageId);return send(res,{ok:true});
+            }
+            if(pathname==='/guide/observer') {await session.recordObserver(input);return send(res,{ok:true});}
+            if(pathname==='/guide/gesture') {await session.recordGesture(input);return send(res,{ok:true});}
             if(pathname==='/guide/timing') {
-              assert.ok(input&&Object.keys(input).every(key=>['attemptId','pageId','clock','metric','durationMs','sampleOutcome','gestureId','generationId'].includes(key)));
+              assert.ok(input&&Object.keys(input).every(key=>['attemptId','pageId','clock','metric','durationMs','sampleOutcome','gestureId','generationId','spanId','requestId','delivery'].includes(key)));
               assert.equal(input.clock,'browser-monotonic');assert.ok(['prepare-roundtrip','execute-roundtrip','apply-to-visible','finish-to-visible'].includes(input.metric));
               if(['apply-to-visible','finish-to-visible'].includes(input.metric))assert.equal(input.sampleOutcome,'unfinished');
               await session.recordTiming({...input,evidence:scripted?'scripted':'automatic'});
               return send(res,{ok:true});
             }
             if(pathname==='/guide/metadata') {
-              assert.ok(input&&Object.keys(input).every(key=>['attemptId','sequence','source','projectionHash','visibleMetric'].includes(key)));
+              assert.ok(input&&Object.keys(input).every(key=>['attemptId','pageId','sequence','source','projectionHash','visibleMetric'].includes(key)));
               assert.equal(input.attemptId,session.state().attemptId);assert.ok(Number.isSafeInteger(input.sequence)&&input.sequence>0);
               assert.ok(['typed-input','local-final','canonical-projection','unsupported_targets','too_many_targets'].includes(input.source));
-              const last=metadataSequences.get(input.attemptId)??0;
-              if(input.sequence>last){metadataSequences.set(input.attemptId,input.sequence);
+              if(metadataFence.accept(input.attemptId,input.pageId,input.sequence)){
                 if(input.source==='canonical-projection') {
                   assert.match(input.projectionHash,/^[a-f0-9]{64}$/);
                   const canonical=await readCanonicalTasks(drizzle(fixture.client,{schema}),PROOF_PROJECT);
@@ -257,6 +270,8 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
             if(pathname==='/api/ping'||pathname==='/api/ping/receipt') {
               const action=pathname.endsWith('/receipt')?'durable_receipt':input.action;
               const serverStarted=performance.now();
+              const spanId=req.headers['x-ping-guide-span'];if(spanId!==undefined)assert.match(spanId,/^[0-9a-f-]{36}$/i);
+              const timingIdentity={...(spanId?{spanId}:{}),...(input.requestId?{requestId:input.requestId}:{}),...(input.generationId?{generationId:input.generationId}:{})};
               if(action==='prepare')await session.observeInput({...inputPaths.get(session.state().attemptId),
                 ...(!inputPaths.has(session.state().attemptId)?{mode:scripted?'scripted':session.state().mode,evidence:scripted?'scripted':'participant-reported'}:{}),
                 generationId:input.generationId,requestId:input.requestId});
@@ -264,13 +279,19 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
               const parser=action==='prepare'?parsePingTypedCommand(input.text):null;
               const injected=(action==='refresh'&&test.refreshFailure)||(action==='durable_receipt'&&test.receiptFailure);
               if(!injected)requestCounts[action]=(requestCounts[action]??0)+1;
-              const response=injected?Response.json({ok:false,code:'temporarily_unavailable'},{status:503}):
+              let response,text,value;
+              try {
+              response=injected?Response.json({ok:false,code:'temporarily_unavailable'},{status:503}):
                 await(pathname.endsWith('/receipt')?receiptHandler:handler)(new Request(url+pathname,{method:'POST',headers:{...req.headers,'content-type':'application/json'},body:JSON.stringify(input)}));
-              const text=await response.text(),value=JSON.parse(text);
+              text=await response.text();value=JSON.parse(text);
               if(action==='prepare')await session.observePrepareResponse(value,{stage:parser?.outcome!=='plan'&&parser?.reason===value.code?'parse':'prepare',generationId:input.generationId});
               else if(['execute','cancel','receipt','refresh','durable_receipt'].includes(action))await session.observeTerminal(value,{action});
+              } catch(error) {
+                if(['prepare','execute'].includes(action))await session.recordTiming({metric:action+'-server',durationMs:performance.now()-serverStarted,clock:'server-monotonic',evidence:scripted?'scripted':'automatic',sampleOutcome:'failed',delivery:'handler-threw',attemptId:session.state().attemptId,...timingIdentity});
+                throw error;
+              }
               if(['prepare','execute'].includes(action))await session.recordTiming({metric:action+'-server',durationMs:performance.now()-serverStarted,
-                clock:'server-monotonic',evidence:scripted?'scripted':'automatic',sampleOutcome:'completed',attemptId:session.state().attemptId});
+                clock:'server-monotonic',evidence:scripted?'scripted':'automatic',sampleOutcome:'completed',delivery:test.drop===action?'reply-dropped':'response',...timingIdentity,attemptId:session.state().attemptId});
               if(test.drop===action){test.drop=null;req.socket.destroy();return;}
               res.writeHead(response.status,{...Object.fromEntries(response.headers),...jsonHeaders});return res.end(text);
             }
