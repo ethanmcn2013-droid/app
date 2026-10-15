@@ -1,5 +1,9 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-15 · Internal fixture · A guided Ping session
+
+The isolated Ping runner places a case guide beside the real Tasks view. It records actual attempts, checks saved effects and original receipts, preserves uncertain results across restart, and exports structured results. Pause and End stop capture while keeping the record. This is an invented-data test tool; human speech, founder experience, pilot use and production activation remain separate.
+
 ## 2026-10-15 · Internal candidate · Speak over your Tasks
 
 Ping opens in a compact floating box over the current Tasks workspace. Activate it, speak, then choose **Finish and run**. Closing stops capture; an uncertain save can be checked through its original result. The typed alternative keeps its review and apply steps. On narrow screens, Ping sits above the selection controls.
