@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "tasks-reviewed-migration-candidate/1",
+  "id": "personal-chat-0043-20261015",
+  "repository": "ethanmcn2013-droid/app",
+  "pullRequestNumber": 286,
+  "candidateSourceRevision": "8febeaf79465563aed8f0af00178fb842cad15a6",
+  "candidateBaseRevision": "78a3af774fcb61226b29f876a46afd1d6636023e",
+  "baseLedgerSha256": "9e8dfa49cd28e63cadd8ebe18e6e078a8d5ff447b8319ad7c9f8a1ff3c134d0d",
+  "candidateLedgerSha256": "504e8c8506a7f736221d8fe30f41161351cd0736c033068984d7c5b77fc5584a",
+  "expectedLastMigrationId": "0042_wedding_guests",
+  "targetUrlSha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "databaseIdentitySha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "notBefore": "2026-10-15T04:00:00.000Z",
+  "expiresAt": "2026-10-15T16:00:00.000Z",
+  "authorization": {
+    "source": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/36#issuecomment-6184134614",
+    "authorizedBy": "Ethan McNamara, founder; approved selected sprint implementation and safe production deployment, reaffirmed 15 October 2026"
+  },
+  "review": {
+    "verdict": "approved",
+    "reviewedBy": "selected_sprint_review, independent read-only reviewer; no migration implementation authorship",
+    "reference": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/36#issuecomment-6184134614; exact-B independent review; diff SHA256 2f960043a4db45f97e0d86903ee750ccd4551cc2c3dc2481970be96113c37fe7",
+    "sourceRevision": "8febeaf79465563aed8f0af00178fb842cad15a6",
+    "reviewedAt": "2026-10-15T04:03:45.772Z"
+  },
+  "migrations": [
+    {
+      "id": "0043_personal_chat",
+      "sha256": "3a78f486c8aded0e3cb7b2e2a8a32d411d7143d40ac731b1d03e9f8ad506e84b",
+      "receiptSha256": "3dcc45ce702dbcc9015db969ce9169f43140e1eb2426fbf1556f2328c9ea3f76"
+    }
+  ],
+  "files": [
+    {"path":"drizzle/0043_personal_chat.sql","sha256":"3a78f486c8aded0e3cb7b2e2a8a32d411d7143d40ac731b1d03e9f8ad506e84b"},
+    {"path":"drizzle/meta/_journal.json","sha256":"fc0058139f45e88849d5489aa8d6e95660deb4aa3a5b3a3599f664ca7b5a369f"},
+    {"path":"drizzle/migration-ledger.json","sha256":"504e8c8506a7f736221d8fe30f41161351cd0736c033068984d7c5b77fc5584a"},
+    {"path":"drizzle/receipts/personal-chat-2026-10-15.json","sha256":"3dcc45ce702dbcc9015db969ce9169f43140e1eb2426fbf1556f2328c9ea3f76"}
+  ]
+}
