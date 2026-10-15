@@ -575,7 +575,7 @@ function PingTypedPanelFlow({
         <div id="ping-typed-examples" className="mt-3 max-w-3xl rounded-md bg-[color:var(--v3-sunken)] px-3 py-2 text-sm text-[color:var(--v3-text-2)]">
           <p>Use exact task words. Unsupported or mixed requests are refused as a whole.</p>
           <ul className="mt-2 space-y-1.5">
-            <li><code>assign me and due 2026-10-08 and status doing</code></li>
+            <li><code>assign these to me and mark them in progress</code></li>
             <li><code>clear due and status review</code></li>
             <li><code>create 3 tasks called &quot;Research and review&quot; and status todo</code></li>
           </ul>
@@ -639,7 +639,7 @@ function PingTypedPanelFlow({
             disabled={busy || hasRecovery || Boolean(prepared)}
             aria-describedby="ping-typed-help ping-typed-count"
             className="mt-1.5 block min-h-[88px] w-full resize-y rounded-md border border-[color:var(--v3-border-strong)] bg-[color:var(--v3-surface)] px-3 py-2 text-sm leading-5 text-[color:var(--v3-text)] caret-[color:var(--v3-accent)] selection:bg-[color:var(--v3-accent-soft)] selection:text-[color:var(--v3-text)] placeholder:text-[color:var(--v3-text-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--v3-accent)] disabled:cursor-not-allowed disabled:opacity-65"
-            placeholder="For example: assign me and due 2026-10-08"
+            placeholder="For example: assign these to me and mark them in progress"
           />
           <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <p id="ping-typed-help" className="text-xs text-[color:var(--v3-text-2)]">One exact request at a time. Other people, custom columns and destructive actions are not supported.</p>
