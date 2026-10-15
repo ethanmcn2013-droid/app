@@ -281,6 +281,9 @@ try {
   for (const action of ['next', 'start', 'retire']) assert.equal((await request(action)).ok, false, `${action} cannot bypass an uncertain original`);
   unchanged(lost, await snapshot());
   const beforeLateCancel = await snapshot();
+  // Cancel may recover a committed receipt and schedule a product refresh. Keep
+  // that projection unavailable so this same page's abandoned span stays missing.
+  runner.testHooks.failRefresh(true);
   const cancellation = page.waitForResponse(response => response.url() === runner.url + '/api/ping'
     && response.request().method() === 'POST' && response.request().postDataJSON()?.action === 'cancel');
   await page.getByTestId('ping-cancel-prepared').click();
