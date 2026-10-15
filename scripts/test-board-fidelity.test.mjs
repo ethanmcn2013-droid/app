@@ -12,7 +12,7 @@ test("parent removes only its fresh fixture after the child exits", () => {
     execute: (_binary, args, options) => {
       events.push("child-exited");
       assert.equal(options.env.BOARD_FIDELITY_TEST_ROOT, root);
-      assert.deepEqual(args.slice(-2), ["--test", "src/server/actions/board-fidelity.persisted.test.mjs"]);
+      assert.deepEqual(args.slice(-2), ["--test", "scripts/db/waiting-proof-board-action.test.mjs"]);
       return { status: 0 };
     },
     remove: path => { assert.equal(path, root); events.push("removed"); },

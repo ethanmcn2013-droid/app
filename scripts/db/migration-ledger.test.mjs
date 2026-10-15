@@ -1255,6 +1255,156 @@ test("the resource backfill count remains required when its migration executes",
   await assert.rejects(() => runMigrations({ client, context, releaseSha: "broken-backfill-test" }), /backfill-upload-count-matches-attachments/);
 }));
 
+const waitingProofIds = ["zero-waiting-lane-text", "claims-are-canonical", "no-stray-lane-text",
+  "affected-configs-name-waiting", "integrity", "foreign-keys"];
+const waitingContinuousIds = ["zero-waiting-lane-text", "no-stray-lane-text", "integrity", "foreign-keys"];
+function throughWaiting(ordinal = 24) {
+  const context = loadAndValidateLedger();
+  context.forward = context.forward.filter(entry => entry.ordinal <= ordinal);
+  return context;
+}
+const waitingEntry = context => context.forward.find(entry => entry.id === "0024_retire_waiting_lane");
+async function waitingSeed(client) {
+  await client.executeMultiple(`
+    INSERT INTO users(id,color,initials) VALUES('waiting_actor','#111','WA');
+    INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES
+      ('waiting_default','waiting-default','Default','waiting_actor'),
+      ('waiting_configured','waiting-configured','Configured','waiting_actor');
+    INSERT INTO meta(key,value,updated_at) VALUES('board:waiting_configured:columns',
+      '{"system":{},"custom":[{"key":"col-paid","name":"Paid"}],"order":["todo","col-paid","done"]}',1);
+    INSERT INTO tasks(id,workspace_id,seq,title,lane,priority) VALUES
+      ('waiting_a','waiting_default',1,'Preserve default','waiting','p2'),
+      ('waiting_b','waiting_configured',1,'Preserve configured','waiting','p2'),
+      ('waiting_other','waiting_default',2,'Unrelated','review','p2');
+  `);
+}
+async function waitingSnapshot(client) {
+  return {
+    tasks: (await client.execute("SELECT * FROM tasks ORDER BY id")).rows,
+    meta: (await client.execute("SELECT * FROM meta ORDER BY key")).rows,
+    ledger: (await client.execute("SELECT * FROM signal_schema_migrations ORDER BY id")).rows,
+    highWater: (await client.execute("SELECT * FROM __drizzle_migrations ORDER BY created_at")).rows,
+  };
+}
+
+test("0024 timing metadata preserves all immutable proofs and continuous enum/integrity guards", () => {
+  const entry = waitingEntry(loadAndValidateLedger());
+  assert.deepEqual(entry.receipt.record.proofs.map(proof => proof.id), waitingProofIds);
+  assert.deepEqual(entry.continuousProofIds, waitingContinuousIds);
+  assert.equal(entry.sha256, "63a96b5effdf633c0341193506225d209777ca6353234522cdbb1fd439d3a9a9");
+  assert.equal(entry.receipt.sha256, "b4b4dd9a266cba899120abac958d6221902ea622d9c49afffc1304e21c8b515b");
+});
+
+for (const [ids, failure] of [
+  [["integrity", "integrity"], /duplicate continuousProofIds/],
+  [["missing-proof"], /continuous proof missing-proof is not present/],
+]) {
+  test(`0024 continuous proof selection rejects ${ids.join(",")}`, () => withFixture(root => {
+    const ledgerPath = path.join(root, "drizzle", "migration-ledger.json");
+    const ledger = JSON.parse(fs.readFileSync(ledgerPath, "utf8"));
+    ledger.entries.find(entry => entry.id === "0024_retire_waiting_lane").continuousProofIds = ids;
+    fs.writeFileSync(ledgerPath, `${JSON.stringify(ledger, null, 2)}\n`);
+    assert.throws(() => loadAndValidateLedger({ root }), failure);
+  }));
+}
+
+test("0024 runs all six apply proofs, rewrites affected rows once, then no-ops", async () => withClient(async client => {
+  await runMigrations({ client, context: throughWaiting(23) });
+  await waitingSeed(client);
+  const unrelated = (await client.execute("SELECT * FROM tasks WHERE id='waiting_other'")).rows;
+  const result = await runMigrations({ client, context: throughWaiting() });
+  assert.deepEqual(result.applied, ["0024_retire_waiting_lane"]);
+  assert.deepEqual(result.proofs.map(proof => proof.id), waitingProofIds);
+  const moved = (await client.execute("SELECT id,lane,board_column_key,title FROM tasks WHERE id IN ('waiting_a','waiting_b') ORDER BY id")).rows;
+  assert.deepEqual(moved.map(row => [row.id, row.lane, row.board_column_key, row.title]), [
+    ["waiting_a", "doing", "waiting", "Preserve default"],
+    ["waiting_b", "doing", "waiting", "Preserve configured"],
+  ]);
+  for (const project of ["waiting_default", "waiting_configured"]) {
+    const config = JSON.parse(String((await client.execute({ sql: "SELECT value FROM meta WHERE key=?", args: [`board:${project}:columns`] })).rows[0].value));
+    assert.ok(config.custom.some(column => column.key === "waiting"));
+    assert.ok(config.order.includes("waiting"));
+  }
+  assert.deepEqual((await client.execute("SELECT * FROM tasks WHERE id='waiting_other'")).rows, unrelated);
+  const before = await waitingSnapshot(client);
+  assert.equal((await migrationStatus({ client, context: throughWaiting() })).state, "current");
+  assert.deepEqual(await runMigrations({ client, context: throughWaiting() }), { status: "no-op", applied: [] });
+  assert.deepEqual(await waitingSnapshot(client), before);
+}));
+
+test("0024 permits later canonical Waiting claims and implicit default config without rewriting data", async () => withClient(async client => {
+  const context = loadAndValidateLedger();
+  await runMigrations({ client, context });
+  await client.executeMultiple(`
+    INSERT INTO users(id,color,initials) VALUES('waiting_actor','#111','WA');
+    INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES('waiting_default','waiting-default','Default','waiting_actor');
+    INSERT INTO tasks(id,workspace_id,seq,title,lane,board_column_key,priority) VALUES
+      ('waiting_todo','waiting_default',1,'Later todo','todo','waiting','p2'),
+      ('waiting_review','waiting_default',2,'Later review','review','waiting','p2'),
+      ('waiting_done','waiting_default',3,'Later done','done','waiting','p2');
+  `);
+  for (const id of ["claims-are-canonical", "affected-configs-name-waiting"]) {
+    const proof = waitingEntry(context).receipt.record.proofs.find(proof => proof.id === id);
+    assert.ok(Number((await client.execute(proof.sql)).rows[0].value) > 0, `${id} must reproduce the historical false alarm`);
+  }
+  const oldContext = loadAndValidateLedger();
+  delete waitingEntry(oldContext).continuousProofIds;
+  await assert.rejects(migrationStatus({ client, context: oldContext }), /proof claims-are-canonical/);
+  await assert.rejects(runMigrations({ client, context: oldContext }), /proof claims-are-canonical/);
+  const before = await waitingSnapshot(client);
+  assert.equal((await migrationStatus({ client, context })).state, "current");
+  assert.deepEqual(await runMigrations({ client, context }), { status: "no-op", applied: [] });
+  assert.deepEqual(await waitingSnapshot(client), before);
+}));
+
+for (const [lane, proofId] of [["waiting", "zero-waiting-lane-text"], ["blocked", "no-stray-lane-text"]]) {
+  test(`0024 continuous guard still rejects raw ${lane} before status, no-op or forward apply`, async () => withClient(async client => {
+    const context = throughWaiting();
+    await runMigrations({ client, context });
+    await client.execute({ sql: "INSERT INTO tasks(id,title,lane,priority,seq) VALUES('invalid_lane','Invalid',?,'p2',1)", args: [lane] });
+    const expected = new RegExp(`proof ${proofId}`);
+    await assert.rejects(migrationStatus({ client, context }), expected);
+    await assert.rejects(runMigrations({ client, context }), expected);
+    await assert.rejects(runMigrations({ client, context: throughWaiting(25) }), expected);
+    assert.equal(Number((await client.execute("SELECT count(*) AS n FROM signal_schema_migrations WHERE id='0025_tasks_completed_at'")).rows[0].n), 0);
+  }));
+}
+
+test("0024 integrity remains an executed continuous proof", async () => withClient(async client => {
+  const context = throughWaiting();
+  await runMigrations({ client, context });
+  // Fault injection in a fresh in-memory test context, never the immutable receipt.
+  waitingEntry(context).receipt.record.proofs.find(proof => proof.id === "integrity").sql = "SELECT 'synthetic corruption' AS value";
+  await assert.rejects(migrationStatus({ client, context }), /proof integrity expected "ok" but received "synthetic corruption"/);
+  await assert.rejects(runMigrations({ client, context }), /proof integrity expected "ok" but received "synthetic corruption"/);
+}));
+
+test("0024 timing does not hide real foreign-key violations", async () => withClient(async client => {
+  const context = throughWaiting();
+  await runMigrations({ client, context });
+  await client.execute("PRAGMA foreign_keys=OFF");
+  await client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES('missing_project','missing_actor','member')");
+  await client.execute("PRAGMA foreign_keys=ON");
+  assert.ok((await client.execute("PRAGMA foreign_key_check")).rows.length > 0);
+  await assert.rejects(migrationStatus({ client, context }), /proof foreign-keys/);
+  await assert.rejects(runMigrations({ client, context }), /proof foreign-keys/);
+}));
+
+for (const proofId of ["claims-are-canonical", "affected-configs-name-waiting"]) {
+  test(`0024 apply-only ${proofId} still rolls back SQL and both ledger writes`, async () => withClient(async client => {
+    await runMigrations({ client, context: throughWaiting(23) });
+    await waitingSeed(client);
+    const before = await waitingSnapshot(client);
+    const broken = throughWaiting();
+    waitingEntry(broken).receipt.record.proofs.find(proof => proof.id === proofId).expected = 1;
+    await assert.rejects(runMigrations({ client, context: broken }), new RegExp(`proof ${proofId}`));
+    assert.deepEqual(await waitingSnapshot(client), before, "migration effects and both ledger rows roll back together");
+    const retry = await runMigrations({ client, context: throughWaiting() });
+    assert.deepEqual(retry.applied, ["0024_retire_waiting_lane"]);
+    assert.equal((await runMigrations({ client, context: throughWaiting() })).status, "no-op");
+  }));
+}
+
 test("usage migration proof failure rolls back both new tables and its ledger receipt", async () => withClient(async (client) => {
   const before = loadAndValidateLedger();
   before.forward = before.forward.filter(entry => entry.ordinal < 30);

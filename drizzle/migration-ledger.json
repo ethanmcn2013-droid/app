@@ -271,7 +271,13 @@
       "sha256": "63a96b5effdf633c0341193506225d209777ca6353234522cdbb1fd439d3a9a9",
       "policy": "forward",
       "receipt": "drizzle/receipts/retire-waiting-lane-2026-07-31.json",
-      "receiptSha256": "b4b4dd9a266cba899120abac958d6221902ea622d9c49afffc1304e21c8b515b"
+      "receiptSha256": "b4b4dd9a266cba899120abac958d6221902ea622d9c49afffc1304e21c8b515b",
+      "continuousProofIds": [
+        "zero-waiting-lane-text",
+        "no-stray-lane-text",
+        "integrity",
+        "foreign-keys"
+      ]
     },
     {
       "ordinal": 25,
