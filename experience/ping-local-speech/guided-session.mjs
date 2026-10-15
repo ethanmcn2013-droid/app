@@ -476,6 +476,7 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       if(generationId!==undefined)
         assert.ok(c.inputGenerations?.includes(generationId)||c.originals.some(original=>original.generationId===generationId),'Timing generation must belong to its captured attempt');
       const capturedMode=generationId!==undefined?c.originals.find(original=>original.generationId===generationId)?.inputMode??c.generationModes?.[generationId]:undefined;
+      if(gestureId!==undefined&&visibleMetrics.includes(metric)){const prior=c.timings?.find(t=>t.gestureId===gestureId&&t.metric===metric&&t.sampleOutcome===sampleOutcome);if(prior){assert.equal(prior.pageId,pageId,'Gesture page identity changed');assert.equal(prior.generationId,generationId,'Gesture generation identity changed');return projectionState();}}
       if(spanId!==undefined){const prior=c.timings?.find(t=>t.spanId===spanId&&t.metric===metric);if(prior){
         for(const key of ['durationMs','sampleOutcome','generationId','pageId','requestId','delivery'])assert.equal(prior[key],value[key]??(key==='sampleOutcome'?'completed':undefined),'Conflicting span replay');return projectionState();}}
       await append('timing',{caseId,attemptId:c.attemptId,metric,...(sampleOutcome==='unfinished'?{}:{durationMs}),clock,evidence,mode:capturedMode??c.inputMode??state.mode,sampleOutcome,

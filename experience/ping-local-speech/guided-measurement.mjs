@@ -33,6 +33,8 @@ export function validateBenchmark(value) {
 }
 // No environment guessing: incomplete receipts and protocol differences fail closed.
 export function compareGuidedResults(before,after) {
+  assert.equal(before.timingProtocol,'ping.guided.latency.v2','Unsupported timing protocol');
+  assert.equal(before.timingExtension,'ping.guided.measurement.v1','Unsupported timing extension');
   assert.equal(before.timingProtocol,after.timingProtocol,'Incompatible timing protocols');
   assert.equal(before.timingExtension,after.timingExtension,'Incompatible timing extensions');
   const a=validateBenchmark(before.benchmark),b=validateBenchmark(after.benchmark);

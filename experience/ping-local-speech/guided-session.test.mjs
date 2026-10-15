@@ -324,8 +324,9 @@ test('gesture starts expose missing completion and observer losses survive reope
   assert.equal(result.latencyCoverage.observerDelivery.failed,1);
   await assert.rejects(s.recordObserver({attemptId,pageId,attempted:2,delivered:1,failed:0}),/decrease/);
   await s.recordTiming({...gesture,clock:'browser-monotonic',evidence:'scripted',sampleOutcome:'unfinished'});
+  await s.recordTiming({...gesture,clock:'browser-monotonic',evidence:'scripted',sampleOutcome:'unfinished'});
   await s.close();const reopened=await createGuidedSession(f.options);result=(await reopened.exportResults()).json;
-  assert.equal(result.latencyCoverage.gestureCoverage.unfinished,1);assert.equal(result.latencyCoverage.gestureCoverage.missing,0);
+  assert.equal(result.rows[0].timings.length,1);assert.equal(result.latencyCoverage.gestureCoverage.unfinished,1);assert.equal(result.latencyCoverage.gestureCoverage.missing,0);
   assert.equal(result.latencyCoverage.gestureCoverage.completed,0);assert.equal(result.latencyCoverage.observerDelivery.failed,1);await reopened.close();
 });
 
