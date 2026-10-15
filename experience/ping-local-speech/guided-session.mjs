@@ -222,7 +222,7 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       case 'started':c.status='started';c.attemptId=d.attemptId;c.attempts.push(d.attemptId);break;
       case 'mode':state.mode=d.mode;break;
       case 'input':c.inputObserved=true;c.inputMode=d.mode;c.inputEvidence=d.evidence;c.pendingInput=d;c.outcome=null;c.terminal=null;c.status='started';
-        if(d.generationId){(c.inputGenerations??=[]).push(d.generationId);(c.generationModes??={})[d.generationId]??=d.mode;}break;
+        if(d.generationId){(c.inputGenerations??=[]).push(d.generationId);(c.generationModes??=Object.create(null))[d.generationId]??=d.mode;}break;
       case 'prepared':c.originals.push({...d,inputMode:c.pendingInput?.mode??c.inputMode??state.mode,invoked:false,terminal:null});c.pendingInput=null;c.outcome=null;break;
       case 'invocation':c.originals.at(-1).invoked=true;c.outcome='unresolved';break;
       case 'terminal': {
