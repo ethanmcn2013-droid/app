@@ -565,6 +565,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/wedding-guests-2026-10-12.json",
       "receiptSha256": "ab9630a2fd0c0038d84a4224f7dcb7934db11e70f1904dd0d9cc8268f9771987"
+    },
+    {
+      "ordinal": 43,
+      "id": "0043_personal_chat",
+      "file": "drizzle/0043_personal_chat.sql",
+      "when": 1792060800000,
+      "sha256": "3a78f486c8aded0e3cb7b2e2a8a32d411d7143d40ac731b1d03e9f8ad506e84b",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/personal-chat-2026-10-15.json",
+      "receiptSha256": "3dcc45ce702dbcc9015db969ce9169f43140e1eb2426fbf1556f2328c9ea3f76"
     }
   ]
 }
