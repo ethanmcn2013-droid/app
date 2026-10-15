@@ -221,7 +221,8 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       case 'armed':Object.assign(state.cases[d.caseId],{status:'armed',baseline:d.baseline});break;
       case 'started':c.status='started';c.attemptId=d.attemptId;c.attempts.push(d.attemptId);break;
       case 'mode':state.mode=d.mode;break;
-      case 'input':c.inputObserved=true;c.inputMode=d.mode;c.inputEvidence=d.evidence;c.pendingInput=d;c.outcome=null;c.terminal=null;c.status='started';break;
+      case 'input':c.inputObserved=true;c.inputMode=d.mode;c.inputEvidence=d.evidence;c.pendingInput=d;c.outcome=null;c.terminal=null;c.status='started';
+        if(d.generationId)(c.inputGenerations??=[]).push(d.generationId);break;
       case 'prepared':c.originals.push({...d,invoked:false,terminal:null});c.pendingInput=null;c.outcome=null;break;
       case 'invocation':c.originals.at(-1).invoked=true;c.outcome='unresolved';break;
       case 'terminal': {
@@ -436,6 +437,8 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
         current()?.attemptId?[cases[state.index].id,current()]:null;
       assert.ok(owner,'Started immutable attempt required for timing metadata');
       const [caseId,c]=owner;
+      if(visibleMetrics.includes(metric)&&generationId!==undefined)
+        assert.ok(c.inputGenerations?.includes(generationId)||c.originals.some(original=>original.generationId===generationId),'Visible timing generation must belong to its captured attempt');
       await append('timing',{caseId,attemptId:c.attemptId,metric,...(sampleOutcome==='unfinished'?{}:{durationMs}),clock,evidence,mode:c.inputMode??state.mode,sampleOutcome,
         ...(pageId!==undefined?{pageId}:{}),...(gestureId!==undefined?{gestureId}:{}),...(generationId!==undefined?{generationId}:{})});return projectionState();
     }),

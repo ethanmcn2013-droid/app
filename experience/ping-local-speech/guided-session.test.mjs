@@ -208,7 +208,7 @@ test('unfinished timing gestures keep absent duration and null statistics after 
   const f=await setup();let s=f.session;await s.startCase();await s.recordMode('scripted');
   const attemptId=s.state().attemptId;
   const base={metric:'finish-to-visible',clock:'browser-monotonic',evidence:'scripted',attemptId,
-    pageId:'00000000-0000-4000-8000-000000000099',gestureId:'00000000-0000-4000-8000-000000000101',generationId:'first-generation'};
+    pageId:'00000000-0000-4000-8000-000000000099',gestureId:'00000000-0000-4000-8000-000000000101'};
   await s.recordTiming({...base,sampleOutcome:'unfinished'});
   for(const bad of [
     {...base,sampleOutcome:'unfinished',durationMs:0},
@@ -216,13 +216,15 @@ test('unfinished timing gestures keep absent duration and null statistics after 
     {...base,sampleOutcome:'completed'}, {...base,sampleOutcome:'failed'},
     {...base,sampleOutcome:'unfinished',gestureId:'private/raw/text'},
     {...base,sampleOutcome:'unfinished',generationId:'raw speech words'},
+    {...base,sampleOutcome:'unfinished',generationId:'unobserved-generation'},
   ])await assert.rejects(s.recordTiming(bad));
   let result=await s.exportResults();const unfinished=result.json.timingSummary[0];
   assert.equal(unfinished.count,1);assert.equal(unfinished.medianMs,null);assert.equal(unfinished.p95Ms,null);assert.equal(unfinished.maxMs,null);
   assert.equal(result.json.latencyCoverage.unfinishedSampleCount,1);assert.equal(result.json.latencyCoverage.startedMissingOrUnfinished,1);
   assert.ok(!Object.hasOwn(result.json.rows[0].timings[0],'durationMs'));
-  await s.observeInput({mode:'scripted',evidence:'scripted'});await s.observePrepareResponse(prepared);await s.beforeExecute(request);
-  await s.recordTiming({...base,gestureId:'00000000-0000-4000-8000-000000000102',generationId:'second-generation',durationMs:15,sampleOutcome:'completed'});
+  await s.observeInput({mode:'scripted',evidence:'scripted',generationId:prepared.generationId});await s.observePrepareResponse(prepared);await s.beforeExecute(request);
+  await assert.rejects(s.recordTiming({...base,generationId:'another-attempt-generation',durationMs:15,sampleOutcome:'completed'}));
+  await s.recordTiming({...base,gestureId:'00000000-0000-4000-8000-000000000102',generationId:prepared.generationId,durationMs:15,sampleOutcome:'completed'});
   await s.close();s=await createGuidedSession(f.options);result=await s.exportResults();
   assert.equal(result.json.timingSummary.length,2);assert.equal(result.json.timingSummary.find(g=>g.sampleOutcome==='completed').medianMs,15);
   assert.equal(result.json.timingSummary.find(g=>g.sampleOutcome==='unfinished').medianMs,null);
