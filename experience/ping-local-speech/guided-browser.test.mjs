@@ -135,6 +135,52 @@ async function launch(directory, mode = 'create') {
   runner = await createGuidedRunner({ directory, manifestPath, mode, scripted: true });
   assert.ok(runner.url.startsWith('http://127.0.0.1:'), 'Owned loopback URL required');
 }
+async function waitForMounted() {
+  await waitFor(async () => {
+    await page.evaluate(() => window.pingGuide.getState());
+    return state().canNext;
+  }, 'The real mounted Tasks projection must acknowledge the saved outcome');
+}
+function verifyLatencies(result) {
+  const completed = result.rows.find(row => row.caseId === '01');
+  for (const metric of ['prepare-server', 'execute-server', 'prepare-roundtrip', 'execute-roundtrip', 'apply-to-visible']) {
+    assert.ok(completed.timings.some(sample => sample.metric === metric && sample.sampleOutcome === 'completed'), `Missing completed ${metric} observation`);
+  }
+  const grouped = new Map();
+  for (const row of result.rows) for (const sample of row.timings) {
+    assert.ok(Number.isFinite(sample.durationMs) && sample.durationMs >= 0, 'Measured latency must be finite and nonnegative');
+    assert.equal(sample.mode, 'scripted'); assert.equal(sample.evidence, 'scripted');
+    assert.equal(sample.clock, sample.metric.endsWith('-server') ? 'server-monotonic' : 'browser-monotonic');
+    if (sample.clock === 'browser-monotonic') assert.match(sample.pageId, /^[0-9a-f-]{36}$/i);
+    const key = JSON.stringify([sample.metric, sample.mode, sample.sampleOutcome, row.outcome, sample.clock, sample.evidence]);
+    grouped.set(key, (grouped.get(key) ?? 0) + 1);
+  }
+  assert.equal(result.timingSummary.length, grouped.size);
+  for (const summary of result.timingSummary) {
+    const key = JSON.stringify([summary.metric, summary.mode, summary.sampleOutcome, summary.caseOutcome, summary.clock, summary.evidence]);
+    assert.equal(summary.count, grouped.get(key), 'Summary denominator must match retained raw samples');
+    for (const field of ['medianMs', 'p95Ms', 'maxMs']) assert.ok(Number.isFinite(summary[field]) && summary[field] >= 0);
+    assert.ok(summary.medianMs <= summary.p95Ms && summary.p95Ms <= summary.maxMs);
+  }
+  const lost = result.rows.find(row => row.caseId === '03');
+  assert.ok(lost.timings.some(sample => sample.metric === 'execute-roundtrip' && sample.sampleOutcome === 'failed'), 'Lost response timing remains a failed observation');
+  const visible = row => row.timings.some(sample => ['apply-to-visible', 'finish-to-visible'].includes(sample.metric) && sample.sampleOutcome === 'completed');
+  assert.equal(visible(lost), false, 'A page restart cannot manufacture completion of its abandoned local span');
+  const aborted = result.rows.find(row => row.caseId === '99');
+  assert.equal(aborted.timings.length, 0, 'Unstarted measurement spans remain absent, never zero');
+  const started = result.rows.filter(row => row.started);
+  const invoked = started.filter(row => row.originals.some(original => original.invoked));
+  const coverage = result.latencyCoverage;
+  assert.equal(coverage.startedAttempts, started.length); assert.equal(coverage.invokedAttempts, invoked.length);
+  assert.equal(coverage.startedWithCompletedVisible, started.filter(visible).length);
+  assert.equal(coverage.invokedWithCompletedVisible, invoked.filter(visible).length);
+  assert.equal(coverage.startedMissingOrUnfinished, started.filter(row => !visible(row)).length);
+  assert.equal(coverage.invokedMissingOrUnfinished, invoked.filter(row => !visible(row)).length);
+  assert.deepEqual(coverage.missingOrUnfinished.map(row => row.caseId).sort(), started.filter(row => !visible(row)).map(row => row.caseId).sort());
+  assert.ok(coverage.missingOrUnfinished.some(row => row.caseId === '03' && row.invoked));
+  assert.ok(coverage.missingOrUnfinished.some(row => row.caseId === '99' && !row.invoked));
+  return { summary: result.timingSummary, coverage };
+}
 async function exportsAndPrivacy(directory) {
   const publicState = await (await fetch(new URL('/guide/state', runner.url))).json(); safeParticipant(publicState);
   const result = await (await fetch(new URL('/guide/export.json', runner.url))).json();
@@ -151,7 +197,8 @@ async function exportsAndPrivacy(directory) {
   for (const scenario of manifest.scenarios) assert.equal(ledger.includes(scenario.supported_input_example), false, 'No raw command retained');
   const lines = ledger.trimEnd().split('\n').map(line => JSON.parse(line));
   assert.ok(lines.length > 1); // Parsing every line also catches partial/truncated append output.
-  return { counts: result.counts, ledgerSha256: hash(ledger), jsonSha256: hash(result), csvSha256: hash(csv) };
+  return { counts: result.counts, ledgerSha256: hash(ledger), jsonSha256: hash(result), csvSha256: hash(csv),
+    latency: verifyLatencies(result) };
 }
 
 try {
@@ -180,7 +227,13 @@ try {
     updated_at: receipt.committedAtSeconds });
   assert.equal(handoff.activities.length, beforeHandoff.activities.length + 2);
   assert.equal(handoff.requestCounts.execute - (beforeHandoff.requestCounts.execute ?? 0), 1);
-  assert.equal(await page.evaluate(id => window.pingObserved.find(task => task.id === id).due, targetId), '2026-10-20');
+  await waitForMounted();
+  assert.equal(await page.evaluate(id => window.pingObserved.find(task => task.id === id).dueAt?.toISOString(), targetId), '2026-10-20T09:00:00.000Z');
+  await waitFor(async () => {
+    const row = (await runner.session.exportResults()).json.rows.find(item => item.caseId === '01');
+    return ['prepare-server', 'execute-server', 'prepare-roundtrip', 'execute-roundtrip', 'apply-to-visible']
+      .every(metric => row.timings.some(sample => sample.metric === metric && sample.sampleOutcome === 'completed'));
+  }, 'First completed case must retain all server, request and visible-completion latency spans');
   passed(activeLabel, { canonicalHash: hash(tables(handoff)), receiptCountDelta: 1 });
   await advance();
 
