@@ -36,6 +36,7 @@ export function emitPingTelemetry(event: PingTelemetryEvent) {
 }
 export async function withPingTelemetry(request: Request, operation: () => Promise<Response>): Promise<Response> {
   if(!pingTelemetryEnabled()) return operation();
+  let skipRecorder=false;
   try {
   refreshBudgetWindow();
   if(emitted>=512){
@@ -43,11 +44,12 @@ export async function withPingTelemetry(request: Request, operation: () => Promi
     // constructed, so droppedCount=0 is NOT an exact missing-event count or a
     // claim of complete coverage. Concurrent accepted recorders may still drop.
     queueOverflow("request",0);
-    return context.getStore() ? context.run(undefined,operation) : operation();
+    skipRecorder=true;
   }
-  } catch {
-    return context.getStore() ? context.run(undefined,operation) : operation();
-  }
+  } catch { skipRecorder=true; }
+  // Business invocation stays outside diagnostic catches: a synchronous throw
+  // must never be mistaken for a diagnostic failure or dispatched again.
+  if(skipRecorder)return context.getStore() ? context.run(undefined,operation) : operation();
   let recorder: PingTelemetryRecorder;
   try {
     const attempt=request.headers.get("X-Ping-Telemetry-Attempt"), req=request.headers.get("X-Ping-Telemetry-Request");

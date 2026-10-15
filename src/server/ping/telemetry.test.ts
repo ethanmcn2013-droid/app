@@ -46,6 +46,7 @@ test("exhausted budget skips header/recorder work, preserves result/error, rolls
   for(let i=0;i<40;i++)assert.equal(await withPingTelemetry(request,async()=>{calls++;return response;}),response);
   assert.equal(headerReads,0);assert.equal(calls,40);assert.equal(response.headers.has("X-Ping-Telemetry-Request"),false);assert.equal(lines.length,513);const summary=JSON.parse(lines[512].slice("[ping.telemetry] ".length));assert.equal(summary.stage,"request");assert.equal(summary.outcome,"overflow");assert.equal(summary.droppedCount,0);assert.ok(!lines.join("").includes("PRIVATE_"));
   const error=Error("business");await assert.rejects(withPingTelemetry(request,async()=>{throw error;}),e=>e===error);
+  let syncCalls=0;await assert.rejects(withPingTelemetry(request,()=>{syncCalls++;throw error;}),e=>e===error);assert.equal(syncCalls,1);
   clock+=60000;const fresh=new Response("fresh");assert.equal(await withPingTelemetry(req({}),async()=>fresh),fresh);assert.equal(fresh.headers.has("X-Ping-Telemetry-Request"),true);await Promise.resolve();assert.equal(lines.length,515);
   // A summary logger failure is queued and contained; no change to task result.
   clock+=60000;for(let i=0;i<512;i++)emitPingTelemetry(events[0]);console.warn=()=>{throw Error("logger unavailable");};assert.equal(await withPingTelemetry(request,async()=>response),response);await Promise.resolve();
@@ -54,7 +55,7 @@ test("exhausted budget skips header/recorder work, preserves result/error, rolls
 
 test("throwing diagnostic wall clock invokes business once and preserves exact response/error",async()=>{
  const oldFlag=process.env.PING_TELEMETRY_ENABLED,oldNow=Date.now;process.env.PING_TELEMETRY_ENABLED="1";Date.now=()=>{throw Error("diagnostic clock");};
- try {let calls=0;const response=new Response("original");assert.equal(await withPingTelemetry(req({}),async()=>{calls++;return response;}),response);assert.equal(calls,1);const error=Error("original business error");calls=0;await assert.rejects(withPingTelemetry(req({}),async()=>{calls++;throw error;}),e=>e===error);assert.equal(calls,1);}finally{Date.now=oldNow;if(oldFlag===undefined)delete process.env.PING_TELEMETRY_ENABLED;else process.env.PING_TELEMETRY_ENABLED=oldFlag;}
+ try {let calls=0;const response=new Response("original");assert.equal(await withPingTelemetry(req({}),async()=>{calls++;return response;}),response);assert.equal(calls,1);const error=Error("original business error");calls=0;await assert.rejects(withPingTelemetry(req({}),async()=>{calls++;throw error;}),e=>e===error);assert.equal(calls,1);calls=0;await assert.rejects(withPingTelemetry(req({}),()=>{calls++;throw error;}),e=>e===error);assert.equal(calls,1);}finally{Date.now=oldNow;if(oldFlag===undefined)delete process.env.PING_TELEMETRY_ENABLED;else process.env.PING_TELEMETRY_ENABLED=oldFlag;}
 });
 
 test("physical authentication leases remain bounded after logical deadline and release only at settlement",async()=>{
