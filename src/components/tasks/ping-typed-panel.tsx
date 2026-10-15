@@ -517,6 +517,7 @@ function PingTypedPanelFlow({
         </div>
         <button
           type="button"
+          data-dialog-skip-focus
           aria-expanded={examplesOpen}
           aria-controls="ping-typed-examples"
           onClick={() => setExamplesOpen((open) => !open)}
