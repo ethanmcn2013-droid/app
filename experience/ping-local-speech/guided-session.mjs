@@ -449,7 +449,7 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
         skipped:c?.status==='skipped',projection:c?.projection??'unknown',originalCount:c?.originals?.length??0,
         evidenceHash:c?.evidenceHash??null,feedback:c?.feedback??null,timings:structuredClone(c?.timings??[]),
         originals:(c?.originals??[]).map(o=>({generationId:o.generationId,commandId:o.commandId,projectId:o.projectId,ordinal:o.ordinal,invoked:o.invoked,terminal:o.terminal}))};});
-      const json={version:'ping.guided.results.v1',identity,counts:projectionState().counts,ledgerHash:chain,rows,
+      const json={version:'ping.guided.results.v1',timingProtocol:'ping.guided.latency.v2',identity,counts:projectionState().counts,ledgerHash:chain,rows,
         timingSummary:latencySummary(rows),latencyCoverage:latencyCoverage(rows),timingStatistics:{percentile:'nearest-rank',median:'midpoint for even sample counts'}};
       const columns=['caseId','attemptId','started','inputObserved','inputMode','inputEvidence','outcome','skipped','projection','originalCount','evidenceHash','timings'];
       const csv=[columns.join(','),...rows.map(row=>columns.map(k=>'"'+String(k==='timings'?JSON.stringify(row.timings):row[k]??'').replaceAll('"','""')+'"').join(','))].join('\n')+'\n';

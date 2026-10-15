@@ -57,6 +57,10 @@ outcome and evidence class. Failed requests remain separate; missing or unfinish
 spans are listed rather than replaced with zero. Page restarts are not combined
 into an invented browser span. These are local guided-fixture measurements,
 including observation overhead, not hosted production or genuine-speech benchmarks.
+The `ping.guided.latency.v2` definition marks browser HTTP non-success responses
+and transport errors as failed round trips. A server span measures completed
+handler processing, including an intentional refusal. Earlier test packets keep
+their original source-bound definitions and outcomes; do not silently regrade them.
 
 Checks:
 
