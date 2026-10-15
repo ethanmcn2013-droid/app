@@ -26,10 +26,11 @@ const report = {
   status: 'running', startedAt: new Date().toISOString(),
   sourceHead: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   manifestSha256: hash(await fs.readFile(manifestPath, 'utf8')),
+  environment: { node: process.version, headless: true, viewport: { width: 1440, height: 960 }, reducedMotion: 'reduce' },
   cases: [], limits: ['Owned headless browser and invented fixture only.',
     'Typed scripted gestures do not prove actual microphone recognition, founder experience, pilot use or programme acceptance.'],
 };
-let runner, browser, context, page, activeLabel = 'setup';
+let runner, browser, context, page, activeDirectory, activeLabel = 'setup';
 const runtimeErrors = [];
 const passed = (name, evidence = {}) => report.cases.push({ name, passed: true, evidenceClass: report.evidenceClass, ...evidence });
 const state = () => runner.session.state();
@@ -112,6 +113,7 @@ async function advance() {
 }
 async function newBrowser({ scriptedSpeech = false } = {}) {
   browser = await chromium.launch({ headless: true });
+  report.environment.chromium = browser.version();
   context = await browser.newContext({ viewport: { width: 1440, height: 960 }, reducedMotion: 'reduce' });
   // A fresh owned context, without microphone permission or any existing browser profile.
   if (scriptedSpeech) await context.addInitScript(() => {
@@ -133,7 +135,27 @@ async function newBrowser({ scriptedSpeech = false } = {}) {
 }
 async function launch(directory, mode = 'create') {
   runner = await createGuidedRunner({ directory, manifestPath, mode, scripted: true });
+  activeDirectory = directory;
   assert.ok(runner.url.startsWith('http://127.0.0.1:'), 'Owned loopback URL required');
+}
+async function closeOwned() {
+  if (!runner && !context && !browser) return;
+  const cleanup = { directory: activeDirectory, contextClosed: !context, browserClosed: !browser, runnerClosed: !runner };
+  if (runner) {
+    try {
+      const result = await runner.session.exportResults(); safeParticipant(result.json);
+      await fs.writeFile(path.join(activeDirectory, 'results.json'), JSON.stringify(result.json, null, 2) + '\n');
+      await fs.writeFile(path.join(activeDirectory, 'results.csv'), result.csv);
+      cleanup.exportsSaved = true;
+    } catch (error) { cleanup.exportsSaved = false; cleanup.exportError = error.name; }
+  }
+  try { await context?.close(); cleanup.contextClosed = true; } catch (error) { cleanup.contextError = error.name; }
+  try { await browser?.close(); cleanup.browserClosed = !browser?.isConnected(); } catch (error) { cleanup.browserError = error.name; }
+  try { await runner?.close(); cleanup.runnerClosed = true; } catch (error) { cleanup.runnerError = error.name; }
+  (report.cleanup ??= []).push(cleanup);
+  browser = context = page = runner = null;
+  assert.ok(cleanup.contextClosed && cleanup.browserClosed && cleanup.runnerClosed, 'Owned resource closure failed');
+  assert.notEqual(cleanup.exportsSaved, false, 'Safe results exports were not preserved');
 }
 async function waitForMounted() {
   await waitFor(async () => {
@@ -254,8 +276,7 @@ try {
   unchanged(lost, await snapshot());
   await page.reload(); await page.getByRole('heading', { name: 'Ping session guide', exact: true }).waitFor();
   assert.equal(state().outcome, 'unresolved'); unchanged(lost, await snapshot());
-  await context.close(); await browser.close(); browser = context = page = null;
-  await runner.close(); runner = null;
+  await closeOwned();
   await launch(directory, 'reopen');
   assert.equal(runner.databasePath, retainedDatabasePath);
   assert.deepEqual(runner.identity, retainedIdentity);
@@ -293,7 +314,7 @@ try {
   assert.equal(evidence.counts.started, 8); assert.equal(evidence.counts.inputObserved, 7);
   assert.equal(evidence.counts.verified, 7); assert.equal(evidence.counts.unresolved, 0);
   passed(activeLabel, evidence);
-  await context.close(); await browser.close(); browser = context = page = null; await runner.close(); runner = null;
+  await closeOwned();
 
   activeLabel = 'committed saved effect remains separate from refresh failure';
   const refreshDirectory = path.join(output, 'projection-failure-session');
@@ -303,7 +324,7 @@ try {
   runner.testHooks.failRefresh(false); await page.getByTestId('ping-refresh-current').click(); await waitOutcome('matched');
   assert.equal((await snapshot()).receipts.length, beforeRefresh.receipts.length + 1);
   passed(activeLabel);
-  await context.close(); await browser.close(); browser = context = page = null; await runner.close(); runner = null;
+  await closeOwned();
 
   activeLabel = 'scripted listening is disposed by Pause and End without product input';
   const captureDirectory = path.join(output, 'scripted-capture-lifecycle-session');
@@ -328,7 +349,7 @@ try {
   assert.equal((await snapshot()).requestCounts.prepare ?? 0, beforeCapture.requestCounts.prepare ?? 0);
   assert.equal(state().counts.inputObserved, 0);
   passed(activeLabel, { injectedRecognizerOnly: true, captureCounters });
-  await context.close(); await browser.close(); browser = context = page = null; await runner.close(); runner = null;
+  await closeOwned();
 
   activeLabel = 'journal failure before forwarding Execute fails closed';
   const journalDirectory = path.join(output, 'journal-failure-session');
@@ -346,7 +367,7 @@ try {
   report.status = 'failed'; report.failedCase = activeLabel;
   report.error = String(error.message).slice(0, 1200); process.exitCode = 1;
 } finally {
-  await context?.close(); await browser?.close(); await runner?.close();
+  try { await closeOwned(); } catch (error) { report.status = 'failed'; report.cleanupError = error.message; process.exitCode = 1; }
   report.finishedAt = new Date().toISOString();
   await fs.writeFile(path.join(output, 'scripted-dry-run.json'), JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify({ status: report.status, evidenceClass: report.evidenceClass, cases: report.cases.length,
