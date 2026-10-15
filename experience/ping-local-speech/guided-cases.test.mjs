@@ -54,8 +54,8 @@ test('derives unique fixture IDs, exact private oracles, and the narrow particip
     effects: { namedAssignment: { userId: 'ping-guide-case-01-member-member-1', name: 'Maya Chen' }, dueDate: '2026-10-20', statusColumnKey: 'doing' },
   });
   assert.deepEqual(cases[1].oracle, { kind: 'create', taskIds: [], effects: { selfAssignment: 'add', statusColumnKey: 'todo' }, count: 1, title: 'Synthetic follow-up' });
-  assert.deepEqual(cases[2].oracle, { kind: 'zero', taskIds: ['ping-guide-case-03-task-01'], effects: {}, expectedStage: 'Parse' });
-  assert.deepEqual(cases[3].oracle, { kind: 'zero', taskIds: ['ping-guide-case-04-task-01', 'ping-guide-case-04-task-02'], effects: {}, expectedStage: 'Prepare named-member identity resolution' });
+  assert.deepEqual(cases[2].oracle, { kind: 'zero', taskIds: ['ping-guide-case-03-task-01'], effects: {}, expectedStage: 'parse' });
+  assert.deepEqual(cases[3].oracle, { kind: 'zero', taskIds: ['ping-guide-case-04-task-01', 'ping-guide-case-04-task-02'], effects: {}, expectedStage: 'prepare' });
   assert.equal(cases[3].seed.currentProjectMembers[0].userId === cases[3].seed.currentProjectMembers[1].userId, false);
   assert.deepEqual(participantCase(cases[0]), {
     id: '01', goal: 'Update the invented tasks in case 1.', taskNames: ['Synthetic one'], modeInfo: 'Update the selected tasks',
@@ -103,4 +103,20 @@ test('supports an empty-task create case without inventing selected task IDs', (
   assert.deepEqual(createCase.seed.taskIds, []);
   assert.equal(createCase.seed.selectedTaskCount, 0);
   assert.deepEqual(createCase.oracle.taskIds, []);
+});
+
+test('normalizes negative scenarios 97–100 to the parser or Prepare stage without guessing answers', () => {
+  const scenarios = [
+    scenario(1, { group: 'negative_safety', classification: 'expected_prepare_refusal', fixture: { selected_task_count: 2, task_names: ['Synthetic identity a', 'Synthetic identity b'] }, stage: 'Prepare named-member identity resolution' }),
+    scenario(2, { group: 'negative_safety', classification: 'expected_scope_refusal', fixture: { selected_task_count: 3, task_names: ['Synthetic milestone a', 'Synthetic milestone b', 'Synthetic milestone c'] }, stage: 'Prepare captured-selection eligibility' }),
+    scenario(3, { group: 'negative_safety', classification: 'expected_scope_refusal', fixture: { selected_task_count: 11, task_names: Array.from({ length: 11 }, (_, index) => `Synthetic max task ${index + 1}`) }, stage: 'Prepare captured-selection eligibility' }),
+    scenario(4, { group: 'negative_safety', classification: 'expected_refusal', fixture: { selected_task_count: 2, task_names: ['Synthetic punctuation a', 'Synthetic punctuation b'] }, holdout: true }),
+  ];
+  const manifest = { scenarios };
+  const cases = buildGuidedCases(manifest, 'test-manifest-hash', {
+    expectedManifestSha256: 'test-manifest-hash', expectedCount: 4, expectedPractice: 3, expectedHeldout: 1,
+  });
+  assert.deepEqual(cases.map(item => item.oracle.expectedStage), ['prepare', 'prepare', 'prepare', 'parse']);
+  assert.equal(cases[0].validationStage, 'Prepare named-member identity resolution');
+  assert.equal(cases[1].parserOutcome, null);
 });

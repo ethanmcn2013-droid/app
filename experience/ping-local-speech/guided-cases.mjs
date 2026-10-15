@@ -60,7 +60,10 @@ function buildMembers(scenario, caseId) {
 function buildOracle(scenario, taskIds, members) {
   const classification = scenario.classification;
   if (classification.startsWith('expected_')) {
-    const stage = scenario.validation_stage ?? (classification === 'expected_prepare_refusal' ? 'Prepare' : 'Parse');
+    const defaultStage = classification === 'expected_prepare_refusal' || classification === 'expected_scope_refusal' ? 'prepare' : 'parse';
+    const declaredStage = scenario.validation_stage ?? defaultStage;
+    const stage = /^prepare\b/i.test(declaredStage) ? 'prepare' : /^parse\b/i.test(declaredStage) ? 'parse' : null;
+    if (!stage) throw new Error(`scenario ${scenario.scenario_id} has an unsupported validation stage`);
     return { kind: 'zero', taskIds, effects: {}, expectedStage: stage };
   }
 
@@ -138,7 +141,6 @@ export function buildGuidedCases(manifest, manifestSha256 = GUIDED_MANIFEST_SHA2
       if (seenMemberIds.has(member.userId)) throw new Error(`duplicate synthetic Project member id ${member.userId}`);
       seenMemberIds.add(member.userId);
     }
-    const caseMembers = members.map(({ userId }) => ({ userId }));
     const existingAssignees = (scenario.fixture.existing_assignees ?? []).map((name, memberIndex) => ({
       name: text(name, `scenario ${caseId} existing collaborator ${memberIndex + 1}`),
       userId: `ping-guide-case-${caseId}-collaborator-${String(memberIndex + 1).padStart(2, '0')}`,
