@@ -3679,7 +3679,7 @@
     "src/server/ping/operating-controls.test.ts": "ab933fded77e9701653764e25bad12a6d9610f91c0dc7484914cd55718a6e9e1",
     "src/server/ping/operational-admission.test.ts": "75340223783a5bbe218e95496a3acd7ddf13398e8e17cde273389dffe4fce541",
     "src/server/ping/operational-admission.ts": "6d7c97659a5644f25521adf4e56080e769e60962a7181239fd03644dcd2c06bb",
-    "src/server/ping/proof-fixture.ts": "349af92eb75b9cda2c004f44b0fef10a81c397221d02565f84b161d5c115137c",
+    "src/server/ping/proof-fixture.ts": "4cac43a116243f0e5e52c628348b9abbd69ae853817fe597db26e6fc9d2bdaf5",
     "src/server/ping/receipt-http.ts": "b2fee81456d8fa88fc5d14af0fb36ae491ff6e9e560c2ee4c4c646df9f96d6c2",
     "src/server/ping/runtime.test.ts": "d7c1bcc0986cba31805dbb90fb703a0e6be34dedef60f1bd50e3c937d7a0883e",
     "src/server/ping/runtime.ts": "b5ba15be5b9e026c600b2a66902d41c8d3c2c9a76c6c659a8247e8762d74830c",
@@ -3810,6 +3810,7 @@
     "src/components/tasks/ping-overlay.module.css": "03fa0ee0363bc0ba5af645de9c8e5b228814f6645bffcacea504377cc859e6f5",
     "src/components/tasks/ping-overlay.tsx": "aabad1af4b88724d55edd2e68a6e593455c00c8733538f9f2972bbe345e02cc0",
     "src/lib/ping/local-speech.test.ts": "2f683617829ad4c5455bb1f4e96c182b27356e6507dff700e119bfbc98c94813",
-    "src/lib/ping/local-speech.ts": "4b8b49aad0719ff17e95afea097d43b8f0839d70f1a0b795df16e4f296fec494"
+    "src/lib/ping/local-speech.ts": "4b8b49aad0719ff17e95afea097d43b8f0839d70f1a0b795df16e4f296fec494",
+    "src/server/ping/proof-fixture.test.ts": "be8dbf739cc76572393a5927cd530e89708cab1fbaecf017b613bc6826a2862b"
   }
 }

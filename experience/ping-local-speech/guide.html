@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>Ping session guide</title>
+    <style>
+      @font-face{font-family:Geist;src:url('/fonts/Geist-Variable.woff2') format('woff2');font-weight:100 900;font-display:swap}
+      :root{font-family:Geist,system-ui,sans-serif;color:var(--v3-text,#141414);background:var(--v3-chrome,#f5f5f5);font-size:14px;line-height:1.5;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;--guide-border:var(--v3-border,#e7e7e7);--guide-surface:var(--v3-surface,#fff);--guide-text:var(--v3-text,#141414);--guide-muted:var(--v3-text-2,#474747);--guide-soft:var(--v3-accent-soft,rgba(79,70,229,.1));--guide-accent:var(--v3-accent,#4f46e5);--guide-focus:var(--x-accent-focus,var(--guide-accent))}
+      *{box-sizing:border-box}
+      html,body{height:100%;margin:0}
+      body{overflow:hidden;background:var(--v3-chrome,#f5f5f5);color:var(--guide-text);caret-color:var(--guide-accent);scrollbar-color:var(--v3-border-strong,#d6d6d6) var(--v3-chrome,#f5f5f5);scrollbar-width:thin}
+      ::selection{background:var(--guide-accent);color:#fff}
+      .runner-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(304px,360px);gap:12px;width:100%;height:100%;padding:12px}
+      #root{min-width:0;min-height:0;height:100%;overflow:hidden;border-radius:12px;background:var(--guide-surface)}
+      #guide-root{min-width:0;min-height:0;height:100%;overflow:auto;overscroll-behavior:contain;border:1px solid var(--guide-border);border-radius:12px;background:var(--guide-surface);scrollbar-color:var(--v3-border-strong,#d6d6d6) var(--guide-surface);scrollbar-width:thin}
+      .guide{min-height:100%;display:flex;flex-direction:column;padding:22px 21px 16px}
+      .guide-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:18px;border-bottom:1px solid var(--guide-border)}
+      .guide-header h1{margin:0;font-size:19px;line-height:1.25;font-weight:650;letter-spacing:-.025em}
+      .save-state{display:inline-flex;align-items:center;gap:7px;margin-top:5px;color:var(--guide-muted);font-size:12px;white-space:nowrap}
+      .save-dot{width:7px;height:7px;border-radius:50%;background:#27825a;box-shadow:0 0 0 3px color-mix(in srgb,#27825a 14%,transparent)}
+      .guide-intro{padding:22px 0 18px}
+      .guide-intro h2{max-width:13ch;margin:0;font-size:28px;line-height:1.12;font-weight:650;letter-spacing:-.03em}
+      .guide-intro p,.guide-copy{margin:12px 0 0;color:var(--guide-muted);font-size:13px;line-height:1.6}
+      .case-panel{padding:18px 16px;background:var(--guide-soft);border-radius:12px}
+      .case-meta{display:flex;align-items:center;gap:8px;min-height:22px;color:var(--guide-muted);font-size:12px;font-weight:550}
+      .case-meta span+span::before{content:'·';margin-right:8px;color:var(--guide-muted)}
+      .case-panel h2{margin:10px 0 0;font-size:19px;line-height:1.35;font-weight:620;letter-spacing:-.02em}
+      .task-list{display:grid;gap:5px;margin:14px 0 0;padding:0;list-style:none}
+      .task-list li{padding:8px 10px;border-radius:7px;background:color-mix(in srgb,var(--guide-surface) 72%,transparent);overflow-wrap:anywhere;font-size:12px;font-weight:540}
+      .action-hint{margin-top:16px;padding-top:14px;border-top:1px solid color-mix(in srgb,var(--guide-border) 78%,transparent);color:var(--guide-muted);font-size:12px;line-height:1.55}
+      .steps{display:grid;gap:12px;margin:20px 0 0;padding:0;list-style:none;counter-reset:guide-step}
+      .steps li{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;color:var(--guide-muted);font-size:12px;line-height:1.55}
+      .steps li::before{counter-increment:guide-step;content:counter(guide-step);display:grid;place-items:center;width:22px;height:22px;border:1px solid var(--guide-border);border-radius:50%;color:var(--guide-text);font-size:11px;font-variant-numeric:tabular-nums}
+      .steps strong{display:block;color:var(--guide-text);font-size:12px;font-weight:600}
+      .progress-block{margin:19px 0 0;padding-top:15px;border-top:1px solid var(--guide-border)}
+      .progress-heading{display:flex;justify-content:space-between;gap:8px;color:var(--guide-muted);font-size:12px}
+      .progress-heading strong{color:var(--guide-text);font-weight:620;font-variant-numeric:tabular-nums}
+      .count-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px}
+      .count{padding:10px 9px;border:1px solid var(--guide-border);border-radius:8px}
+      .count strong{display:block;font-size:17px;line-height:1.2;font-weight:630;font-variant-numeric:tabular-nums}
+      .count span{display:block;margin-top:4px;color:var(--guide-muted);font-size:10px;line-height:1.35}
+      .remaining-line{margin:10px 0 0;color:var(--guide-muted);font-size:12px;font-variant-numeric:tabular-nums}
+      .status-line{margin:15px 0 0;padding:11px 12px;border-radius:8px;background:color-mix(in srgb,var(--guide-accent) 8%,var(--guide-surface));color:var(--guide-text);font-size:12px;line-height:1.5}
+      .feedback{margin:17px 0 0;padding-top:15px;border-top:1px solid var(--guide-border)}
+      .feedback h3{margin:0;font-size:13px;font-weight:620}
+      .feedback-grid{display:grid;gap:10px;margin-top:10px}
+      .feedback label{display:grid;gap:5px;color:var(--guide-muted);font-size:11px}
+      select{width:100%;min-height:36px;padding:7px 9px;border:1px solid var(--guide-border);border-radius:7px;background:var(--guide-surface);color:var(--guide-text);font:inherit;font-size:12px}
+      .guide-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto;padding-top:18px}
+      .export-links{display:flex;justify-content:center;gap:16px;margin-top:11px;font-size:12px}
+      .export-links a{color:var(--guide-accent);text-underline-offset:3px}
+      .report-note{margin:7px 0 0;color:var(--guide-muted);font-size:11px;line-height:1.5}
+      button{min-height:40px;border:1px solid var(--guide-border);border-radius:8px;background:var(--guide-surface);color:var(--guide-text);font:inherit;font-size:12px;font-weight:570;cursor:pointer;transition:background-color .16s ease,border-color .16s ease,transform .16s ease}
+      button:hover:not(:disabled){border-color:var(--guide-accent);background:var(--guide-soft)}
+      button:active:not(:disabled){transform:translateY(1px)}
+      button.primary{grid-column:1/-1;border-color:var(--guide-accent);background:var(--guide-accent);color:#fff;font-weight:620}
+      button.primary:hover:not(:disabled){background:var(--v3-accent-hover,#4338ca)}
+      button:disabled{opacity:.48;cursor:not-allowed}
+      button:focus-visible,select:focus-visible{outline:3px solid var(--guide-focus);outline-offset:2px}
+      .end-button{color:var(--guide-muted)}
+      .error{margin-top:10px;color:#a33c32;font-size:12px}
+      [hidden]{display:none!important}
+      @media(max-width:1040px){body{overflow:auto}.runner-layout{grid-template-columns:1fr;grid-template-rows:minmax(380px,62vh) auto;height:auto;min-height:100%;padding:8px}.guide{min-height:auto}.guide-actions{margin-top:22px}}
+      @media(max-width:420px){.runner-layout{grid-template-rows:minmax(360px,56vh) auto;gap:8px;padding:6px}.guide{padding:17px 15px 14px}.guide-intro h2{font-size:25px}.case-panel{padding:15px 13px}.count-grid{gap:5px}.count{padding:8px 7px}.count span{font-size:9px}}
+      @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+    </style>
+  </head>
+  <body>
+    <div class="runner-layout">
+      <div id="root" aria-label="Signal Tasks"></div>
+      <aside id="guide-root" aria-label="Ping session guide"></aside>
+    </div>
+    <script type="module" src="/guide.mjs"></script>
+  </body>
+</html>

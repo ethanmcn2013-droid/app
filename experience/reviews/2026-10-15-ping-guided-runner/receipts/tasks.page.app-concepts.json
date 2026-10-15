@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-concepts",
+  "source": "tasks/src/app/app/concepts/page.tsx",
+  "materialityHash": "63e7924b683e8c06",
+  "reviewedAt": "2026-10-15",
+  "reviewer": "Codex root receiving",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-f61057a4b8b4a7b75877ff0b-41c9d4620cd7af1b.json",
+    "attestationSha256": "5f7b0cd545705903dc5fff74b535d16d27823a2da7efdd07df7f66f3930ab302",
+    "runId": "tasks-playwright-f61057a4b8b4a7b75877ff0b",
+    "canonicalEvidenceSha256": "f61057a4b8b4a7b75877ff0bcd43a9fd2533f6551732e41a1784f91f23c4f7f0",
+    "rawArtifactSha256": "41c9d4620cd7af1b226859373bea98d1631ea5265d7c2ffe5d6fd2ebe6f05bc1",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-concepts",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Exact capture source 21d957e8bca402230da0b6f376290b59fa99de92, tree 9d108c50948171f5e7bd263fe4a620d95de08a3d; fixture tasks.page.app-concepts, case \"own surface in demo\". Actual Concepts demo route and visible Concepts surface; no design score, independent aesthetic certification or new capability acceptance is established. Fresh root receiving accepted the complete 204-pair run and independent custody of all 72 own-target PNGs. All four current viewport image bytes for this target match both accepted utility and compact evidence, and its visual source is unchanged. The reviewed synthetic proof-helper create/reopen and named-assignment state handling plus the new fixture regression test are bound by the refreshed 2133-input inventory and actual capture HEAD. Guide/harness source remains outside that rendered inventory but within the same HEAD. Prior receipts remain historical.",
+  "decision": "ACCEPT bounded current demo/component materiality and independently received visual byte continuity. This default-off global matrix does not establish guided functional admission, genuine speech or microphone recognition, authenticated/provider or production continuity, human utility, deployment, new design scores or broader required-state coverage."
+}

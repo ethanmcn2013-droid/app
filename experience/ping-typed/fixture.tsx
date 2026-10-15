@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { CurrentUserProvider } from "@/lib/auth-context";
 import { DomainProvider } from "@/lib/domain-context";
@@ -14,13 +14,15 @@ import "./fixture.css";
 
 // Explicit browser-fixture auth and initial read adapters. Ping refresh itself
 // must travel through the real panel, HTTP handler and provider hydration seam.
-type Props = { actorId: string; projectId: string; tasks: Task[]; tasksEpoch?: string | null };
+type Props = { actorId: string; projectId: string; tasks: Task[]; tasksEpoch?: string | null;
+  fixtureKey?: string; members?: ComponentProps<typeof DomainProvider>["members"] };
 declare global {
   interface Window {
     pingObserved: Task[];
     pingMount: (props: Props) => void;
     pingFixtureUser: string;
     pingFixtureSession: string;
+    pingGuideObserveProjection?: (tasks: Task[]) => void;
   }
 }
 const calendarFrame = createCalendarFrame({ now: new Date("2026-10-06T09:00:00Z"), timeZone: "Europe/Dublin", source: "review" });
@@ -36,7 +38,7 @@ function revive(tasks: Task[]): Task[] {
 }
 function Probe() {
   const { tasks } = useTasksState();
-  useEffect(() => { window.pingObserved = tasks; }, [tasks]);
+  useEffect(() => { window.pingObserved = tasks; window.pingGuideObserveProjection?.(tasks); }, [tasks]);
   return <output hidden data-ping-observed>{JSON.stringify(tasks.map(task => ({ id: task.id, lane: task.lane, assignees: task.assignees })))}</output>;
 }
 function Fixture() {
@@ -49,8 +51,8 @@ function Fixture() {
   return <CurrentUserProvider user={props.actorId}>
     <DomainProvider domain="wedding" workspaceId={props.projectId} workspaceSlug={props.projectId} workspaceName="Synthetic Ping project"
       personalization={{ headline: "Plan the work", body: "An isolated synthetic project.", firstTaskExample: "A task", workspaceTitle: "Synthetic Ping project" }}
-      members={[{ id: "alice", name: "Alice", knownName: "Alice", initials: "AL", role: "member", color: "#555" }, { id: "bob", name: "Bob", knownName: "Bob", initials: "BO", role: "member", color: "#777" }]}>
-      <TasksProvider key={JSON.stringify([props.actorId, props.projectId])} actorId={props.actorId} projectId={props.projectId} initialTasks={props.tasks} initialTasksEpoch={props.tasksEpoch}>
+      members={props.members ?? [{ id: "alice", name: "Alice", knownName: "Alice", initials: "AL", role: "member", color: "#555" }, { id: "bob", name: "Bob", knownName: "Bob", initials: "BO", role: "member", color: "#777" }]}>
+      <TasksProvider key={JSON.stringify([props.actorId, props.projectId, props.fixtureKey])} actorId={props.actorId} projectId={props.projectId} initialTasks={props.tasks} initialTasksEpoch={props.tasksEpoch}>
         <RoomBriefProvider value={{ calendarFrame, periodName: null, dateWindow: null, ownerName: "Synthetic owner", purpose: "Isolated synthetic browser verification" }}>
           <RoomToolsProvider><main><HybridWorkspace view="list" canEdit canManage={false} /><Probe /></main></RoomToolsProvider>
         </RoomBriefProvider>

@@ -1,8 +1,9 @@
 import "server-only";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, readdir } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, mkdir, open, lstat, realpath } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, resolve, relative, isAbsolute, dirname } from "node:path";
 import { createClient, type Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "@/server/db/schema";
@@ -17,12 +18,49 @@ export const PROOF_PROJECT = "synthetic-ping-project";
 export const PROOF_FIXTURE_MARKER_KEY = "ping:synthetic-proof-fixture";
 export const PROOF_FIXTURE_MARKER_VALUE = "ping.proof.fixture.v1";
 /** Synthetic file-backed database only; never an application migration or ambient connection. */
-export async function createPingProofFixture() {
-  const directory = await mkdtemp(join(tmpdir(), "signal-ping-proof-"));
-  const databasePath = join(directory, "synthetic.db");
+export type PingProofBinding = Readonly<{ sessionId: string; sourceRevision: string; manifestSha256: string;
+  actorId: string; projectId: string }>;
+export type PingProofFixtureOptions = Readonly<{ scratchDirectory: string; databasePath: string;
+  mode: "create" | "reopen"; binding: PingProofBinding }>;
+const bindingKey = "ping:synthetic-proof-binding";
+const schemaKey = "ping:synthetic-proof-schema";
+/** Explicit paths must be inside an explicitly admitted scratch directory; reopen never migrates or seeds. */
+export async function createPingProofFixture(options?: PingProofFixtureOptions) {
+  let databasePath: string;
+  if (options) {
+    assert.ok(isAbsolute(options.databasePath) && isAbsolute(options.scratchDirectory), "Explicit absolute scratch paths required");
+    const rel = relative(resolve(options.scratchDirectory), resolve(options.databasePath));
+    assert.ok(rel && !rel.startsWith("..") && !isAbsolute(rel), "Database must stay inside admitted scratch directory");
+    assert.equal(options.binding.actorId, "alice"); assert.equal(options.binding.projectId, PROOF_PROJECT);
+    assert.ok(/^[a-f0-9]{40}$/.test(options.binding.sourceRevision) && /^[a-f0-9]{64}$/.test(options.binding.manifestSha256));
+    assert.ok(/^[A-Za-z0-9_-]{1,128}$/.test(options.binding.sessionId));
+    await mkdir(dirname(options.databasePath), { recursive: true });
+    const actualRel = relative(await realpath(options.scratchDirectory), await realpath(dirname(options.databasePath)));
+    assert.ok(!actualRel.startsWith("..") && !isAbsolute(actualRel), "Scratch symlink escaped directory");
+    databasePath = resolve(options.databasePath);
+    if (options.mode === "create") { const reserved = await open(databasePath, "wx"); await reserved.close(); }
+    else { assert.equal(options.mode, "reopen"); const info = await lstat(databasePath); assert.ok(info.isFile() && !info.isSymbolicLink()); }
+  } else {
+    const directory = await mkdtemp(join(tmpdir(), "signal-ping-proof-"));
+    databasePath = join(directory, "synthetic.db");
+  }
   const client = createClient({ url: `file:${databasePath.replaceAll("\\", "/")}` });
   try {
     await client.execute("PRAGMA foreign_keys = ON");
+    const schemaFingerprint = async () => createHash("sha256").update(JSON.stringify((await client.execute(
+      "SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name")).rows)).digest("hex");
+    if (options?.mode === "reopen") {
+      assert.equal(String((await client.execute("PRAGMA quick_check")).rows[0].quick_check), "ok");
+      const marker = async (key: string) => (await client.execute({ sql: "SELECT value FROM meta WHERE key=?", args: [key] })).rows[0]?.value;
+      assert.equal(await marker(PROOF_FIXTURE_MARKER_KEY), PROOF_FIXTURE_MARKER_VALUE, "Wrong fixture marker");
+      assert.equal(await marker(bindingKey), JSON.stringify(options.binding), "Wrong fixture identity");
+      assert.equal(await marker(schemaKey), await schemaFingerprint(), "Changed fixture schema");
+      const admitted = await client.execute({ sql: `SELECT u.id FROM users u JOIN workspace_members m ON m.user_id=u.id
+        JOIN workspaces w ON w.id=m.workspace_id WHERE u.id=? AND w.id=? AND w.owner_user_id='owner' AND m.role='member'`,
+        args: [options.binding.actorId, options.binding.projectId] });
+      assert.equal(admitted.rows.length, 1, "Wrong fixture actor or Project");
+      return { client, adapter: createLocalConversationDatabaseAdapter({ client }), databasePath, reopened: true };
+    }
     const migrationFiles = (await readdir(resolve("drizzle"))).filter(name => /^\d{4}_.+\.sql$/.test(name) && name >= "0014_").sort();
     const hasPingReceiptMigration = migrationFiles.includes("0041_ping_command_receipts.sql");
     for (const name of migrationFiles) {
@@ -59,8 +97,12 @@ export async function createPingProofFixture() {
     for (const id of ["owner", "alice", "bob"]) {
       await client.execute({ sql: "INSERT INTO workspace_members(workspace_id,user_id,role) VALUES(?,?,?)", args: [PROOF_PROJECT, id, id === "owner" ? "owner" : "member"] });
     }
+    if (options) {
+      await client.execute({ sql: "INSERT INTO meta(key,value) VALUES(?,?)", args: [bindingKey, JSON.stringify(options.binding)] });
+      await client.execute({ sql: "INSERT INTO meta(key,value) VALUES(?,?)", args: [schemaKey, await schemaFingerprint()] });
+    }
     const adapter = createLocalConversationDatabaseAdapter({ client });
-    return { client, adapter, databasePath };
+    return { client, adapter, databasePath, reopened: false };
   } catch (error) { client.close(); throw error; }
 }
 
@@ -90,7 +132,7 @@ export async function proofEditCommand(client: Client, ids: string[], effects: P
   for (const id of ids) {
     const row = (await client.execute({ sql: "SELECT * FROM tasks WHERE id=?", args: [id] })).rows[0];
     const value: Record<string, unknown> = {};
-    if (effects.selfAssignment) value.assignees = JSON.parse(String(row.assignees));
+    if (effects.selfAssignment || effects.namedAssignment) value.assignees = JSON.parse(String(row.assignees));
     if (Object.hasOwn(effects, "dueDate")) Object.assign(value, { due: row.due, dueAtSeconds: row.due_at,
       startDay: row.start_day, durationDays: row.duration_days });
     if (effects.statusColumnKey) Object.assign(value, { lane: row.lane, boardColumnKey: row.board_column_key, completedAtSeconds: row.completed_at });
