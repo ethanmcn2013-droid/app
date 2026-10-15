@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-files",
+  "source": "tasks/src/app/app/files/page.tsx",
+  "materialityHash": "08771bc864af3e7b",
+  "reviewedAt": "2026-10-15",
+  "reviewer": "Codex root receiving",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-21a36c5482f74ed61dff9c4c-7bd4c129507f949b.json",
+    "attestationSha256": "682e8150fb64e1c55295787148889ab1225a3adc3d8914d0ff53d2ec9763253b",
+    "runId": "tasks-playwright-21a36c5482f74ed61dff9c4c",
+    "canonicalEvidenceSha256": "21a36c5482f74ed61dff9c4c64da8d1dc9b4475616c1561498bbf52b23e6425f",
+    "rawArtifactSha256": "7bd4c129507f949b56e67fb370d2eaee460822871a8570a686450db7aa70363c",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-files",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Exact capture source 4733896b42f2f4e33c56062092e358e35f0d499c, tree a014f878533a85b0c6c4678f40a05bc028f74363; fixture tasks.page.app-files, case \"own surface in demo\". Actual Files surface in its specified demo state. Fresh normal 204-pair capture and 2142-input rendered inventory bind the accepted telemetry and batched typed-Prepare changes. Root directly received one current representative for this target and additional tablet/wide representatives; independent custody accepted this target's four current viewport images and the full source/build/asset/process packet. Prior receipts remain historical; no visual byte continuity with earlier captures is claimed.",
+  "decision": "ACCEPT bounded current default-off demo/component materiality in the specified fixture state. This matrix does not establish enabled Ping workflow behavior, genuine speech, microphone recognition, real authentication/provider/remote database or production continuity, human utility, deployment, production latency, new design scores or broader required-state coverage."
+}
