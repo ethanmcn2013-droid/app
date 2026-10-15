@@ -200,7 +200,7 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
     html=html.replace('id="root"','id="root" inert');
     html=html.replace('<div id="root" inert aria-label="Signal Tasks"></div>',
       '<section id="tasks-pane" inert><div id="root" inert aria-label="Signal Tasks"></div><div id="fixture-portals"></div></section>')
-      .replace('</head>','<style>#tasks-pane{position:relative;transform:translateZ(0);min-width:0;min-height:0;height:100%;overflow:hidden;border-radius:12px}</style></head>');
+      .replace('</head>','<style>#tasks-pane{position:relative;transform:translateZ(0);container-type:size;min-width:0;min-height:0;height:100%;overflow:hidden;border-radius:12px}#fixture-portals div:has(>[role="dialog"]){padding-top:16px}#fixture-portals [role="dialog"]{max-width:calc(100cqw - 24px);max-height:calc(100cqh - 32px)}#fixture-portals [data-testid="ping-overlay"]{max-height:min(680px,calc(100cqh - 34px))}</style></head>');
     const metadataSequences=new Map(),inputPaths=new Map();
     const readJson=async(req,max=48000)=>{assert.equal(req.headers['content-type']?.split(';')[0],'application/json');assert.ok(!req.headers['content-encoding']);let length=0;const chunks=[];
       req.setTimeout(10000,()=>req.destroy());for await(const chunk of req){length+=chunk.length;assert.ok(length<=max);chunks.push(chunk);}return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));};
