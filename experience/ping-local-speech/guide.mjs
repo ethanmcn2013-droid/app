@@ -3,6 +3,10 @@ const allowedCaseKeys = new Set(['id', 'goal', 'taskNames', 'modeInfo']);
 const allowedPhases = new Set(['setup', 'ready', 'interacting', 'outcome', 'unresolved', 'paused', 'ended']);
 let snapshot = null;
 let pending = false;
+let refreshInFlight = false;
+let pageStopped = false;
+let stateVersion = 0;
+let pollingTimer;
 
 root.innerHTML = `
   <div class="guide">
@@ -136,8 +140,10 @@ function phraseForOutcome(outcome) {
 function render() {
   if (!snapshot) return;
   const phase = phaseOf(snapshot);
+  if (phase === 'ended') clearInterval(pollingTimer);
   const activeCase = publicCase(snapshot.currentCase ?? null);
   const counts = snapshot.counts ?? snapshot;
+  const sessionComplete = counts.remainingCount === 0 && snapshot.canStart !== true && phase !== 'ended';
   el('save-copy').textContent = snapshot.saved === true ? 'Saved locally' : 'Session status';
   el('planned-count').textContent = `${count(snapshot.totalCount ?? snapshot.plannedCount ?? 100)} cases planned`;
   el('started-count').textContent = count(counts.startedCount ?? counts.participantStartedCount);
@@ -169,7 +175,7 @@ function render() {
   }));
   list.hidden = !activeCase?.taskNames.length;
 
-  const mainAction = ({
+  const mainAction = sessionComplete ? ['end', 'End session', true] : ({
     setup: ['start', 'Start a case', Boolean(snapshot.canStart)],
     ready: ['start', 'Start this case', Boolean(snapshot.canStart)],
     interacting: ['verify', snapshot.canVerify ? 'Check Ping result' : 'Waiting for Ping input', Boolean(snapshot.canVerify)],
@@ -182,9 +188,9 @@ function render() {
   primary.textContent = mainAction[1];
   primary.hidden = phase === 'ended';
   primary.disabled = pending || !mainAction[2];
-  pauseButton.hidden = !['ready', 'interacting', 'outcome', 'unresolved'].includes(phase);
+  pauseButton.hidden = sessionComplete || !['ready', 'interacting', 'outcome', 'unresolved'].includes(phase);
   pauseButton.disabled = pending;
-  endButton.hidden = phase === 'ended' || phase === 'setup';
+  endButton.hidden = phase === 'ended' || phase === 'setup' || sessionComplete;
   endButton.disabled = pending;
   const canReportMode = phase === 'ready' && Boolean(snapshot.canStart)
     || phase === 'interacting' && counts.startedCount > counts.inputObservedCount;
@@ -204,18 +210,27 @@ function render() {
 }
 
 async function refresh() {
+  if (pageStopped || pending || document.hidden || refreshInFlight || phaseOf(snapshot) === 'ended') return;
+  refreshInFlight = true;
+  const requestVersion = stateVersion;
   try {
     const value = await window.pingGuide.getState();
+    if (requestVersion !== stateVersion || pageStopped) return;
     snapshot = value?.snapshot ?? value;
     render();
+    if (phaseOf(snapshot) === 'ended') clearInterval(pollingTimer);
   } catch {
+    if (requestVersion !== stateVersion || pageStopped) return;
     statusText.textContent = 'The saved session could not be loaded. Keep this page open and ask the session owner to check the runner.';
     el('save-copy').textContent = 'Session unavailable';
+  } finally {
+    refreshInFlight = false;
   }
 }
 
 async function act(action, payload = undefined) {
   if (pending || !window.pingGuide || typeof window.pingGuide.action !== 'function') return;
+  stateVersion++;
   pending = true;
   el('error-copy').hidden = true;
   render();
@@ -255,4 +270,13 @@ if (!window.pingGuide || typeof window.pingGuide.getState !== 'function' || type
   el('save-copy').textContent = 'Session not connected';
 } else {
   void refresh();
+  pollingTimer = setInterval(() => void refresh(), 1000);
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) void refresh();
+});
+window.addEventListener('pagehide', () => {
+  pageStopped = true;
+  clearInterval(pollingTimer);
+}, { once: true });
