@@ -9,7 +9,7 @@ export type PlannerBudgetReservation = Readonly<{
   developmentCapMicroUsd: number; totalCapMicroUsd: number; rateCardId: string;
 }>;
 export type PlannerUsageRecord = Readonly<{
-  requestId: string; inputTokens: number | null; outputTokens: number | null;
+  runId: string; requestId: string; inputTokens: number | null; outputTokens: number | null;
   estimatedMicroUsd: number | null; state: "usage_observed" | "unknown";
 }>;
 /** Implementations must reserve atomically and durably before dispatch. An already

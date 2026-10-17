@@ -103,8 +103,8 @@ export function createClaudeAssistantPlanner<Plan>(options: {
             estimatedMicroUsd:estimatePlannerUsageMicroUsd(model,{inputTokens:value.usage.input_tokens,outputTokens:value.usage.output_tokens,
               cacheReadTokens:cacheRead,cacheWrite5mTokens:write5m,cacheWrite1hTokens:write1h})};
           if(usage.estimatedMicroUsd>reservation.reservedMicroUsd)throw new Error("planner_usage_exceeds_reservation");
-          await budget.recordUsage({requestId:request.requestId,...usage,state:"usage_observed"}); usageRecorded = true;
-        } else { await budget.recordUsage({requestId:request.requestId,inputTokens:null,outputTokens:null,estimatedMicroUsd:null,state:"unknown"}); usageRecorded = true; }
+          await budget.recordUsage({runId:request.runId,requestId:request.requestId,...usage,state:"usage_observed"}); usageRecorded = true;
+        } else { await budget.recordUsage({runId:request.runId,requestId:request.requestId,inputTokens:null,outputTokens:null,estimatedMicroUsd:null,state:"unknown"}); usageRecorded = true; }
         if (!object(value) || value.type !== "message" || value.role !== "assistant" || value.model !== model ||
           value.stop_reason !== "end_turn" || !Array.isArray(value.content)) throw new Error("planner_response_invalid");
         const textBlocks = value.content.filter(block=>object(block)&&block.type === "text");
@@ -116,7 +116,7 @@ export function createClaudeAssistantPlanner<Plan>(options: {
         if (stopped || signal.aborted) throw new Error("planner_cancelled");
         return {plan,model,requestId:request.requestId,usage};
       } catch (error) {
-        if (reserved && !usageRecorded) try { await budget.recordUsage({requestId:request.requestId,inputTokens:null,outputTokens:null,estimatedMicroUsd:null,state:"unknown"}); } catch { /* Reservation remains charged. */ }
+        if (reserved && !usageRecorded) try { await budget.recordUsage({runId:request.runId,requestId:request.requestId,inputTokens:null,outputTokens:null,estimatedMicroUsd:null,state:"unknown"}); } catch { /* Reservation remains charged. */ }
         // No provider body, credential, generated text, or reasoning in errors.
         const code = error instanceof Error && SAFE_ERRORS.has(error.message) ? error.message : "planner_request_failed";
         throw new Error(code);
