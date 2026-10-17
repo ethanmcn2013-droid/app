@@ -13,6 +13,8 @@ import { assertAssistantActor, authorizeAssistantProject, getAssistantContext } 
 import { executeAssistantAction } from "./actions";
 import { prepareAssistantTimeline } from "./timeline";
 import { createAssistantDispatcher } from "./dispatch";
+import { pingTelemetrySpan } from "../telemetry";
+import type { AssistantActionResult } from "@/lib/ping/assistant/contract";
 
 type Target = NonNullable<ReturnType<typeof assistantTarget>>;
 const currentTarget = () => assistantTarget(process.env, isDemoMode());
@@ -36,8 +38,19 @@ function createInstance(target: Target) {
   const service = createAssistantService({ store,
     planner: { plan: (input, signal) => {
       if (!planner || !stillCurrent() || process.env.ANTHROPIC_API_KEY !== key) throw new Error("planner_unavailable");
-      return planner.plan(input, signal ?? new AbortController().signal);
+      return pingTelemetrySpan("prepare", () => planner.plan(input, signal ?? new AbortController().signal));
     } },
+    priorTaskResult: async (actorId, request) => {
+      for (const run of await store.listRuns(actorId)) {
+        if (run.requestId === request.requestId) continue;
+        const results = Object.values(await store.getStepResults<AssistantActionResult>(actorId, run.id));
+        const prior = results.filter(result => result.kind === "create_tasks" && result.status === "completed" && result.createdTaskIds?.length &&
+          (request.scope.kind !== "project" || result.projectId === request.scope.projectId)).at(-1);
+        if (!prior?.projectId) continue;
+        try { await transact(tx => authorizeAssistantProject(tx, actorId, prior.projectId!)); return prior; } catch { return undefined; }
+      }
+      return undefined;
+    },
     context: (actorId, request) => transact(async tx => {
       const actor = await assertAssistantActor(tx, actorId);
       const context = await getAssistantContext(tx, actorId, request.scope.kind === "project" ? request.scope.projectId : null);
@@ -64,13 +77,13 @@ function createInstance(target: Target) {
         return true;
       } catch { return false; }
     }),
-    execute: input => executeAssistantAction({ ...input, dispatch: dispatcher, deliveryTransaction: transact,
+    execute: input => pingTelemetrySpan("execute", () => executeAssistantAction({ ...input, dispatch: dispatcher, deliveryTransaction: transact,
       prepareTimeline: action => prepareAssistantTimeline(action, (actorId, projectId) => transact(async tx => {
         const actor = await assertAssistantActor(tx, actorId), project = await authorizeAssistantProject(tx, actorId, projectId);
         const owner = await assertAssistantActor(tx, project.ownerUserId!);
         if (!actor.clerkId || !owner.clerkId) throw new Error("timeline_identity_unavailable");
         return { clerkId: actor.clerkId, ownerClerkId: owner.clerkId, id: project.id, slug: project.slug, name: project.name };
-      })) }),
+      })) })),
   });
   return { database, service, transact };
 }

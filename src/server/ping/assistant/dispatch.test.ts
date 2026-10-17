@@ -16,3 +16,8 @@ test("disabled or pre-aborted delivery sends nothing; ambiguous reply never mean
   assert.equal(sends, 0);
   assert.deepEqual(await createAssistantMailDispatcher({ ...base, enabled: () => true })(intent, { idempotencyKey: "id", signal: new AbortController().signal }), { outcome: "unknown" });
 });
+
+test("nudge link opens the exact task using the application's canonical task query", async () => {
+  const dispatch = createAssistantMailDispatcher({ enabled: () => true, from: "Synthetic", describe: async () => ({ projectName: "Test", inviterName: "Teammate", taskTitle: "Task A" }), send: async message => { assert.match(message.text, /workspaceId=project-a&task=task-a/); assert.doesNotMatch(message.text, /taskId=/); return { id: "accepted" }; } });
+  assert.equal((await dispatch({ key: "nudge", kind: "nudge", projectId: "project-a", email: "invented@example.invalid", taskId: "task-a", recipientId: "member-a" }, { idempotencyKey: "receipt", signal: new AbortController().signal })).outcome, "accepted");
+});

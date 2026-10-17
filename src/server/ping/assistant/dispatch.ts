@@ -19,7 +19,7 @@ export function createAssistantMailDispatcher(deps: {
     const details = await deps.describe(intent);
     if (input.signal.aborted) return { outcome: "suppressed" };
     const link = intent.kind === "invite" ? `${APP_ORIGIN}/invite/${encodeURIComponent(intent.inviteToken!)}` :
-      `${APP_ORIGIN}/app/tasks?workspaceId=${encodeURIComponent(intent.projectId)}&taskId=${encodeURIComponent(intent.taskId!)}`;
+      `${APP_ORIGIN}/app/tasks?workspaceId=${encodeURIComponent(intent.projectId)}&task=${encodeURIComponent(intent.taskId!)}`;
     const subject = intent.kind === "invite" ? `${details.inviterName} invited you to ${details.projectName}` : `A reminder about ${details.taskTitle ?? "your task"}`;
     const text = intent.kind === "invite" ? `${details.inviterName} invited you to ${details.projectName}. Join the project: ${link}` :
       `A teammate sent a reminder about ${details.taskTitle ?? "your task"} in ${details.projectName}. Open the task: ${link}`;
