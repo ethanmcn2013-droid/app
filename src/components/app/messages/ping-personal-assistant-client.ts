@@ -70,3 +70,17 @@ export function observeAssistantResultCommit(options: {
   }); } catch { return () => {}; }
   return () => { disposed = true; try { options.cancelFrame(frame); } catch { /* Diagnostic only. */ } };
 }
+
+/** Re-entry is allowed only after an authoritative empty lookup, retaining the saved identity. */
+export function assistantReentryId(pending: PendingAssistantRequest | null, authoritativeAbsent: boolean): string | null {
+  return pending && authoritativeAbsent ? pending.requestId : null;
+}
+export function assistantCreatedProjects(run: AssistantRunView): readonly { id: string; name: string }[] {
+  if (!["completed", "partial"].includes(run.status)) return [];
+  const projects = new Map<string, { id: string; name: string }>();
+  for (const step of run.steps) {
+    const result = step.result as (NonNullable<typeof step.result> & { createdProjectName?: string }) | null;
+    if (step.status === "completed" && result?.status === "completed" && typeof result.createdProjectId === "string" && result.createdProjectId && typeof result.createdProjectName === "string" && result.createdProjectName.trim()) projects.set(result.createdProjectId, { id: result.createdProjectId, name: result.createdProjectName });
+  }
+  return [...projects.values()];
+}

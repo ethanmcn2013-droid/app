@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit } from "./ping-personal-assistant-client";
+import { assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit } from "./ping-personal-assistant-client";
 import type { AssistantRunView } from "@/lib/ping/assistant/contract";
 const run: AssistantRunView = { id:"run_synthetic_123",requestId:"request_synthetic_123",text:"Create 100 tasks",scope:{kind:"project",projectId:"synthetic-project"},mode:"execute",status:"partial",createdAt:"2026-10-18T09:00:00.000Z",updatedAt:"2026-10-18T09:01:00.000Z",steps:[
   {id:"step1",actionId:"tasks",kind:"create_tasks",status:"completed",result:{stepId:"tasks",kind:"create_tasks",status:"completed",summary:"Created 100 tasks",affectedCount:100}},
@@ -46,4 +46,17 @@ test("hidden or disposed results do not manufacture a visible completion",()=>{
   const base={timing,run:{status:"completed" as const,mode:"execute" as const},isCurrent:()=>true,requestFrame:(cb:()=>void)=>{callback=cb;return 1;},cancelFrame:()=>{}};
   observeAssistantResultCommit({...base,isCurrent:()=>false});assert.deepEqual(facts,[]);
   const dispose=observeAssistantResultCommit(base);dispose();callback();assert.equal(facts.length,1);assert.equal(timing.done,false);
+});
+
+test("reload re-entry requires authoritative absence and reuses original saved request identity", () => {
+  const saved = { version: 1 as const, requestId: "request_saved_123" };
+  assert.equal(assistantReentryId(saved, false), null);
+  assert.equal(assistantReentryId(null, true), null);
+  assert.equal(assistantReentryId(saved, true), saved.requestId);
+});
+test("follow-up scope uses explicit authorized created Project fields only", () => {
+  const projectRun = {...run, status: "completed" as const, steps: [{...run.steps[0], result: {...run.steps[0].result!, createdProjectId: "new-project", createdProjectName: "New launch"}}]};
+  assert.deepEqual(assistantCreatedProjects(projectRun), [{id:"new-project",name:"New launch"}]);
+  assert.deepEqual(assistantCreatedProjects({...projectRun,status:"running"}), []);
+  assert.deepEqual(assistantCreatedProjects(run), []);
 });

@@ -9,9 +9,7 @@ import { getEffectiveNodesForWorkspace, getProjectsForWorkspace, getWorkspacesFo
 import { getCurrentTasksWorkspaceContext } from "@/modules/timeline/server/sync/tasks-workspace-context";
 import { selectCurrentPreviewWorkspace } from "./current-project-preview-model";
 import { CurrentProjectPreviewView } from "./current-project-preview-view";
-
-export const metadata: Metadata = { title: "Private preview · Timeline · Signal Studio", robots: { index: false, follow: false } };
-
+export const metadata: Metadata = { title: "Private preview - Timeline - Signal Studio", robots: { index: false, follow: false } };
 /** Reads current owner-plan data only. No publication lookup, token, share control, sync or provisioning. */
 export default async function CurrentProjectPreview({ params, searchParams }: {
   params: Promise<{ projectSlug: string }>;
