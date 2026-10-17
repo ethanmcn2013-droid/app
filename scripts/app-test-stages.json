@@ -22,6 +22,10 @@
   ],
   [
     "pnpm",
+    "test:ping-assistant"
+  ],
+  [
+    "pnpm",
     "test:ping-voice"
   ],
   [
