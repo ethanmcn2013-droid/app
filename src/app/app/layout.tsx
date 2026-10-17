@@ -14,6 +14,7 @@ import { isDemoMode } from "@/lib/access-mode";
 import { requireAppAccessTasks } from "@/server/app-access";
 import { ActiveProjectProvider } from "@/components/app/active-project-provider";
 import { ConversationSessionRuntime } from "@/components/app/conversation-session-runtime";
+import { ToastRoot } from "@/components/primitives/toast";
 import { isActiveProjectV3Enabled } from "@/lib/projects/flags";
 import { readActiveProjectCookies } from "@/server/projects/active-project-cookie";
 import { APP_BAR_DARK } from "@/lib/document-paper";
@@ -115,6 +116,7 @@ export default function AppLayout({
   overlay: React.ReactNode;
 }) {
   const shell = (
+    <ToastRoot>
     <StudioChromeProvider>
       {/* First thing in the /app document body: the theme resolves before the
           app paints, and only documents that render THIS layout carry it. */}
@@ -149,6 +151,7 @@ export default function AppLayout({
         </SuiteScrollFrame>
       </ActiveProjectRuntime>
     </StudioChromeProvider>
+    </ToastRoot>
   );
 
   return isDemoMode() ? shell : <ClerkRuntimeProvider>{shell}</ClerkRuntimeProvider>;

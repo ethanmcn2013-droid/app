@@ -52,6 +52,13 @@ const ToastContext = createContext<Ctx | null>(null);
  * Anti-spam: max 4 stacked at once; older ones dismiss to make room.
  */
 export function ToastRoot({ children }: { children: ReactNode }) {
+  const parent = useContext(ToastContext);
+  // The App shell and standalone Tasks renders share this boundary. Reuse an
+  // existing queue so navigation never mounts a second viewport or bridge.
+  return parent ? <>{children}</> : <ToastProvider>{children}</ToastProvider>;
+}
+
+function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastsRef = useRef<Toast[]>([]);
   const timers = useRef(new Map<string, { handle: ReturnType<typeof setTimeout>; startedAt: number; remaining: number }>());
@@ -122,6 +129,7 @@ export function ToastRoot({ children }: { children: ReactNode }) {
 
   return (
     <ToastContext.Provider value={{ toast }}>
+      <ToastBridge />
       {children}
       <div className="signal-toast-viewport pointer-events-none fixed z-[80] flex w-[min(380px,calc(100vw-32px))] flex-col gap-2">
         <AnimatePresence initial={false}>

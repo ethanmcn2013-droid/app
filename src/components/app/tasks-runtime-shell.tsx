@@ -18,7 +18,7 @@ import {
   StudioChromeBridge,
   StudioChromePublisher,
 } from "@/components/studio-bar/studio-chrome-context";
-import { ToastBridge, ToastRoot } from "@/components/primitives/toast";
+import { ToastRoot } from "@/components/primitives/toast";
 import { CurrentUserProvider } from "@/lib/auth-context";
 import { DomainProvider } from "@/lib/domain-context";
 import {
@@ -300,7 +300,6 @@ export async function TasksRuntimeShell({
                     <CrossWorkspaceOverdue />
                     <CrossWorkspaceSearch />
                     <FocusMode />
-                    <ToastBridge />
                   </PaletteRoot>
                 </AddTaskRoot>
               </ToastRoot>
