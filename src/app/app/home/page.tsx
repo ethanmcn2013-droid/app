@@ -7,6 +7,7 @@ import { ActiveProjectRouteSync } from "@/components/app/active-project-route-sy
 import { resolveProjectForRoute } from "@/server/projects/route-authz";
 import type { RouteProjectDecision } from "@/server/projects/route-authz";
 import { loadHomeData } from "./home-data";
+import { homeProjectsPreview } from "@/components/app/design-directions/preview-gate";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Home · Signal Studio" };
@@ -21,11 +22,17 @@ export default async function HomePage({ searchParams }: {
 }) {
   await requireAppAccessTasks();
 
+  const params = await searchParams ?? {};
+  const preview = homeProjectsPreview(params);
+  if (preview) {
+    const { ReviewExperience } = await import("@/components/app/design-directions/review-experience");
+    return <ReviewExperience key={`home-${preview.direction}-${preview.state}`} surface="home" initialDirection={preview.direction} initialState={preview.state} />;
+  }
+
   const demo = isDemoMode();
   const userId = demo ? null : await requireSignalUser();
   if (!demo && !userId) redirect("/sign-in");
 
-  const params = await searchParams ?? {};
   const hint = parseBriefingReadScopeHint(params, planningPeriodsEnabled());
   if (hint.kind === "invalid") notFound();
   let data = await loadHomeData({

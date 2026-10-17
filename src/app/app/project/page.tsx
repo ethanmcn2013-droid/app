@@ -10,6 +10,8 @@ import { resolveProjectForRoute } from "@/server/projects/route-authz";
 import { PROJECT_APP_PATH } from "@/lib/product-urls";
 import { withActiveProject } from "@/lib/projects/project-url";
 import type { ProjectId } from "@/lib/projects/project-ref";
+import { homeProjectsPreview } from "@/components/app/design-directions/preview-gate";
+import { requireAppAccessTasks } from "@/server/app-access";
 
 // Inherited from the /app layout: force-dynamic
 export const dynamic = "force-dynamic";
@@ -71,9 +73,16 @@ function Unavailable() {
 export default async function ProjectPage({
   searchParams,
 }: {
-  searchParams: Promise<{ workspaceId?: string | string[]; view?: string | string[]; show?: string | string[] }>;
+  searchParams: Promise<{ workspaceId?: string | string[]; view?: string | string[]; show?: string | string[]; design?: string | string[]; state?: string | string[] }>;
 }) {
-  const { workspaceId, view, show } = await searchParams;
+  const params = await searchParams;
+  const preview = homeProjectsPreview(params);
+  if (preview) {
+    await requireAppAccessTasks();
+    const { ReviewExperience } = await import("@/components/app/design-directions/review-experience");
+    return <ReviewExperience key={`projects-${preview.direction}-${preview.state}`} surface="projects" initialDirection={preview.direction} initialState={preview.state} />;
+  }
+  const { workspaceId, view, show } = params;
   const project = await resolveProjectForRoute(workspaceId);
 
   // Missing, forbidden, deleted and malformed — one neutral answer. A caller
