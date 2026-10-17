@@ -9,7 +9,7 @@ import vm from 'node:vm';
 import {createGuidedDiagnosticStore,createMetadataFence} from './guided-measurement.mjs';
 import {createGuidedRunner,guidedTelemetryModule} from './guided-browser.mjs';
 import {createGuidedSession} from './guided-session.mjs';
-const module=await import('../../src/lib/ping/telemetry.ts');const {validatePingTelemetryEvent}=module.default??module;
+const telemetryModule=await import('../../src/lib/ping/telemetry.ts');const {validatePingTelemetryEvent}=telemetryModule.default??telemetryModule;
 const require=createRequire(import.meta.url),esbuild=createRequire(require.resolve('tsx/package.json'))('esbuild');
 const root=path.resolve(import.meta.dirname,'../..');
 const event=(attemptId,overrides={})=>({version:'ping.telemetry.v1',source:'client',trust:'client_reported',clock:'client_monotonic',attemptId,
