@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-concepts",
+  "source": "tasks/src/app/app/concepts/page.tsx",
+  "materialityHash": "63e7924b683e8c06",
+  "reviewedAt": "2026-10-17",
+  "reviewer": "Independent GPT-6.1 reviewer /root/ai_typed_76_100",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-d9de0535f0c1ca737f9543be-13a258ad3b093870.json",
+    "attestationSha256": "6c4e6277b15e965ffd70d63e646d8a18416869c58d0f2f5b95afbfb6ae4373d1",
+    "runId": "tasks-playwright-d9de0535f0c1ca737f9543be",
+    "canonicalEvidenceSha256": "d9de0535f0c1ca737f9543be61b00b519ad5762ae185ceeaff671622593e644c",
+    "rawArtifactSha256": "13a258ad3b093870fa49d8b1106f82e85744ddbb69f97e43e9fc206c8f9bb248",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-concepts",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh actual capture source a58cd484895557a0859fcb123ba47453cf84f880, tree bf96c3239c097b3ace45fc3dad1c314894e4dd90; fixture tasks.page.app-concepts, case \"own surface in demo\". Actual Concepts surface in the specified default-off demo state; no enabled experiment or production claim. Canonical 204-pair capture passed; independent reviewer inspected this target's actual four-viewport contact sheet and verified all four PNG identities. All 2142 declared rendered source inputs, four capture contracts and lock bytes equal receiving functional source 10bc21410ce675d3ed55421fb9c0b1819710b989. The only package metadata change adds the diagnostic test filename to its owning test command; actual built HEAD is not relabeled. Earlier capture and receipt records remain historical.",
+  "decision": "ACCEPT bounded current default-off demo/component materiality in the specified fixture state. Actual Concepts surface in the specified default-off demo state; no enabled experiment or production claim. This matrix does not establish enabled Ping workflow behavior, genuine speech or microphone recognition, real authentication/provider/remote database or production continuity, human utility, deployment, production latency, new design scores or broader required-state coverage."
+}
