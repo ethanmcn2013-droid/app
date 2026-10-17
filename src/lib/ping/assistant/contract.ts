@@ -66,7 +66,7 @@ export type AssistantRunView = Readonly<{
   model?: string; estimatedCostMicrousd?: number;
 }>;
 export type AssistantApiCommand = Readonly<{ operation: "submit"; request: AssistantRequest }> |
-  Readonly<{ operation: "resume" | "cancel"; runId: string }>;
+  Readonly<{ operation: "resume" | "cancel" | "apply"; runId: string }>;
 export type AssistantApiResponse = Readonly<{
   version: typeof ASSISTANT_VERSION; ok: true; available: boolean; run?: AssistantRunView; runs?: readonly AssistantRunView[];
 }> | Readonly<{ version: typeof ASSISTANT_VERSION; ok: false; code: string; message: string }>;
@@ -182,7 +182,7 @@ export function parseAssistantApiCommand(value: unknown): AssistantApiCommand | 
   if (value.operation === "submit" && Object.keys(value).length === 2) {
     const request = parseAssistantRequest(value.request); return request ? { operation: "submit", request } : null;
   }
-  return (value.operation === "resume" || value.operation === "cancel") && Object.keys(value).length === 2 && typeof value.runId === "string" && /^[A-Za-z0-9_-]{8,160}$/.test(value.runId)
+  return (value.operation === "resume" || value.operation === "cancel" || value.operation === "apply") && Object.keys(value).length === 2 && typeof value.runId === "string" && /^[A-Za-z0-9_-]{8,160}$/.test(value.runId)
     ? { operation: value.operation, runId: value.runId } : null;
 }
 
