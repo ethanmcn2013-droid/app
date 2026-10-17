@@ -106,18 +106,29 @@ async function sourceIdentity() {
 }
 
 /** Owned loopback-only synthetic host. Importing this file starts no server or browser. */
-export async function createGuidedRunner({directory,manifestPath,mode,sessionId=randomUUID(),scripted=false,io={},benchmark}) {
+export function coachedParticipantCase(record,command,coached=false) {
+  assert.equal(typeof coached,'boolean','Explicit boolean coached configuration required');
+  const summary=participantCase(record);
+  if(!coached)return summary;
+  assert.ok(typeof command==='string'&&command.trim(),'Coached command unavailable');
+  return Object.freeze({...summary,coachedCommand:command});
+}
+
+export async function createGuidedRunner({directory,manifestPath,mode,sessionId=randomUUID(),scripted=false,coached=false,io={},benchmark}) {
   assert.ok(['create','reopen'].includes(mode),'Explicit create/reopen required');
   assert.ok(path.isAbsolute(directory)&&path.relative(scratch,directory)&&!path.relative(scratch,directory).startsWith('..')&&!path.isAbsolute(path.relative(scratch,directory)),'Owned absolute scratch session required');
+  assert.equal(typeof coached,'boolean','Explicit boolean coached configuration required');
   const bytes=await fs.readFile(manifestPath);assert.equal(sha(bytes),GUIDED_MANIFEST_SHA256,'Wrong private scenario manifest');
-  const cases=buildGuidedCases(JSON.parse(bytes),sha(bytes));
+  const manifest=JSON.parse(bytes);
+  const cases=buildGuidedCases(manifest,sha(bytes));
+  const prompts=new Map(manifest.scenarios.map(c=>[String(c.scenario_id),c.supported_input_example]));
   const source=await sourceIdentity();
   if(benchmark!==undefined)benchmark=validateBenchmark(benchmark);
   let config;
   if(mode==='create') {
     await fs.mkdir(directory,{recursive:false});
     config={version:1,identity:{sessionId,sourceRevision:source.sourceRevision,manifestSha256:sha(bytes),actorId:'alice',projectId:'synthetic-ping-project'},
-      sourceInputs:source.sourceInputs,scripted,benchmark:benchmark??null};
+      sourceInputs:source.sourceInputs,scripted,coached,benchmark:benchmark??null};
     const handle=await fs.open(path.join(directory,'host.json'),'wx');
     try{await handle.writeFile(JSON.stringify(config));await handle.datasync();}finally{await handle.close();}
   } else {
@@ -125,6 +136,7 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
     assert.equal(config.version,1);assert.equal(config.identity.sourceRevision,source.sourceRevision,'Session source changed');
     assert.equal(config.identity.manifestSha256,sha(bytes));assert.deepEqual(config.sourceInputs,source.sourceInputs,'Session source bytes changed');
     assert.equal(config.scripted,scripted,'Session evidence class cannot change');
+    assert.equal(config.coached??false,coached,'Session coaching cannot change');
     assert.deepEqual(config.benchmark??null,benchmark??null,'Benchmark identity cannot change');
   }
   const schema=unwrap(await import('../../src/server/db/schema.ts'));
@@ -178,7 +190,7 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
         await tx.commit();
       }catch(error){await tx.rollback();throw error;}
     };
-    session=await createGuidedSession({directory,identity:config.identity,cases,snapshot,lookupReceipt,prepareCase,publicCase:participantCase,benchmark:config.benchmark??undefined,
+    session=await createGuidedSession({directory,identity:config.identity,cases,snapshot,lookupReceipt,prepareCase,publicCase:record=>coachedParticipantCase(record,prompts.get(record.id),coached),coached,benchmark:config.benchmark??undefined,
       io:{beforeWrite:async event=>{if(test.journalFailure&&event.type==='invocation'){test.journalFailure=false;throw Error('Injected durable write failure');}await io.beforeWrite?.(event);}}});
     const esbuild=createRequire(require.resolve('tsx/package.json'))('esbuild');
     const localSpeechPath=path.join(root,'src/lib/ping/local-speech.ts');

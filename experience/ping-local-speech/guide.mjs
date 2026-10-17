@@ -1,5 +1,5 @@
 const root = document.querySelector('#guide-root');
-const allowedCaseKeys = new Set(['id', 'goal', 'taskNames', 'modeInfo']);
+const allowedCaseKeys = new Set(['id', 'goal', 'taskNames', 'modeInfo', 'coachedCommand']);
 const allowedPhases = new Set(['setup', 'ready', 'interacting', 'outcome', 'unresolved', 'paused', 'ended']);
 let snapshot = null;
 let pending = false;
@@ -23,6 +23,11 @@ root.innerHTML = `
     <section class="case-panel" id="case-panel" aria-labelledby="case-goal" hidden>
       <div class="case-meta"><span id="case-label">Case</span><span id="case-mode"></span></div>
       <h2 id="case-goal"></h2>
+      <section id="coached-cue" hidden aria-label="Coached diagnostic command">
+        <strong>Coached diagnostic - excluded from uncoached qualification</strong>
+        <p id="coached-command" style="font-size:1.5rem;line-height:1.35;font-weight:600;overflow-wrap:anywhere"></p>
+        <p>Say this once, choose Finish and run once, then wait for the next cue.</p>
+      </section>
       <ul class="task-list" id="task-list" hidden></ul>
       <p class="action-hint" id="action-hint"></p>
     </section>
@@ -103,7 +108,8 @@ function publicCase(value) {
   if (typeof value.id !== 'string' || typeof value.goal !== 'string' || !Array.isArray(value.taskNames) || typeof value.modeInfo !== 'string') {
     throw new Error('The guide received an incomplete case summary.');
   }
-  return { id: value.id, goal: value.goal, taskNames: value.taskNames.filter(name => typeof name === 'string'), modeInfo: value.modeInfo };
+  if (value.coachedCommand !== undefined && (typeof value.coachedCommand !== 'string' || !value.coachedCommand.trim())) throw new Error('Invalid coached command.');
+  return { coachedCommand:value.coachedCommand, id: value.id, goal: value.goal, taskNames: value.taskNames.filter(name => typeof name === 'string'), modeInfo: value.modeInfo };
 }
 
 function phaseOf(value) {
@@ -164,6 +170,8 @@ function render() {
   el('case-label').textContent = `Case ${activeCase?.id ?? ''}`;
   el('case-mode').textContent = activeCase?.modeInfo ?? '';
   el('case-goal').textContent = activeCase?.goal ?? '';
+  el('coached-cue').hidden = !activeCase?.coachedCommand;
+  el('coached-command').textContent = activeCase?.coachedCommand ?? '';
   el('action-hint').textContent = activeCase?.taskNames.length
     ? 'Select these names in Tasks. With Type, review changes before Finish and apply or Cancel. With Talk, Finish and run can save immediately, so check the goal before starting.'
     : 'This case starts from an empty selection. With Type, review changes before Finish and apply or Cancel. With Talk, Finish and run can save immediately, so check the goal before starting.';

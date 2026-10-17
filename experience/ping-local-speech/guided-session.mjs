@@ -27,7 +27,7 @@ const timingMetrics=['prepare-server','execute-server','prepare-roundtrip','exec
 const visibleMetrics=['apply-to-visible','finish-to-visible'];
 const mutable = ['assignees','due','due_at','lane','board_column_key','idle_days','completed_at','updated_at'];
 const fields = {
-  opened:['identity'], preparing:['caseId'], armed:['caseId','baseline'], started:['attemptId'], mode:['mode'],
+  opened:['identity','coached'], preparing:['caseId'], armed:['caseId','baseline'], started:['attemptId'], mode:['mode'],
   input:['mode','evidence','generationId','requestId'], prepared:['generationId','commandId','projectId','tokenHash','ordinal'],
   invocation:['generationId','commandId','projectId','tokenHash','ordinal'],
   terminal:['category','code','stage','projection','source'], verified:['outcome','evidenceHash','projection'],
@@ -220,7 +220,8 @@ export function verifyGuidedEffects({baseline,snapshot,oracle,receipt,identity,o
 }
 
 /** Returns a serialized async API; state() is synchronous and participant-safe. No raw request is retained. */
-export async function createGuidedSession({directory,identity:inputIdentity,cases,snapshot,lookupReceipt,prepareCase,publicCase,now=Date.now,io={},benchmark}) {
+export async function createGuidedSession({directory,identity:inputIdentity,cases,snapshot,lookupReceipt,prepareCase,publicCase,now=Date.now,io={},benchmark,coached=false}) {
+  assert.equal(typeof coached,'boolean','Invalid coaching configuration');
   const identity=safeIdentity(inputIdentity);
   const benchmarkIdentity=benchmark===undefined?null:validateBenchmark(benchmark);
   assert.ok(path.isAbsolute(directory));assert.ok(Array.isArray(cases)&&cases.length&&new Set(cases.map(c=>c.id)).size===cases.length);
@@ -268,7 +269,7 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       assert.equal(e.version,1);assert.equal(e.seq,++seq);assert.ok(Number.isSafeInteger(e.time));assert.equal(e.previous,chain);
       assert.ok(Object.hasOwn(fields,e.type)&&keys(e.data,fields[e.type]));
       const {hash:recordHash,...body}=e;assert.equal(recordHash,digest(body),'Ledger integrity failure');chain=recordHash;
-      if(seq===1){assert.equal(e.type,'opened');assert.deepEqual(e.data.identity,identity,'Session pin mismatch');}
+      if(seq===1){assert.equal(e.type,'opened');assert.deepEqual(e.data.identity,identity,'Session pin mismatch');assert.equal(e.data.coached??false,coached,'Session coaching cannot change');}
       else assert.notEqual(e.type,'opened');
       apply(e);
     }
@@ -292,7 +293,7 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
   // r+ opens at byte zero. Explicitly position subsequent writes after validated history.
   try {
     if(seq){await file.close();file=await open(journalPath,'a');}
-    if(!seq)await append('opened',{identity});
+    if(!seq)await append('opened',{identity,...(coached?{coached:true}:{})});
   } catch(error){await file?.close();await releaseWriter();throw error;}
   function admitted(){assert.ok(!poisoned&&!closed&&!state.ended&&!state.paused,'Session is not active');assert.ok(state.index<cases.length);}
   function active(){admitted();const c=current();assert.ok(c?.attemptId,'Explicit participant Start required');return c;}
@@ -516,9 +517,11 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
         skipped:c?.status==='skipped',projection:c?.projection??'unknown',originalCount:c?.originals?.length??0,
         evidenceHash:c?.evidenceHash??null,feedback:c?.feedback??null,observers:structuredClone(Object.values(c?.observers??{})),gestures:structuredClone(c?.gestures??[]),timings:structuredClone(c?.timings??[]),
         originals:(c?.originals??[]).map(o=>({generationId:o.generationId,commandId:o.commandId,projectId:o.projectId,ordinal:o.ordinal,invoked:o.invoked,terminal:o.terminal}))};});
-      const json={version:'ping.guided.results.v1',timingProtocol:'ping.guided.latency.v2',timingExtension:'ping.guided.measurement.v1',benchmark:benchmarkIdentity,runtime:{node:process.version,platform:process.platform,architecture:process.arch},identity,counts:projectionState().counts,ledgerHash:chain,rows,
+      const qualification={coached,uncoachedQualificationEligible:!coached};
+      const json={...qualification,version:'ping.guided.results.v1',timingProtocol:'ping.guided.latency.v2',timingExtension:'ping.guided.measurement.v1',benchmark:benchmarkIdentity,runtime:{node:process.version,platform:process.platform,architecture:process.arch},identity,counts:projectionState().counts,ledgerHash:chain,rows,
         timingSummary:latencySummary(rows),latencyCoverage:latencyCoverage(rows),timingStatistics:{percentile:'nearest-rank',median:'midpoint for even sample counts'}};
-      const columns=['caseId','attemptId','started','inputObserved','inputMode','inputEvidence','outcome','skipped','projection','originalCount','evidenceHash','timings'];
+      for(const row of rows)Object.assign(row,qualification);
+      const columns=['coached','uncoachedQualificationEligible','caseId','attemptId','started','inputObserved','inputMode','inputEvidence','outcome','skipped','projection','originalCount','evidenceHash','timings'];
       const csv=[columns.join(','),...rows.map(row=>columns.map(k=>'"'+String(k==='timings'?JSON.stringify(row.timings):row[k]??'').replaceAll('"','""')+'"').join(','))].join('\n')+'\n';
       return {json,csv};}),
     close:serial(async()=>{if(closed)return;try{await file.datasync();}finally{closed=true;await file.close();await releaseWriter();}}),

@@ -5,17 +5,18 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {createGuidedSession,verifyGuidedEffects} from './guided-session.mjs';
+import {coachedParticipantCase} from './guided-browser.mjs';
 
 const identity={sessionId:'scripted-unit',sourceRevision:'a'.repeat(40),manifestSha256:'b'.repeat(64),actorId:'alice',projectId:'synthetic-ping-project'};
 const prepared={ok:true,action:'prepare',generationId:'synthetic-generation',commandId:'00000000-0000-4000-8000-000000000001',projectId:identity.projectId,token:'DO-NOT-RETAIN-SECRET'};
 const request={action:'execute',generationId:prepared.generationId,token:prepared.token};
 const row=(id,projectId=identity.projectId)=>({id,workspace_id:projectId,title:'PRIVATE SYNTHETIC TITLE',seq:1,lane:'todo',assignees:'["bob"]',due:null,due_at:null,board_column_key:null,idle_days:null,completed_at:null,updated_at:1});
-async function setup({kind='edit',io={}}={}) {
+async function setup({kind='edit',io={},coached=false}={}) {
   const directory=await mkdtemp(path.join(tmpdir(),'ping-guide-unit-'));
   const data={tasks:[row('target'),row('unselected'),row('foreign','synthetic-foreign-project')],activities:[],receipts:[]};
   const cases=[{id:'01',oracle:{kind,taskIds:kind==='edit'?['target']:[],effects:{statusColumnKey:'doing'},expectedStage:kind==='zero'?'parse':undefined}},{id:'02',oracle:{kind:'zero',taskIds:[]}}];
   let result=null,prepares=0;
-  const options={directory,identity,cases,snapshot:async()=>structuredClone(data),lookupReceipt:async()=>result,prepareCase:async()=>{prepares++;},publicCase:c=>({id:c.id,goal:'Change the selected synthetic task',taskNames:['Synthetic target'],modeInfo:'Choose input mode'}),io};
+  const options={directory,identity,cases,coached,snapshot:async()=>structuredClone(data),lookupReceipt:async()=>result,prepareCase:async()=>{prepares++;},publicCase:c=>({id:c.id,goal:'Change the selected synthetic task',taskNames:['Synthetic target'],modeInfo:'Choose input mode'}),io};
   const session=await createGuidedSession(options);
   return {session,options,data,directory,setResult:value=>{result=value;},prepares:()=>prepares};
 }
@@ -418,4 +419,34 @@ test('request spans correlate clocks, retain dropped reply and reject contradict
   assert.equal(result.rows[0].timings.length,2);assert.equal(result.latencyCoverage.requestCorrelation.paired,1);
   assert.equal(result.latencyCoverage.droppedReplyCount,1);assert.equal(result.latencyCoverage.sampleCounts.failed,1);
   assert.equal(result.timingProtocol,'ping.guided.latency.v2');assert.equal(result.timingExtension,'ping.guided.measurement.v1');await s.close();
+});
+
+
+test('coached diagnostics export exclusion and cannot reopen as uncoached', async()=>{
+  const {session,options}=await setup({coached:true});
+  const results=await session.exportResults();
+  assert.equal(results.json.coached,true);
+  assert.equal(results.json.uncoachedQualificationEligible,false);
+  assert.ok(results.json.rows.every(row=>row.coached===true&&row.uncoachedQualificationEligible===false));
+  assert.match(results.csv,/^coached,uncoachedQualificationEligible,/);
+  assert.match(results.csv,/"true","false"/);
+  await session.close();
+  await assert.rejects(createGuidedSession({...options,coached:false}),/coaching cannot change/);
+  const reopened=await createGuidedSession(options);await reopened.close();
+});
+
+test('default diagnostics remain uncoached',async()=>{
+  const {session}=await setup();const results=await session.exportResults();
+  assert.equal(results.json.coached,false);assert.equal(results.json.uncoachedQualificationEligible,true);
+  await session.close();
+});
+
+test('only explicit coaching exposes canonical cue including heldout cases',()=>{
+  const record={id:'99',goal:'Synthetic goal',taskNames:[],modeInfo:'Synthetic',holdout:true,oracle:{private:true}};
+  const ordinary=coachedParticipantCase(record,'status review');
+  assert.deepEqual(Object.keys(ordinary),['id','goal','taskNames','modeInfo']);
+  assert.equal(JSON.stringify(ordinary).includes('status review'),false);
+  const coached=coachedParticipantCase(record,'status review',true);
+  assert.equal(coached.coachedCommand,'status review');assert.equal('oracle' in coached,false);
+  assert.throws(()=>coachedParticipantCase(record,undefined,true),/unavailable/);
 });
