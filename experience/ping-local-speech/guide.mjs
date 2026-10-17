@@ -23,8 +23,8 @@ root.innerHTML = `
     <section class="case-panel" id="case-panel" aria-labelledby="case-goal" hidden>
       <div class="case-meta"><span id="case-label">Case</span><span id="case-mode"></span></div>
       <h2 id="case-goal"></h2>
-      <section id="coached-cue" hidden aria-label="Coached diagnostic command">
-        <strong>Coached diagnostic - excluded from uncoached qualification</strong>
+      <section id="coached-cue" hidden aria-label="Guided voice practice">
+        <strong>Guided voice practice</strong>
         <p id="coached-command" style="font-size:1.5rem;line-height:1.35;font-weight:600;overflow-wrap:anywhere"></p>
         <p>Say this once, choose Finish and run once, then wait for the next cue.</p>
       </section>
