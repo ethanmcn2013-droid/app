@@ -395,7 +395,34 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
     beforeExecute:serial(async request=>{const c=active(),o=c.originals.at(-1);assert.ok(o&&!o.terminal&&!o.invoked,'Original invocation cannot be replayed');
       assert.equal(request.generationId,o.generationId);assert.equal(digest(request.token),o.tokenHash);assert.equal(request.action,'execute');
       await append('invocation',{generationId:o.generationId,commandId:o.commandId,projectId:o.projectId,tokenHash:o.tokenHash,ordinal:o.ordinal});return projectionState();}),
-    observeTerminal:serial(async(response,{action,stage='prepare'}={})=>{
+    observeTerminal:serial(async(response,{action,stage='prepare',request}={})=>{
+      // Recovery reads can belong to an earlier case. The runtime still owns
+      // authorization; this only binds its result to our durable invocation.
+      if(request&&['receipt','refresh','durable_receipt'].includes(action)) {
+        const owners=Object.values(state.cases).flatMap(owner=>owner.originals.map(original=>({owner,original}))).filter(({original:o})=>
+          action==='durable_receipt'?request.commandId===o.commandId&&request.projectId===o.projectId:
+            request.action===action&&request.generationId===o.generationId&&typeof request.token==='string'&&digest(request.token)===o.tokenHash);
+        assert.equal(owners.length,1,'Recovery read requires a known owned invocation');
+        const {owner,original}=owners[0];
+        if(owner!==current()) {
+          assert.ok(original.invoked,'Historical recovery requires an invoked original');
+          assert.ok(response?.ok===false||response?.ok===true,'Invalid historical recovery response');
+          if(response.ok) {
+            if(action==='durable_receipt'){assert.ok(!Object.hasOwn(response,'action'),'Historical recovery must remain read-only');assert.equal(response.knowledge,'committed');}
+            else {
+              assert.equal(response.action,action,'Historical recovery must remain read-only');
+              assert.equal(response.generationId,original.generationId);assert.equal(response.commandId,original.commandId);assert.equal(response.projectId,original.projectId);
+              if(action==='receipt')assert.ok(response.knowledge==='committed'||response.knowledge==='unresolved'&&['pending','absent','failed'].includes(response.detail),'Invalid historical receipt knowledge');
+              else assert.ok(['matches','diverged'].includes(response.projection)&&Array.isArray(response.tasks),'Invalid historical refresh');
+            }
+            if(action!=='receipt'||response.knowledge==='committed') {
+              assert.equal(response.receipt?.commandId,original.commandId);assert.equal(response.receipt?.projectId,original.projectId);
+              assert.equal(response.receipt?.version,'ping.receipt.v1');
+            }
+          }
+          return projectionState();
+        }
+      }
       const c=current();assert.ok(c?.attemptId);const o=c.originals.at(-1);
       if(response?.ok&&response.knowledge==='not_invoked') {
         assert.ok(o&&!o.invoked&&response.action==='cancel');assert.equal(response.commandId,o.commandId);assert.equal(response.projectId,o.projectId);

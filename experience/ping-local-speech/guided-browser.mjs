@@ -285,7 +285,7 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
                 await(pathname.endsWith('/receipt')?receiptHandler:handler)(new Request(url+pathname,{method:'POST',headers:{...req.headers,'content-type':'application/json'},body:JSON.stringify(input)}));
               text=await response.text();value=JSON.parse(text);
               if(action==='prepare')await session.observePrepareResponse(value,{stage:parser?.outcome!=='plan'&&parser?.reason===value.code?'parse':'prepare',generationId:input.generationId});
-              else if(['execute','cancel','receipt','refresh','durable_receipt'].includes(action))await session.observeTerminal(value,{action});
+              else if(['execute','cancel','receipt','refresh','durable_receipt'].includes(action))await session.observeTerminal(value,{action,request:input});
               } catch(error) {
                 if(['prepare','execute'].includes(action))await session.recordTiming({metric:action+'-server',durationMs:performance.now()-serverStarted,clock:'server-monotonic',evidence:scripted?'scripted':'automatic',sampleOutcome:'failed',delivery:'handler-threw',attemptId:session.state().attemptId,...timingIdentity});
                 throw error;

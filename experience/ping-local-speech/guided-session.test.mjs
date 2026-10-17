@@ -62,11 +62,86 @@ test('missing original remains unresolved after restart and blocks reset, replay
   await s.pause();await s.resume();assert.equal(s.state().counts.started,1);assert.equal(f.prepares(),1);await s.close();
 });
 
+test('historical recovery reads preserve the new case and ledger, including after reopen',async()=>{
+  const f=await setup();let s=f.session;await arm(s);await s.beforeExecute(request);const receipt=commit(f);
+  await s.observeTerminal({ok:true,knowledge:'committed',receipt},{action:'execute'});
+  await s.observeProjection({matches:true,source:'fixture-canonical-mounted'});await s.next();await s.startCase();
+  const ledgerPath=path.join(f.directory,'session.jsonl');
+  for(const reopen of [false,true]) {
+    if(reopen){await s.close();s=await createGuidedSession(f.options);}
+    const before=s.state(),bytes=await readFile(ledgerPath),data=structuredClone(f.data);
+    for(const action of ['receipt','refresh','durable_receipt']) {
+      const read=action==='durable_receipt'?{commandId:prepared.commandId,projectId:identity.projectId}:{...request,action};
+      const response={ok:true,...(action==='durable_receipt'?{knowledge:'committed'}:{action,generationId:prepared.generationId,commandId:prepared.commandId,projectId:identity.projectId,...(action==='refresh'?{projection:'matches',tasks:[]}:{knowledge:'committed'})}),receipt};
+      await s.observeTerminal(response,{action,request:read});
+      await s.observeTerminal({ok:false,code:'temporarily_unavailable'},{action,request:read});
+      await assert.rejects(s.observeTerminal({ok:true,action:'execute',receipt},{action,request:read}),/read-only/);
+      await assert.rejects(s.observeTerminal({...response,receipt:{...receipt,commandId:'unknown'}},{action,request:read}));
+      await assert.rejects(s.observeTerminal({...response,receipt:{...receipt,projectId:'foreign'}},{action,request:read}));
+      for(const key of action==='durable_receipt'?['knowledge']:action==='receipt'?['generationId','commandId','projectId','knowledge']:['generationId','commandId','projectId','projection'])
+        await assert.rejects(s.observeTerminal({...response,[key]:'wrong'},{action,request:read}));
+      await assert.rejects(s.observeTerminal({ok:true,receipt},{action,request:{...read,token:'unknown',commandId:'unknown'}}),/known owned/);
+      if(action==='durable_receipt')await assert.rejects(s.observeTerminal(response,{action,request:{...read,projectId:'foreign'}}),/known owned/);
+    }
+    await assert.rejects(s.observeTerminal({ok:true,action:'execute',knowledge:'committed',receipt},{action:'execute',request}));
+    assert.deepEqual(s.state(),before);assert.deepEqual(await readFile(ledgerPath),bytes);assert.deepEqual(f.data,data);
+    assert.equal(s.state().counts.started,2);assert.equal(s.state().counts.inputObserved,1);assert.equal(s.state().counts.verified,1);
+  }
+  await s.close();
+});
+
 test('failed durable write prevents invoke and poisons subsequent admission',async()=>{
   const f=await setup({io:{beforeWrite:async e=>{if(e.type==='invocation')throw Error('synthetic disk failure');}}});
   await arm(f.session);await assert.rejects(f.session.beforeExecute(request),/disk failure/);
   assert.equal(f.session.state().status,'blocked');assert.equal(f.data.receipts.length,0);
   await assert.rejects(f.session.beforeExecute(request),/not active/);await f.session.close();
+});
+
+test('actual HTTP handlers and SQLite recover the prior committed case without touching the next case',async()=>{
+  const unwrap=m=>m.default??m;
+  const {createPingProofFixture}=unwrap(await import('../../src/server/ping/proof-fixture.ts'));
+  const {createPingTypedSession}=unwrap(await import('../../src/server/ping/typed-session.ts'));
+  const {createPingTypedHttp}=unwrap(await import('../../src/server/ping/http.ts'));
+  const {createPingReceiptHttp}=unwrap(await import('../../src/server/ping/receipt-http.ts'));
+  const {createPingCommandService}=unwrap(await import('../../src/server/ping/command-service.ts'));
+  const directory=await mkdtemp(path.join(tmpdir(),'ping-guide-http-'));
+  const fixture=await createPingProofFixture();let s;
+  try {
+    const snapshot=async()=>({tasks:(await fixture.client.execute('SELECT * FROM tasks ORDER BY id')).rows,
+      activities:(await fixture.client.execute('SELECT * FROM activities ORDER BY id')).rows,
+      receipts:(await fixture.client.execute('SELECT * FROM ping_command_receipts ORDER BY actor_id,command_id')).rows});
+    const service=createPingCommandService(fixture.adapter);
+    const lookupReceipt=async input=>service.getReceipt(input);
+    const options={directory,identity,cases:[{id:'01',oracle:{kind:'create',taskIds:[],count:1,title:'Untitled task',effects:{}}},{id:'02',oracle:{kind:'zero',taskIds:[]}}],
+      snapshot,lookupReceipt,prepareCase:async()=>{},publicCase:c=>({id:c.id,goal:'Synthetic HTTP recovery',taskNames:[],modeInfo:'Scripted'})};
+    s=await createGuidedSession(options);await s.startCase();
+    let clock=Date.now();const runtime=createPingTypedSession(fixture.adapter,{now:()=>clock}),authenticate=async()=>({actorId:identity.actorId,sessionId:identity.sessionId});
+    const typed=createPingTypedHttp({authenticate,session:async()=>runtime});
+    const durable=createPingReceiptHttp({authenticate,receipt:async(actorId,commandId,projectId)=>{
+      const result=await lookupReceipt({actorId,commandId,projectId});return result.ok&&result.state==='committed'?result.receipt:null;}});
+    const send=async(handler,body,pathname='/api/ping')=>{
+      const response=await handler(new Request('https://isolated.invalid'+pathname,{method:'POST',headers:{origin:'https://isolated.invalid','content-type':'application/json'},body:JSON.stringify(body)}));
+      return {status:response.status,value:await response.json()};};
+    const prepare={version:'ping.typed.v1',action:'prepare',generationId:'http-generation',requestId:'00000000-0000-4000-8000-000000000902',projectId:identity.projectId,selectedTaskIds:[],snapshots:{},text:'create 1 tasks'};
+    await s.observeInput({mode:'scripted',evidence:'scripted'});const p=await send(typed,prepare);assert.equal(p.status,200);await s.observePrepareResponse(p.value);
+    const execute={version:'ping.typed.v1',action:'execute',generationId:p.value.generationId,token:p.value.token};await s.beforeExecute(execute);
+    const committed=await send(typed,execute);assert.equal(committed.status,200);assert.equal(committed.value.knowledge,'committed');await s.observeTerminal(committed.value,{action:'execute',request:execute});
+    await s.observeProjection({matches:true,source:'fixture-canonical-mounted'});await s.next();await s.startCase();
+    const ledger=path.join(directory,'session.jsonl');
+    for(const reopen of [false,true]) {
+      if(reopen){await s.close();s=await createGuidedSession(options);}
+      const bytes=await readFile(ledger),before=s.state(),rows=await snapshot();
+      for(const action of ['receipt','refresh','durable_receipt']) {
+        clock+=1000; // Respect the real runtime's receipt-read cooldown without sleeping.
+        const read=action==='durable_receipt'?{version:'ping.receipt.lookup.v1',commandId:p.value.commandId,projectId:identity.projectId}:{...execute,action};
+        const result=await send(action==='durable_receipt'?durable:typed,read,action==='durable_receipt'?'/api/ping/receipt':'/api/ping');
+        assert.equal(result.status,200,action+' '+JSON.stringify(result.value.ok?{action:result.value.action}:result.value));assert.deepEqual(result.value.receipt,committed.value.receipt);
+        await s.observeTerminal(result.value,{action,request:read});
+        await assert.rejects(s.observeTerminal(result.value,{action,request:{...read,token:'unknown',commandId:'00000000-0000-4000-8000-000000000999'}}),/known owned/);
+      }
+      assert.deepEqual(s.state(),before);assert.deepEqual(await snapshot(),rows);assert.deepEqual(await readFile(ledger),bytes);
+    }
+  } finally {await s?.close();fixture.client.close();}
 });
 
 test('known refusal and acknowledged preinvoke Cancel verify zero; late Cancel never does',async()=>{
