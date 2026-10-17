@@ -206,7 +206,7 @@
 }
 
 .calendarItem:hover { background: var(--horizon-soft); }
-.milestoneItem { border-left: 3px solid var(--horizon-accent); }
+.milestoneItem { border-left: 1px solid var(--horizon-line-strong); }
 .itemKind { color: var(--horizon-faint); font-size: 10px; letter-spacing: 0.025em; }
 .itemTitle { font-size: 13px; font-weight: 560; line-height: 1.35; }
 .itemMeta { color: var(--horizon-muted); font-size: 11px; line-height: 1.35; }

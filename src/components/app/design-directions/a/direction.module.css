@@ -54,7 +54,6 @@
   margin: 36px 0 0;
   padding: 28px clamp(20px, 4vw, 42px) 30px;
   border: 1px solid var(--v3-border);
-  border-left: 3px solid var(--v3-accent);
   background: var(--v3-surface);
 }
 .featuredCopy { min-width: 0; }
