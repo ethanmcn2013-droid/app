@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "assistant-execution-2026-10-18",
+  "authorizedBy": "Founder-authorized text-first assistant build; local and CI implementation only",
+  "reviewedBy": "Implementation self-check; independent exact review required before integration",
+  "authorizationSource": "Delivery111 comment6243060368 and direct founder build instruction",
+  "migrations": [
+    {
+      "id": "0044_assistant_execution",
+      "sha256": "c412b0eee56f6f55bd1eeebb1401ee76eaaf9daee8cbfc39d2e8685b22aca2bd",
+      "reviewedAt": "2026-10-18T00:00:00Z",
+      "risk": "Two additive private execution tables; transaction-bound local effects and receipts, durable leases and permanent inference budget reservations. Erasure removes steps/content and retains anonymous numeric billing tombstones so erasure cannot reset the global cap.",
+      "rollbackPlan": "Disable assistant entry. Preserve custody and pending/unknown reservations. Do not drop tables containing unresolved effects; any production migration requires separate authorized backup and execution receipt.",
+      "postconditions": [
+        "Actor request and run step keys are unique",
+        "JSON/hash checks reject invalid custody",
+        "Foreign keys and integrity pass"
+      ],
+      "proofs": [
+        {
+          "id": "assistant-tables",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='table' AND name IN ('assistant_runs','assistant_steps')",
+          "expected": 2
+        },
+        {
+          "id": "assistant-indexes",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='index' AND name IN ('assistant_runs_actor_request','assistant_runs_budget_request','assistant_steps_run_key','assistant_steps_run_ordinal')",
+          "expected": 4
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

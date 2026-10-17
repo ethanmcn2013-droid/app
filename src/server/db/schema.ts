@@ -34,6 +34,62 @@ import type {
   WorkspaceContext,
 } from "@/lib/planning/context";
 
+/** Private text-assistant custody. Billing tombstones retain no account/content. */
+export const assistantRuns = sqliteTable("assistant_runs", {
+  id: text("id").primaryKey(),
+  actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+  requestId: text("request_id").notNull(),
+  requestHash: text("request_hash").notNull(),
+  requestJson: text("request_json"),
+  status: text("status").notNull().default("planning"),
+  planJson: text("plan_json"),
+  resultJson: text("result_json"),
+  cancelledAt: integer("cancelled_at"),
+  executionAuthorizedAt: integer("execution_authorized_at"),
+  revision: integer("revision").notNull().default(0),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+  budgetRequestId: text("budget_request_id"),
+  budgetModel: text("budget_model"),
+  budgetRateCardId: text("budget_rate_card_id"),
+  reservedMicroUsd: integer("reserved_micro_usd").notNull().default(0),
+  inputTokens: integer("input_tokens"),
+  outputTokens: integer("output_tokens"),
+  estimatedMicroUsd: integer("estimated_micro_usd"),
+  usageState: text("usage_state").notNull().default("not_reserved"),
+}, t => [
+  uniqueIndex("assistant_runs_actor_request").on(t.actorId, t.requestId),
+  uniqueIndex("assistant_runs_budget_request").on(t.budgetRequestId),
+  check("assistant_run_hash", sql`length(${t.requestHash})=64`),
+  check("assistant_run_budget", sql`${t.reservedMicroUsd}>=0`),
+  check("assistant_run_plan", sql`${t.planJson} IS NULL OR json_valid(${t.planJson})`),
+  check("assistant_run_result", sql`${t.resultJson} IS NULL OR json_valid(${t.resultJson})`),
+]);
+
+export const assistantSteps = sqliteTable("assistant_steps", {
+  id: text("id").primaryKey(),
+  runId: text("run_id").notNull().references(() => assistantRuns.id, { onDelete: "cascade" }),
+  ordinal: integer("ordinal").notNull(),
+  stepKey: text("step_key").notNull(),
+  payloadJson: text("payload_json").notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  status: text("status").notNull().default("pending"),
+  fence: integer("fence").notNull().default(0),
+  leaseUntil: integer("lease_until"),
+  resultJson: text("result_json"),
+  errorCode: text("error_code"),
+  deliveryState: text("delivery_state").notNull().default("not_applicable"),
+  deliveryJson: text("delivery_json"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, t => [
+  uniqueIndex("assistant_steps_run_key").on(t.runId, t.stepKey),
+  uniqueIndex("assistant_steps_run_ordinal").on(t.runId, t.ordinal),
+  check("assistant_step_hash", sql`length(${t.payloadHash})=64`),
+  check("assistant_step_payload", sql`json_valid(${t.payloadJson})`),
+  check("assistant_step_result", sql`${t.resultJson} IS NULL OR json_valid(${t.resultJson})`),
+]);
+
 export const tasks = sqliteTable("tasks", {
   id: text("id").primaryKey(),
   /** Per-tenant boundary. Nullable during the cutover; tightened to

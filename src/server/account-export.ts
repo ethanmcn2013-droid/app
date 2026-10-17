@@ -2,6 +2,8 @@ import { and, eq, inArray, isNotNull, like, notInArray, or, sql } from "drizzle-
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import {
   activities,
+  assistantRuns,
+  assistantSteps,
   attachments,
   comments,
   conversationAttention,
@@ -421,11 +423,15 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       : [],
   ]);
 
+  const assistantTables=(await database.run(sql`SELECT name FROM sqlite_master WHERE type='table' AND name IN ('assistant_runs','assistant_steps')`)).rows;
+  const privateAssistantRuns=assistantTables.length===2?await database.select().from(assistantRuns).where(eq(assistantRuns.actorId,userId)):[];
+  const privateAssistantSteps=privateAssistantRuns.length?await database.select().from(assistantSteps).where(inArray(assistantSteps.runId,privateAssistantRuns.map(row=>row.id))):[];
   return {
     product: "tasks" as const,
     exportedAt,
     clerkId,
     user,
+    assistant:{runs:privateAssistantRuns,steps:privateAssistantSteps},
     eventPurchases: myEventPurchases,
     ownedWorkspaces: {
       workspaces: ownedWorkspaces,

@@ -4,6 +4,8 @@ import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   activities,
+  assistantRuns,
+  assistantSteps,
   attachments,
   comments,
   conversations,
@@ -939,6 +941,15 @@ export async function eraseAccountData(
   // tombstones so other members' replies remain intact. Legacy comments are
   // removed by the same helper; its work-link cleanup preserves destination Tasks.
   await eraseConversationUserFootprint(database, userId);
+  // Remove all execution content explicitly, even with foreign keys disabled.
+  // Anonymous numeric billing custody survives so account deletion cannot reset a spend cap.
+  const assistantTables=(await database.run(sql`SELECT name FROM sqlite_master WHERE type='table' AND name IN ('assistant_runs','assistant_steps')`)).rows;
+  if(assistantTables.length===2){
+    const privateRuns = await database.select({ id: assistantRuns.id }).from(assistantRuns).where(eq(assistantRuns.actorId,userId));
+    if(privateRuns.length) await database.delete(assistantSteps).where(inArray(assistantSteps.runId,privateRuns.map(row=>row.id)));
+    await database.update(assistantRuns).set({actorId:null,requestId:sql`${assistantRuns.id}`,requestHash:"0".repeat(64),requestJson:null,planJson:null,resultJson:null,
+      status:"erased",cancelledAt:Date.now()}).where(eq(assistantRuns.actorId,userId));
+  }
   await database.delete(taskCommentOutbox).where(eq(taskCommentOutbox.recipientId, userId));
   await database.delete(taskCommentAttention).where(eq(taskCommentAttention.recipientId, userId));
   await database.delete(taskCommentReceipts).where(eq(taskCommentReceipts.actorId, userId));

@@ -1,11 +1,21 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createClient } from "@libsql/client";
+import {readFile} from "node:fs/promises";
 import { readSchema, takeBackup } from "./backup.mjs";
 import { compare, compareDdl, measure, restoreInto } from "./restore-verify.mjs";
 import { migrationStatus, schemaFingerprintSha256 } from "./migrate.mjs";
 import { loadTimelineLedger, timelineMigrationStatus, timelineSchemaFingerprintSha256 } from "./timeline-migrate.mjs";
 import { testDatabaseUrl, withTempDatabaseDir } from "./test-temp-database.mjs";
+
+test("assistant execution tables and custody indexes are included in schema enumeration and backup",()=>withDatabase(async({client,url})=>{
+  await client.execute("CREATE TABLE users(id TEXT PRIMARY KEY)");
+  await client.executeMultiple(await readFile(new URL('../../drizzle/0044_assistant_execution.sql',import.meta.url),'utf8'));
+  const schema=await readSchema(client),names=schema.map(row=>row.name);
+  for(const name of ['assistant_runs','assistant_steps','assistant_runs_actor_request','assistant_runs_budget_request','assistant_steps_run_key','assistant_steps_run_ordinal'])assert.ok(names.includes(name),name);
+  const backup=await takeBackup(client,{label:'synthetic-assistant-enumeration',url});
+  for(const name of ['assistant_runs','assistant_steps'])assert.ok(backup.manifest.ddl.tables.includes(name));
+}));
 
 // SQLite reserves the literal sqlite_ prefix. sqlitex_* is ordinary user data.
 // Keep the expected objects independent of the enumeration being tested so an
