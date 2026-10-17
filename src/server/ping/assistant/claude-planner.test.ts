@@ -8,8 +8,8 @@ const key="FAKE-NON-CREDENTIAL-ONLY";
 const request=(tier:PlannerRequest["tier"]="simple",requestId="request-1"):PlannerRequest=>({runId:"run-1",requestId,text:"Make a synthetic task",context:{projects:[{ref:"p1",name:"Invented"}]},tier});
 const signal=()=>new AbortController().signal;
 function fixture(fetcher:(init:RequestInit)=>Promise<Response>,extra:Record<string,unknown>={}) {
-  const reservations:PlannerBudgetReservation[]=[],usage:PlannerUsageRecord[]=[],calls:RequestInit[]=[];const seen=new Set<string>();
-  const budget:PlannerBudgetPort={reserve:async value=>{if(seen.has(value.requestId)||reservations.reduce((n,r)=>n+r.reservedMicroUsd,0)+value.reservedMicroUsd>value.developmentCapMicroUsd)return false;seen.add(value.requestId);reservations.push(value);return true;},recordUsage:async value=>{usage.push(value);}};
+  const reservations:PlannerBudgetReservation[]=[],usage:PlannerUsageRecord[]=[],calls:RequestInit[]=[];const seen=new Set<string>(),charged=new Map<string,number>();
+  const budget:PlannerBudgetPort={reserve:async value=>{if(seen.has(value.requestId)||[...charged.values()].reduce((n,r)=>n+r,0)+value.reservedMicroUsd>value.developmentCapMicroUsd)return false;seen.add(value.requestId);reservations.push(value);charged.set(value.requestId,value.reservedMicroUsd);return true;},recordUsage:async value=>{usage.push(value);if(value.state==="usage_observed"&&value.estimatedMicroUsd!==null)charged.set(value.requestId,value.estimatedMicroUsd);}};
   const planner=createClaudeAssistantPlanner({apiKey:key,budget,schema,instructions:"Return one checked proposal only.",
     validate:value=>JSON.stringify(value)==='{"kind":"plan"}'?value:null,
     fetch:(async(_url,init)=>{calls.push(init!);return fetcher(init!);}) as typeof fetch,...extra});
@@ -28,10 +28,16 @@ test("one structured JSON generation per model; no tools or forced choice; expli
   const f=fixture(async()=>response());await assert.rejects(f.planner.plan(request("evaluation"),signal()),/not_admitted/);assert.equal(f.calls.length,0);
 });
 test("durable reservation precedes dispatch; duplicate and cap never dispatch or retry",async()=>{
-  const f=fixture(async()=>{assert.equal(f.reservations.length,f.calls.length);return response("claude-sonnet-5-5");});
+  const f=fixture(async()=>{assert.equal(f.reservations.length,f.calls.length);return response("claude-sonnet-5-5",{usage:null});});
   await f.planner.plan(request("bulk"),signal());await assert.rejects(f.planner.plan(request("bulk"),signal()),/budget/);
   await f.planner.plan(request("bulk","request-2"),signal());await assert.rejects(f.planner.plan(request("bulk","request-3"),signal()),/budget/);
   assert.equal(f.calls.length,2);assert.equal(f.reservations.length,2);
+});
+test("known usage can reconcile unused reservation without reissuing a spent request entitlement",async()=>{
+  const f=fixture(async()=>response("claude-sonnet-5-5"));
+  for(let i=0;i<20;i++)await f.planner.plan(request("bulk",`request-${i}`),signal());
+  assert.equal(f.calls.length,20);assert.equal(f.usage.reduce((n,u)=>n+(u.estimatedMicroUsd??0),0),8000);
+  await assert.rejects(f.planner.plan(request("bulk","request-0"),signal()),/budget/);assert.equal(f.calls.length,20);
 });
 test("refusal, invalid JSON and unsupported plan retain observed usage without another request",async()=>{
   for(const overrides of [{stop_reason:"refusal"},{stop_reason:"max_tokens"},{content:[{type:"text",text:"invalid"}]},{content:[{type:"text",text:'{"kind":"delete"}'}]}]){
