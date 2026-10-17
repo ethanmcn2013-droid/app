@@ -227,3 +227,13 @@ test("one Share per page: the header's, or the finale's only where there is no h
   assert.match(artifactCode, /<Finale timeline=\{timeline\} id=\{finaleId\} onShare=\{showProductHeader \? undefined : onShare\}/);
   assert.match(artifactCode, /\{showProductHeader \? <ProductIdentity timeline=\{timeline\} onShare=\{onShare\}/);
 });
+
+
+test("current private preview changes sharing copy and footer only by explicit opt-in",()=>{
+  assert.match(artifactCode,/privatePreview = false/);
+  assert.match(artifactCode,/privatePreview \? "Your current project timeline" : nouns.kicker/);
+  assert.match(artifactCode,/!privatePreview \? <footer/);
+  const current=readFileSync(new URL("../../app/audience/current-project-preview-view.tsx",import.meta.url),"utf8");
+  assert.match(current,/<TimelineArtifact timeline=\{timeline\} showProductHeader=\{false\} privatePreview/);
+  assert.doesNotMatch(current,/onShare|QualifiedViewTracker/);
+});

@@ -1,0 +1,195 @@
+"use client";
+
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { ASSISTANT_LIMITS, type AssistantApiCommand, type AssistantApiResponse, type AssistantRequest, type AssistantRunView, isAssistantInternalHref } from "@/lib/ping/assistant/contract";
+import { createBrowserPingTelemetry, pingTelemetryBegin, pingTelemetryRecord } from "@/lib/ping/telemetry-client";
+import { Composer } from "./chat-ui";
+import { assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
+import styles from "./ping-personal-assistant.module.css";
+
+async function assistantRequest(query = "", command?: AssistantApiCommand, signal?: AbortSignal): Promise<AssistantApiResponse> {
+  const response = await fetch(`/api/ping/assistant${query}`, { method: command ? "POST" : "GET", credentials: "same-origin", cache: "no-store", signal,
+    ...(command ? { headers: { "content-type": "application/json" }, body: JSON.stringify(command) } : {}) });
+  const value = parseAssistantApiResponse(await response.json());
+  if (!value) throw new Error("Ping’s response could not be read. Check the original request before trying again.");
+  return value;
+}
+function readEventTime() { return performance.now(); }
+const queryFor = (pending: PendingAssistantRequest) => pending.runId ? `?runId=${encodeURIComponent(pending.runId)}` : `?clientRequestId=${encodeURIComponent(pending.requestId)}`;
+
+/** Actor-keyed by the chat shell. A recovery note stores identifiers, never request text or results. */
+export function PingPersonalAssistant({ actorId, projects, visible }: { actorId: string; projects: readonly { id: string; name: string }[]; visible: boolean }) {
+  const [runs, setRuns] = useState<readonly AssistantRunView[]>([]);
+  const [draft, setDraft] = useState("");
+  const [scope, setScope] = useState("");
+  const [mode, setMode] = useState<"execute" | "draft">("execute");
+  const [ready, setReady] = useState(false);
+  const [available, setAvailable] = useState(false);
+  const [pending, setPending] = useState<PendingAssistantRequest | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [absent, setAbsent] = useState(false);
+  const [hasOriginal, setHasOriginal] = useState(false);
+  const pendingRef = useRef<PendingAssistantRequest | null>(null);
+  const original = useRef<AssistantRequest | null>(null);
+  const mounted = useRef(false);
+  const generation = useRef(0);
+  const latch = useRef(false);
+  const visibleTiming = useRef<AssistantVisibleTiming | null>(null);
+  const historyRef = useRef<HTMLDivElement>(null);
+
+  const keepPending = useCallback((next: PendingAssistantRequest | null) => {
+    const key = pendingAssistantKey(actorId);
+    if (next) window.localStorage.setItem(key, JSON.stringify(next)); else window.localStorage.removeItem(key);
+    pendingRef.current = next; setPending(next);
+  }, [actorId]);
+
+  const receive = useCallback((response: AssistantApiResponse) => {
+    if (!response.ok) throw new Error(response.message);
+    setAvailable(response.available);
+    if (response.runs) setRuns(response.runs);
+    if (response.run) {
+      const run = response.run;
+      setRuns(previous => [run, ...previous.filter(value => value.id !== run.id)].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      if (pendingRef.current?.requestId === run.requestId) {
+        keepPending(assistantNeedsRecovery(run) ? { version: 1, requestId: run.requestId, runId: run.id } : null);
+        setAbsent(false);
+        if (original.current?.requestId === run.requestId) { original.current = null; setHasOriginal(false); setDraft(""); if (historyRef.current) historyRef.current.scrollTop = 0; }
+      }
+    }
+    return response;
+  }, [keepPending]);
+
+  const checkOriginal = useCallback(async () => {
+    if (latch.current || !pendingRef.current) return;
+    latch.current = true; setBusy(true); setError(null);
+    try {
+      const response = await assistantRequest(queryFor(pendingRef.current));
+      if (!mounted.current) return;
+      const accepted = receive(response);
+      if (!accepted.run) { setAbsent(true); setError("The original request is not recorded yet. Check again before starting another request."); }
+    } catch (failure) { if (mounted.current) setError(failure instanceof Error ? failure.message : "The original result could not be checked."); }
+    finally { latch.current = false; if (mounted.current) setBusy(false); }
+  }, [receive]);
+
+  useEffect(() => {
+    mounted.current = true;
+    const epoch = ++generation.current;
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const raw = window.localStorage.getItem(pendingAssistantKey(actorId));
+        const saved = parsePendingAssistantRequest(raw);
+        if (raw !== null && !saved) throw new Error("A recovery note could not be read. Reload before starting another request.");
+        pendingRef.current = saved; setPending(saved);
+        const history = await assistantRequest("", undefined, controller.signal);
+        if (!mounted.current || epoch !== generation.current) return;
+        receive(history);
+        if (saved) {
+          const response = await assistantRequest(queryFor(saved), undefined, controller.signal);
+          if (!mounted.current || epoch !== generation.current) return;
+          const accepted = receive(response);
+          if (!accepted.run) { setAbsent(true); setError("The original request is not recorded yet. Check its status before starting another request."); }
+        }
+        setReady(true);
+      } catch (failure) { if (!controller.signal.aborted && mounted.current && epoch === generation.current) setError(failure instanceof Error ? failure.message : "Ping could not load your saved requests."); }
+    })();
+    return () => { mounted.current = false; generation.current = epoch + 1; controller.abort();
+      try { visibleTiming.current?.endAttempt("unfinished"); } catch { /* Diagnostic only. */ }
+      visibleTiming.current = null;
+    };
+  }, [actorId, receive]);
+
+  const active = pending ? runs.find(run => run.requestId === pending.requestId) : undefined;
+  useEffect(() => {
+    if (!visible || !ready || !pending || !active || !assistantIsWorking(active)) return;
+    const timer = window.setTimeout(() => { void checkOriginal(); }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [visible, ready, pending, active, busy, checkOriginal]);
+
+  useLayoutEffect(() => {
+    const timing = visibleTiming.current;
+    const run = timing && runs.find(value => value.requestId === timing.requestId);
+    if (!timing || !run || !visible) return;
+    return observeAssistantResultCommit({ timing, run, isCurrent: () => mounted.current && visible && visibleTiming.current === timing,
+      requestFrame: callback => window.requestAnimationFrame(callback), cancelFrame: frame => window.cancelAnimationFrame(frame) });
+  }, [runs, visible]);
+
+  function beginVisibleTiming(requestId: string) {
+    try {
+      visibleTiming.current?.endAttempt("unfinished");
+      const startedAt = readEventTime();
+      const recorder = createBrowserPingTelemetry("typed");
+      visibleTiming.current = { requestId, startedAt, recorder, endAttempt: pingTelemetryBegin(recorder, "attempt"), done: false };
+    } catch { visibleTiming.current = null; }
+  }
+
+  async function submit(retry = false) {
+    if (latch.current || !ready || !available || (!retry && pendingRef.current)) return;
+    const request = retry ? original.current : { requestId: `ping_${crypto.randomUUID().replaceAll("-", "")}`, text: draft.trim(),
+      scope: scope ? { kind: "project" as const, projectId: scope } : { kind: "account" as const }, mode };
+    if (!request || !request.text || request.text.length > ASSISTANT_LIMITS.text) return;
+    latch.current = true; setBusy(true); setError(null); setAbsent(false);
+    beginVisibleTiming(request.requestId);
+    try {
+      keepPending({ version: 1, requestId: request.requestId });
+      original.current = request; setHasOriginal(true);
+      const response = await assistantRequest("", { operation: "submit", request });
+      if (mounted.current) receive(response);
+    } catch (failure) {
+      pingTelemetryRecord(visibleTiming.current?.recorder, { stage: "request", outcome: "unknown" });
+      if (mounted.current) setError(pendingRef.current ? "The result is not confirmed. Check status before trying again. Your original request will not be sent again automatically." : failure instanceof Error ? failure.message : "This browser could not keep a recovery note. No request was sent.");
+    } finally { latch.current = false; if (mounted.current) setBusy(false); }
+  }
+
+  async function operate(operation: "resume" | "cancel" | "apply", run: AssistantRunView) {
+    if (latch.current || pendingRef.current && pendingRef.current.requestId !== run.requestId) return;
+    latch.current = true; setBusy(true); setError(null);
+    beginVisibleTiming(run.requestId);
+    try {
+      keepPending({ version: 1, requestId: run.requestId, runId: run.id });
+      const response = await assistantRequest("", { operation, runId: run.id });
+      if (mounted.current) receive(response);
+    } catch { if (mounted.current) setError("The latest result is not confirmed. Check status; work already saved stays saved."); }
+    finally { latch.current = false; if (mounted.current) setBusy(false); }
+  }
+
+  return <section className={styles.assistant} aria-label="Ping personal assistant">
+    <header className={styles.header}><div><h2>Ping</h2><p>Ask for the work you want done.</p></div>
+      <label className={styles.scope}>Work in<select value={scope} onChange={event => setScope(event.target.value)} disabled={!ready || !!pending || busy} aria-label="Ping scope">
+        <option value="">Across my account</option>{projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
+      </select></label>
+    </header>
+    <div className={styles.history} ref={historyRef} tabIndex={0} aria-label="Ping requests and results">
+      {!ready && !error ? <p className={styles.note} role="status">Loading your saved requests…</p> : null}
+      {ready && !available ? <p className={styles.note}>Ping is not available for this account yet.</p> : null}
+      {ready && available && !runs.length && !pending ? <div className={styles.empty}><h3>What would you like to move forward?</h3><p>Create a Project, put tasks in order, assign work or prepare a private Timeline preview. You can put several actions in one request.</p><p>Choose a Project above, or name one in your request.</p></div> : null}
+      <ol className={styles.runs}>{runs.map(run => <li key={run.id} className={styles.run}>
+        <div className={styles.request}><span>You</span><p>{run.text}</p></div>
+        <div className={styles.result}><h3 aria-live="polite">{assistantRunLabel(run)}</h3>{run.message ? <p>{run.message}</p> : null}
+          {run.status === "ready" && run.mode === "draft" ? <p className={styles.note}>This is a draft. No changes have been made.</p> : null}
+          <ol className={styles.steps}>{run.steps.map(step => <li key={step.id} data-state={step.status}>
+            <div className={styles.stepHead}><span>{assistantStepLabel(step.kind)}</span><span>{step.status === "completed" ? "Done" : step.status === "running" ? "In progress" : step.status === "queued" ? run.mode === "draft" && run.status === "ready" ? "Planned" : "Waiting" : step.status === "unknown" ? "Not confirmed" : step.status === "cancelled" ? "Cancelled" : step.status === "blocked" ? "Needs attention" : "Could not finish"}</span></div>
+            {step.result ? <><p>{step.result.summary}</p>{step.result.status === "completed" && step.result.affectedCount > 0 && ["create_tasks", "update_tasks", "archive_tasks"].includes(step.kind) ? <p className={styles.note}>{step.result.affectedCount} {step.result.affectedCount === 1 ? "task" : "tasks"}</p> : null}
+              {isAssistantInternalHref(step.result.href) ? <Link href={step.result.href}>Open result</Link> : null}
+              {step.result.delivery ? <p className={styles.note}>Delivery: {step.result.delivery.queued} queued · {step.result.delivery.accepted} accepted · {step.result.delivery.unknown} unconfirmed · {step.result.delivery.suppressed} suppressed</p> : null}
+              {step.result.items?.length ? <details><summary>View {step.result.items.length} {step.result.items.length === 1 ? "item" : "items"}</summary><ul className={styles.items}>{step.result.items.map(item => <li key={item.id}>{isAssistantInternalHref(item.href) ? <Link href={item.href}>{item.title}</Link> : <span>{item.title}</span>}{typeof item.detail === "string" ? <p>{item.detail}</p> : null}</li>)}</ul></details> : null}
+            </> : null}
+          </li>)}</ol>
+          <div className={styles.actions}>
+            {run.status === "ready" && run.mode === "draft" ? <button type="button" disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("apply", run)}>Apply this draft</button> : null}
+            {!assistantNeedsRecovery(run) && ["ready", "partial"].includes(run.status) && run.mode !== "draft" ? <button type="button" disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("resume", run)}>Continue remaining work</button> : null}
+            {["planning", "ready", "running", "partial", "unknown"].includes(run.status) ? <button type="button" disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("cancel", run)}>Cancel remaining work</button> : null}
+          </div>
+        </div>
+      </li>)}</ol>
+    </div>
+    {error ? <div className={styles.error} role="alert">{error}</div> : null}
+    {pending ? <div className={styles.recovery} role="status"><span>{busy ? "Waiting for the latest result…" : "Your request is kept until its result is confirmed."}</span><button type="button" onClick={() => void checkOriginal()} disabled={busy}>Check status</button>{absent && hasOriginal ? <button type="button" onClick={() => void submit(true)} disabled={busy}>Retry original request</button> : null}</div> : null}
+    <div className={styles.compose}>
+      <label className={styles.mode}><input type="checkbox" checked={mode === "draft"} onChange={event => setMode(event.target.checked ? "draft" : "execute")} disabled={!ready || !!pending || busy} />Draft only</label>
+      <Composer value={draft} onChange={setDraft} onSend={() => void submit()} label="Request for Ping" placeholder="Tell Ping what you want to get done" people={[]} selfId={actorId} mentionIds={[]} disabled={!ready || !available || !!pending || busy} sendDisabled={!draft.trim() || draft.length > ASSISTANT_LIMITS.text} showHint={false} count={<span className={styles.note}>{draft.length.toLocaleString()} / {ASSISTANT_LIMITS.text.toLocaleString()}</span>} />
+    </div>
+  </section>;
+}
