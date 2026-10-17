@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {createGuidedSession,verifyGuidedEffects} from './guided-session.mjs';
-import {coachedParticipantCase} from './guided-browser.mjs';
+import {createGuidedRunner,coachedParticipantCase} from './guided-browser.mjs';
 
 const identity={sessionId:'scripted-unit',sourceRevision:'a'.repeat(40),manifestSha256:'b'.repeat(64),actorId:'alice',projectId:'synthetic-ping-project'};
 const prepared={ok:true,action:'prepare',generationId:'synthetic-generation',commandId:'00000000-0000-4000-8000-000000000001',projectId:identity.projectId,token:'DO-NOT-RETAIN-SECRET'};
@@ -16,7 +16,7 @@ async function setup({kind='edit',io={},coached=false}={}) {
   const data={tasks:[row('target'),row('unselected'),row('foreign','synthetic-foreign-project')],activities:[],receipts:[]};
   const cases=[{id:'01',oracle:{kind,taskIds:kind==='edit'?['target']:[],effects:{statusColumnKey:'doing'},expectedStage:kind==='zero'?'parse':undefined}},{id:'02',oracle:{kind:'zero',taskIds:[]}}];
   let result=null,prepares=0;
-  const options={directory,identity,cases,coached,snapshot:async()=>structuredClone(data),lookupReceipt:async()=>result,prepareCase:async()=>{prepares++;},publicCase:c=>({id:c.id,goal:'Change the selected synthetic task',taskNames:['Synthetic target'],modeInfo:'Choose input mode'}),io};
+  const options={directory,identity,cases,coached,snapshot:async()=>structuredClone(data),lookupReceipt:async()=>result,prepareCase:async()=>{prepares++;},publicCase:c=>coachedParticipantCase({id:c.id,goal:'Change the selected synthetic task',taskNames:['Synthetic target'],modeInfo:'Choose input mode'},'status doing',coached),io};
   const session=await createGuidedSession(options);
   return {session,options,data,directory,setResult:value=>{result=value;},prepares:()=>prepares};
 }
@@ -449,4 +449,32 @@ test('only explicit coaching exposes canonical cue including heldout cases',()=>
   const coached=coachedParticipantCase(record,'status review',true);
   assert.equal(coached.coachedCommand,'status review');assert.equal('oracle' in coached,false);
   assert.throws(()=>coachedParticipantCase(record,undefined,true),/unavailable/);
+});
+
+test('coached session accepts its cue through state start and export; default rejects cue',async()=>{
+  const fixture=await setup({coached:true});await fixture.session.close();
+  const publicCase=c=>coachedParticipantCase({id:c.id,goal:'Synthetic cue',taskNames:[],modeInfo:'Diagnostic'},'status doing',true);
+  const s=await createGuidedSession({...fixture.options,publicCase});
+  try{assert.equal(s.state().currentCase.coachedCommand,'status doing');await s.startCase();
+    assert.equal(s.state().currentCase.coachedCommand,'status doing');
+    assert.equal((await s.exportResults()).json.coached,true);
+  }finally{await s.close();}
+  const ordinary=await setup();await ordinary.session.close();
+  const rejected=await createGuidedSession({...ordinary.options,publicCase});
+  try{assert.throws(()=>rejected.state(),/Unsafe participant projection/);}finally{await rejected.close();}
+});
+
+test('coached runner HTTP state start and export retain explicit exclusion', {skip:!process.env.PING_GUIDED_MANIFEST},async()=>{
+  const directory=path.join('D:/Codex-scratch/project-ping','coached-http-'+Date.now());
+  const runner=await createGuidedRunner({directory,manifestPath:process.env.PING_GUIDED_MANIFEST,mode:'create',scripted:true,coached:true});
+  try{
+    const state=await (await fetch(runner.url+'/guide/state')).json();
+    assert.equal(typeof state.currentCase.coachedCommand,'string');assert.ok(state.currentCase.coachedCommand.length);
+    const start=await fetch(runner.url+'/guide/action',{method:'POST',headers:{origin:runner.url,'content-type':'application/json'},body:JSON.stringify({action:'start'})});
+    assert.equal(start.status,200);assert.equal((await start.json()).currentCase.coachedCommand,state.currentCase.coachedCommand);
+    const exported=await (await fetch(runner.url+'/guide/export.json')).json();
+    assert.equal(exported.coached,true);assert.equal(exported.uncoachedQualificationEligible,false);
+    assert.equal(JSON.stringify(exported).includes('coachedCommand'),false);
+    const csv=await (await fetch(runner.url+'/guide/export.csv')).text();assert.match(csv,/^coached,uncoachedQualificationEligible,/);
+  }finally{await runner.close();}
 });

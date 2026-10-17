@@ -110,7 +110,7 @@ export function coachedParticipantCase(record,command,coached=false) {
   assert.equal(typeof coached,'boolean','Explicit boolean coached configuration required');
   const summary=participantCase(record);
   if(!coached)return summary;
-  assert.ok(typeof command==='string'&&command.trim(),'Coached command unavailable');
+  assert.ok(typeof command==='string'&&command.trim()&&[...command].length<=4000,'Coached command unavailable');
   return Object.freeze({...summary,coachedCommand:command});
 }
 

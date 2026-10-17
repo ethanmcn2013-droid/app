@@ -301,7 +301,8 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
     ['refused_verified_zero','cancelled_not_invoked_verified_zero','aborted_before_input','retired_not_invoked_verified_zero'].includes(c?.outcome);}
   function projection(){
     const c=current(),offered=cases[state.index]?publicCase(cases[state.index]):null;
-    assert.ok(offered===null||keys(offered,['id','goal','taskNames','modeInfo'])&&id(offered.id)&&typeof offered.goal==='string'&&
+    assert.ok(offered===null||keys(offered,['id','goal','taskNames','modeInfo',...(coached?['coachedCommand']:[])])&&id(offered.id)&&typeof offered.goal==='string'&&
+      (!coached||(typeof offered.coachedCommand==='string'&&offered.coachedCommand.trim().length>0&&[...offered.coachedCommand].length<=4000))&&
       typeof offered.modeInfo==='string'&&Array.isArray(offered.taskNames)&&offered.taskNames.every(name=>typeof name==='string'),'Unsafe participant projection');
     const safe=structuredClone(offered);
     const values=Object.values(state.cases);
