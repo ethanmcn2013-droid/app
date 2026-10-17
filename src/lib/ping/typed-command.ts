@@ -40,9 +40,9 @@ export function parsePingTypedCommand(input: unknown): PingProposal {
       const value = clause.toLowerCase();
       const selectedAssignment = /^assign (?:these|this|them) to me$/.test(value);
       const selectedStatus = /^mark (?:these|this|them) (done|in progress)$/.exec(value);
-      const selectedReview = /^move (?:these|this|them) to review$/.test(value);
+      const selectedMove = /^move (?:these|this|them) to (review|a review|done)$/.exec(value);
       // Pronouns name the captured selection, never tasks in a creation prefix.
-      if (count !== undefined && (selectedAssignment || selectedStatus || selectedReview)) return refuse();
+      if (count !== undefined && (selectedAssignment || selectedStatus || selectedMove)) return refuse();
       const dated = /^(?:due|set due date to|move the deadline to) (\d{4}-\d{2}-\d{2})$/.exec(value);
       const namedAssignment = /^assign(?: these)? to (.+)$/i.exec(clause);
       if (value === "assign me" || value === "assign to me" || value === "unassign me" || selectedAssignment || value === "remove me as an assignee") {
@@ -60,9 +60,9 @@ export function parsePingTypedCommand(input: unknown): PingProposal {
         const date = dated?.[1] ?? null;
         if (date !== null && !validPingCalendarDate(date)) return refuse();
         mutable.dueDate = date;
-      } else if (/^status (todo|doing|review|done)$/.test(value) || selectedStatus || selectedReview) {
+      } else if (/^status (todo|doing|review|done)$/.test(value) || selectedStatus || selectedMove) {
         if (Object.hasOwn(effects, "statusColumnKey")) return refuse("ambiguous");
-        mutable.statusColumnKey = selectedReview ? "review" : selectedStatus
+        mutable.statusColumnKey = selectedMove ? selectedMove[1] === "done" ? "done" : "review" : selectedStatus
           ? selectedStatus[1] === "done" ? "done" : "doing"
           : value.slice(7) as typeof mutable.statusColumnKey;
       } else return refuse();

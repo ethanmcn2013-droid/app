@@ -135,7 +135,8 @@ test("successive synthetic controller finals retain fresh text, selection and ge
   const { createPingProofFixture, seedProofTask, PROOF_PROJECT } = await import("../../server/ping/proof-fixture");
   const { createPingTypedSession } = await import("../../server/ping/typed-session");
   const { createPingTypedHttp } = await import("../../server/ping/http");
-  for (const second of ["status done", "move these to done", "delete all tasks"]) {
+  // Prospective aliases do not change the historical refusal recorded before this parser update.
+  for (const second of ["status done", "move these to done", "move these to a review", "delete all tasks"]) {
     const db = await createPingProofFixture();
     let speech: ReturnType<typeof fixture> | undefined;
     try {
@@ -156,9 +157,9 @@ test("successive synthetic controller finals retain fresh text, selection and ge
         const result = await send({ version: "ping.typed.v1", action: "prepare", generationId: generation,
           requestId: `00000000-0000-4000-8000-${String(capture).padStart(12, "0")}`, projectId: PROOF_PROJECT, selectedTaskIds: [taskId],
           snapshots: { [taskId]: { assignees: ["bob"], due: null, dueAtSeconds: null, startDay: 2, durationDays: 3, lane: "todo", boardColumnKey: null, completedAtSeconds: null } }, text });
-        if (text !== "status review" && text !== "status done") { assert.deepEqual(result, { ok: false, code: "unsupported" }); return; }
+        if (text === "delete all tasks") { assert.deepEqual(result, { ok: false, code: "unsupported" }); return; }
         assert.equal(result.action, "prepare"); assert.equal(result.generationId, generation);
-        assert.deepEqual(result.proposal.operation, { kind: "edit_selected", effects: { statusColumnKey: text === "status review" ? "review" : "done" } });
+        assert.deepEqual(result.proposal.operation, { kind: "edit_selected", effects: { statusColumnKey: text === "status review" || text === "move these to a review" ? "review" : "done" } });
         observed.at(-1)!.token = result.token; observed.at(-1)!.command = result.commandId;
         executions++;
         const applied = await send({ version: "ping.typed.v1", action: "execute", generationId: generation, token: result.token });
@@ -187,9 +188,9 @@ test("successive synthetic controller finals retain fresh text, selection and ge
       ]);
       const after = await rows(); assert.deepEqual(after.find(row => row.id === "review-target"), first.find(row => row.id === "review-target"));
       assert.deepEqual(after.find(row => row.id === "guard"), initial.find(row => row.id === "guard"));
-      if (second === "status done") {
+      if (second !== "delete all tasks") {
         assert.notEqual(observed[0].token, observed[1].token); assert.notEqual(observed[0].command, observed[1].command);
-        assert.equal(after.find(row => row.id === "done-target")!.lane, "done"); assert.equal(executions, 2); assert.equal(await count("ping_command_receipts"), 2);
+        assert.equal(after.find(row => row.id === "done-target")!.lane, second === "move these to a review" ? "review" : "done"); assert.equal(executions, 2); assert.equal(await count("ping_command_receipts"), 2);
       } else {
         assert.deepEqual(after, first); assert.equal(executions, 1); assert.equal(await count("ping_command_receipts"), 1);
         assert.deepEqual((await db.client.execute("SELECT * FROM activities ORDER BY id")).rows, firstActivities);

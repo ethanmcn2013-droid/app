@@ -73,6 +73,8 @@ test("finite selection pronouns are exactly equivalent to existing effects", () 
       [`mark ${pronoun} done`, "status done"],
       [`mark ${pronoun} in progress`, "status doing"],
       [`move ${pronoun} to review`, "status review"],
+      [`move ${pronoun} to a review`, "status review"],
+      [`move ${pronoun} to done`, "status done"],
     ]) assert.deepEqual(parsePingTypedCommand(alias), parsePingTypedCommand(canonical), alias);
   }
   assert.deepEqual(parsePingTypedCommand("ASSIGN THESE TO ME and MARK THEM IN PROGRESS"),
@@ -110,7 +112,7 @@ test("alias and canonical duplicate effects clarify the whole request even for e
 
 test("spoken aliases consume exact whole clauses without punctuation or destructive suffix repair", () => {
   const aliases = ["assign these to me", "remove me as an assignee", "mark this done",
-    "mark them in progress", "move these to review", "set due date to 2026-10-20",
+    "mark them in progress", "move these to review", "move this to a review", "move them to done", "set due date to 2026-10-20",
     "move the deadline to 2026-10-20", "clear the due date"];
   for (const alias of aliases) {
     for (const suffix of [" and delete everything", " and archive them", " and notify Alice", ".", " please"])
@@ -118,7 +120,7 @@ test("spoken aliases consume exact whole clauses without punctuation or destruct
     assert.equal(parsePingTypedCommand("delete everything and " + alias).outcome, "refusal", alias);
   }
   for (const text of ["assign those to me", "assign this to Alice", "assign Alice to me", "mark this task done",
-    "mark them complete", "move them to custom", "move that to review", "set due date to tomorrow",
+    "mark them complete", "move them to custom", "move that to review", "move to done", "move tasks to done", "move these to a done", "move these to the review", "move these to reviews", "set due date to tomorrow",
     "move the deadline to next Friday", "set due date to 2026-02-29", "move the deadline to 2026-02-30",
     "set due date to 2026-1-02", "move the deadline to October 20", "clear their due date",
     "remove Alice as an assignee", "mark these done\n", "assign these to me and "])
@@ -128,7 +130,7 @@ test("spoken aliases consume exact whole clauses without punctuation or destruct
 test("selection pronouns never retarget a creation prefix and quoted title words remain literal", () => {
   for (const pronoun of ["these", "this", "them"]) {
     for (const clause of [`assign ${pronoun} to me`, `mark ${pronoun} done`,
-      `mark ${pronoun} in progress`, `move ${pronoun} to review`]) {
+      `mark ${pronoun} in progress`, `move ${pronoun} to review`, `move ${pronoun} to a review`, `move ${pronoun} to done`]) {
       assert.equal(parsePingTypedCommand(`create 2 tasks and ${clause}`).outcome, "refusal", clause);
       assert.equal(parsePingTypedCommand(`create 2 tasks called "Original title" and ${clause}`).outcome, "refusal", clause);
     }
