@@ -8,6 +8,7 @@ import {createRequire} from 'node:module';
 import vm from 'node:vm';
 import {createGuidedDiagnosticStore,createMetadataFence} from './guided-measurement.mjs';
 import {createGuidedRunner,guidedTelemetryModule} from './guided-browser.mjs';
+import {createGuidedSession} from './guided-session.mjs';
 const module=await import('../../src/lib/ping/telemetry.ts');const {validatePingTelemetryEvent}=module.default??module;
 const require=createRequire(import.meta.url),esbuild=createRequire(require.resolve('tsx/package.json'))('esbuild');
 const root=path.resolve(import.meta.dirname,'../..');
@@ -33,6 +34,27 @@ test('diagnostic sidecar validates privacy, page ownership, replay, bounds and m
   await store.accept({pageId:retired,events:[event(attempt),event(attempt)]});
   await assert.rejects(store.accept({pageId:retired,events:[event(attempt)]}),/capacity/);assert.equal(store.snapshot().records.length,4);
   const unavailable=await createGuidedDiagnosticStore({...options,file:directory});assert.equal(unavailable.snapshot().coverage.blocked,true);
+});
+
+test('row stage coverage pairs the same span and exposes split or mixed losses',async()=>{
+  for(const kind of ['split','mixed']) {
+    const directory=await fs.mkdtemp(path.join(tmpdir(),'ping-stage-loss-'));let store;
+    const session=await createGuidedSession({directory,identity:{sessionId:'diagnostic-unit',sourceRevision:'a'.repeat(40),manifestSha256:'b'.repeat(64),actorId:'alice',projectId:'synthetic'},
+      cases:[{id:'01',oracle:{kind:'zero',taskIds:[]}}],snapshot:async()=>({tasks:[],activities:[],receipts:[]}),lookupReceipt:async()=>null,prepareCase:async()=>{},
+      publicCase:c=>({id:c.id,goal:'Synthetic stage coverage',taskNames:[],modeInfo:'Scripted'}),diagnostics:()=>store?.snapshot()??null});
+    try {
+      await session.startCase();const attempt=session.state().attemptId,page=randomUUID();
+      store=await createGuidedDiagnosticStore({file:path.join(directory,'stages.jsonl'),validateEvent:validatePingTelemetryEvent,ownsAttempt:session.ownsDiagnosticAttempt,isActivePage:()=>true,evidence:'scripted'});
+      const a=event(attempt),b=event(attempt);
+      const events=kind==='split'?[a,{...b,outcome:'completed',durationMs:2,sequence:1}]:[a,{...a,outcome:'completed',durationMs:2,sequence:1},b];
+      await store.accept({pageId:page,events});
+      const result=await session.exportResults(),coverage=result.json.rows[0].diagnosticCoverage;
+      assert.equal(coverage.finishFinal,'partial');assert.equal(coverage.finishFinalSpans.missingTerminal,1);
+      assert.equal(coverage.finishFinalSpans.missingStart,kind==='split'?1:0);
+      assert.equal(coverage.finishFinalSpans.complete,kind==='split'?0:1);
+      assert.equal(coverage.finishFinalSpans.total,2);assert.match(result.csv,/partial/);
+    } finally {await session.close();}
+  }
 });
 
 test('actual bundled recorder reaches owned HTTP sidecar and exports; diagnostic disk failure preserves SQL execution',

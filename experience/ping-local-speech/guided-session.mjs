@@ -521,9 +521,11 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
         originals:(c?.originals??[]).map(o=>({generationId:o.generationId,commandId:o.commandId,projectId:o.projectId,ordinal:o.ordinal,invoked:o.invoked,terminal:o.terminal}))};});
       const diagnosticStages=diagnostics();
       for(const row of rows){row.diagnosticStages=diagnosticStages?.records.filter(record=>record.event.attemptId===row.attemptId)??[];
-        const finish=row.diagnosticStages.filter(record=>record.event.stage==='finish-final'),expected=row.gestures.some(g=>g.metric==='finish-to-visible');
+        const finish=diagnosticStages?.coverage.spans.filter(span=>span.attemptId===row.attemptId&&span.stage==='finish-final')??[],expected=row.gestures.some(g=>g.metric==='finish-to-visible');
+        const finishFinalSpans={total:finish.length,started:finish.filter(s=>s.started).length,terminal:finish.filter(s=>s.terminal).length,
+          complete:finish.filter(s=>s.started&&s.terminal).length,missingStart:finish.filter(s=>!s.started).length,missingTerminal:finish.filter(s=>s.started&&!s.terminal).length};
         row.diagnosticCoverage={available:!!diagnosticStages&&!diagnosticStages.coverage.blocked,pending:diagnosticStages?.coverage.pending??0,
-          finishFinal:finish.some(r=>r.event.outcome!=='started')?finish.some(r=>r.event.outcome==='started')?'recorded':'missing-start':finish.length?'missing-terminal':expected?'missing-start':'not-observed'};}
+          finishFinalSpans,finishFinal:finish.length?finishFinalSpans.missingStart||finishFinalSpans.missingTerminal?'partial':'recorded':expected?'missing-start':'not-observed'};}
       const qualification={coached,uncoachedQualificationEligible:!coached};
       const json={...qualification,version:'ping.guided.results.v1',timingProtocol:'ping.guided.latency.v2',timingExtension:'ping.guided.measurement.v1',benchmark:benchmarkIdentity,runtime:{node:process.version,platform:process.platform,architecture:process.arch},identity,counts:projectionState().counts,ledgerHash:chain,rows,
         diagnosticStages,timingSummary:latencySummary(rows),latencyCoverage:latencyCoverage(rows),timingStatistics:{percentile:'nearest-rank',median:'midpoint for even sample counts'}};
