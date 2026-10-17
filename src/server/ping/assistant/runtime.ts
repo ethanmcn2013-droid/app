@@ -41,6 +41,7 @@ function createInstance(target: Target) {
       return pingTelemetrySpan("prepare", () => planner.plan(input, signal ?? new AbortController().signal));
     } },
     priorTaskResult: async (actorId, request) => {
+      if (request.scope.kind !== "project") return null;
       for (const run of await store.listRuns(actorId)) {
         if (run.requestId === request.requestId) continue;
         const results = Object.values(await store.getStepResults<AssistantActionResult>(actorId, run.id));

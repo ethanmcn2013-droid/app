@@ -7,6 +7,7 @@ import { FloatingChatRoot, AuthenticatedFloatingChatRoot } from "./messages/floa
 import { isDemoMode } from "@/lib/access-mode";
 import { demoMessagesSnapshot } from "@/server/demo/messages-demo";
 import { parseProjectId } from "@/lib/projects/project-ref";
+import { assistantActorEnabled } from "@/server/ping/assistant/controls";
 
 export async function ConversationSessionRuntime({ children }: { children: ReactNode }) {
   if (isDemoMode()) {
@@ -28,5 +29,5 @@ export async function ConversationSessionRuntime({ children }: { children: React
     return null;
   } })();
   if (!bootstrap) return children;
-  return <AuthenticatedConversationSession actorId={bootstrap.actorId} clerkId={bootstrap.userId}><AuthenticatedFloatingChatRoot actorId={bootstrap.actorId} actorName="You" projects={bootstrap.projects} catalogUnavailable={bootstrap.catalogUnavailable} directMessagesEnabled={controls.directMessagesEnabled}>{children}</AuthenticatedFloatingChatRoot></AuthenticatedConversationSession>;
+  return <AuthenticatedConversationSession actorId={bootstrap.actorId} clerkId={bootstrap.userId}><AuthenticatedFloatingChatRoot actorId={bootstrap.actorId} actorName="You" projects={bootstrap.projects} catalogUnavailable={bootstrap.catalogUnavailable} directMessagesEnabled={controls.directMessagesEnabled} assistantEnabled={assistantActorEnabled(process.env, bootstrap.actorId)}>{children}</AuthenticatedFloatingChatRoot></AuthenticatedConversationSession>;
 }

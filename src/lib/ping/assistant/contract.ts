@@ -50,7 +50,7 @@ export type AssistantPlannerContext = Readonly<{
 export type AssistantResultItem = Readonly<{ id: string; title: string; detail?: string; href?: string }>;
 export type AssistantActionResult = Readonly<{
   stepId: string; kind: AssistantAction["kind"]; status: "completed" | "blocked" | "failed" | "unknown" | "cancelled";
-  summary: string; affectedCount: number; projectId?: string; createdProjectId?: string; createdTaskIds?: readonly string[];
+  summary: string; affectedCount: number; projectId?: string; createdProjectId?: string; createdProjectName?: string; createdTaskIds?: readonly string[];
   taskIds?: readonly string[]; href?: string; items?: readonly AssistantResultItem[];
   delivery?: Readonly<{ queued: number; accepted: number; unknown: number; suppressed: number }>;
   undo?: Readonly<{ projectId: string; taskIds: readonly string[]; archived: boolean }>;

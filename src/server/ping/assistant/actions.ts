@@ -113,7 +113,7 @@ export async function executeAssistantAction(input: AssistantActionInput): Promi
         planningPeriodId: null, contextType: "project", position: await nextOwnedProjectPositionInTransaction(tx,
           { actorUserId: input.actorId, planningPeriodId: null }), activeDomain: "marketing", primaryUseCase: "other", now,
         description: step.description });
-      return { ...base, summary: `Created ${name}.`, affectedCount: 1, projectId: id, createdProjectId: id,
+      return { ...base, summary: `Created ${name}.`, affectedCount: 1, projectId: id, createdProjectId: id, createdProjectName: name,
         href: `/app/tasks?workspaceId=${encodeURIComponent(id)}` };
     }
     const writing = ["create_tasks", "update_tasks", "archive_tasks", "add_comment", "nudge_tasks", "invite_members", "send_message"].includes(step.kind);
