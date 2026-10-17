@@ -27,7 +27,7 @@ const timingMetrics=['prepare-server','execute-server','prepare-roundtrip','exec
 const visibleMetrics=['apply-to-visible','finish-to-visible'];
 const mutable = ['assignees','due','due_at','lane','board_column_key','idle_days','completed_at','updated_at'];
 const fields = {
-  opened:['identity'], preparing:['caseId'], armed:['caseId','baseline'], started:['attemptId'], mode:['mode'],
+  opened:['identity','coached'], preparing:['caseId'], armed:['caseId','baseline'], started:['attemptId'], mode:['mode'],
   input:['mode','evidence','generationId','requestId'], prepared:['generationId','commandId','projectId','tokenHash','ordinal'],
   invocation:['generationId','commandId','projectId','tokenHash','ordinal'],
   terminal:['category','code','stage','projection','source'], verified:['outcome','evidenceHash','projection'],
@@ -220,7 +220,8 @@ export function verifyGuidedEffects({baseline,snapshot,oracle,receipt,identity,o
 }
 
 /** Returns a serialized async API; state() is synchronous and participant-safe. No raw request is retained. */
-export async function createGuidedSession({directory,identity:inputIdentity,cases,snapshot,lookupReceipt,prepareCase,publicCase,now=Date.now,io={},benchmark}) {
+export async function createGuidedSession({directory,identity:inputIdentity,cases,snapshot,lookupReceipt,prepareCase,publicCase,now=Date.now,io={},benchmark,coached=false,diagnostics=()=>null}) {
+  assert.equal(typeof coached,'boolean','Invalid coaching configuration');
   const identity=safeIdentity(inputIdentity);
   const benchmarkIdentity=benchmark===undefined?null:validateBenchmark(benchmark);
   assert.ok(path.isAbsolute(directory));assert.ok(Array.isArray(cases)&&cases.length&&new Set(cases.map(c=>c.id)).size===cases.length);
@@ -268,7 +269,7 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
       assert.equal(e.version,1);assert.equal(e.seq,++seq);assert.ok(Number.isSafeInteger(e.time));assert.equal(e.previous,chain);
       assert.ok(Object.hasOwn(fields,e.type)&&keys(e.data,fields[e.type]));
       const {hash:recordHash,...body}=e;assert.equal(recordHash,digest(body),'Ledger integrity failure');chain=recordHash;
-      if(seq===1){assert.equal(e.type,'opened');assert.deepEqual(e.data.identity,identity,'Session pin mismatch');}
+      if(seq===1){assert.equal(e.type,'opened');assert.deepEqual(e.data.identity,identity,'Session pin mismatch');assert.equal(e.data.coached??false,coached,'Session coaching cannot change');}
       else assert.notEqual(e.type,'opened');
       apply(e);
     }
@@ -292,7 +293,7 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
   // r+ opens at byte zero. Explicitly position subsequent writes after validated history.
   try {
     if(seq){await file.close();file=await open(journalPath,'a');}
-    if(!seq)await append('opened',{identity});
+    if(!seq)await append('opened',{identity,...(coached?{coached:true}:{})});
   } catch(error){await file?.close();await releaseWriter();throw error;}
   function admitted(){assert.ok(!poisoned&&!closed&&!state.ended&&!state.paused,'Session is not active');assert.ok(state.index<cases.length);}
   function active(){admitted();const c=current();assert.ok(c?.attemptId,'Explicit participant Start required');return c;}
@@ -300,7 +301,8 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
     ['refused_verified_zero','cancelled_not_invoked_verified_zero','aborted_before_input','retired_not_invoked_verified_zero'].includes(c?.outcome);}
   function projection(){
     const c=current(),offered=cases[state.index]?publicCase(cases[state.index]):null;
-    assert.ok(offered===null||keys(offered,['id','goal','taskNames','modeInfo'])&&id(offered.id)&&typeof offered.goal==='string'&&
+    assert.ok(offered===null||keys(offered,['id','goal','taskNames','modeInfo',...(coached?['coachedCommand']:[])])&&id(offered.id)&&typeof offered.goal==='string'&&
+      (!coached||(typeof offered.coachedCommand==='string'&&offered.coachedCommand.trim().length>0&&[...offered.coachedCommand].length<=4000))&&
       typeof offered.modeInfo==='string'&&Array.isArray(offered.taskNames)&&offered.taskNames.every(name=>typeof name==='string'),'Unsafe participant projection');
     const safe=structuredClone(offered);
     const values=Object.values(state.cases);
@@ -349,6 +351,7 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
   const projectionState=()=>projection();
   let queue=Promise.resolve();const serial=fn=>(...args)=>{const result=queue.then(()=>fn(...args));queue=result.catch(()=>{});return result;};
   return {
+    ownsDiagnosticAttempt:attemptId=>Object.values(state.cases).some(c=>c.attemptId===attemptId),
     state:projectionState,
     startCase:serial(async()=>{admitted();const existing=current();assert.ok(!existing||existing.status==='armed'&&!existing.attemptId,'Case cannot be reset');const record=cases[state.index];
       if(existing)verifyGuidedEffects({baseline:existing.baseline,snapshot:await snapshot(),oracle:record.oracle,identity,zero:true});
@@ -395,7 +398,34 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
     beforeExecute:serial(async request=>{const c=active(),o=c.originals.at(-1);assert.ok(o&&!o.terminal&&!o.invoked,'Original invocation cannot be replayed');
       assert.equal(request.generationId,o.generationId);assert.equal(digest(request.token),o.tokenHash);assert.equal(request.action,'execute');
       await append('invocation',{generationId:o.generationId,commandId:o.commandId,projectId:o.projectId,tokenHash:o.tokenHash,ordinal:o.ordinal});return projectionState();}),
-    observeTerminal:serial(async(response,{action,stage='prepare'}={})=>{
+    observeTerminal:serial(async(response,{action,stage='prepare',request}={})=>{
+      // Recovery reads can belong to an earlier case. The runtime still owns
+      // authorization; this only binds its result to our durable invocation.
+      if(request&&['receipt','refresh','durable_receipt'].includes(action)) {
+        const owners=Object.values(state.cases).flatMap(owner=>owner.originals.map(original=>({owner,original}))).filter(({original:o})=>
+          action==='durable_receipt'?request.commandId===o.commandId&&request.projectId===o.projectId:
+            request.action===action&&request.generationId===o.generationId&&typeof request.token==='string'&&digest(request.token)===o.tokenHash);
+        assert.equal(owners.length,1,'Recovery read requires a known owned invocation');
+        const {owner,original}=owners[0];
+        if(owner!==current()) {
+          assert.ok(original.invoked,'Historical recovery requires an invoked original');
+          assert.ok(response?.ok===false||response?.ok===true,'Invalid historical recovery response');
+          if(response.ok) {
+            if(action==='durable_receipt'){assert.ok(!Object.hasOwn(response,'action'),'Historical recovery must remain read-only');assert.equal(response.knowledge,'committed');}
+            else {
+              assert.equal(response.action,action,'Historical recovery must remain read-only');
+              assert.equal(response.generationId,original.generationId);assert.equal(response.commandId,original.commandId);assert.equal(response.projectId,original.projectId);
+              if(action==='receipt')assert.ok(response.knowledge==='committed'||response.knowledge==='unresolved'&&['pending','absent','failed'].includes(response.detail),'Invalid historical receipt knowledge');
+              else assert.ok(['matches','diverged'].includes(response.projection)&&Array.isArray(response.tasks),'Invalid historical refresh');
+            }
+            if(action!=='receipt'||response.knowledge==='committed') {
+              assert.equal(response.receipt?.commandId,original.commandId);assert.equal(response.receipt?.projectId,original.projectId);
+              assert.equal(response.receipt?.version,'ping.receipt.v1');
+            }
+          }
+          return projectionState();
+        }
+      }
       const c=current();assert.ok(c?.attemptId);const o=c.originals.at(-1);
       if(response?.ok&&response.knowledge==='not_invoked') {
         assert.ok(o&&!o.invoked&&response.action==='cancel');assert.equal(response.commandId,o.commandId);assert.equal(response.projectId,o.projectId);
@@ -489,10 +519,19 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
         skipped:c?.status==='skipped',projection:c?.projection??'unknown',originalCount:c?.originals?.length??0,
         evidenceHash:c?.evidenceHash??null,feedback:c?.feedback??null,observers:structuredClone(Object.values(c?.observers??{})),gestures:structuredClone(c?.gestures??[]),timings:structuredClone(c?.timings??[]),
         originals:(c?.originals??[]).map(o=>({generationId:o.generationId,commandId:o.commandId,projectId:o.projectId,ordinal:o.ordinal,invoked:o.invoked,terminal:o.terminal}))};});
-      const json={version:'ping.guided.results.v1',timingProtocol:'ping.guided.latency.v2',timingExtension:'ping.guided.measurement.v1',benchmark:benchmarkIdentity,runtime:{node:process.version,platform:process.platform,architecture:process.arch},identity,counts:projectionState().counts,ledgerHash:chain,rows,
-        timingSummary:latencySummary(rows),latencyCoverage:latencyCoverage(rows),timingStatistics:{percentile:'nearest-rank',median:'midpoint for even sample counts'}};
-      const columns=['caseId','attemptId','started','inputObserved','inputMode','inputEvidence','outcome','skipped','projection','originalCount','evidenceHash','timings'];
-      const csv=[columns.join(','),...rows.map(row=>columns.map(k=>'"'+String(k==='timings'?JSON.stringify(row.timings):row[k]??'').replaceAll('"','""')+'"').join(','))].join('\n')+'\n';
+      const diagnosticStages=diagnostics();
+      for(const row of rows){row.diagnosticStages=diagnosticStages?.records.filter(record=>record.event.attemptId===row.attemptId)??[];
+        const finish=diagnosticStages?.coverage.spans.filter(span=>span.attemptId===row.attemptId&&span.stage==='finish-final')??[],expected=row.gestures.some(g=>g.metric==='finish-to-visible');
+        const finishFinalSpans={total:finish.length,started:finish.filter(s=>s.started).length,terminal:finish.filter(s=>s.terminal).length,
+          complete:finish.filter(s=>s.started&&s.terminal).length,missingStart:finish.filter(s=>!s.started).length,missingTerminal:finish.filter(s=>s.started&&!s.terminal).length};
+        row.diagnosticCoverage={available:!!diagnosticStages&&!diagnosticStages.coverage.blocked,pending:diagnosticStages?.coverage.pending??0,
+          finishFinalSpans,finishFinal:finish.length?finishFinalSpans.missingStart||finishFinalSpans.missingTerminal?'partial':'recorded':expected?'missing-start':'not-observed'};}
+      const qualification={coached,uncoachedQualificationEligible:!coached};
+      const json={...qualification,version:'ping.guided.results.v1',timingProtocol:'ping.guided.latency.v2',timingExtension:'ping.guided.measurement.v1',benchmark:benchmarkIdentity,runtime:{node:process.version,platform:process.platform,architecture:process.arch},identity,counts:projectionState().counts,ledgerHash:chain,rows,
+        diagnosticStages,timingSummary:latencySummary(rows),latencyCoverage:latencyCoverage(rows),timingStatistics:{percentile:'nearest-rank',median:'midpoint for even sample counts'}};
+      for(const row of rows)Object.assign(row,qualification);
+      const columns=['coached','uncoachedQualificationEligible','caseId','attemptId','started','inputObserved','inputMode','inputEvidence','outcome','skipped','projection','originalCount','evidenceHash','timings','diagnosticStages','diagnosticCoverage'];
+      const csv=[columns.join(','),...rows.map(row=>columns.map(k=>'"'+String(['timings','diagnosticStages','diagnosticCoverage'].includes(k)?JSON.stringify(row[k]):row[k]??'').replaceAll('"','""')+'"').join(','))].join('\n')+'\n';
       return {json,csv};}),
     close:serial(async()=>{if(closed)return;try{await file.datasync();}finally{closed=true;await file.close();await releaseWriter();}}),
   };

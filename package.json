@@ -131,7 +131,7 @@
     "test:ping-voice:browser": "node --import tsx scripts/ping/voice/browser.mjs",
     "test:ping-voice:tasks-browser": "node --import tsx --import ./src/test/register-server-only.mjs experience/ping-voice-tasks/browser.mjs",
     "ping:session-guide": "node --import tsx --import ./src/test/register-server-only.mjs experience/ping-local-speech/guided-browser.mjs",
-    "test:ping-session-guide": "node --import tsx --import ./src/test/register-server-only.mjs --test experience/ping-local-speech/guided-cases.test.mjs experience/ping-local-speech/guided-session.test.mjs experience/ping-local-speech/guided-measurement.test.mjs src/server/ping/proof-fixture.test.ts",
+    "test:ping-session-guide": "node --import tsx --import ./src/test/register-server-only.mjs --test experience/ping-local-speech/guided-cases.test.mjs experience/ping-local-speech/guided-session.test.mjs experience/ping-local-speech/guided-measurement.test.mjs experience/ping-local-speech/guided-diagnostics.test.mjs src/server/ping/proof-fixture.test.ts",
     "ping:telemetry:analyze": "node --import tsx scripts/ping/telemetry/analyze.ts",
     "test:ping-telemetry": "node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/lib/ping/telemetry.test.ts src/lib/ping/telemetry-client.test.ts src/server/ping/telemetry.test.ts scripts/ping/telemetry/analyze.test.ts",
     "test:ping-session-guide:browser": "node --import tsx --import ./src/test/register-server-only.mjs experience/ping-local-speech/guided-browser.test.mjs",

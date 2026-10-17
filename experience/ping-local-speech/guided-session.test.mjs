@@ -5,17 +5,18 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {createGuidedSession,verifyGuidedEffects} from './guided-session.mjs';
+import {createGuidedRunner,coachedParticipantCase} from './guided-browser.mjs';
 
 const identity={sessionId:'scripted-unit',sourceRevision:'a'.repeat(40),manifestSha256:'b'.repeat(64),actorId:'alice',projectId:'synthetic-ping-project'};
 const prepared={ok:true,action:'prepare',generationId:'synthetic-generation',commandId:'00000000-0000-4000-8000-000000000001',projectId:identity.projectId,token:'DO-NOT-RETAIN-SECRET'};
 const request={action:'execute',generationId:prepared.generationId,token:prepared.token};
 const row=(id,projectId=identity.projectId)=>({id,workspace_id:projectId,title:'PRIVATE SYNTHETIC TITLE',seq:1,lane:'todo',assignees:'["bob"]',due:null,due_at:null,board_column_key:null,idle_days:null,completed_at:null,updated_at:1});
-async function setup({kind='edit',io={}}={}) {
+async function setup({kind='edit',io={},coached=false}={}) {
   const directory=await mkdtemp(path.join(tmpdir(),'ping-guide-unit-'));
   const data={tasks:[row('target'),row('unselected'),row('foreign','synthetic-foreign-project')],activities:[],receipts:[]};
   const cases=[{id:'01',oracle:{kind,taskIds:kind==='edit'?['target']:[],effects:{statusColumnKey:'doing'},expectedStage:kind==='zero'?'parse':undefined}},{id:'02',oracle:{kind:'zero',taskIds:[]}}];
   let result=null,prepares=0;
-  const options={directory,identity,cases,snapshot:async()=>structuredClone(data),lookupReceipt:async()=>result,prepareCase:async()=>{prepares++;},publicCase:c=>({id:c.id,goal:'Change the selected synthetic task',taskNames:['Synthetic target'],modeInfo:'Choose input mode'}),io};
+  const options={directory,identity,cases,coached,snapshot:async()=>structuredClone(data),lookupReceipt:async()=>result,prepareCase:async()=>{prepares++;},publicCase:c=>coachedParticipantCase({id:c.id,goal:'Change the selected synthetic task',taskNames:['Synthetic target'],modeInfo:'Choose input mode'},'status doing',coached),io};
   const session=await createGuidedSession(options);
   return {session,options,data,directory,setResult:value=>{result=value;},prepares:()=>prepares};
 }
@@ -62,11 +63,86 @@ test('missing original remains unresolved after restart and blocks reset, replay
   await s.pause();await s.resume();assert.equal(s.state().counts.started,1);assert.equal(f.prepares(),1);await s.close();
 });
 
+test('historical recovery reads preserve the new case and ledger, including after reopen',async()=>{
+  const f=await setup();let s=f.session;await arm(s);await s.beforeExecute(request);const receipt=commit(f);
+  await s.observeTerminal({ok:true,knowledge:'committed',receipt},{action:'execute'});
+  await s.observeProjection({matches:true,source:'fixture-canonical-mounted'});await s.next();await s.startCase();
+  const ledgerPath=path.join(f.directory,'session.jsonl');
+  for(const reopen of [false,true]) {
+    if(reopen){await s.close();s=await createGuidedSession(f.options);}
+    const before=s.state(),bytes=await readFile(ledgerPath),data=structuredClone(f.data);
+    for(const action of ['receipt','refresh','durable_receipt']) {
+      const read=action==='durable_receipt'?{commandId:prepared.commandId,projectId:identity.projectId}:{...request,action};
+      const response={ok:true,...(action==='durable_receipt'?{knowledge:'committed'}:{action,generationId:prepared.generationId,commandId:prepared.commandId,projectId:identity.projectId,...(action==='refresh'?{projection:'matches',tasks:[]}:{knowledge:'committed'})}),receipt};
+      await s.observeTerminal(response,{action,request:read});
+      await s.observeTerminal({ok:false,code:'temporarily_unavailable'},{action,request:read});
+      await assert.rejects(s.observeTerminal({ok:true,action:'execute',receipt},{action,request:read}),/read-only/);
+      await assert.rejects(s.observeTerminal({...response,receipt:{...receipt,commandId:'unknown'}},{action,request:read}));
+      await assert.rejects(s.observeTerminal({...response,receipt:{...receipt,projectId:'foreign'}},{action,request:read}));
+      for(const key of action==='durable_receipt'?['knowledge']:action==='receipt'?['generationId','commandId','projectId','knowledge']:['generationId','commandId','projectId','projection'])
+        await assert.rejects(s.observeTerminal({...response,[key]:'wrong'},{action,request:read}));
+      await assert.rejects(s.observeTerminal({ok:true,receipt},{action,request:{...read,token:'unknown',commandId:'unknown'}}),/known owned/);
+      if(action==='durable_receipt')await assert.rejects(s.observeTerminal(response,{action,request:{...read,projectId:'foreign'}}),/known owned/);
+    }
+    await assert.rejects(s.observeTerminal({ok:true,action:'execute',knowledge:'committed',receipt},{action:'execute',request}));
+    assert.deepEqual(s.state(),before);assert.deepEqual(await readFile(ledgerPath),bytes);assert.deepEqual(f.data,data);
+    assert.equal(s.state().counts.started,2);assert.equal(s.state().counts.inputObserved,1);assert.equal(s.state().counts.verified,1);
+  }
+  await s.close();
+});
+
 test('failed durable write prevents invoke and poisons subsequent admission',async()=>{
   const f=await setup({io:{beforeWrite:async e=>{if(e.type==='invocation')throw Error('synthetic disk failure');}}});
   await arm(f.session);await assert.rejects(f.session.beforeExecute(request),/disk failure/);
   assert.equal(f.session.state().status,'blocked');assert.equal(f.data.receipts.length,0);
   await assert.rejects(f.session.beforeExecute(request),/not active/);await f.session.close();
+});
+
+test('actual HTTP handlers and SQLite recover the prior committed case without touching the next case',async()=>{
+  const unwrap=m=>m.default??m;
+  const {createPingProofFixture}=unwrap(await import('../../src/server/ping/proof-fixture.ts'));
+  const {createPingTypedSession}=unwrap(await import('../../src/server/ping/typed-session.ts'));
+  const {createPingTypedHttp}=unwrap(await import('../../src/server/ping/http.ts'));
+  const {createPingReceiptHttp}=unwrap(await import('../../src/server/ping/receipt-http.ts'));
+  const {createPingCommandService}=unwrap(await import('../../src/server/ping/command-service.ts'));
+  const directory=await mkdtemp(path.join(tmpdir(),'ping-guide-http-'));
+  const fixture=await createPingProofFixture();let s;
+  try {
+    const snapshot=async()=>({tasks:(await fixture.client.execute('SELECT * FROM tasks ORDER BY id')).rows,
+      activities:(await fixture.client.execute('SELECT * FROM activities ORDER BY id')).rows,
+      receipts:(await fixture.client.execute('SELECT * FROM ping_command_receipts ORDER BY actor_id,command_id')).rows});
+    const service=createPingCommandService(fixture.adapter);
+    const lookupReceipt=async input=>service.getReceipt(input);
+    const options={directory,identity,cases:[{id:'01',oracle:{kind:'create',taskIds:[],count:1,title:'Untitled task',effects:{}}},{id:'02',oracle:{kind:'zero',taskIds:[]}}],
+      snapshot,lookupReceipt,prepareCase:async()=>{},publicCase:c=>({id:c.id,goal:'Synthetic HTTP recovery',taskNames:[],modeInfo:'Scripted'})};
+    s=await createGuidedSession(options);await s.startCase();
+    let clock=Date.now();const runtime=createPingTypedSession(fixture.adapter,{now:()=>clock}),authenticate=async()=>({actorId:identity.actorId,sessionId:identity.sessionId});
+    const typed=createPingTypedHttp({authenticate,session:async()=>runtime});
+    const durable=createPingReceiptHttp({authenticate,receipt:async(actorId,commandId,projectId)=>{
+      const result=await lookupReceipt({actorId,commandId,projectId});return result.ok&&result.state==='committed'?result.receipt:null;}});
+    const send=async(handler,body,pathname='/api/ping')=>{
+      const response=await handler(new Request('https://isolated.invalid'+pathname,{method:'POST',headers:{origin:'https://isolated.invalid','content-type':'application/json'},body:JSON.stringify(body)}));
+      return {status:response.status,value:await response.json()};};
+    const prepare={version:'ping.typed.v1',action:'prepare',generationId:'http-generation',requestId:'00000000-0000-4000-8000-000000000902',projectId:identity.projectId,selectedTaskIds:[],snapshots:{},text:'create 1 tasks'};
+    await s.observeInput({mode:'scripted',evidence:'scripted'});const p=await send(typed,prepare);assert.equal(p.status,200);await s.observePrepareResponse(p.value);
+    const execute={version:'ping.typed.v1',action:'execute',generationId:p.value.generationId,token:p.value.token};await s.beforeExecute(execute);
+    const committed=await send(typed,execute);assert.equal(committed.status,200);assert.equal(committed.value.knowledge,'committed');await s.observeTerminal(committed.value,{action:'execute',request:execute});
+    await s.observeProjection({matches:true,source:'fixture-canonical-mounted'});await s.next();await s.startCase();
+    const ledger=path.join(directory,'session.jsonl');
+    for(const reopen of [false,true]) {
+      if(reopen){await s.close();s=await createGuidedSession(options);}
+      const bytes=await readFile(ledger),before=s.state(),rows=await snapshot();
+      for(const action of ['receipt','refresh','durable_receipt']) {
+        clock+=1000; // Respect the real runtime's receipt-read cooldown without sleeping.
+        const read=action==='durable_receipt'?{version:'ping.receipt.lookup.v1',commandId:p.value.commandId,projectId:identity.projectId}:{...execute,action};
+        const result=await send(action==='durable_receipt'?durable:typed,read,action==='durable_receipt'?'/api/ping/receipt':'/api/ping');
+        assert.equal(result.status,200,action+' '+JSON.stringify(result.value.ok?{action:result.value.action}:result.value));assert.deepEqual(result.value.receipt,committed.value.receipt);
+        await s.observeTerminal(result.value,{action,request:read});
+        await assert.rejects(s.observeTerminal(result.value,{action,request:{...read,token:'unknown',commandId:'00000000-0000-4000-8000-000000000999'}}),/known owned/);
+      }
+      assert.deepEqual(s.state(),before);assert.deepEqual(await snapshot(),rows);assert.deepEqual(await readFile(ledger),bytes);
+    }
+  } finally {await s?.close();fixture.client.close();}
 });
 
 test('known refusal and acknowledged preinvoke Cancel verify zero; late Cancel never does',async()=>{
@@ -343,4 +419,62 @@ test('request spans correlate clocks, retain dropped reply and reject contradict
   assert.equal(result.rows[0].timings.length,2);assert.equal(result.latencyCoverage.requestCorrelation.paired,1);
   assert.equal(result.latencyCoverage.droppedReplyCount,1);assert.equal(result.latencyCoverage.sampleCounts.failed,1);
   assert.equal(result.timingProtocol,'ping.guided.latency.v2');assert.equal(result.timingExtension,'ping.guided.measurement.v1');await s.close();
+});
+
+
+test('coached diagnostics export exclusion and cannot reopen as uncoached', async()=>{
+  const {session,options}=await setup({coached:true});
+  const results=await session.exportResults();
+  assert.equal(results.json.coached,true);
+  assert.equal(results.json.uncoachedQualificationEligible,false);
+  assert.ok(results.json.rows.every(row=>row.coached===true&&row.uncoachedQualificationEligible===false));
+  assert.match(results.csv,/^coached,uncoachedQualificationEligible,/);
+  assert.match(results.csv,/"true","false"/);
+  await session.close();
+  await assert.rejects(createGuidedSession({...options,coached:false}),/coaching cannot change/);
+  const reopened=await createGuidedSession(options);await reopened.close();
+});
+
+test('default diagnostics remain uncoached',async()=>{
+  const {session}=await setup();const results=await session.exportResults();
+  assert.equal(results.json.coached,false);assert.equal(results.json.uncoachedQualificationEligible,true);
+  await session.close();
+});
+
+test('only explicit coaching exposes canonical cue including heldout cases',()=>{
+  const record={id:'99',goal:'Synthetic goal',taskNames:[],modeInfo:'Synthetic',holdout:true,oracle:{private:true}};
+  const ordinary=coachedParticipantCase(record,'status review');
+  assert.deepEqual(Object.keys(ordinary),['id','goal','taskNames','modeInfo']);
+  assert.equal(JSON.stringify(ordinary).includes('status review'),false);
+  const coached=coachedParticipantCase(record,'status review',true);
+  assert.equal(coached.coachedCommand,'status review');assert.equal('oracle' in coached,false);
+  assert.throws(()=>coachedParticipantCase(record,undefined,true),/unavailable/);
+});
+
+test('coached session accepts its cue through state start and export; default rejects cue',async()=>{
+  const fixture=await setup({coached:true});await fixture.session.close();
+  const publicCase=c=>coachedParticipantCase({id:c.id,goal:'Synthetic cue',taskNames:[],modeInfo:'Diagnostic'},'status doing',true);
+  const s=await createGuidedSession({...fixture.options,publicCase});
+  try{assert.equal(s.state().currentCase.coachedCommand,'status doing');await s.startCase();
+    assert.equal(s.state().currentCase.coachedCommand,'status doing');
+    assert.equal((await s.exportResults()).json.coached,true);
+  }finally{await s.close();}
+  const ordinary=await setup();await ordinary.session.close();
+  const rejected=await createGuidedSession({...ordinary.options,publicCase});
+  try{assert.throws(()=>rejected.state(),/Unsafe participant projection/);}finally{await rejected.close();}
+});
+
+test('coached runner HTTP state start and export retain explicit exclusion', {skip:!process.env.PING_GUIDED_MANIFEST},async()=>{
+  const directory=path.join('D:/Codex-scratch/project-ping','coached-http-'+Date.now());
+  const runner=await createGuidedRunner({directory,manifestPath:process.env.PING_GUIDED_MANIFEST,mode:'create',scripted:true,coached:true});
+  try{
+    const state=await (await fetch(runner.url+'/guide/state')).json();
+    assert.equal(typeof state.currentCase.coachedCommand,'string');assert.ok(state.currentCase.coachedCommand.length);
+    const start=await fetch(runner.url+'/guide/action',{method:'POST',headers:{origin:runner.url,'content-type':'application/json'},body:JSON.stringify({action:'start'})});
+    assert.equal(start.status,200);assert.equal((await start.json()).currentCase.coachedCommand,state.currentCase.coachedCommand);
+    const exported=await (await fetch(runner.url+'/guide/export.json')).json();
+    assert.equal(exported.coached,true);assert.equal(exported.uncoachedQualificationEligible,false);
+    assert.equal(JSON.stringify(exported).includes('coachedCommand'),false);
+    const csv=await (await fetch(runner.url+'/guide/export.csv')).text();assert.match(csv,/^coached,uncoachedQualificationEligible,/);
+  }finally{await runner.close();}
 });

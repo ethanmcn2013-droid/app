@@ -130,6 +130,76 @@ test("Finish stops once; cumulative observed finals plus native end hand off exa
   assert.equal(native.aborts, 0);
 });
 
+test("successive synthetic controller finals retain fresh text, selection and generation through HTTP and SQLite", async () => {
+  // Synthetic native events only: no browser, microphone, recognizer or human evidence.
+  const { createPingProofFixture, seedProofTask, PROOF_PROJECT } = await import("../../server/ping/proof-fixture");
+  const { createPingTypedSession } = await import("../../server/ping/typed-session");
+  const { createPingTypedHttp } = await import("../../server/ping/http");
+  // Prospective aliases do not change the historical refusal recorded before this parser update.
+  for (const second of ["status done", "move these to done", "move these to a review", "delete all tasks"]) {
+    const db = await createPingProofFixture();
+    let speech: ReturnType<typeof fixture> | undefined;
+    try {
+      for (const id of ["review-target", "done-target", "guard"]) await seedProofTask(db.client, id, { assignees: ["bob"], startDay: 2, durationDays: 3 });
+      const runtime = createPingTypedSession(db.adapter);
+      const handler = createPingTypedHttp({ authenticate: async () => ({ actorId: "alice", sessionId: "synthetic-successive" }), session: async () => runtime });
+      const rows = async () => (await db.client.execute("SELECT * FROM tasks ORDER BY id")).rows;
+      const count = async (table: string) => Number((await db.client.execute("SELECT COUNT(*) AS n FROM " + table)).rows[0].n);
+      let capture = 0, selected = "review-target", executions = 0;
+      const observed: { text: string; selected: string; generation: string; token?: string; command?: string }[] = [];
+      speech = fixture({ onFinal: async text => {
+        const generation = `synthetic-capture-${capture}`, taskId = selected;
+        observed.push({ text, selected: taskId, generation });
+        const send = async (body: unknown) => {
+          const response = await handler(new Request("https://isolated.invalid/api/ping", { method: "POST", headers: { origin: "https://isolated.invalid", "content-type": "application/json" }, body: JSON.stringify(body) }));
+          return response.json();
+        };
+        const result = await send({ version: "ping.typed.v1", action: "prepare", generationId: generation,
+          requestId: `00000000-0000-4000-8000-${String(capture).padStart(12, "0")}`, projectId: PROOF_PROJECT, selectedTaskIds: [taskId],
+          snapshots: { [taskId]: { assignees: ["bob"], due: null, dueAtSeconds: null, startDay: 2, durationDays: 3, lane: "todo", boardColumnKey: null, completedAtSeconds: null } }, text });
+        if (text === "delete all tasks") { assert.deepEqual(result, { ok: false, code: "unsupported" }); return; }
+        assert.equal(result.action, "prepare"); assert.equal(result.generationId, generation);
+        assert.deepEqual(result.proposal.operation, { kind: "edit_selected", effects: { statusColumnKey: text === "status review" || text === "move these to a review" ? "review" : "done" } });
+        observed.at(-1)!.token = result.token; observed.at(-1)!.command = result.commandId;
+        executions++;
+        const applied = await send({ version: "ping.typed.v1", action: "execute", generationId: generation, token: result.token });
+        assert.equal(applied.knowledge, "committed"); assert.equal(applied.commandId, result.commandId);
+        assert.deepEqual(applied.receipt.effects.map((effect: { taskId: string }) => effect.taskId), [taskId]);
+      } });
+      const initial = await rows();
+      capture = 1; assert.equal(await speech.controller.start(), true);
+      const old = speech.instances.at(-1)!; const staleResult = old.onresult, staleEnd = old.onend;
+      old.result([["status review", true]]); speech.controller.finish(); old.onend?.(); await flush();
+      // Wait for the real async SQL handoff, not merely the native end event.
+      for (let i = 0; speech.controller.getSnapshot().phase === "processing" && i < 100; i++) await new Promise(resolve => setTimeout(resolve, 10));
+      assert.equal(speech.controller.getSnapshot().phase, "finished");
+      const first = await rows(), firstActivities = (await db.client.execute("SELECT * FROM activities ORDER BY id")).rows,
+        firstReceipts = (await db.client.execute("SELECT * FROM ping_command_receipts ORDER BY actor_id,command_id")).rows;
+      assert.equal(first.find(row => row.id === "review-target")!.lane, "review");
+      selected = "done-target"; capture = 2; assert.equal(await speech.controller.start(), true);
+      // A captured callback from the prior recognizer cannot substitute its text.
+      staleResult?.({ resultIndex: 0, results: [{ isFinal: true, length: 1, 0: { transcript: "status review" } }] }); staleEnd?.();
+      const current = speech.instances.at(-1)!; current.result([[second, true]]); speech.controller.finish(); current.onend?.();
+      await flush(); for (let i = 0; speech.controller.getSnapshot().phase === "processing" && i < 100; i++) await new Promise(resolve => setTimeout(resolve, 10));
+      assert.equal(speech.controller.getSnapshot().phase, "finished");
+      assert.deepEqual(observed.map(({ text, selected, generation }) => ({ text, selected, generation })), [
+        { text: "status review", selected: "review-target", generation: "synthetic-capture-1" },
+        { text: second, selected: "done-target", generation: "synthetic-capture-2" },
+      ]);
+      const after = await rows(); assert.deepEqual(after.find(row => row.id === "review-target"), first.find(row => row.id === "review-target"));
+      assert.deepEqual(after.find(row => row.id === "guard"), initial.find(row => row.id === "guard"));
+      if (second !== "delete all tasks") {
+        assert.notEqual(observed[0].token, observed[1].token); assert.notEqual(observed[0].command, observed[1].command);
+        assert.equal(after.find(row => row.id === "done-target")!.lane, second === "move these to a review" ? "review" : "done"); assert.equal(executions, 2); assert.equal(await count("ping_command_receipts"), 2);
+      } else {
+        assert.deepEqual(after, first); assert.equal(executions, 1); assert.equal(await count("ping_command_receipts"), 1);
+        assert.deepEqual((await db.client.execute("SELECT * FROM activities ORDER BY id")).rows, firstActivities);
+        assert.deepEqual((await db.client.execute("SELECT * FROM ping_command_receipts ORDER BY actor_id,command_id")).rows, firstReceipts);
+      }
+    } finally { speech?.controller.dispose(); db.client.close(); }
+  }
+});
+
 test("early native end, empty results, interim tail, no-match, and errors never deliver text", async () => {
   for (const scenario of ["early", "empty", "interim", "no_match", "error"] as const) {
     const f = fixture(); await f.controller.start(); const native = f.instances[0];
