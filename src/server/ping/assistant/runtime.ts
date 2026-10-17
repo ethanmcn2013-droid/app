@@ -47,9 +47,9 @@ function createInstance(target: Target) {
         const prior = results.filter(result => result.kind === "create_tasks" && result.status === "completed" && result.createdTaskIds?.length &&
           (request.scope.kind !== "project" || result.projectId === request.scope.projectId)).at(-1);
         if (!prior?.projectId) continue;
-        try { await transact(tx => authorizeAssistantProject(tx, actorId, prior.projectId!)); return prior; } catch { return undefined; }
+        try { await transact(tx => authorizeAssistantProject(tx, actorId, prior.projectId!)); return prior; } catch { return null; }
       }
-      return undefined;
+      return null;
     },
     context: (actorId, request) => transact(async tx => {
       const actor = await assertAssistantActor(tx, actorId);

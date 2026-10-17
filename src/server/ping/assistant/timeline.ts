@@ -23,7 +23,7 @@ export function createAssistantTimelinePreparation(deps: {
     const current = await deps.project(input.actorId, input.projectId);
     if (current.clerkId !== project.clerkId || current.ownerClerkId !== project.ownerClerkId) throw new Error("timeline_access_changed");
     return { href: `/app/timeline/${encodeURIComponent(matches[0].slug)}/current-preview?workspaceId=${encodeURIComponent(input.projectId)}`,
-      summary: "The current timeline is ready in private preview. It has not been published." };
+      summary: "The current timeline is ready in private preview. This request did not publish or change a shared copy." };
   };
 }
 

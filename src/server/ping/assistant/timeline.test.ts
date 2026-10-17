@@ -10,7 +10,7 @@ test("explicit preparation binds one exact current timeline, syncs then rechecks
   const result = await prepare(target);
   assert.deepEqual(calls, ["authorize", "provision", "sync", "authorize"]);
   assert.equal(result.href, "/app/timeline/timeline-a/current-preview?workspaceId=project-a");
-  assert.match(result.summary, /not been published/);
+  assert.match(result.summary, /did not publish or change a shared copy/);
 });
 test("foreign binding, incomplete refresh, nonowner and access loss never return preview success", async () => {
   const base = { project: async () => project, provision: async () => ({ slug: "workspace-a" }), timelines: async () => [{ slug: "timeline-a", sourceTasksWorkspaceId: "project-a" }], sync: async () => ({ ok: true as const, complete: true }) };

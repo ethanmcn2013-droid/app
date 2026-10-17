@@ -211,7 +211,7 @@ export async function executeAssistantAction(input: AssistantActionInput): Promi
         : await prepareAssistantNudges(tx, input.actorId, projectId, await targetsFor(tx, input, projectId, step.targets), input.stepId, now, remainingEffects(input));
       outbound = prepared.intents;
       await input.delivery.queueDeliveries(tx, input.stepId, outbound.map(intent => intent.key));
-      const affectedCount = "notified" in prepared ? prepared.notified : outbound.length;
+      const affectedCount = "notified" in prepared && typeof prepared.notified === "number" ? prepared.notified : outbound.length;
       return { ...base, projectId, affectedCount,
         summary: step.kind === "invite_members" ? `Saved ${outbound.length} invitations; email delivery is queued.`
           : `Saved ${affectedCount} in-app nudges.`,
