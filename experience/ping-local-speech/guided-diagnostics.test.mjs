@@ -30,6 +30,8 @@ test('diagnostic sidecar validates privacy, page ownership, replay, bounds and m
   assert.equal((await fs.readFile(file,'utf8')).includes('PRIVATE_SENTINEL'),false);
   const reopened=await createGuidedDiagnosticStore(options);assert.equal(reopened.snapshot().records.length,2);assert.equal(reopened.snapshot().records[0].generationId,null);
   assert.equal(reopened.snapshot().coverage.spans[0].missingTerminal,false);
+  await store.accept({pageId:retired,events:[event(attempt),event(attempt)]});
+  await assert.rejects(store.accept({pageId:retired,events:[event(attempt)]}),/capacity/);assert.equal(store.snapshot().records.length,4);
   const unavailable=await createGuidedDiagnosticStore({...options,file:directory});assert.equal(unavailable.snapshot().coverage.blocked,true);
 });
 
@@ -61,6 +63,7 @@ test('actual bundled recorder reaches owned HTTP sidecar and exports; diagnostic
     await fs.rename(path.join(directory,'diagnostic-stages.jsonl'),path.join(directory,'diagnostic-stages-retained.jsonl'));
     await fs.mkdir(path.join(directory,'diagnostic-stages.jsonl'));
     const failed=await post('/api/ping/telemetry',{version:'ping.telemetry.batch.v1',events:[event(attempt)]},{'x-ping-guide-page':page});assert.equal(failed.status,409);
+    context.window.pingGuideTelemetryOwner=()=>{throw Error('Synthetic observer failure');};assert.equal(context.makeRecorder('local-speech'),null);
     const before=await runner.testHooks.snapshot(),manifest=JSON.parse(await fs.readFile(process.env.PING_GUIDED_MANIFEST,'utf8'));
     const selected=before.tasks.filter(r=>String(r.id).startsWith('ping-guide-case-01-task-'));
     const snapshots=Object.fromEntries(selected.map(r=>[r.id,{assignees:JSON.parse(r.assignees),due:r.due,dueAtSeconds:r.due_at,startDay:r.start_day,durationDays:r.duration_days,lane:r.lane,boardColumnKey:r.board_column_key,completedAtSeconds:r.completed_at}]));
