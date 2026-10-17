@@ -220,7 +220,7 @@ export function verifyGuidedEffects({baseline,snapshot,oracle,receipt,identity,o
 }
 
 /** Returns a serialized async API; state() is synchronous and participant-safe. No raw request is retained. */
-export async function createGuidedSession({directory,identity:inputIdentity,cases,snapshot,lookupReceipt,prepareCase,publicCase,now=Date.now,io={},benchmark,coached=false}) {
+export async function createGuidedSession({directory,identity:inputIdentity,cases,snapshot,lookupReceipt,prepareCase,publicCase,now=Date.now,io={},benchmark,coached=false,diagnostics=()=>null}) {
   assert.equal(typeof coached,'boolean','Invalid coaching configuration');
   const identity=safeIdentity(inputIdentity);
   const benchmarkIdentity=benchmark===undefined?null:validateBenchmark(benchmark);
@@ -351,6 +351,7 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
   const projectionState=()=>projection();
   let queue=Promise.resolve();const serial=fn=>(...args)=>{const result=queue.then(()=>fn(...args));queue=result.catch(()=>{});return result;};
   return {
+    ownsDiagnosticAttempt:attemptId=>Object.values(state.cases).some(c=>c.attemptId===attemptId),
     state:projectionState,
     startCase:serial(async()=>{admitted();const existing=current();assert.ok(!existing||existing.status==='armed'&&!existing.attemptId,'Case cannot be reset');const record=cases[state.index];
       if(existing)verifyGuidedEffects({baseline:existing.baseline,snapshot:await snapshot(),oracle:record.oracle,identity,zero:true});
@@ -518,12 +519,17 @@ export async function createGuidedSession({directory,identity:inputIdentity,case
         skipped:c?.status==='skipped',projection:c?.projection??'unknown',originalCount:c?.originals?.length??0,
         evidenceHash:c?.evidenceHash??null,feedback:c?.feedback??null,observers:structuredClone(Object.values(c?.observers??{})),gestures:structuredClone(c?.gestures??[]),timings:structuredClone(c?.timings??[]),
         originals:(c?.originals??[]).map(o=>({generationId:o.generationId,commandId:o.commandId,projectId:o.projectId,ordinal:o.ordinal,invoked:o.invoked,terminal:o.terminal}))};});
+      const diagnosticStages=diagnostics();
+      for(const row of rows){row.diagnosticStages=diagnosticStages?.records.filter(record=>record.event.attemptId===row.attemptId)??[];
+        const finish=row.diagnosticStages.filter(record=>record.event.stage==='finish-final'),expected=row.gestures.some(g=>g.metric==='finish-to-visible');
+        row.diagnosticCoverage={available:!!diagnosticStages&&!diagnosticStages.coverage.blocked,pending:diagnosticStages?.coverage.pending??0,
+          finishFinal:finish.some(r=>r.event.outcome!=='started')?finish.some(r=>r.event.outcome==='started')?'recorded':'missing-start':finish.length?'missing-terminal':expected?'missing-start':'not-observed'};}
       const qualification={coached,uncoachedQualificationEligible:!coached};
       const json={...qualification,version:'ping.guided.results.v1',timingProtocol:'ping.guided.latency.v2',timingExtension:'ping.guided.measurement.v1',benchmark:benchmarkIdentity,runtime:{node:process.version,platform:process.platform,architecture:process.arch},identity,counts:projectionState().counts,ledgerHash:chain,rows,
-        timingSummary:latencySummary(rows),latencyCoverage:latencyCoverage(rows),timingStatistics:{percentile:'nearest-rank',median:'midpoint for even sample counts'}};
+        diagnosticStages,timingSummary:latencySummary(rows),latencyCoverage:latencyCoverage(rows),timingStatistics:{percentile:'nearest-rank',median:'midpoint for even sample counts'}};
       for(const row of rows)Object.assign(row,qualification);
-      const columns=['coached','uncoachedQualificationEligible','caseId','attemptId','started','inputObserved','inputMode','inputEvidence','outcome','skipped','projection','originalCount','evidenceHash','timings'];
-      const csv=[columns.join(','),...rows.map(row=>columns.map(k=>'"'+String(k==='timings'?JSON.stringify(row.timings):row[k]??'').replaceAll('"','""')+'"').join(','))].join('\n')+'\n';
+      const columns=['coached','uncoachedQualificationEligible','caseId','attemptId','started','inputObserved','inputMode','inputEvidence','outcome','skipped','projection','originalCount','evidenceHash','timings','diagnosticStages','diagnosticCoverage'];
+      const csv=[columns.join(','),...rows.map(row=>columns.map(k=>'"'+String(['timings','diagnosticStages','diagnosticCoverage'].includes(k)?JSON.stringify(row[k]):row[k]??'').replaceAll('"','""')+'"').join(','))].join('\n')+'\n';
       return {json,csv};}),
     close:serial(async()=>{if(closed)return;try{await file.datasync();}finally{closed=true;await file.close();await releaseWriter();}}),
   };

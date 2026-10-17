@@ -7,7 +7,7 @@ import { createRequire } from 'node:module';
 import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { buildGuidedCases, participantCase, GUIDED_MANIFEST_SHA256 } from './guided-cases.mjs';
-import { createMetadataFence, validateBenchmark } from './guided-measurement.mjs';
+import { createMetadataFence, createGuidedDiagnosticStore, validateBenchmark } from './guided-measurement.mjs';
 import { createGuidedSession } from './guided-session.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -45,12 +45,14 @@ function projectionModel(tasks) {
 const bridge = `window.EventSource=undefined;
 (()=>{
  const projectionModel=${projectionModel.toString()};
- const nativeFetch=window.fetch.bind(window);
+ const rawFetch=window.fetch.bind(window);
+ const nativeFetch=(input,options)=>{const target=new URL(input instanceof Request?input.url:String(input),location.href);return rawFetch(input,target.origin===location.origin&&target.pathname==='/api/ping/telemetry'?{...options,headers:{...options?.headers,'x-ping-guide-page':pageId}}:options);};
  const pageId=crypto.randomUUID();
  const suspend=s=>{const paused=['paused','ended'].includes(s.phase)||!s.saved;document.getElementById('root').inert=paused;document.getElementById('tasks-pane').inert=paused;};
  let registeredAttempt=null;
  const register=async()=>{if(attempt&&registeredAttempt!==attempt){await post('/guide/page',{attemptId:attempt,pageId});registeredAttempt=attempt;}};
  let attempt=null, sequence=0, observed=null, projection=null, metadataError=false, chain=Promise.resolve(),timingChain=Promise.resolve(),pendingAction=null,currentGeneration=null;
+ window.pingGuideTelemetryOwner=()=>attempt;
  const health=new Map();
  const observedPost=async(path,value)=>{const captured=value.attemptId;if(!health.has(captured))health.set(captured,{attempted:0,delivered:0,failed:0});const counts=health.get(captured);counts.attempted++;try{const result=await post(path,value);counts.delivered++;return result;}catch(error){counts.failed++;throw error;}};
  const flushHealth=async()=>{for(const [attemptId,counts] of health)await post('/guide/observer',{attemptId,pageId,...counts});};
@@ -114,6 +116,11 @@ export function coachedParticipantCase(record,command,coached=false) {
   return Object.freeze({...summary,coachedCommand:command});
 }
 
+// Only the isolated bundle binds the existing content-free recorder to its guide owner.
+export function guidedTelemetryModule(realPath) {
+  return `import {createBrowserPingTelemetry as real} from ${JSON.stringify(realPath)};export * from ${JSON.stringify(realPath)};export function createBrowserPingTelemetry(mode,attemptId){try{const owner=attemptId??window.pingGuideTelemetryOwner?.();return owner?real(mode,owner):null;}catch{return null;}}`;
+}
+
 export async function createGuidedRunner({directory,manifestPath,mode,sessionId=randomUUID(),scripted=false,coached=false,io={},benchmark}) {
   assert.ok(['create','reopen'].includes(mode),'Explicit create/reopen required');
   assert.ok(path.isAbsolute(directory)&&path.relative(scratch,directory)&&!path.relative(scratch,directory).startsWith('..')&&!path.isAbsolute(path.relative(scratch,directory)),'Owned absolute scratch session required');
@@ -147,7 +154,7 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
   const {createPingTypedHttp}=unwrap(await import('../../src/server/ping/http.ts'));
   const {createPingReceiptHttp}=unwrap(await import('../../src/server/ping/receipt-http.ts'));
   const {parsePingTypedCommand}=unwrap(await import('../../src/lib/ping/typed-command.ts'));
-  let fixture,session,server,url,closed=false,tail=Promise.resolve();
+  let fixture,session,server,url,diagnosticStore,closed=false,tail=Promise.resolve();
   const requestCounts={};const test={drop:null,refreshFailure:false,receiptFailure:false,journalFailure:false};
   const serial=fn=>{const result=tail.then(fn);tail=result.catch(()=>{});return result;};
   const query=async table=>{const result=await fixture.client.execute('SELECT * FROM '+table+' ORDER BY '+(table==='ping_command_receipts'?'actor_id,command_id':'id'));return result.rows.map(row=>Object.fromEntries(result.columns.map(column=>[column,row[column]])));};
@@ -190,20 +197,26 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
         await tx.commit();
       }catch(error){await tx.rollback();throw error;}
     };
-    session=await createGuidedSession({directory,identity:config.identity,cases,snapshot,lookupReceipt,prepareCase,publicCase:record=>coachedParticipantCase(record,prompts.get(record.id),coached),coached,benchmark:config.benchmark??undefined,
+    session=await createGuidedSession({directory,identity:config.identity,cases,snapshot,lookupReceipt,prepareCase,publicCase:record=>coachedParticipantCase(record,prompts.get(record.id),coached),coached,benchmark:config.benchmark??undefined,diagnostics:()=>diagnosticStore?.snapshot()??null,
       io:{beforeWrite:async event=>{if(test.journalFailure&&event.type==='invocation'){test.journalFailure=false;throw Error('Injected durable write failure');}await io.beforeWrite?.(event);}}});
     const esbuild=createRequire(require.resolve('tsx/package.json'))('esbuild');
+    const metadataFence=createMetadataFence(),inputPaths=new Map();
+    const {validatePingTelemetryEvent}=unwrap(await import('../../src/lib/ping/telemetry.ts'));
+    diagnosticStore=await createGuidedDiagnosticStore({file:path.join(directory,'diagnostic-stages.jsonl'),validateEvent:validatePingTelemetryEvent,
+      ownsAttempt:session.ownsDiagnosticAttempt,isActivePage:(attempt,page)=>metadataFence.isActive(attempt,page),evidence:scripted?'scripted':'automatic'});
     const localSpeechPath=path.join(root,'src/lib/ping/local-speech.ts');
     const reactDomPath=require.resolve('react-dom').replaceAll('\\','/');
     const bundle=await esbuild.build({absWorkingDir:root,entryPoints:['experience/ping-typed/fixture.tsx'],outdir:path.join(directory,'bundle'),write:false,bundle:true,metafile:true,
       platform:'browser',format:'iife',jsx:'automatic',alias:{'@':path.join(root,'src')},loader:{'.module.css':'local-css','.css':'css'},external:['/fonts/*'],
-      define:{'process.env.NODE_ENV':'"production"','process.env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED':'"1"','process.env.NEXT_PUBLIC_PROJECT_PING_LOCAL_SPEECH_ENABLED':'"1"','process.env':'{}'},
+      define:{'process.env.NODE_ENV':'"production"','process.env.NEXT_PUBLIC_PROJECT_PING_TYPED_ENABLED':'"1"','process.env.NEXT_PUBLIC_PROJECT_PING_LOCAL_SPEECH_ENABLED':'"1"','process.env.NEXT_PUBLIC_PING_TELEMETRY_ENABLED':'"1"','process.env.NEXT_PUBLIC_PING_TELEMETRY_DEPLOYMENT':'"test"','process.env':'{}'},
       plugins:[{name:'guided-fixture-boundaries',setup(build){
         build.onResolve({filter:/^react-dom$/},args=>args.importer.replaceAll('\\','/').startsWith(root.replaceAll('\\','/')+'/src/')?{path:'owned-fixture-portals',namespace:'portals'}:undefined);
         build.onLoad({filter:/.*/,namespace:'portals'},()=>({contents:`import {createPortal as real} from ${JSON.stringify(reactDomPath)};export * from ${JSON.stringify(reactDomPath)};export function createPortal(children,target,key){return real(children,target===document.body?document.getElementById('fixture-portals'):target,key);}`,loader:'js',resolveDir:root}));
         build.onResolve({filter:/.*/},args=>stubs.has(args.path)?{path:args.path,namespace:'fixture'}:undefined);
         build.onLoad({filter:/.*/,namespace:'fixture'},args=>({contents:stubs.get(args.path),loader:'js',resolveDir:root}));
         build.onResolve({filter:/^@\/lib\/ping\/local-speech$/},()=>({path:'local-speech-observer',namespace:'guided'}));
+        build.onResolve({filter:/^@\/lib\/ping\/telemetry-client$/},()=>({path:'guided-telemetry-client',namespace:'guided-telemetry'}));
+        build.onLoad({filter:/.*/,namespace:'guided-telemetry'},()=>({contents:guidedTelemetryModule(path.join(root,'src/lib/ping/telemetry-client.ts').replaceAll('\\','/')),loader:'js',resolveDir:root}));
         build.onLoad({filter:/.*/,namespace:'guided'},()=>({contents:`import {createBrowserPingLocalSpeech as real} from ${JSON.stringify(localSpeechPath.replaceAll('\\','/'))};export * from ${JSON.stringify(localSpeechPath.replaceAll('\\','/'))};export function createBrowserPingLocalSpeech(options){return real({...options,onFinal:text=>{window.pingGuideObserveFinal?.();return options.onFinal(text);}});}`,loader:'js',resolveDir:root}));
         build.onLoad({filter:/ping-typed-panel\.tsx$/},async args=>{const source=await fs.readFile(args.path,'utf8');const needle='data-testid="project-ping-typed-panel"';assert.equal(source.split(needle).length,2);
           return {contents:source.replace(needle,needle+' data-ping-scope-refusal={unsupportedTargets ? "unsupported_targets" : tooManyTargets ? "too_many_targets" : undefined}'),loader:'tsx',resolveDir:path.dirname(args.path)};});
@@ -221,7 +234,6 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
     html=html.replace('<div id="root" inert aria-label="Signal Tasks"></div>',
       '<section id="tasks-pane" inert><div id="root" inert aria-label="Signal Tasks"></div><div id="fixture-portals"></div></section>')
       .replace('</head>','<style>#tasks-pane{position:relative;transform:translateZ(0);container-type:size;min-width:0;min-height:0;height:100%;overflow:hidden;border-radius:12px}#fixture-portals div:has(>[role="dialog"]){padding-top:16px}#fixture-portals [role="dialog"]{max-width:calc(100cqw - 24px);max-height:calc(100cqh - 32px)}#fixture-portals [data-testid="ping-overlay"]{max-height:min(680px,calc(100cqh - 34px))}</style></head>');
-    const metadataFence=createMetadataFence(),inputPaths=new Map();
     const readJson=async(req,max=48000)=>{assert.equal(req.headers['content-type']?.split(';')[0],'application/json');assert.ok(!req.headers['content-encoding']);let length=0;const chunks=[];
       req.setTimeout(10000,()=>req.destroy());for await(const chunk of req){length+=chunk.length;assert.ok(length<=max);chunks.push(chunk);}return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)));};
     const send=(res,value,status=200)=>{res.writeHead(status,jsonHeaders);res.end(JSON.stringify(value));};
@@ -230,6 +242,12 @@ export async function createGuidedRunner({directory,manifestPath,mode,sessionId=
         assert.equal(req.headers.host,new URL(url).host);const pathname=new URL(req.url,url).pathname;
         if(req.method==='POST') {
           if(req.headers.origin!==url||req.headers['sec-fetch-site']==='cross-site')return send(res,{ok:false,code:'unavailable'},404);
+          // Diagnostic collection never enters the mutation/metadata serial queue.
+          if(pathname==='/api/ping/telemetry') {
+            const input=await readJson(req,8192);
+            assert.ok(input&&Object.keys(input).length===2&&input.version==='ping.telemetry.batch.v1'&&Array.isArray(input.events));
+            await diagnosticStore.accept({pageId:req.headers['x-ping-guide-page'],events:input.events});return send(res,{ok:true});
+          }
           const input=await readJson(req,pathname.startsWith('/guide/')?2048:48000);
           return await serial(async()=>{
             if(pathname==='/guide/action') {
