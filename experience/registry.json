@@ -416,7 +416,7 @@
       "materialityReview": {
         "materialityHash": "3fcba4d3b2bb4dcf",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.page.app-settings.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.page.app-settings.json"
       }
     },
     {
@@ -1422,7 +1422,7 @@
       "materialityReview": {
         "materialityHash": "56f4c16d02cbcebb",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.page.welcome.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.page.welcome.json"
       }
     },
     {
@@ -2136,7 +2136,7 @@
       "materialityReview": {
         "materialityHash": "795236cc4236a32a",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.page.app-project.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.page.app-project.json"
       }
     },
     {
@@ -2184,7 +2184,7 @@
       "materialityReview": {
         "materialityHash": "50734606e8cded67",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.state.app-project-loading.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.state.app-project-loading.json"
       }
     },
     {
@@ -3192,7 +3192,7 @@
       "materialityReview": {
         "materialityHash": "9dcb7b09c5c2c254",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.state.app-home-loading.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.state.app-home-loading.json"
       }
     },
     {
@@ -3239,7 +3239,7 @@
       "materialityReview": {
         "materialityHash": "94e95fe898bce26d",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.state.app-home-error.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.state.app-home-error.json"
       }
     },
     {
@@ -3503,7 +3503,7 @@
       "materialityReview": {
         "materialityHash": "12140b4bae611a58",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.state.app-tasks-loading.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.state.app-tasks-loading.json"
       }
     },
     {
@@ -3744,7 +3744,7 @@
       "materialityReview": {
         "materialityHash": "19f85eac6f784ffa",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.resources.drive-upload.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.resources.drive-upload.json"
       }
     },
     {
@@ -4007,7 +4007,7 @@
       "materialityReview": {
         "materialityHash": "dacfebb578dd8234",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.page.app-messages.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.page.app-messages.json"
       }
     },
     {
@@ -4193,7 +4193,7 @@
       "materialityReview": {
         "materialityHash": "d89f2a4abd38ee57",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.page.app-analytics.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.page.app-analytics.json"
       }
     },
     {
@@ -4240,7 +4240,7 @@
       "materialityReview": {
         "materialityHash": "9a83f9e97a750b1b",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.state.app-analytics-loading.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.state.app-analytics-loading.json"
       }
     },
     {
@@ -4287,7 +4287,7 @@
       "materialityReview": {
         "materialityHash": "16a0888ed7b367ab",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.state.app-analytics-error.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.state.app-analytics-error.json"
       }
     },
     {
@@ -4517,7 +4517,7 @@
       "materialityReview": {
         "materialityHash": "4a1b05486b44306f",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.page.app-tools-by-slug.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.page.app-tools-by-slug.json"
       }
     },
     {
@@ -4565,7 +4565,7 @@
       "materialityReview": {
         "materialityHash": "45e0fc19aaf3ca48",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.state.app-tools-loading.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.state.app-tools-loading.json"
       }
     },
     {
@@ -4621,7 +4621,7 @@
       "materialityReview": {
         "materialityHash": "63e7924b683e8c06",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.page.app-concepts.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.page.app-concepts.json"
       }
     },
     {
@@ -4728,7 +4728,7 @@
       "materialityReview": {
         "materialityHash": "08771bc864af3e7b",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.page.app-files.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.page.app-files.json"
       }
     },
     {
@@ -4775,7 +4775,7 @@
       "materialityReview": {
         "materialityHash": "9beac142f8f04cb2",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.state.app-files-loading.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.state.app-files-loading.json"
       }
     },
     {
@@ -4822,7 +4822,7 @@
       "materialityReview": {
         "materialityHash": "83d088f7615c6a6b",
         "reviewedAt": "2026-10-18",
-        "evidence": "experience/reviews/2026-10-18-ping-assistant-canonical/receipts/tasks.state.app-files-error.json"
+        "evidence": "experience/reviews/2026-10-18-ping-assistant-final-canonical/receipts/tasks.state.app-files-error.json"
       }
     },
     {

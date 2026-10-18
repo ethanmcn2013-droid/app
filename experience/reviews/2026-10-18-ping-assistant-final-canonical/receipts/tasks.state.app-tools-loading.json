@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-tools-loading",
+  "source": "tasks/src/app/app/tools/loading.tsx",
+  "materialityHash": "45e0fc19aaf3ca48",
+  "reviewedAt": "2026-10-18",
+  "reviewer": "Codex ai_typed_76_100: actual all18 four-target image review; root independently accepted six representative sheets",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-d596c7e894d36c1ec47fd934-cfb7f54e27e2a625.json",
+    "attestationSha256": "7603fedaf94b91f64a7f3f9e5c08990131d6b622bad1c6f44a344406b3089da2",
+    "runId": "tasks-playwright-d596c7e894d36c1ec47fd934",
+    "canonicalEvidenceSha256": "d596c7e894d36c1ec47fd93484763503097e507d9c745c99f45bd5db47a216b2",
+    "rawArtifactSha256": "cfb7f54e27e2a625949e10722ecf79a98f2800cb72567575f7dd65687a83655d",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-tools-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh canonical evidence actually built461796dc05a2d58e6a35a049e74d24b65c8ba4b6; identical full tree0bb60541. Tools skeleton renders at all four actual capture widths. No rebuilt0bb render or new design rating.",
+  "decision": "accepted"
+}
