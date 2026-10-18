@@ -85,5 +85,11 @@ export async function cleanupGuestSubscriptions(database:LibSQLDatabase<typeof g
  if(!Number.isSafeInteger(limit)||limit<1||limit>500)throw new TypeError('Invalid cleanup limit');
  const t=guestSchema.timelineGuestSubscriptions,expired=or(and(eq(t.state,'pending'),lte(t.confirmationExpiresAt,now)),and(eq(t.state,'unsubscribed'),lte(t.updatedAt,new Date(now.getTime()-30*86400000))));
  const ids=(await database.select({id:t.id}).from(t).where(expired).limit(limit)).map(r=>r.id);if(!ids.length)return 0;
- return (await database.delete(t).where(and(inArray(t.id,ids),expired)).returning({id:t.id})).length;
+ return database.transaction(async tx=>{
+  // Recheck eligibility under the write lock before touching children: a follow
+  // confirmed after the bounded candidate read must retain every delivery.
+  const eligible=(await tx.select({id:t.id}).from(t).where(and(inArray(t.id,ids),expired))).map(r=>r.id);if(!eligible.length)return 0;
+  await tx.delete(guestSchema.timelineGuestDeliveries).where(inArray(guestSchema.timelineGuestDeliveries.subscriptionId,eligible));
+  return (await tx.delete(t).where(and(inArray(t.id,eligible),expired)).returning({id:t.id})).length;
+ },{behavior:'immediate'});
 }
