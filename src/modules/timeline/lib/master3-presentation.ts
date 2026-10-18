@@ -6,7 +6,7 @@ export type Master3ItemPresentation = Readonly<{
 export type Master3Presentation = Readonly<{
   market?: 'wedding' | 'event' | 'launch' | 'school';
   countTo?: 'final' | 'next'; eyebrow?: string; panelLabel?: string; unitNoun?: string; progressNoun?: string;
-  timezone?: string; place?: string; address?: string; locationConsent?: boolean;
+  timezone?: string; place?: string; address?: string; locationConsent?: boolean; socialDetails?: boolean;
   eventTitle?: string; calAll?: boolean;
   after?: Readonly<{ word: string; l1?: string; l2?: string }>;
   during?: Readonly<{ days: number; word: string; l1?: string; l2?: string }>;
@@ -39,9 +39,9 @@ export function validateMaster3ItemPresentation(value: unknown): Master3ItemPres
  if(input.time!==undefined&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(input.time)))throw new TypeError('Invalid event time');
  return out as Master3ItemPresentation;
 }
-const PRESENTATION_FIELDS=['market','countTo','eyebrow','panelLabel','unitNoun','progressNoun','timezone','place','address','locationConsent','eventTitle','calAll','after','during','afterNote','onDayNote','venueNote','photosUrl','afterFollow','giftLead','giftName','giftUrl','ref','referral','next','subject','pitch','newsVerb','ownerVerb'] as const;
+const PRESENTATION_FIELDS=['market','countTo','eyebrow','panelLabel','unitNoun','progressNoun','timezone','place','address','locationConsent','socialDetails','eventTitle','calAll','after','during','afterNote','onDayNote','venueNote','photosUrl','afterFollow','giftLead','giftName','giftUrl','ref','referral','next','subject','pitch','newsVerb','ownerVerb'] as const;
 export function validateMaster3Presentation(value: unknown): Master3Presentation {
- const {input,out}=fields(value,PRESENTATION_FIELDS,['eyebrow','panelLabel','unitNoun','progressNoun','timezone','place','address','eventTitle','afterNote','onDayNote','venueNote','giftLead','giftName','ref','subject','pitch','newsVerb','ownerVerb'],['locationConsent','calAll','afterFollow','referral'],['photosUrl','giftUrl']);
+ const {input,out}=fields(value,PRESENTATION_FIELDS,['eyebrow','panelLabel','unitNoun','progressNoun','timezone','place','address','eventTitle','afterNote','onDayNote','venueNote','giftLead','giftName','ref','subject','pitch','newsVerb','ownerVerb'],['locationConsent','socialDetails','calAll','afterFollow','referral'],['photosUrl','giftUrl']);
  if(input.market!==undefined){if(!['wedding','event','launch','school'].includes(String(input.market)))throw new TypeError('Invalid market');out.market=input.market;}
  if(input.countTo!==undefined){if(!['final','next'].includes(String(input.countTo)))throw new TypeError('Invalid countdown');out.countTo=input.countTo;}
  if(input.timezone!==undefined)new Intl.DateTimeFormat('en',{timeZone:String(input.timezone)}).format();
