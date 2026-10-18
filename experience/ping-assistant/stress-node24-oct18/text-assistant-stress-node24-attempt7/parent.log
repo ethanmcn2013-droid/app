@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: 100 actual SQLite service/action scenarios in isolated native-client processes
+not ok 1 - 100 actual SQLite service/action scenarios in isolated native-client processes
+  ---
+  duration_ms: 167231.6245
+  type: 'test'
+  location: 'D:\\Codex-scratch\\project-ping\\text-assistant-stress-node24-oct18\\src\\server\\ping\\assistant\\stress.test.ts:2:17848'
+  failureType: 'testCodeFailure'
+  error: |-
+    Batch 032-032 exited 1/null; preserved D:\Codex-scratch\project-ping\founder-session-oct17\text-assistant-stress-node24-attempt7\children
+    TAP version 13
+    # Subtest: 032:update-field-8
+    ok 1 - 032:update-field-8
+      ---
+      duration_ms: 2263.1375
+      type: 'test'
+      ...
+    # {"synthetic":true,"id":"032:update-field-8","serverSpanMs":247.805,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+    # Subtest: stress scenario inventory and bounded latency summary
+    ok 2 - stress scenario inventory and bounded latency summary
+      ---
+      duration_ms: 0.6841
+      type: 'test'
+      ...
+    # {"synthetic":true,"scenarios":1,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":247.805,"p95":247.805,"p99":247.805,"max":247.80459999999994,"statuses":{"completed":1},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+    # Subtest: src\\server\\ping\\assistant\\stress.test.ts
+    not ok 1 - src\\server\\ping\\assistant\\stress.test.ts
+      ---
+      duration_ms: 4091.3731
+      type: 'test'
+      location: 'D:\\Codex-scratch\\project-ping\\text-assistant-stress-node24-oct18\\src\\server\\ping\\assistant\\stress.test.ts:1:1'
+      failureType: 'testCodeFailure'
+      exitCode: 3221225477
+      signal: ~
+      error: 'test failed'
+      code: 'ERR_TEST_FAILURE'
+      ...
+    1..3
+    # tests 3
+    # suites 0
+    # pass 2
+    # fail 1
+    # cancelled 0
+    # skipped 0
+    # todo 0
+    # duration_ms 4101.654
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (D:\Codex-scratch\project-ping\text-assistant-stress-node24-oct18\src\server\ping\assistant\stress.test.ts:228:12)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+# {"batch":"001-001","completed":1,"rawSha256":"d77ee6cc84d478bd248910620ed2daaf78b24c0f5291fdc0caec55afcd4b3a12"}
+# {"batch":"002-002","completed":1,"rawSha256":"f608a14966c59f1bb533a436ee8a25d23ed70477de6fb7e85ddae2bd6b010643"}
+# {"batch":"003-003","completed":1,"rawSha256":"31beaf92c977da1e914fc8729bb1283466dc2b1f58706f67bde50f3a2f7ab3d0"}
+# {"batch":"004-004","completed":1,"rawSha256":"bae0be349a7bf99a4d24e784085daf3b0daea2fc99136c40f24ec1443d99a3fe"}
+# {"batch":"005-005","completed":1,"rawSha256":"405de1dc05f0c91e24b0129f84464bbfcf5ba7296c62174578a7aa93214cf65b"}
+# {"batch":"006-006","completed":1,"rawSha256":"034d738cbaf89e8ab337ab3fe328a6aaf3ee7e3924e070604b19ef5d33719ab6"}
+# {"batch":"007-007","completed":1,"rawSha256":"68156fb94cb645cb9e8f008047e404d87ef598804075173fdc6cf36a01f10e0d"}
+# {"batch":"008-008","completed":1,"rawSha256":"6f2ba2e34aeed3e061e1c374b46a6524da18c48d06d8d0f8b4b5187e880fa5c5"}
+# {"batch":"009-009","completed":1,"rawSha256":"4063170a85a3368448b8b40fb38b4fc3d0fb04cd24e7d2333659d5eb0bc7d25f"}
+# {"batch":"010-010","completed":1,"rawSha256":"7d700d565890a12d51b9b2520b7db9cba24288910458dee35a1a785f04945294"}
+# {"batch":"011-011","completed":1,"rawSha256":"57d93308f7b00a85f1b061d0fba8caf2d705ef1ccfd9f28be016ea267499d061"}
+# {"batch":"012-012","completed":1,"rawSha256":"abc42c5c736fcbe4a9229b6365ff7b46d2fba89cb4198b5404f590ea83694d10"}
+# {"batch":"013-013","completed":1,"rawSha256":"28c7ce9b23108ae4caf49c19a8b95a383cadd6bebdc97cdf408c99f17289a5c2"}
+# {"batch":"014-014","completed":1,"rawSha256":"2cb20b17ccb2e81711b790f00468776bc24a21d73728930b31dcd4a5c5c936c8"}
+# {"batch":"015-015","completed":1,"rawSha256":"b004f99dd44b161f87bb83794c8a72b00e0f0615180652f50d6e9fca9269dafc"}
+# {"batch":"016-016","completed":1,"rawSha256":"5e73bdabe6d48b8ec244303a31d3cad03f554280fb0bd7a232876f5079280e30"}
+# {"batch":"017-017","completed":1,"rawSha256":"1f87ef9fa20193bcbbdb7e267e0f96dab2bda6415dcc26bd04b61a66b396dacd"}
+# {"batch":"018-018","completed":1,"rawSha256":"5f0ebb1fb0d55f5376a247b62ee9e238e6bc8758c13541b4abe0e218f2e4f6a7"}
+# {"batch":"019-019","completed":1,"rawSha256":"126b168ca8fdb1451e7cfb69082772c9b66442ed0292127ce50de262ce28f198"}
+# {"batch":"020-020","completed":1,"rawSha256":"6b5db6b478cec8cde7d2e6b795b005d89caa304a1ac5d79a47800e5e00a46e34"}
+# {"batch":"021-021","completed":1,"rawSha256":"f774377dfa46a7df6b5f3cc9c73b0ad3173dd65ac4f1d39ccd06ad7cf217246a"}
+# {"batch":"022-022","completed":1,"rawSha256":"c9e63c7c42b69e127b38a29ede6430672f679bf055bea5fad60ee2c6585b5419"}
+# {"batch":"023-023","completed":1,"rawSha256":"d9866921677f1633864246efac79f6e5d82377dabcb402f5969f0286ac6e37d8"}
+# {"batch":"024-024","completed":1,"rawSha256":"661055ec1d8d56c2b9292dca3603a0c9a6455c68ce08dbeb1933bed1a3d2b9cd"}
+# {"batch":"025-025","completed":1,"rawSha256":"954f03b771d228606c31789a763ac93f3553c9f0afb90159dec0379654ac7db0"}
+# {"batch":"026-026","completed":1,"rawSha256":"650dbe8179c34efe52064551e2b5157210253b520b462ecf17673defde0cf0b6"}
+# {"batch":"027-027","completed":1,"rawSha256":"7bfc3b08fd4c538f38f834df2ce0f571a452e33e2c360612e23df1376693cca1"}
+# {"batch":"028-028","completed":1,"rawSha256":"ae1d76528a15e95056854bd0d8908793c06ab436e405a140c0fc0855180fb6bb"}
+# {"batch":"029-029","completed":1,"rawSha256":"2abe1082938dc0e780301802fc8c5005389740fff98741b5e1375d0a8785543f"}
+# {"batch":"030-030","completed":1,"rawSha256":"baaa71f05c456cd1ec1c6168e6a96e25ca90087968f0fedd9a9ce3014d84dc05"}
+# {"batch":"031-031","completed":1,"rawSha256":"cfc5eb86590372264db8e98a08e79d6b911bad6e37fa6007ecaefc264dc68ea4"}
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 170254.2036

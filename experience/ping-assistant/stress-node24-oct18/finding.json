@@ -1,0 +1,17 @@
+{
+  "version": "ping.assistant.stress.node24.v1",
+  "status": "failed",
+  "runtime": "v24.19.0",
+  "base": "4a7438b9efc23adcd44b3a122f471631c52285dc",
+  "reporterFix": "39c1b761b276c5b3ace585422d7b91170da679e1",
+  "attempt6": "Harness TAP-format refusal after first scenario passed with Node24 spec reporter; no native exit",
+  "attempt7": "31 child clean exits, case032 assertions passed then native child exit3221225477; parent rejected",
+  "qualifiedChildPasses": 31,
+  "scenarioAssertionPasses": 32,
+  "full100Pass": false,
+  "cause": "unattributed",
+  "canonicalLinuxRequired": true,
+  "nativeModuleInstallOrDownload": false,
+  "logSha256": "9d7bc553b8c6b6da0587eacbba867962c0df38c074f50b75cf301fdd3125f02d",
+  "limits": "Synthetic local SQLite/service/actions, fake planner/dispatcher, fixed fixture time; no provider/model quality/production/browser/publication qualification"
+}

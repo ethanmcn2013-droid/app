@@ -1,0 +1,24 @@
+TAP version 13
+# Subtest: 013:archive-and-exact-undo-1
+ok 1 - 013:archive-and-exact-undo-1
+  ---
+  duration_ms: 3885.9277
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"013:archive-and-exact-undo-1","serverSpanMs":474.83,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: stress scenario inventory and bounded latency summary
+ok 2 - stress scenario inventory and bounded latency summary
+  ---
+  duration_ms: 0.5694
+  type: 'test'
+  ...
+# {"synthetic":true,"scenarios":1,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":474.83,"p95":474.83,"p99":474.83,"max":474.83010000000104,"statuses":{"completed":1},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10892.2197

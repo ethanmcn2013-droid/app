@@ -1,0 +1,480 @@
+{
+  "version": "ping.assistant.synthetic-stress.v1",
+  "input": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children",
+  "inputSha256": "de723f73626ae8b7646f7844aef75ea939751ec01df759d65576a6401848d65c",
+  "attempts": [
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-001-001.log",
+      "sha256": "d77ee6cc84d478bd248910620ed2daaf78b24c0f5291fdc0caec55afcd4b3a12"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-002-002.log",
+      "sha256": "f608a14966c59f1bb533a436ee8a25d23ed70477de6fb7e85ddae2bd6b010643"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-003-003.log",
+      "sha256": "31beaf92c977da1e914fc8729bb1283466dc2b1f58706f67bde50f3a2f7ab3d0"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-004-004.log",
+      "sha256": "bae0be349a7bf99a4d24e784085daf3b0daea2fc99136c40f24ec1443d99a3fe"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-005-005.log",
+      "sha256": "405de1dc05f0c91e24b0129f84464bbfcf5ba7296c62174578a7aa93214cf65b"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-006-006.log",
+      "sha256": "034d738cbaf89e8ab337ab3fe328a6aaf3ee7e3924e070604b19ef5d33719ab6"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-007-007.log",
+      "sha256": "68156fb94cb645cb9e8f008047e404d87ef598804075173fdc6cf36a01f10e0d"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-008-008.log",
+      "sha256": "6f2ba2e34aeed3e061e1c374b46a6524da18c48d06d8d0f8b4b5187e880fa5c5"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-009-009.log",
+      "sha256": "4063170a85a3368448b8b40fb38b4fc3d0fb04cd24e7d2333659d5eb0bc7d25f"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-010-010.log",
+      "sha256": "7d700d565890a12d51b9b2520b7db9cba24288910458dee35a1a785f04945294"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-011-011.log",
+      "sha256": "57d93308f7b00a85f1b061d0fba8caf2d705ef1ccfd9f28be016ea267499d061"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-012-012.log",
+      "sha256": "abc42c5c736fcbe4a9229b6365ff7b46d2fba89cb4198b5404f590ea83694d10"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-013-013.log",
+      "sha256": "28c7ce9b23108ae4caf49c19a8b95a383cadd6bebdc97cdf408c99f17289a5c2"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-014-014.log",
+      "sha256": "2cb20b17ccb2e81711b790f00468776bc24a21d73728930b31dcd4a5c5c936c8"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-015-015.log",
+      "sha256": "b004f99dd44b161f87bb83794c8a72b00e0f0615180652f50d6e9fca9269dafc"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-016-016.log",
+      "sha256": "5e73bdabe6d48b8ec244303a31d3cad03f554280fb0bd7a232876f5079280e30"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-017-017.log",
+      "sha256": "1f87ef9fa20193bcbbdb7e267e0f96dab2bda6415dcc26bd04b61a66b396dacd"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-018-018.log",
+      "sha256": "5f0ebb1fb0d55f5376a247b62ee9e238e6bc8758c13541b4abe0e218f2e4f6a7"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-019-019.log",
+      "sha256": "126b168ca8fdb1451e7cfb69082772c9b66442ed0292127ce50de262ce28f198"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-020-020.log",
+      "sha256": "6b5db6b478cec8cde7d2e6b795b005d89caa304a1ac5d79a47800e5e00a46e34"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-021-021.log",
+      "sha256": "f774377dfa46a7df6b5f3cc9c73b0ad3173dd65ac4f1d39ccd06ad7cf217246a"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-022-022.log",
+      "sha256": "c9e63c7c42b69e127b38a29ede6430672f679bf055bea5fad60ee2c6585b5419"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-023-023.log",
+      "sha256": "d9866921677f1633864246efac79f6e5d82377dabcb402f5969f0286ac6e37d8"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-024-024.log",
+      "sha256": "661055ec1d8d56c2b9292dca3603a0c9a6455c68ce08dbeb1933bed1a3d2b9cd"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-025-025.log",
+      "sha256": "954f03b771d228606c31789a763ac93f3553c9f0afb90159dec0379654ac7db0"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-026-026.log",
+      "sha256": "650dbe8179c34efe52064551e2b5157210253b520b462ecf17673defde0cf0b6"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-027-027.log",
+      "sha256": "7bfc3b08fd4c538f38f834df2ce0f571a452e33e2c360612e23df1376693cca1"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-028-028.log",
+      "sha256": "ae1d76528a15e95056854bd0d8908793c06ab436e405a140c0fc0855180fb6bb"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-029-029.log",
+      "sha256": "2abe1082938dc0e780301802fc8c5005389740fff98741b5e1375d0a8785543f"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-030-030.log",
+      "sha256": "baaa71f05c456cd1ec1c6168e6a96e25ca90087968f0fedd9a9ce3014d84dc05"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-031-031.log",
+      "sha256": "cfc5eb86590372264db8e98a08e79d6b911bad6e37fa6007ecaefc264dc68ea4"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\founder-session-oct17\\text-assistant-stress-node24-attempt7\\children\\batch-032-032.log",
+      "sha256": "9d7bc553b8c6b6da0587eacbba867962c0df38c074f50b75cf301fdd3125f02d"
+    }
+  ],
+  "synthetic": true,
+  "expectedScenarios": 100,
+  "completedScenarios": 32,
+  "uniqueScenarios": 32,
+  "complete": false,
+  "failures": [
+    "not ok 1 - src\\\\server\\\\ping\\\\assistant\\\\stress.test.ts"
+  ],
+  "time": {
+    "referenceInstant": "2026-10-18T09:00:00.000Z",
+    "referenceDate": "2026-10-18",
+    "timeZone": "Europe/Dublin"
+  },
+  "serverSpanMs": {
+    "p50": 267.06,
+    "p95": 474.83,
+    "p99": 695.619,
+    "max": 695.619
+  },
+  "statuses": {
+    "completed": 32
+  },
+  "boundary": "Actual synthetic file-backed SQLite, durable store, service and actions; fake structured one-shot planner and dispatcher; server span includes scenario assertions and excludes migration/setup. No model-quality, browser, production performance, real email, provider, or Timeline publication claim.",
+  "samples": [
+    {
+      "synthetic": true,
+      "id": "001:create-1-1",
+      "serverSpanMs": 325.46,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "002:create-2-2",
+      "serverSpanMs": 192.49,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "003:create-3-3",
+      "serverSpanMs": 216.009,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "004:create-4-4",
+      "serverSpanMs": 302.456,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "005:create-5-5",
+      "serverSpanMs": 170.59,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "006:create-6-6",
+      "serverSpanMs": 192.825,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "007:create-7-7",
+      "serverSpanMs": 164.643,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "008:create-8-8",
+      "serverSpanMs": 227.533,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "009:create-9-9",
+      "serverSpanMs": 383.809,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "010:create-10-10",
+      "serverSpanMs": 171.907,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "011:create-11-50",
+      "serverSpanMs": 267.06,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "012:create-12-100",
+      "serverSpanMs": 695.619,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "013:archive-and-exact-undo-1",
+      "serverSpanMs": 474.83,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "014:archive-and-exact-undo-2",
+      "serverSpanMs": 397.041,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "015:archive-and-exact-undo-3",
+      "serverSpanMs": 405.774,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "016:archive-and-exact-undo-5",
+      "serverSpanMs": 464.538,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "017:archive-and-exact-undo-10",
+      "serverSpanMs": 330.517,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "018:archive-and-exact-undo-20",
+      "serverSpanMs": 454.019,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "019:archive-and-exact-undo-30",
+      "serverSpanMs": 332.924,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "020:archive-and-exact-undo-40",
+      "serverSpanMs": 297.341,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "021:archive-and-exact-undo-50",
+      "serverSpanMs": 306.054,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "022:archive-and-exact-undo-75",
+      "serverSpanMs": 343.005,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "023:archive-and-exact-undo-90",
+      "serverSpanMs": 358.883,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "024:archive-and-exact-undo-100",
+      "serverSpanMs": 350.754,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "025:update-field-1",
+      "serverSpanMs": 209.828,
+      "status": "completed",
+      "plans": 1,
+      "executions": 2,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "026:update-field-2",
+      "serverSpanMs": 217.29,
+      "status": "completed",
+      "plans": 1,
+      "executions": 2,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "027:update-field-3",
+      "serverSpanMs": 265.634,
+      "status": "completed",
+      "plans": 1,
+      "executions": 2,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "028:update-field-4",
+      "serverSpanMs": 200.792,
+      "status": "completed",
+      "plans": 1,
+      "executions": 2,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "029:update-field-5",
+      "serverSpanMs": 220.857,
+      "status": "completed",
+      "plans": 1,
+      "executions": 2,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "030:update-field-6",
+      "serverSpanMs": 229.827,
+      "status": "completed",
+      "plans": 1,
+      "executions": 2,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "031:update-field-7",
+      "serverSpanMs": 204.257,
+      "status": "completed",
+      "plans": 1,
+      "executions": 2,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "032:update-field-8",
+      "serverSpanMs": 247.805,
+      "status": "completed",
+      "plans": 1,
+      "executions": 2,
+      "deliveries": 0,
+      "provisions": 0
+    }
+  ]
+}
