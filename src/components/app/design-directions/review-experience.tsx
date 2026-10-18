@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/primitives/dialog";
 import { applyThemeChoice, readThemeChoice } from "@/lib/theme-mode";
 import DirectionBrief from "./a/direction";
@@ -20,7 +18,6 @@ const DRAFT_KEY = `${CHOICE_KEY}:draft`;
 export function ReviewExperience({ surface, initialDirection, initialState }: {
   surface: ReviewSurface; initialDirection: DirectionId; initialState: ReviewState;
 }) {
-  const router = useRouter();
   const state = initialState;
   const [query, setQuery] = useState("");
   const [detail, setDetail] = useState<{ kind: "project" | "task"; id: string } | null>(null);
@@ -39,7 +36,9 @@ export function ReviewExperience({ surface, initialDirection, initialState }: {
   }, [fixture, query, surface]);
   const Renderer = renderers[initialDirection];
   const href = (direction: DirectionId, target: ReviewSurface = surface, targetState: ReviewState = state) => `/app/${target === "home" ? "home" : "project"}?design=${direction}&state=${targetState}`;
-  const setState = (next: ReviewState) => router.push(href(initialDirection, surface, next));
+  // Full-document comparison navigation isolates the known shared theme-meta
+  // ownership defect. No shared runtime or production navigation is changed.
+  const setState = (next: ReviewState) => window.location.assign(href(initialDirection, surface, next));
 
   useEffect(() => {
     try {
@@ -78,13 +77,13 @@ export function ReviewExperience({ surface, initialDirection, initialState }: {
 
   return <div className={`${styles.root} thin-scroll`} data-home-projects-review="" data-direction={initialDirection} data-review-ready={restored ? "true" : "false"}>
     <section className={styles.reviewBar} aria-label="Design comparison controls">
-      <div className={styles.reviewLine}><span className={styles.reviewLabel}>Design review · fictional example account</span><Link href={`/app/${surface === "home" ? "home" : "project"}`} className={styles.textLink}>Current app</Link></div>
+      <div className={styles.reviewLine}><span className={styles.reviewLabel}>Design review · fictional example account</span><a href={`/app/${surface === "home" ? "home" : "project"}`} className={styles.textLink}>Current app</a></div>
       <div className={styles.reviewRow}>
-        <nav className={styles.directionNav} aria-label="Design direction">{choices.map(id => <Link key={id} href={href(id)} aria-current={initialDirection === id ? "page" : undefined}>{directionNames[id]}</Link>)}</nav>
+        <nav className={styles.directionNav} aria-label="Design direction">{choices.map(id => <a key={id} href={href(id)} aria-current={initialDirection === id ? "page" : undefined}>{directionNames[id]}</a>)}</nav>
         <button className={styles.reviewButton} onClick={() => setFeedbackOpen(true)} type="button">Review and choose</button>
       </div>
       <details className={styles.controls}><summary>Compare Home, Projects and states</summary><div className={styles.controlRow}>
-        <nav className={styles.surfaceNav} aria-label="Preview surface"><Link aria-current={surface === "home" ? "page" : undefined} href={href(initialDirection,"home")}>Home</Link><Link aria-current={surface === "projects" ? "page" : undefined} href={href(initialDirection,"projects")}>Projects</Link></nav>
+        <nav className={styles.surfaceNav} aria-label="Preview surface"><a aria-current={surface === "home" ? "page" : undefined} href={href(initialDirection,"home")}>Home</a><a aria-current={surface === "projects" ? "page" : undefined} href={href(initialDirection,"projects")}>Projects</a></nav>
         <label>State <select value={state} onChange={e => {setState(e.target.value as ReviewState); setQuery(""); setDetail(null);}}><option value="busy">Everyday work</option><option value="empty">Empty account</option><option value="partial">Some figures unavailable</option><option value="loading">Loading</option><option value="error">Read error</option></select></label>
         <button type="button" onClick={() => applyThemeChoice(readThemeChoice() === "dark" ? "light" : "dark")}>Switch theme</button>
       </div></details>
@@ -96,7 +95,7 @@ export function ReviewExperience({ surface, initialDirection, initialState }: {
       {state === "loading" ? <section className={styles.state} aria-busy="true"><h1>{surface === "home" ? "Getting your day ready" : "Reading your projects"}</h1><p>This example pauses in a loading state so you can inspect it.</p><div className={styles.skeleton}/><div className={styles.skeleton}/><button onClick={()=>setState("busy")} type="button">Show the loaded view</button></section>
       : state === "error" ? <section className={styles.state} role="alert"><h1>Your work could not be read</h1><p>Nothing has changed. This is an example of a recoverable read error.</p><button onClick={()=>setState("busy")} type="button">Try again</button></section>
       : surface === "projects" && fixture.projects.length > 0 && filtered.projects.length === 0 ? <section className={styles.state}><h1>No projects match your search</h1><p>Try a different project, purpose or person.</p><button type="button" onClick={()=>setQuery("")}>Clear search</button></section>
-      : <Renderer surface={surface} data={filtered} onOpenTask={id=>setDetail({kind:"task",id})} onOpenProject={id=>setDetail({kind:"project",id})} onNavigate={target=>router.push(href(initialDirection,target))} />}
+      : <Renderer surface={surface} data={filtered} onOpenTask={id=>setDetail({kind:"task",id})} onOpenProject={id=>setDetail({kind:"project",id})} onNavigate={target=>window.location.assign(href(initialDirection,target))} />}
     </div>
 
     <footer className={styles.argument}><p>{directionArguments[initialDirection].thesis}</p><p><strong>The tradeoff.</strong> {directionArguments[initialDirection].tradeoff}</p><small>Local design interactions only. No tasks, projects or messages are changed.</small></footer>
