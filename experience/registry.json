@@ -5184,6 +5184,122 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "4ef87cb5c7246170"
+    },
+    {
+      "id": "tasks.page.app-timeline-by-project-slug-current-preview",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/timeline/[projectSlug]/current-preview",
+      "source": "tasks/src/app/app/timeline/[projectSlug]/current-preview/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "review-and-approval-workspace",
+      "primaryJob": "Review the current authorized unpublished Timeline plan.",
+      "primaryAction": "Inspect the private current plan and return to Timeline.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "empty",
+        "populated",
+        "loading",
+        "error",
+        "restricted",
+        "read-only",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "current-project-preview",
+        "timeline-artifact"
+      ],
+      "patternDependencies": [
+        "authorized-current-plan",
+        "read-only-preview"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-18",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "67c1b139c140c383"
+    },
+    {
+      "id": "tasks.workspace.ping-personal-assistant",
+      "product": "tasks",
+      "surfaceType": "embedded-workspace",
+      "trigger": "Open Chat and choose Ping when assistantEnabled is explicitly enabled.",
+      "source": "tasks/src/components/app/messages/ping-personal-assistant.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "search-and-command-interface",
+      "primaryJob": "Complete scoped account or Project work from one text request and recover its durable result.",
+      "primaryAction": "Send a request and inspect saved work or recover the original request.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "restricted",
+        "disabled",
+        "saved",
+        "unsaved",
+        "dense",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "composer",
+        "floating-chat-root"
+      ],
+      "patternDependencies": [
+        "durable-request-recovery",
+        "scoped-action-results"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-18",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "b6cb64b0dececb5e"
     }
   ]
 }

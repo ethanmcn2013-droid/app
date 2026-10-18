@@ -306,6 +306,11 @@ function validateSourceContract(fixture, entry, targetErrors) {
   }
 }
 
+function isNewSourceReview(fixture, entry) {
+  const newSourceRegistration = new Set(["tasks.workspace.ping-personal-assistant", "tasks.page.app-timeline-by-project-slug-current-preview"]);
+  return newSourceRegistration.has(fixture.id) && fixture.evidence === "source-contract" && fixture.sourceReviewedAt === "2026-10-18" && entry.auditStatus === "registered" && !entry.materialityReview && entry.approvedBaselineReference === null;
+}
+
 function applyMappedFixtureEvidence(targetRegistry, mappedFixtures, reviewedAt, targetErrors) {
   targetRegistry.generatedAt = reviewedAt;
   for (const entry of targetRegistry.experiences) {
@@ -323,7 +328,7 @@ function applyMappedFixtureEvidence(targetRegistry, mappedFixtures, reviewedAt, 
     // so validate.mjs can still catch drift on those sources.
     entry.materialityHash = hashFile(sourceFile);
     entry.automatedTestCoverage = "partial";
-    entry.lastReviewedAt = reviewedAt;
+    entry.lastReviewedAt = fixture.evidence === "source-contract" && fixture.sourceReviewedAt ? fixture.sourceReviewedAt : reviewedAt;
     if (fixture.evidence === "rendered") {
       entry.fixtureCoverage = "partial";
       entry.screenshotCoverage = "partial";
@@ -420,6 +425,11 @@ for (const fixture of fixtures.experiences ?? []) {
     }
     validateRenderedAssertions(fixture, `${fixture.id} / ${fixture.interaction}`, errors);
   }
+  if (fixture.sourceReviewedAt !== undefined) {
+    if (!isNewSourceReview(fixture, entry)) {
+      errors.push(`${fixture.id}: sourceReviewedAt is restricted to the new October 18 source-contract registrations`);
+    }
+  }
   if (fixture.evidence === "source-contract") validateSourceContract(fixture, entry, errors);
 }
 
@@ -469,6 +479,22 @@ const nextRegistry = structuredClone(registry);
 applyMappedFixtureEvidence(nextRegistry, fixtureById, fixtures.generatedAt, errors);
 
 if (selfTest) {
+  const sourceRegistration = fixtures.experiences.find(fixture => fixture.sourceReviewedAt);
+  if (!sourceRegistration) throw Error("self-test needs a new source registration");
+  const registrationEntry = registry.experiences.find(entry => entry.id === sourceRegistration.id);
+  if (!isNewSourceReview(sourceRegistration, registrationEntry)) throw Error("self-test rejected source registration");
+  for (const invalid of [{...sourceRegistration, evidence: "rendered"}, {...sourceRegistration, id: "tasks.page.app"}, {...sourceRegistration, sourceReviewedAt: "2026-10-15"}]) {
+    if (isNewSourceReview(invalid, registrationEntry)) throw Error("self-test admitted restamped or backdated source review");
+  }
+  const datedProbe = structuredClone(registry);
+  applyMappedFixtureEvidence(datedProbe, fixtureById, "2026-10-15", []);
+  for (const original of registry.experiences) {
+    const mapping = fixtureById.get(original.id);
+    if (!mapping) continue;
+    const expected = mapping.sourceReviewedAt ?? "2026-10-15";
+    if (datedProbe.experiences.find(entry => entry.id === original.id).lastReviewedAt !== expected) throw Error("self-test changed the owning source review date");
+    if (mapping.sourceReviewedAt && ["screenshotCoverage", "accessibilityCoverage", "fixtureCoverage"].some(key => datedProbe.experiences.find(entry => entry.id === original.id)[key] !== "none")) throw Error("self-test manufactured rendered coverage from a source review");
+  }
   const mapped = nextRegistry.experiences.find((entry) => fixtureById.has(entry.id));
   const unmapped = registry.experiences.find((entry) => !fixtureById.has(entry.id));
   if (!mapped || !unmapped) throw new Error("self-test needs mapped and unmapped registry entries");
