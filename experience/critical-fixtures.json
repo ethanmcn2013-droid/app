@@ -3547,7 +3547,7 @@
     "src/modules/timeline/server/audience-revocation.ts": "158e7fb3875e3b7e99fc648aa4c38dd1abe9fdbc7752d045897e76ebe5bb2dab",
     "src/modules/timeline/server/audience-timeline.ts": "6d5dfc528e3e28e7d7c130f2dc15f124b9a2d271075bb863d0a33bd548e188d0",
     "src/modules/timeline/server/auth.ts": "0f0cc792661f406f8c59884f54e669eb9d8d70510f0576e55df56b4fdfcf539f",
-    "src/modules/timeline/server/couple-artifact-boundary.test.ts": "4838928785eef31c604d99c50e23f755727b746ee22b4e4fd43b84efdaa4bd53",
+    "src/modules/timeline/server/couple-artifact-boundary.test.ts": "69acca57b110978c1d211ad3a8df656f5a3fbf5c2b457f572a1ce84e2389cfe1",
     "src/modules/timeline/server/db/binding-write-gates.test.ts": "a8583e2f6d95c4f9f5431450644b3880b7024cada980947a43315728644858ed",
     "src/modules/timeline/server/db/milestone-date-history.test.ts": "dcfedbc92aa460cd36f1b0a437d91d173a1f7c14edbda18f8d870f12b2c31ccc",
     "src/modules/timeline/server/db/milestone-date-history.ts": "54b08efa76dc4ddac39c0aac289c1793e0cbe3a3107ce3545c5da8c78f7ec293",
