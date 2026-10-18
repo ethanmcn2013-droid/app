@@ -151,7 +151,7 @@ export function TimelineArtifact({ timeline, compact = false, embedded = false, 
   const [expanded, setExpanded] = useState(false), [lastVisit, setLastVisit] = useState<string>(), [live, setLive] = useState("");
   const board = useBoard(root, compact, embedded), id = useId(), isOwner = !!owner || privatePreview;
   const model = useMemo(() => buildMaster3Model(timeline, { lastVisit, expanded, viewer: isOwner ? "owner" : "guest" }), [timeline, lastVisit, expanded, isOwner]);
-  const p = model.presentation, title = timeline.audienceKind === "couple" ? timeline.ownerDisplayLabel || timeline.label : timeline.label;
+  const p = model.presentation, title = model.title;
   const passedProgress = p.market === "school" || p.progressNoun?.includes("passed");
   const progressCount = passedProgress ? model.progress.passed : model.milestones.filter(item => item.sourceState === "covered").length;
   const progressNoun = p.progressNoun || (passedProgress ? "dates passed" : "milestones done");

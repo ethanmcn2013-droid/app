@@ -1,6 +1,7 @@
 import 'server-only';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { AudienceTimelineDto } from '../lib/audience-timeline';
+import { master3ConfirmationSubject } from '../lib/master3-labels';
 export type GuestFollowRecord={id:string;publicationId:string;shareTokenHash:string;email:string;emailHash:string;state:'pending'|'confirmed'|'unsubscribed';confirmationTokenHash:string|null;confirmationExpiresAt:Date|null;unsubscribeTokenHash:string|null;undoTokenHash:string|null;undoUntil:Date|null;confirmedAt:Date|null;lastConfirmationSentAt:Date|null;deliveryState:'pending'|'sending'|'sent'|'failed'|'unknown';deliveryAttemptId:string|null;providerMessageId:string|null;createdAt:Date;updatedAt:Date};
 export interface GuestFollowStore{
  findEmail(shareHash:string,emailHash:string):Promise<GuestFollowRecord|null>;
@@ -11,7 +12,7 @@ export interface GuestFollowStore{
 export type FollowResult={ok:true;state:'pending'|'confirmed'|'unsubscribed'|'check_email';emailHint?:string;confirmationSent?:boolean;managementToken?:string;undoToken?:string;undoUntil?:string;retryAfterSeconds?:number}|{ok:false;code:string;message:string;managementToken?:string};
 /** Only authorized management responses use this deliberately coarse hint. */
 export const guestEmailHint=(email:string)=>{const [local,domain]=email.split('@');return `${local.slice(0,1)}***@${domain.slice(0,1)}***`;};
-export type GuestFollowPorts={store:GuestFollowStore;resolve:(shareToken:string)=>Promise<{kind:string;dto?:AudienceTimelineDto}>;deliveryAvailable:()=>boolean;limit:(identity:string)=>Promise<boolean>;send:(input:{to:string;label:string;confirmationUrl:string;manageUrl:string;attemptId:string})=>Promise<{kind:'sent';providerMessageId:string}|{kind:'failed'|'unknown'}>;origin:string;now?:()=>Date;token?:()=>string;id?:()=>string};
+export type GuestFollowPorts={store:GuestFollowStore;resolve:(shareToken:string)=>Promise<{kind:string;dto?:AudienceTimelineDto}>;deliveryAvailable:()=>boolean;limit:(identity:string)=>Promise<boolean>;send:(input:{to:string;label:string;subject:string;confirmationUrl:string;manageUrl:string;attemptId:string})=>Promise<{kind:'sent';providerMessageId:string}|{kind:'failed'|'unknown'}>;origin:string;now?:()=>Date;token?:()=>string;id?:()=>string};
 export const guestDigest=(v:string)=>createHash('sha256').update(v).digest('hex');
 const tokenShape=(v:string)=>/^[A-Za-z0-9_-]{43}$/.test(v);
 const normalizeEmail=(v:string)=>v.trim().toLowerCase();
@@ -41,7 +42,7 @@ export function createGuestFollowService(ports:GuestFollowPorts){
   const record:GuestFollowRecord={id:id(),publicationId:a.dto.publicationId,shareTokenHash:a.shareHash,email,emailHash,state:'pending',confirmationTokenHash:null,confirmationExpiresAt:null,unsubscribeTokenHash:null,undoTokenHash:null,undoUntil:null,confirmedAt:null,lastConfirmationSentAt:null,deliveryState:'pending',deliveryAttemptId:null,providerMessageId:null,createdAt:timestamp,updatedAt:timestamp,...patch};
   const saved=current?await ports.store.update(current.id,current.deliveryAttemptId,patch):await ports.store.insert(record);if(!saved)return failure('request_conflict','This request changed. Check its status before trying again.');
   const recordId=current?.id??record.id,base=ports.origin.replace(/\/$/,'')+'/s/'+encodeURIComponent(shareToken)+'/follow/';
-  let sent:Awaited<ReturnType<GuestFollowPorts['send']>>;try{sent=await ports.send({to:email,label:a.dto.label,confirmationUrl:base+'confirm?key='+encodeURIComponent(confirmation),manageUrl:base+'unsubscribe?key='+encodeURIComponent(management),attemptId:attempt});}catch{sent={kind:'unknown'};}
+  let sent:Awaited<ReturnType<GuestFollowPorts['send']>>;try{sent=await ports.send({to:email,label:a.dto.label,subject:master3ConfirmationSubject(a.dto),confirmationUrl:base+'confirm?key='+encodeURIComponent(confirmation),manageUrl:base+'unsubscribe?key='+encodeURIComponent(management),attemptId:attempt});}catch{sent={kind:'unknown'};}
   const real=sent.kind==='sent'&&!!sent.providerMessageId&&sent.providerMessageId!=='dev-no-resend';const settled=await ports.store.update(recordId,attempt,{deliveryState:real?'sent':sent.kind==='failed'?'failed':'unknown',providerMessageId:sent.kind==='sent'?sent.providerMessageId:null,updatedAt:now()});
   if(!settled)return failure('delivery_unknown','The delivery result could not be saved. Use the email link if it arrives.');
   if(!real)return {ok:false,code:sent.kind==='failed'?'delivery_failed':'delivery_unknown',message:sent.kind==='failed'?'The confirmation could not be sent.':'Delivery could not be confirmed. Use the email link if it arrives.',managementToken:management};

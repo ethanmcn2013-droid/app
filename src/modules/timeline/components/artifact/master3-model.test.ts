@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { AudienceTimelineDto, AudienceTimelineItemDto } from "../../lib/audience-timeline";
 import { buildMaster3Model } from "./master3-model";
+import { master3ConfirmationSubject } from "../../lib/master3-labels";
 
 const item = (id: string, date?: string, presentation?: AudienceTimelineItemDto["presentation"]): AudienceTimelineItemDto =>
   ({ publicId: id, title: `Milestone ${id}`, state: "next", ...(date ? { date } : {}), ...(presentation ? { presentation } : {}) });
@@ -10,6 +11,16 @@ function dto(items: readonly AudienceTimelineItemDto[], changes: Partial<Audienc
     today: "2026-10-19", lastUpdatedAt: "2026-10-18T12:00:00Z",
     sections: [{ state: "next", label: "Milestones", items }], ...changes };
 }
+
+test("legacy shared attribution becomes the public couple title without guessing identity", () => {
+  const source = dto([], { audienceKind: "couple", ownerDisplayLabel: "Shared by Mara & Finn" });
+  assert.equal(buildMaster3Model(source).title, "Mara & Finn");
+  assert.equal(source.ownerDisplayLabel, "Shared by Mara & Finn");
+  assert.equal(master3ConfirmationSubject(source), "Confirm your updates from Mara & Finn");
+  assert.equal(master3ConfirmationSubject({ ...source, presentation: { subject: "Your invited updates" } }), "Your invited updates");
+  assert.equal(buildMaster3Model(dto([], { audienceKind: "couple" })).title, "Community project");
+  assert.equal(buildMaster3Model(dto([], { ownerDisplayLabel: "Shared by Orla" })).title, "Community project");
+});
 
 test("empty and undated models never synthesize dates, RSVP completion, or wedding content", () => {
   const empty = buildMaster3Model(dto([]));

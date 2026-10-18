@@ -214,6 +214,9 @@
 @keyframes nextPulse { 0%, 100% { box-shadow: 0 0 0 7px var(--x-m3-accent-soft); } 50% { box-shadow: 0 0 0 11px var(--x-m3-accent-soft); } }
 @media (prefers-reduced-motion: reduce) { .artifact *, .artifact *::before, .artifact *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 @media (forced-colors: active) {
+  /* System ink stays automatic; suppress the large numeral's generated text
+     backplate, whose font overflow otherwise obscures the heading above it. */
+  .countValue { forced-color-adjust: none; color: CanvasText; background: transparent; }
   .mark, .emptyFlag { border: 2px solid CanvasText !important; }
   .mark[data-state="next"], .mark[data-state="today"] { border: 3px double Highlight !important; }
   .railLine, .doneRail, .passedDash { border-top: 1px solid CanvasText; }
