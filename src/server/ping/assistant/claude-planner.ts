@@ -206,6 +206,7 @@ export function createPingAssistantPlanner(options: {
       members:context.members.map(p=>({name:p.name})),selectedTaskCount:context.selectedTaskCount,previousTaskCount:context.previousTaskCount,
       referenceDate:context.referenceDate,timeZone:context.timeZone,mode};
     const compound=input.text.length>400||/\b(and|then|followed by|milestones?|timeline|distribute|round.robin)\b/i.test(input.text)||
+      /\b(?:nudg(?:e|es|ed|ing)|ping(?:s|ed|ing)?)\b/i.test(input.text)||
       /\b(?:[2-9]|[1-9]\d|100)\s+(?:tasks?|items?|steps?)\b/i.test(input.text);
     return planner.plan({...input,context:safeContext,tier:compound?"bulk":"simple"},signal??new AbortController().signal);
   }};

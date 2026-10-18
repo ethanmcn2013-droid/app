@@ -129,3 +129,15 @@ test("compact envelope keeps canonical bounds, actions and decoded JSON fail clo
   const original=JSON.stringify(schema);const f=fixture(async()=>response(),{planJsonEnvelope:true,instructions:"x".repeat(66_000)});
   await assert.rejects(f.planner.plan(request(),signal()),/input_invalid/);assert.equal(f.calls.length,0);assert.equal(JSON.stringify(schema),original);
 });
+
+test("nudge and ping route to Sonnet before exactly one request without substring overmatching",async()=>{
+  for(const [text,model] of [["Nudge the assignees of the selected tasks.","claude-sonnet-5-5"],
+    ["Ping the selected task assignees.","claude-sonnet-5-5"],["Send nudges to the selected tasks.","claude-sonnet-5-5"],
+    ["Create a task called Shopping.","claude-haiku-5-5"]]){
+    let calls=0;const plan={version:"ping.assistant.v1",outcome:"clarification",message:"Synthetic only"};
+    const planner=createPingAssistantPlanner({apiKey:key,budget:{reserve:async()=>true,recordUsage:async()=>{}},fetch:(async(_url,init)=>{
+      calls++;const body=JSON.parse(String(init?.body));assert.equal(body.model,model);
+      return response(model,{content:[{type:"text",text:JSON.stringify({plan_json:JSON.stringify({plan})})}]});}) as typeof fetch});
+    await planner.plan({runId:"synthetic",requestId:"synthetic-request",text,context},signal());assert.equal(calls,1);
+  }
+});
