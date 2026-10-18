@@ -47,6 +47,7 @@ export function createClaudeAssistantPlanner<Plan>(options: {
   apiKey: string; fetch: typeof fetch; budget: PlannerBudgetPort; schema: Readonly<Record<string, unknown>>;
   instructions: string; validate: (value: unknown, request: PlannerRequest) => Plan | null;
   allowEvaluation?: boolean; deadlineMs?: number; planJsonEnvelope?: boolean;
+  retainCompletion?: (completion:Promise<void>)=>void;
 }): AssistantPlannerPort<Plan> {
   if (!options.apiKey || !/^[\x21-\x7e]{16,512}$/.test(options.apiKey) || typeof options.fetch !== "function" ||
     typeof options.validate !== "function" || !object(options.schema) || !options.instructions ||
@@ -157,6 +158,10 @@ export function createClaudeAssistantPlanner<Plan>(options: {
         throw new Error(code);
       } finally { attempt.physical="settled";attempt.stages.physical=elapsed();if(reserved)observe();physicalBusy = false; }
     })();
+    // Register in the invoking request context. Read the final queue only after
+    // physical finally has enqueued its observation; never await this on the response path.
+    const completion=physical.then(()=>undefined,()=>undefined).then(()=>observations);
+    try{options.retainCompletion?.(completion);}catch{/* Missing lifecycle retention leaves coverage best-effort. */}
     try { return await Promise.race([physical,deadline]); }
     finally { clearTimeout(timer); signal.removeEventListener("abort",onAbort); }
   }};
@@ -212,7 +217,7 @@ export const PING_ASSISTANT_PLANNER_INSTRUCTIONS="Turn the entire user request i
   "Return only the JSON object containing plan; no reasoning or hidden metadata.";
 
 export function createPingAssistantPlanner(options: {
-  apiKey:string;fetch:typeof fetch;budget:PlannerBudgetPort;deadlineMs?:number;
+  apiKey:string;fetch:typeof fetch;budget:PlannerBudgetPort;deadlineMs?:number;retainCompletion?:(completion:Promise<void>)=>void;
 }):PingAssistantPlannerPort {
   const wire={type:"object",properties:{plan:ASSISTANT_PLAN_SCHEMA},required:["plan"],additionalProperties:false};
   const planner=createClaudeAssistantPlanner<AssistantPlan>({...options,schema:wire,planJsonEnvelope:true,instructions:PING_ASSISTANT_PLANNER_INSTRUCTIONS,

@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
@@ -37,7 +38,7 @@ function createInstance(target: Target) {
   const key = process.env.ANTHROPIC_API_KEY;
   // One instance retains transport quarantine after a logical timeout. Changing
   // credentials requires restart; old result reads remain available meanwhile.
-  const planner = key ? createPingAssistantPlanner({ apiKey: key, fetch, budget: store.budget }) : null;
+  const planner = key ? createPingAssistantPlanner({ apiKey: key, fetch, budget: store.budget, retainCompletion: completion => after(() => completion) }) : null;
   const dispatcher = createAssistantDispatcher(database);
   const service = createAssistantService({ store,
     planner: { plan: (input, signal) => {

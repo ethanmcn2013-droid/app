@@ -137,13 +137,16 @@ test("production uses Sonnet for simple, literal-title, nudge and bulk requests 
     ["Ping the selected task assignees.",16_384],["Send nudges to the selected tasks.",16_384],
     ["Create a task called Shopping.",4_096],["Create a task called Draft a reply.",4_096],
     ["Create a task.",4_096],["Create 100 tasks.",16_384]] as const){
+    const retained:Promise<void>[]=[];
     const model="claude-sonnet-5-5";
     let calls=0;const plan={version:"ping.assistant.v1",outcome:"clarification",message:"Synthetic only"};
-    const planner=createPingAssistantPlanner({apiKey:key,budget:{reserve:async()=>true,recordUsage:async()=>{}},fetch:(async(_url,init)=>{
+    const planner=createPingAssistantPlanner({apiKey:key,budget:{reserve:async()=>true,recordUsage:async()=>{}},retainCompletion:p=>{retained.push(p);},fetch:(async(_url,init)=>{
       calls++;const body=JSON.parse(String(init?.body));assert.equal(body.model,model);assert.equal(body.max_tokens,maxTokens);
       assert.deepEqual(body.thinking,{type:"adaptive"});assert.equal(body.output_config.effort,"medium");
       return response(model,{content:[{type:"text",text:JSON.stringify({plan_json:JSON.stringify({plan})})}]});}) as typeof fetch});
+    assert.equal(retained.length,0);
     await planner.plan({runId:"synthetic",requestId:"synthetic-request",text,context},signal());assert.equal(calls,1);
+    assert.equal(retained.length,1);await retained[0];
   }
 });
 
@@ -192,4 +195,44 @@ test('post-dispatch cancellation retains unknown usage and accounting failure re
  const attempts:PlannerAttemptMetadata[]=[];let calls=0;
  const planner=createClaudeAssistantPlanner({apiKey:key,schema,instructions:'Synthetic',validate:v=>v,budget:{reserve:async()=>true,recordUsage:async()=>{throw Error('storage');},recordAttempt:async v=>{attempts.push(v.attempt);}},fetch:(async()=>{calls++;return response();}) as typeof fetch});
  await assert.rejects(planner.plan(request(),signal()));await settleObservations();assert.equal(calls,1);assert.equal(attempts.at(-1)?.failureCode,'accounting');assert.equal(attempts.at(-1)?.logical,'failed');
+});
+
+test('lifecycle retention registers per invocation, returns before deferred observer and drains final queue',async()=>{
+ const retained:Promise<void>[]=[],seen:PlannerAttemptMetadata[]=[];let release!:()=>void;let observed=0,fetches=0;
+ const blocked=new Promise<void>(resolve=>{release=resolve;});
+ const planner=createClaudeAssistantPlanner({apiKey:key,schema,instructions:'Synthetic',validate:v=>v,
+  budget:{reserve:async()=>true,recordUsage:async()=>{observed++;},recordAttempt:async v=>{await blocked;seen.push(v.attempt);}},
+  retainCompletion:p=>{retained.push(p);},fetch:(async()=>{fetches++;return response();}) as typeof fetch});
+ assert.equal(retained.length,0,'No request retention at constructor');
+ await planner.plan(request(),signal());assert.equal(retained.length,1);assert.equal(observed,1);assert.equal(seen.length,0);
+ let drained=false;void retained[0].then(()=>{drained=true;});await new Promise(resolve=>setTimeout(resolve,5));assert.equal(drained,false);
+ release();await retained[0];assert.equal(seen.at(-1)?.physical,'settled');assert.equal(seen.at(-1)?.logical,'completed');
+ await planner.plan(request('simple','second'),signal());assert.equal(retained.length,2);await retained[1];assert.equal(fetches,2);assert.equal(observed,2);
+});
+test('retained deadline and cancel wait for original physical settlement, without holding the logical response',async()=>{
+ for(const mode of ['deadline','cancel'] as const){
+  const retained:Promise<void>[]=[],attempts:PlannerAttemptMetadata[]=[];let finish!:(r:Response)=>void;let calls=0;
+  const controller=new AbortController();
+  const planner=createClaudeAssistantPlanner({apiKey:key,schema,instructions:'Synthetic',validate:v=>v,deadlineMs:mode==='deadline'?10:1000,
+   budget:{reserve:async()=>true,recordUsage:async()=>{},recordAttempt:async v=>{attempts.push(v.attempt);}},retainCompletion:p=>{retained.push(p);},
+   fetch:(async()=>{calls++;return new Promise<Response>(resolve=>{finish=resolve;});}) as typeof fetch});
+  const logical=planner.plan(request(),controller.signal);if(mode==='cancel'){await new Promise(resolve=>setTimeout(resolve,5));controller.abort();}
+  await assert.rejects(logical,mode==='deadline'?/deadline/:/cancelled/);assert.equal(retained.length,1);
+  let drained=false;void retained[0].then(()=>{drained=true;});await new Promise(resolve=>setTimeout(resolve,5));assert.equal(drained,false);
+  assert.equal(attempts.at(-1)?.physical,'pending');
+  finish(response());await retained[0];assert.equal(attempts.at(-1)?.physical,'settled');assert.equal(attempts.at(-1)?.logical,mode==='deadline'?'deadline':'cancelled');assert.equal(calls,1);
+ }
+});
+test('never-settling physical request remains quarantined; scheduler or observer failure never changes known accounting',async()=>{
+ const retained:Promise<void>[]=[];const never=fixture(()=>new Promise<Response>(()=>{}),{deadlineMs:10,retainCompletion:(p:Promise<void>)=>{retained.push(p);}});
+ await assert.rejects(never.planner.plan(request(),signal()),/deadline/);let drained=false;void retained[0].then(()=>{drained=true;});
+ await new Promise(resolve=>setTimeout(resolve,10));assert.equal(drained,false);await assert.rejects(never.planner.plan(request('simple','next'),signal()),/physically_busy/);assert.equal(never.calls.length,1);
+ for(const invalid of [false,true]){
+  let usage=0,calls=0,registrations=0;
+  const planner=createClaudeAssistantPlanner({apiKey:key,schema,instructions:'Synthetic',validate:v=>invalid?null:v,
+   budget:{reserve:async()=>true,recordUsage:async()=>{usage++;},recordAttempt:async()=>{throw Error('observer');}},
+   retainCompletion:()=>{registrations++;throw Error('scheduler');},fetch:(async()=>{calls++;return response();}) as typeof fetch});
+  if(invalid)await assert.rejects(planner.plan(request(),signal()),/plan_invalid/);else await planner.plan(request(),signal());
+  await settleObservations();assert.equal(calls,1);assert.equal(usage,1);assert.equal(registrations,1);
+ }
 });
