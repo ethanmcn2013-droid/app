@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import type { AudienceTimelineDto } from "../../lib/audience-timeline";
 import type { GuestTimelineServices } from "../../lib/master3-calendar";
 import { master3FollowCopy, master3FollowEmailError } from "./master3-follow-copy";
@@ -28,7 +28,29 @@ async function post(endpoint: string, body: Record<string, string>): Promise<Res
   return result;
 }
 
-const focusAfterRender = (node: () => HTMLElement | null) => requestAnimationFrame(() => node()?.focus());
+/** A frame may run before React commits the requested state. Consume focus
+ * only after its real target is connected/enabled, and never steal it back
+ * when the user has moved to another control while a request was pending. */
+function useCommittedFocus() {
+  const intent = useRef<{ target: () => HTMLElement | null; from: Element | null } | null>(null);
+  const [, requestCommit] = useState(0);
+  useLayoutEffect(() => {
+    const requested = intent.current;
+    if (!requested) return;
+    const target = requested.target();
+    if (!target?.isConnected || target.matches(":disabled")) return;
+    intent.current = null;
+    const active = document.activeElement;
+    if (active && active !== document.body && active !== requested.from) return;
+    target.focus();
+  });
+  return useCallback((target: () => HTMLElement | null, from: Element | null = document.activeElement) => {
+    intent.current = { target, from };
+    // Repeated invalid submissions may have unchanged error text; they still
+    // need a commit before focusing the field with its updated description.
+    requestCommit(value => value + 1);
+  }, []);
+}
 function undoFrom(result: Result): Undo | null {
   const until = result.undoUntil ? Math.min(Date.parse(result.undoUntil), Date.now() + 10_000) : NaN;
   return result.undoToken && Number.isFinite(until) && until > Date.now() ? { key: result.undoToken, until } : null;
@@ -43,6 +65,7 @@ function TimelineFollowBody({ shareToken, timeline, className = "", compact = fa
   const input = useRef<HTMLInputElement>(null), pending = useRef<HTMLParagraphElement>(null);
   const following = useRef<HTMLParagraphElement>(null), undoButton = useRef<HTMLButtonElement>(null);
   const resultMessage = useRef<HTMLParagraphElement>(null), busyNow = useRef(false);
+  const focusAfterRender = useCommittedFocus();
   const [available, setAvailable] = useState<boolean | null>(null), [email, setEmail] = useState("");
   const [management, setManagement] = useState(""), [emailHint, setEmailHint] = useState("");
   const [state, setState] = useState<State>("idle"), [message, setMessage] = useState("");
@@ -78,10 +101,12 @@ function TimelineFollowBody({ shareToken, timeline, className = "", compact = fa
       if (now >= retryAt && (!undo || now >= undo.until)) clearInterval(timer);
     }, undo ? 250 : 1000);
     return () => clearInterval(timer);
-  }, [undo, retryAt]);
+  }, [undo, retryAt, focusAfterRender]);
 
   async function act(operation: Operation, body: Record<string, string> = {}) {
     if (busyNow.current) return;
+    const focusFrom = document.activeElement;
+    const focusAfterAction = (target: () => HTMLElement | null) => focusAfterRender(target, focusFrom);
     busyNow.current = true; setBusy(true); setMessage(""); setInvalid("");
     try {
       const endpoint = operation === "unsubscribe" || operation === "undo" ? operation : "follow";
@@ -90,12 +115,12 @@ function TimelineFollowBody({ shareToken, timeline, className = "", compact = fa
       if (result.emailHint) setEmailHint(result.emailHint);
       if (!result.ok) {
         if (result.code === "email_invalid") {
-          setInvalid(result.message ?? "Enter a valid email address."); focusAfterRender(() => input.current);
+          setInvalid(result.message ?? "Enter a valid email address."); focusAfterAction(() => input.current);
         } else {
           setMessage(result.message ?? "This request could not be completed.");
           if (result.code === "delivery_unknown" || result.code === "request_conflict") {
             setState("unknown"); setChange(false); setEmail("");
-            focusAfterRender(() => resultMessage.current);
+            focusAfterAction(() => resultMessage.current);
           }
         }
         return;
@@ -103,28 +128,28 @@ function TimelineFollowBody({ shareToken, timeline, className = "", compact = fa
       if (result.retryAfterSeconds) setRetryAt(Date.now() + result.retryAfterSeconds * 1000);
       const nextUndo = undoFrom(result);
       setUndo(nextUndo); setClock(Date.now()); setState(result.state!); setChange(false); setEmail("");
-      if (result.state === "pending") focusAfterRender(() => pending.current);
-      else if (result.state === "confirmed") focusAfterRender(() => following.current);
+      if (result.state === "pending") focusAfterAction(() => pending.current);
+      else if (result.state === "confirmed") focusAfterAction(() => following.current);
       else if (result.state === "unsubscribed") {
-        if (nextUndo) focusAfterRender(() => undoButton.current);
+        if (nextUndo) focusAfterAction(() => undoButton.current);
         else setMessage("Unfollowed. No more emails.");
       } else {
         setMessage("Use the link in your last email to manage this follow. You are not following yet.");
-        focusAfterRender(() => resultMessage.current);
+        focusAfterAction(() => resultMessage.current);
       }
     } catch {
       // A lost mutation response is not evidence that sending or saving failed.
       // Offer only a status check; never issue a replacement send automatically.
       setMessage("This change could not be confirmed. Use the email link if it arrives, or check its status.");
       if (operation !== "status") { setState("unknown"); setChange(false); setEmail(""); }
-      focusAfterRender(() => resultMessage.current);
+      focusAfterAction(() => resultMessage.current);
     } finally { busyNow.current = false; setBusy(false); }
   }
 
   function submit(event: FormEvent) {
     event.preventDefault();
     const error = master3FollowEmailError(email);
-    if (error) { setInvalid(error); input.current?.focus(); return; }
+    if (error) { setInvalid(error); focusAfterRender(() => input.current); return; }
     void act(change ? "change_email" : "subscribe", { email, ...(management ? { managementToken: management } : {}) });
   }
   const managed: Record<string, string> = management ? { managementToken: management } : {};
@@ -179,6 +204,7 @@ export function TimelineFollowAction({ endpoint, undoEndpoint, linkKey, proof, l
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(""), [done, setDone] = useState(false);
   const [undo, setUndo] = useState<Undo | null>(null), [clock, setClock] = useState(() => Date.now());
   const busyNow = useRef(false), undoButton = useRef<HTMLButtonElement>(null), status = useRef<HTMLParagraphElement>(null), currentLabel = useRef<HTMLParagraphElement>(null);
+  const focusAfterRender = useCommittedFocus();
   const copy = master3FollowCopy(timeline);
   useEffect(() => {
     if (!undo) return;
@@ -192,20 +218,22 @@ export function TimelineFollowAction({ endpoint, undoEndpoint, linkKey, proof, l
       }
     }, 250);
     return () => clearInterval(timer);
-  }, [undo]);
+  }, [undo, focusAfterRender]);
   async function submit(isUndo = false) {
     if (busyNow.current) return;
+    const focusFrom = document.activeElement;
+    const focusAfterAction = (target: () => HTMLElement | null) => focusAfterRender(target, focusFrom);
     busyNow.current = true; setBusy(true);
     try {
       const result = await post(isUndo ? undoEndpoint! : endpoint, { ...(proof ? { proof } : {}), ...(isUndo ? { key: undo!.key } : linkKey ? { key: linkKey } : {}) });
       if (!result.ok) {
         if (result.code === "delivery_unknown" || result.code === "request_conflict") setDone(true);
-        setMessage(result.message ?? "This link is unavailable."); focusAfterRender(() => status.current); return;
+        setMessage(result.message ?? "This link is unavailable."); focusAfterAction(() => status.current); return;
       }
       setDone(!(inline && result.state === "confirmed")); setMessage(result.state === "confirmed" ? inline ? "" : "Following this timeline." : result.state === "unsubscribed" ? "Unfollowed. No more emails." : "Your follow has been updated.");
       const nextUndo = undoFrom(result); setUndo(nextUndo); setClock(Date.now());
-      focusAfterRender(() => nextUndo && undoEndpoint ? undoButton.current : inline && result.state === "confirmed" ? currentLabel.current : status.current);
-    } catch { setDone(true); setMessage("This change could not be confirmed. Use the email link if it arrives; do not repeat the request."); focusAfterRender(() => status.current); }
+      focusAfterAction(() => nextUndo && undoEndpoint ? undoButton.current : inline && result.state === "confirmed" ? currentLabel.current : status.current);
+    } catch { setDone(true); setMessage("This change could not be confirmed. Use the email link if it arrives; do not repeat the request."); focusAfterAction(() => status.current); }
     finally { busyNow.current = false; setBusy(false); }
   }
   const Tag = inline ? "section" : "main";
