@@ -33,7 +33,12 @@ export function createAssistantService(deps: {
       ...(run.estimatedMicroUsd !== null ? {estimatedCostMicrousd:run.estimatedMicroUsd} : {}),
       steps: rows.map(row => ({ id: row.id, actionId: row.stepKey, kind: (JSON.parse(row.payloadJson) as AssistantAction).kind,
         status: (row.status === "pending" ? "queued" : row.status === "uncertain" ? "unknown" : row.status) as AssistantStepStatus,
-        result: row.resultJson ? {...JSON.parse(row.resultJson) as AssistantActionResult,...(row.deliveryJson?{delivery:assistantDeliverySummary(JSON.parse(row.deliveryJson))}:{})} : null })),
+        result: row.resultJson ? (() => {
+          const original=JSON.parse(row.resultJson) as AssistantActionResult;
+          if(!row.deliveryJson)return original;
+          const delivery=assistantDeliverySummary(JSON.parse(row.deliveryJson));
+          return {...original,delivery:{...delivery,suppressed:delivery.suppressed+(original.delivery?.suppressed??0)}};
+        })() : null })),
       createdAt: new Date(run.createdAt).toISOString(), updatedAt: new Date(run.updatedAt).toISOString() };
     if(deps.authorizeView&&!await deps.authorizeView(actorId,visible))return {...visible,message:'Access changed. Result details are unavailable.',steps:visible.steps.map(step=>({...step,result:null}))};
     return visible;

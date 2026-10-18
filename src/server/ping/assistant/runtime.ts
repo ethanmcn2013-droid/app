@@ -15,6 +15,7 @@ import { prepareAssistantTimeline } from "./timeline";
 import { createAssistantDispatcher } from "./dispatch";
 import { pingTelemetrySpan } from "../telemetry";
 import type { AssistantActionResult } from "@/lib/ping/assistant/contract";
+import { guardAssistantCommitStep } from "./runtime-admission";
 
 type Target = NonNullable<ReturnType<typeof assistantTarget>>;
 const currentTarget = () => assistantTarget(process.env, isDemoMode());
@@ -28,7 +29,10 @@ function createInstance(target: Target) {
   const stillCurrent = () => currentTarget()?.cacheKey === target.cacheKey;
   const transact = <T>(operation: Parameters<typeof database.transaction<T>>[0]) => {
     if (!stillCurrent()) throw new Error("assistant_configuration_changed");
-    return assistantDatabaseTransaction(database, operation);
+    return assistantDatabaseTransaction(database, tx => {
+      if (!stillCurrent()) throw new Error("assistant_configuration_changed");
+      return operation(tx);
+    });
   };
   const key = process.env.ANTHROPIC_API_KEY;
   // One instance retains transport quarantine after a logical timeout. Changing
@@ -78,7 +82,8 @@ function createInstance(target: Target) {
         return true;
       } catch { return false; }
     }),
-    execute: input => pingTelemetrySpan("execute", () => executeAssistantAction({ ...input, dispatch: dispatcher, deliveryTransaction: transact,
+    execute: input => pingTelemetrySpan("execute", () => executeAssistantAction({ ...input,
+      commitStep: guardAssistantCommitStep(input.commitStep, stillCurrent), dispatch: dispatcher, deliveryTransaction: transact,
       prepareTimeline: action => prepareAssistantTimeline(action, (actorId, projectId) => transact(async tx => {
         const actor = await assertAssistantActor(tx, actorId), project = await authorizeAssistantProject(tx, actorId, projectId);
         const owner = await assertAssistantActor(tx, project.ownerUserId!);
