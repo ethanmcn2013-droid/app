@@ -632,10 +632,10 @@ export async function updateAudiencePublicationItem(input: {
   if (!(await ownsPublication(input.publicationId, input.workspaceSlug))) {
     throw new TypeError("Publication not found");
   }
-  const [previous]=await db.select({title:timelinePublicationItems.title,date:timelinePublicationItems.calendarDate,state:timelinePublicationItems.state}).from(timelinePublicationItems).where(and(eq(timelinePublicationItems.publicId,input.publicId),eq(timelinePublicationItems.publicationId,input.publicationId))).limit(1);
-  if(!previous)throw new TypeError('Milestone not found');
   const now = new Date();
   await db.transaction(async (tx) => {
+  const [previous]=await tx.select({title:timelinePublicationItems.title,date:timelinePublicationItems.calendarDate,state:timelinePublicationItems.state}).from(timelinePublicationItems).where(and(eq(timelinePublicationItems.publicId,input.publicId),eq(timelinePublicationItems.publicationId,input.publicationId))).limit(1);
+  if(!previous)throw new TypeError('Milestone not found');
     await tx
       .update(timelinePublicationItems)
       .set({
@@ -686,10 +686,11 @@ export async function setAudiencePrimaryDate(input: {
   if (!(await ownsPublication(input.publicationId, input.workspaceSlug))) {
     throw new TypeError("Publication not found");
   }
-  const [previous]=await db.select({label:timelinePublications.primaryDateLabel,date:timelinePublications.primaryDate}).from(timelinePublications).where(and(eq(timelinePublications.id,input.publicationId),eq(timelinePublications.workspaceSlug,input.workspaceSlug))).limit(1);
   const conceal = !input.primaryDate || !input.primaryDateLabel;
   const now = new Date();
   await db.transaction(async tx=>{
+  const [previous]=await tx.select({label:timelinePublications.primaryDateLabel,date:timelinePublications.primaryDate}).from(timelinePublications).where(and(eq(timelinePublications.id,input.publicationId),eq(timelinePublications.workspaceSlug,input.workspaceSlug))).limit(1);
+  if(!previous)throw new TypeError('Publication not found');
   await tx
     .update(timelinePublications)
     .set({
