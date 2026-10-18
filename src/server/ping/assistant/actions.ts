@@ -14,6 +14,7 @@ import { createConversationService } from "@/server/conversations/service";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { assistantConversationAdapter } from "./conversation-transaction";
 import { insertAssistantTaskBatch } from "./task-batch";
+import { updateAssistantTaskBatch } from "./task-update-batch";
 import { prepareAssistantInvitations, prepareAssistantNudges, revalidateAssistantDelivery,
   type AssistantDeliveryIntent, type AssistantDeliveryPort, type AssistantDispatcher } from "./delivery";
 import type { ActivityPayload } from "@/lib/data";
@@ -91,10 +92,10 @@ async function fieldsFor(tx: AssistantActionTransaction, input: AssistantActionI
   return { assignees, due, dueAt: due === undefined ? undefined : due === null ? null : new Date(`${due}T09:00:00Z`) };
 }
 
-async function activity(tx: AssistantActionTransaction, input: AssistantActionInput, projectId: string, taskId: string,
-  payload: ActivityPayload, now: Date, suffix: string) {
-  await tx.insert(activities).values({ id: stableId("assistant-a", [input.actorId, input.runId, input.stepId, taskId, suffix]),
-    workspaceId: projectId, taskId, userId: input.actorId, kind: payload.kind, payload, createdAt: now });
+function activityRow(input: AssistantActionInput, projectId: string, taskId: string,
+  payload: ActivityPayload, now: Date, suffix: string): typeof activities.$inferInsert {
+  return { id: stableId("assistant-a", [input.actorId, input.runId, input.stepId, taskId, suffix]),
+    workspaceId: projectId, taskId, userId: input.actorId, kind: payload.kind, payload, createdAt: now };
 }
 
 /** Effects and the completed step result share the store's fenced immediate transaction. */
@@ -173,6 +174,8 @@ export async function executeAssistantAction(input: AssistantActionInput): Promi
       admitEffects(input, rows.length);
       const resolved = await fieldsFor(tx, input, projectId, step.changes);
       const config = await readWorkspaceColumnConfig(projectId, tx);
+      const patches: {id:string;patch:Partial<typeof tasks.$inferInsert>}[]=[];
+      const activityRows: (typeof activities.$inferInsert)[]=[];
       for (const row of rows) {
         const changes = step.changes;
         const patch: Partial<typeof tasks.$inferInsert> = { updatedAt: now };
@@ -185,16 +188,15 @@ export async function executeAssistantAction(input: AssistantActionInput): Promi
           patch.lane = changes.status; patch.boardColumnKey = null; patch.idleDays = 0;
           patch.completedAt = isDoneColumnKey(changes.status, config) ? row.completedAt ?? now : null;
         }
-        const changed = await privateTaskDbWrite(() => tx.update(tasks).set(patch).where(and(eq(tasks.id, row.id), eq(tasks.workspaceId, projectId)))
-          .returning({ id: tasks.id }));
-        if (changed.length !== 1) throw new AssistantActionRefusal("stale");
-        if (changes.status !== undefined) await activity(tx, input, projectId, row.id,
-          { kind: "move", from: row.lane, to: changes.status }, now, "status");
+        patches.push({id:row.id,patch});
+        if (changes.status !== undefined) activityRows.push(activityRow(input, projectId, row.id,
+          { kind: "move", from: row.lane, to: changes.status }, now, "status"));
         for (const field of ["title", "description", "assignees"] as const) {
-          if (changes[field] !== undefined) await activity(tx, input, projectId, row.id, { kind: "update", field }, now, field);
+          if (changes[field] !== undefined) activityRows.push(activityRow(input, projectId, row.id, { kind: "update", field }, now, field));
         }
-        if (changes.dueDate !== undefined) await activity(tx, input, projectId, row.id, { kind: "update", field: "due" }, now, "due");
+        if (changes.dueDate !== undefined) activityRows.push(activityRow(input, projectId, row.id, { kind: "update", field: "due" }, now, "due"));
       }
+      await updateAssistantTaskBatch(tx,{projectId,patches,activityRows});
       return { ...base, projectId, taskIds: rows.map(row => row.id), summary: `Updated ${rows.length} tasks.`, affectedCount: rows.length };
     }
     if (step.kind === "list_tasks") {
