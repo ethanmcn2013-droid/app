@@ -57,7 +57,9 @@ export function ShareAction({ title, date, url, onShare, label, phone = false, i
   phone?: boolean; iconOnly?: boolean; announce: (text: string) => void;
 }) {
   const [state, setState] = useState<"idle" | "working" | "copied" | "manual" | "error">("idle");
+  const trigger = useRef<HTMLButtonElement>(null);
   const actualUrl = safeActionHref(url);
+  const close = () => { setState("idle"); trigger.current?.focus(); };
   if (!onShare && !actualUrl) return null;
   const run = async () => {
     setState("working");
@@ -73,11 +75,11 @@ export function ShareAction({ title, date, url, onShare, label, phone = false, i
       setState(actualUrl ? "manual" : "error"); announce(actualUrl ? "Copy the selected timeline link by hand." : "Sharing did not complete. Try again.");
     }
   };
-  return <div className={styles.actionWrap}>
-    <button type="button" className={styles.outlineButton} data-icon-only={iconOnly || undefined} aria-label={label ?? "Share this timeline"} aria-expanded={state === "manual"} disabled={state === "working"} onClick={() => void run()}>
+  return <div className={styles.actionWrap} onKeyDown={event => { if (event.key === "Escape" && state === "manual") { event.preventDefault(); close(); } }}>
+    <button ref={trigger} type="button" className={styles.outlineButton} data-icon-only={iconOnly || undefined} aria-label={label ?? "Share this timeline"} aria-expanded={state === "manual"} disabled={state === "working"} onClick={() => void run()}>
       <Icon kind={state === "copied" ? "check" : "share"} /><span>{state === "copied" ? "Link copied" : state === "working" ? "Sharing…" : label ?? (phone ? "Share" : "Share this timeline")}</span>
     </button>
-    {state === "manual" && actualUrl ? <div className={styles.popover}><ManualCopy value={actualUrl} label="Copy this link" /><button className={styles.textButton} onClick={() => setState("idle")}>Close</button></div> : null}
+    {state === "manual" && actualUrl ? <div className={styles.popover}><ManualCopy value={actualUrl} label="Copy this link" /><button className={styles.textButton} onClick={close}>Close</button></div> : null}
     {state === "error" ? <p className={styles.error} role="alert">Sharing did not complete. Try again.</p> : null}
   </div>;
 }
@@ -85,7 +87,7 @@ export function ShareAction({ title, date, url, onShare, label, phone = false, i
 function fallbackCalendar(timeline: AudienceTimelineDto, model: Master3Model): string | null {
   const entries = timeline.presentation?.calAll ? model.milestones.filter(item => item.date && !item.datePassed) :
     model.milestones.filter(item => item.isFinal || item.isPostFinal);
-  const dated = entries.map(item => ({ title: item.title, date: item.date, id: item.publicId }));
+  const dated = entries.filter(item => item.date).map(item => ({ title: item.title, date: item.date, id: item.publicId }));
   if (!dated.length && model.final) dated.push({ title: model.final.title, date: model.final.date, id: "final" });
   if (!dated.length) return null;
   const escape = (value: string) => value.replaceAll("\\", "\\\\").replaceAll("\n", "\\n").replaceAll(",", "\\,").replaceAll(";", "\\;").replaceAll("\r", "");
@@ -104,7 +106,8 @@ export function CalendarAction({ timeline, model, service, announce }: { timelin
   const [open, setOpen] = useState(false), [manual, setManual] = useState(false), [receipt, setReceipt] = useState("");
   const trigger = useRef<HTMLButtonElement>(null), wrap = useRef<HTMLDivElement>(null);
   const file = fallbackCalendar(timeline, model);
-  const google = safeActionHref(service?.googleHref), hosted = safeActionHref(service?.icsHref ?? service?.feedHref);
+  const subscribe = timeline.presentation?.calAll && !!service?.feedHref;
+  const google = safeActionHref(service?.googleHref), hosted = safeActionHref(subscribe ? service?.feedHref : service?.icsHref ?? service?.feedHref);
   const copyText = service?.copyText ?? [model.final?.date, timeline.presentation?.place].filter(Boolean).join(", ");
   const close = () => { setOpen(false); setManual(false); trigger.current?.focus(); };
   useEffect(() => { if (open && !manual) wrap.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus(); }, [open, manual]);
@@ -123,7 +126,7 @@ export function CalendarAction({ timeline, model, service, announce }: { timelin
     {open ? <div className={styles.popover}>
       {manual ? <ManualCopy value={copyText} label="Copy the date and place" /> : <div role="menu" aria-label="Add to my calendar">
         {google ? <a role="menuitem" tabIndex={-1} className={styles.menuItem} href={google} target="_blank" rel="noopener noreferrer" onClick={() => { setReceipt("Opened in a new tab"); announce("Google Calendar opened in a new tab. Save it there."); close(); }}>Google Calendar<small>Opens in a new tab; save it there</small></a> : null}
-        {hosted ? <a role="menuitem" tabIndex={-1} className={styles.menuItem} href={hosted} download={service?.feedHref ? undefined : service?.fileName ?? "timeline.ics"} onClick={() => { setReceipt("Opening your calendar"); announce("Opening the calendar. Confirm the dates there."); close(); }}>Apple or Outlook<small>{service?.feedHref ? "Subscribe so changes reach you" : "Download a calendar file to open"}</small></a> : file ? <button role="menuitem" tabIndex={-1} className={styles.menuItem} onClick={download}>Apple or Outlook<small>Download an all-day calendar file</small></button> : null}
+        {hosted ? <a role="menuitem" tabIndex={-1} className={styles.menuItem} href={hosted} download={subscribe ? undefined : service?.fileName ?? "timeline.ics"} onClick={() => { setReceipt("Opening your calendar"); announce("Opening the calendar. Confirm the dates there."); close(); }}>Apple or Outlook<small>{subscribe ? "Subscribe so changes reach you" : "Download a calendar file to open"}</small></a> : file ? <button role="menuitem" tabIndex={-1} className={styles.menuItem} onClick={download}>Apple or Outlook<small>Download an all-day calendar file</small></button> : null}
         {copyText ? <button role="menuitem" tabIndex={-1} className={styles.menuItem} onClick={async () => { try { await navigator.clipboard.writeText(copyText); setReceipt("Date copied"); announce("Date and place copied."); close(); } catch { setManual(true); announce("Copy the selected date and place by hand."); } }}>Copy the date and place<small>To paste anywhere</small></button> : null}
       </div>}
       <button type="button" className={styles.textButton} onClick={close}>Close</button>
