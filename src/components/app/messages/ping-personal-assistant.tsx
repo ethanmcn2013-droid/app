@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ASSISTANT_LIMITS, type AssistantApiCommand, type AssistantApiResponse, type AssistantRequest, type AssistantRunView, isAssistantInternalHref } from "@/lib/ping/assistant/contract";
 import { createBrowserPingTelemetry, pingTelemetryBegin, pingTelemetryRecord } from "@/lib/ping/telemetry-client";
 import { Composer } from "./chat-ui";
-import { assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
+import { assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
 import styles from "./ping-personal-assistant.module.css";
 async function assistantRequest(query = "", command?: AssistantApiCommand, signal?: AbortSignal): Promise<AssistantApiResponse> {
   const response = await fetch(`/api/ping/assistant${query}`, { method: command ? "POST" : "GET", credentials: "same-origin", cache: "no-store", signal,
@@ -173,7 +173,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
           </li>)}</ol>
           <div className={styles.actions}>
             {run.status === "ready" && run.mode === "draft" ? <button type="button" disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("apply", run)}>Apply this draft</button> : null}
-            {!assistantNeedsRecovery(run) && ["ready", "partial"].includes(run.status) && run.mode !== "draft" ? <button type="button" disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("resume", run)}>Continue remaining work</button> : null}
+            {assistantCanContinue(run) ? <button type="button" disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("resume", run)}>{run.status === "partial" ? "Retry private preview" : "Continue remaining work"}</button> : null}
             {["planning", "ready", "running", "partial", "unknown"].includes(run.status) ? <button type="button" disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("cancel", run)}>Cancel remaining work</button> : null}
           </div>
         </div>

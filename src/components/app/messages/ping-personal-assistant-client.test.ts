@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit } from "./ping-personal-assistant-client";
+import { assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit } from "./ping-personal-assistant-client";
 import type { AssistantRunView } from "@/lib/ping/assistant/contract";
 const run: AssistantRunView = { id:"run_synthetic_123",requestId:"request_synthetic_123",text:"Create 100 tasks",scope:{kind:"project",projectId:"synthetic-project"},mode:"execute",status:"partial",createdAt:"2026-10-18T09:00:00.000Z",updatedAt:"2026-10-18T09:01:00.000Z",steps:[
   {id:"step1",actionId:"tasks",kind:"create_tasks",status:"completed",result:{stepId:"tasks",kind:"create_tasks",status:"completed",summary:"Created 100 tasks",affectedCount:100}},
@@ -18,6 +18,15 @@ test("partial saved work with unknown step remains recoverable and never appears
   assert.equal(assistantNeedsRecovery({...run,status:"completed",steps:[]}),false);
   assert.equal(assistantIsWorking({...run,status:"planning",steps:[]}),true);
   assert.equal(assistantRunLabel({...run,status:"ready",mode:"draft"}),"Draft ready");
+});
+
+test("cancelling remaining work releases the composer while keeping unknown receipts visible", () => {
+  const cancelled = {...run, status: "cancelled" as const};
+  assert.equal(assistantNeedsRecovery(cancelled), false);
+  assert.equal(cancelled.steps[1].status, "unknown");
+  assert.equal(assistantCanContinue(cancelled), false);
+  assert.equal(assistantCanContinue({...run, steps: [{...run.steps[1], status: "blocked"}]}), false);
+  assert.equal(assistantCanContinue({...run, steps: [{...run.steps[0], result: {...run.steps[0].result!, kind: "preview_timeline", code: "timeline_pending"}}]}), true);
 });
 test("API readback validates stored progress, receipt absence and scalar delivery counts",()=>{
   const response={version:"ping.assistant.v1",ok:true,available:true,run};

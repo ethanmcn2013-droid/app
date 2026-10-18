@@ -41,7 +41,9 @@ export function parseAssistantApiResponse(value: unknown): AssistantApiResponse 
     (response.runs === undefined || Array.isArray(response.runs) && response.runs.length <= 100 && response.runs.every(isAssistantRunView)) ? value as AssistantApiResponse : null;
 }
 export const assistantIsWorking = (run: AssistantRunView) => run.status === "planning" || run.status === "running";
-export const assistantNeedsRecovery = (run: AssistantRunView) => assistantIsWorking(run) || run.status === "unknown" || run.steps.some(step => step.status === "unknown" || step.status === "running");
+export const assistantNeedsRecovery = (run: AssistantRunView) => run.status !== "cancelled" && (assistantIsWorking(run) || run.status === "unknown" || run.steps.some(step => step.status === "unknown" || step.status === "running"));
+export const assistantCanContinue = (run: AssistantRunView) => run.mode !== "draft" && !assistantNeedsRecovery(run) &&
+  (run.status === "ready" || run.status === "partial" && run.steps.some(step => step.result?.code === "timeline_pending"));
 export const assistantRunLabel = (run: AssistantRunView): string => ({ planning: "Understanding your request", ready: run.mode === "draft" ? "Draft ready" : "Ready to continue", running: "Working on your request", completed: "Done", partial: "Some work is saved", clarification: "A detail is needed", failed: "Could not finish", cancelled: "Remaining work cancelled", unknown: "Result not confirmed" })[run.status];
 export const assistantStepLabel = (kind: string): string => ({ create_project: "Create Project", create_tasks: "Create tasks", update_tasks: "Update tasks", archive_tasks: "Archive or restore tasks", add_comment: "Add comments", nudge_tasks: "Send nudges", invite_members: "Invite members", send_message: "Send message", open_project: "Open Project", open_chat: "Open chat", read_timeline: "Read Timeline", preview_timeline: "Prepare private preview", read_chat: "Read chat", list_tasks: "Find tasks" } as Record<string, string>)[kind] ?? "Task";
 
