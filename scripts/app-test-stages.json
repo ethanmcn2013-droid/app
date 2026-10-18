@@ -272,6 +272,7 @@
     "src/modules/timeline/server/sync/tasks-milestone-source.test.ts",
     "src/modules/timeline/timeline-public-url-contract.test.ts",
     "src/modules/timeline/timeline-shared-metadata-contract.test.ts",
+    "src/modules/timeline/timeline-shared-social-image.test.mjs",
     "src/modules/notes/server/demo/notes-fixtures.test.ts",
     "src/modules/notes/lib/notes-copy.test.ts",
     "src/modules/notes/lib/notes-view-model.test.ts",

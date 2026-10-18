@@ -7,10 +7,11 @@ import { master3SocialDetails } from "@/modules/timeline/lib/master3-social";
 /**
  * The social card for every bearer-link timeline (`/s/[token]`).
  *
- * Deliberately data-free: a bearer link's unfurl may not leak names, dates,
- * or milestones — but "nothing" was the wrong answer too. A pasted link is
- * the artifact's first impression in the group chat, so the card carries the
- * product's own typography and the rail motif instead of a grey text stub.
+ * Data-free by default. Only a live public share with the owner's explicit
+ * socialDetails opt-in can show its approved title and primary date. Venue
+ * names additionally require locationConsent; addresses, notes and milestone
+ * details never enter the card. The default uses the product's typography
+ * and rail motif without timeline-specific content.
  * Values are the design-system tokens flattened to literals; satori cannot
  * read CSS custom properties.
  *
