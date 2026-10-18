@@ -4,6 +4,8 @@
 
 Ping can turn one text request into a bounded sequence of Project and task actions, with saved results for each step. Create up to 100 tasks in one action, assign work, set dates and milestones, archive with an exact Undo, or prepare the current Timeline in private preview. Draft mode lets you inspect a saved plan before applying it. Comments, chat, invitations and nudges retain their permission and receipt checks; an unconfirmed external delivery is never automatically repeated.
 
+The initial production planner uses Sonnet for every text request, retaining the existing bounded output caps and single-call deadline. Haiku remains an evaluation path pending separate qualification.
+
 The assistant and external email remain off by default, with an explicit database target and actor allowlist. This is an internal candidate: production receiving, live provider quality, end-to-end latency and delivery remain separate. Speech is deferred. Operator setup and evidence limits: `docs/PING_TEXT_ASSISTANT.md`.
 
 ## 2026-10-15 · Internal candidate · Measure Ping from activation to confirmed changes

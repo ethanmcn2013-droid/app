@@ -208,6 +208,6 @@ export function createPingAssistantPlanner(options: {
     const compound=input.text.length>400||/\b(and|then|followed by|milestones?|timeline|distribute|round.robin)\b/i.test(input.text)||
       /\b(?:nudg(?:e|es|ed|ing)|ping(?:s|ed|ing)?)\b/i.test(input.text)||
       /\b(?:[2-9]|[1-9]\d|100)\s+(?:tasks?|items?|steps?)\b/i.test(input.text);
-    return planner.plan({...input,context:safeContext,tier:compound?"bulk":"simple"},signal??new AbortController().signal);
+    return planner.plan({...input,context:safeContext,tier:compound?"bulk":"compound"},signal??new AbortController().signal);
   }};
 }
