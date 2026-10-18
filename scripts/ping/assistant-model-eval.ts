@@ -221,7 +221,9 @@ async function main() {
     }
     const rows = await database.all<{ reserved: number; estimated: number; unknown: number }>(sql`SELECT COALESCE(SUM(reserved_micro_usd),0) reserved,
       COALESCE(SUM(estimated_micro_usd),0) estimated, SUM(CASE WHEN usage_state='unknown' THEN 1 ELSE 0 END) unknown FROM assistant_runs`);
-    const summary = { synthetic: true, live: options.live, semanticAttempts: attempts.length, expectedFailureSelfTests: options.live ? 0 : 1, passed, failed, dispatched,
+    // Actual semantic attempts count admitted planner invocations; planned count preserves the denominator.
+    const summary = { synthetic: true, live: options.live, plannedSemanticAttempts: attempts.length, semanticAttempts: dispatched,
+      expectedFailureSelfTests: !options.live && !stoppedForSafety ? 1 : 0, passed, failed, dispatched,
       interrupted: controller.signal.aborted, stoppedForSafety, budget: rows[0], estimatesAreNotBilling: true };
     await append({ event: "evaluation_finished", ...summary });
     await writeFile(resolve(options.output, "summary.json"), JSON.stringify(summary, null, 2));
