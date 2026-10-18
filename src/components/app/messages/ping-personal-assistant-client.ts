@@ -1,6 +1,6 @@
 import { pingTelemetryRecord } from "@/lib/ping/telemetry-client";
 import type { PingTelemetryRecorder, PingTelemetryEnd, PingTelemetryOutcome } from "@/lib/ping/telemetry";
-import { ASSISTANT_VERSION, type AssistantApiResponse, type AssistantRunView, type AssistantScope } from "@/lib/ping/assistant/contract";
+import { ASSISTANT_VERSION, type AssistantApiResponse, type AssistantRunView, type AssistantScope, type AssistantStepView, type AssistantStepStatus } from "@/lib/ping/assistant/contract";
 export type PendingAssistantRequest = Readonly<{ version: 1; requestId: string; runId?: string }>;
 const requestId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$/.test(value);
 const runId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9_-]{8,160}$/.test(value);
@@ -46,6 +46,13 @@ export const assistantCanContinue = (run: AssistantRunView) => run.mode !== "dra
   (run.status === "ready" || run.status === "partial" && run.steps.some(step => step.result?.code === "timeline_pending"));
 export const assistantRunLabel = (run: AssistantRunView): string => ({ planning: "Understanding your request", ready: run.mode === "draft" ? "Draft ready" : "Ready to continue", running: "Working on your request", completed: "Done", partial: "Some work is saved", clarification: "A detail is needed", failed: "Could not finish", cancelled: "Remaining work cancelled", unknown: "Result not confirmed" })[run.status];
 export const assistantStepLabel = (kind: string): string => ({ create_project: "Create Project", create_tasks: "Create tasks", update_tasks: "Update tasks", archive_tasks: "Archive or restore tasks", add_comment: "Add comments", nudge_tasks: "Send nudges", invite_members: "Invite members", send_message: "Send message", open_project: "Open Project", open_chat: "Open chat", read_timeline: "Read Timeline", preview_timeline: "Prepare private preview", read_chat: "Read chat", list_tasks: "Find tasks" } as Record<string, string>)[kind] ?? "Task";
+/** A stored receipt is not necessarily a successful action or confirmed delivery. */
+export function assistantVisibleStepStatus(step: AssistantStepView): AssistantStepStatus {
+  if (step.result && step.result.status !== "completed") return step.result.status;
+  if (step.result?.delivery?.unknown) return "unknown";
+  if (step.result?.code === "timeline_pending" || step.result?.delivery?.queued) return "queued";
+  return step.status;
+}
 
 
 export type AssistantVisibleTiming = { requestId: string; startedAt: number; recorder: PingTelemetryRecorder | null; endAttempt: PingTelemetryEnd; done: boolean };

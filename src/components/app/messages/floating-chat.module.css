@@ -2,7 +2,7 @@
 .panel[hidden], .body[hidden] { display: none; }
 .scrim { position: fixed; inset: 0; border: 0; background: color-mix(in srgb, var(--v3-text) 20%, transparent); z-index: 64; }
 .panel[data-full] { right: auto; bottom: auto; border-radius: 0; box-shadow: none; z-index: 20; }
-.panel[data-assistant]:not([data-full]) { width: min(500px, calc(100vw - 48px)); height: min(650px, calc(100dvh - 96px)); }
+.panel[data-assistant]:not([data-full]) { width: min(500px, calc(100vw - 48px)); height: min(650px, calc(100dvh - 96px)); box-shadow: var(--v3-shadow-pop); }
 .panel[data-assistant] .head { padding: 8px 10px; gap: 6px; }
 .panel[data-assistant] .tabs button { padding: 7px 8px; font-size: 12px; }
 .pageAnchor { flex: 1; min-width: 0; min-height: 0; height: 100%; }
@@ -71,3 +71,4 @@
   .personalScroll { padding: 18px 14px; }
   .personalHead button { max-width: 100px; }
 }
+

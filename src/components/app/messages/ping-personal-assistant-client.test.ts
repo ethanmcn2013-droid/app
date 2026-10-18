@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit } from "./ping-personal-assistant-client";
+import { assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit } from "./ping-personal-assistant-client";
 import type { AssistantRunView } from "@/lib/ping/assistant/contract";
 const run: AssistantRunView = { id:"run_synthetic_123",requestId:"request_synthetic_123",text:"Create 100 tasks",scope:{kind:"project",projectId:"synthetic-project"},mode:"execute",status:"partial",createdAt:"2026-10-18T09:00:00.000Z",updatedAt:"2026-10-18T09:01:00.000Z",steps:[
   {id:"step1",actionId:"tasks",kind:"create_tasks",status:"completed",result:{stepId:"tasks",kind:"create_tasks",status:"completed",summary:"Created 100 tasks",affectedCount:100}},
@@ -18,6 +18,15 @@ test("partial saved work with unknown step remains recoverable and never appears
   assert.equal(assistantNeedsRecovery({...run,status:"completed",steps:[]}),false);
   assert.equal(assistantIsWorking({...run,status:"planning",steps:[]}),true);
   assert.equal(assistantRunLabel({...run,status:"ready",mode:"draft"}),"Draft ready");
+});
+test("visible step state follows the original outcome rather than existence of its receipt",()=>{
+  const saved=run.steps[0];
+  assert.equal(assistantVisibleStepStatus(saved),"completed");
+  for(const status of ["blocked","unknown","failed","cancelled"] as const)
+    assert.equal(assistantVisibleStepStatus({...saved,result:{...saved.result!,status}}),status);
+  assert.equal(assistantVisibleStepStatus({...saved,result:{...saved.result!,code:"timeline_pending"}}),"queued");
+  assert.equal(assistantVisibleStepStatus({...saved,result:{...saved.result!,delivery:{queued:0,accepted:0,unknown:1,suppressed:0}}}),"unknown");
+  assert.equal(assistantVisibleStepStatus({...saved,result:{...saved.result!,delivery:{queued:1,accepted:0,unknown:0,suppressed:0}}}),"queued");
 });
 
 test("cancelling remaining work releases the composer while keeping unknown receipts visible", () => {
