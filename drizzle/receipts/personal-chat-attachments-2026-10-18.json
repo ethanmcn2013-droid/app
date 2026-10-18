@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "reviewedBy": "Implementation self-check; independent revision-bound review is required before release.",
+  "authorizedBy": "Founder-directed remaining-product implementation, 18 October 2026; isolated preparation only.",
+  "authorizationSource": "Owner-only personal chat attachment journey delegated by the active coordinator.",
+  "id": "personal-chat-attachments-2026-10-18",
+  "migrations": [
+    {
+      "risk": "Additive private file claims and exact-byte cleanup custody. No Project or shared-conversation ACL. Uploads require separate opt-in and supported schema/storage.",
+      "proofs": [
+        {
+          "id": "private-file-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('personal_chat_attachments') WHERE name IN ('id','owner_id','client_request_id','request_hash','filename','mime_type','size_bytes','backend','store_identity','storage_key','state','writer_settled','custody_until','expires_at','created_at') AND \"notnull\"=1",
+          "expected": 15
+        },
+        {
+          "id": "private-file-indexes",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='index' AND name IN ('idx_personal_chat_attachment_request','idx_personal_chat_attachment_owner','idx_personal_chat_attachment_message')",
+          "expected": 3
+        },
+        {
+          "id": "private-file-no-cascade",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('personal_chat_attachments')",
+          "expected": 0
+        },
+        {
+          "id": "private-file-state-check",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='table' AND name='personal_chat_attachments' AND sql LIKE '%personal_chat_attachment_state%'",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ],
+      "postconditions": [
+        "Owner/request index is unique; owner/message index preserves file order.",
+        "States, backends, bounded sizes and request hashes are constrained.",
+        "Cleanup custody has no cascading user/Project deletion.",
+        "Store identity pins original credentials or disk root; unknown writer completion never retires custody by elapsed time.",
+        "Integrity and foreign-key checks pass."
+      ],
+      "rollbackPlan": "Disable SIGNAL_PERSONAL_CHAT_ATTACHMENTS_ENABLED. Preserve accepted private files and cleanup custody; do not drop rows or bytes without a separate lifecycle decision. Production apply requires the owning backup and release procedure.",
+      "sha256": "ecdebf829dc626450d3a94c9c696135c1a93dd56aef372719f4941292edc80e1",
+      "id": "0045_personal_chat_attachments",
+      "reviewedAt": "2026-10-18T00:00:00.000Z"
+    }
+  ]
+}
