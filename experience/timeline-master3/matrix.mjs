@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {createRequire} from 'node:module';
 const here=path.dirname(fileURLToPath(import.meta.url));
 export const VIEWPORTS=[{id:'desktop',width:1440,height:810},{id:'phone',width:390,height:844},{id:'laptop',width:1280,height:800}];
-export function buildMatrix(fixtures){return fixtures.flatMap(f=>['light','dark'].flatMap(theme=>VIEWPORTS.map(viewport=>({id:`${f.fixtureId}-${theme}-${viewport.id}`,fixtureId:f.fixtureId,theme,viewport,sourceTheme:f.sourceTheme,viewer:f.viewerScenario,followDesignState:f.followScenario.requestedDesignState,followServiceRequired:f.followScenario.status.startsWith('blocked'),ownerServiceRequired:f.viewerScenario==='owner',returningHintPending:!!f.returningVisitorHint,screenshot:theme===f.sourceTheme&&viewport.id!=='laptop'||viewport.id==='laptop'&&[0,8,10,13].includes(fixtures.indexOf(f))&&theme===f.sourceTheme}))));}
+export function buildMatrix(fixtures){return fixtures.flatMap(f=>['light','dark'].flatMap(theme=>VIEWPORTS.map(viewport=>({id:`${f.fixtureId}-${theme}-${viewport.id}`,fixtureId:f.fixtureId,theme,viewport,sourceTheme:f.sourceTheme,viewer:f.viewerScenario,followDesignState:f.followScenario.requestedDesignState,followServiceRequired:f.followScenario.status.startsWith('blocked'),ownerServiceRequired:f.viewerScenario==='owner',lastVisitHint:f.returningVisitorHint,publicationId:f.dto.publicationId,screenshot:theme===f.sourceTheme&&viewport.id!=='laptop'||viewport.id==='laptop'&&[0,8,10,13].includes(fixtures.indexOf(f))&&theme===f.sourceTheme}))));}
 export async function capture({readyPath,output,admissionPath}){
  if(!readyPath||!output||!admissionPath)throw Error('Explicit ready file, fresh output, and capture admission required');
  const ready=JSON.parse(await fs.readFile(readyPath,'utf8')),admission=JSON.parse(await fs.readFile(admissionPath,'utf8'));
@@ -18,7 +18,7 @@ export async function capture({readyPath,output,admissionPath}){
  const browser=await chromium.launch({headless:true}),results=[],screenshots=[],errors=[];
  const shot=async(page,id)=>{const file=path.join(output,id+'.png');await page.screenshot({path:file,fullPage:true});const bytes=await fs.readFile(file);screenshots.push({id,path:file,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')});};
  async function runCase(c,{spacing=false,forcedColors='none'}={}){
-  const context=await browser.newContext({viewport:{width:c.viewport.width,height:c.viewport.height},reducedMotion:'reduce',colorScheme:c.theme,forcedColors});const page=await context.newPage(),caseErrors=[],blocked=[];
+  const context=await browser.newContext({viewport:{width:c.viewport.width,height:c.viewport.height},reducedMotion:'reduce',colorScheme:c.theme,forcedColors});if(c.lastVisitHint)await context.addInitScript(({publicationId,lastVisitHint})=>localStorage.setItem('signal:timeline:last-visit:'+publicationId,lastVisitHint),{publicationId:c.publicationId,lastVisitHint:c.lastVisitHint});const page=await context.newPage(),caseErrors=[],blocked=[];
   page.on('pageerror',error=>caseErrors.push(error.message));page.on('console',m=>{if(m.type()==='error')caseErrors.push(m.text());});
   await context.route('**/*',route=>{if(new URL(route.request().url()).origin===origin.origin)return route.continue();blocked.push(new URL(route.request().url()).origin);return route.abort();});
   let result;try{
@@ -29,7 +29,7 @@ export async function capture({readyPath,output,admissionPath}){
    assert.equal(metrics.innerWidth,c.viewport.width);assert.equal(metrics.innerHeight,c.viewport.height);assert.equal(metrics.visualViewport.scale,1,'Native zoom not simulated by CSS/deviceScaleFactor');assert.ok(metrics.article.width>0);assert.ok(metrics.documentWidth<=metrics.clientWidth+1,`Horizontal overflow ${metrics.documentWidth}/${metrics.clientWidth}`);assert.equal(caseErrors.length,0);assert.equal(blocked.length,0,'Unexpected remote dependency');
    const focus=[];for(let i=0;i<Math.min(metrics.focusables+1,12);i++){await page.keyboard.press('Tab');focus.push(await page.evaluate(()=>{const el=document.activeElement,r=el.getBoundingClientRect();return {tag:el.tagName,name:el.getAttribute('aria-label')??el.textContent?.trim().slice(0,100),visible:!!el.getClientRects().length,inViewport:r.left>=-1&&r.right<=innerWidth+1};}));}await page.keyboard.press('Escape');
    assert.ok(focus.every(f=>f.visible&&f.inViewport));assert.equal(caseErrors.length,0);if(c.screenshot||spacing||forcedColors==='active')await shot(page,c.id);
-   result={...c,status:'passed-layout',designStateComplete:!c.followServiceRequired&&!c.ownerServiceRequired&&!c.returningHintPending,missingDependencies:[...(c.followServiceRequired?['confirmed-follow-service']:[]),...(c.ownerServiceRequired?['authorized-owner-services']:[]),...(c.returningHintPending?['frozen-returning-hint-binding']:[])],followService:'unavailable',metrics,focus,errors:caseErrors,blockedRemoteOrigins:blocked};
+   result={...c,status:'passed-layout',designStateComplete:!c.followServiceRequired&&!c.ownerServiceRequired,missingDependencies:[...(c.followServiceRequired?['confirmed-follow-service']:[]),...(c.ownerServiceRequired?['authorized-owner-services']:[])],followService:'unavailable',metrics,focus,errors:caseErrors,blockedRemoteOrigins:blocked};
   }catch(error){errors.push({caseId:c.id,message:error.message});try{await shot(page,c.id+'-failed');}catch{}result={...c,status:'failed',designStateComplete:false,error:error.message,errors:caseErrors,blockedRemoteOrigins:blocked};}
   finally{await context.close();}results.push(result);await fs.writeFile(path.join(output,'progress.json'),JSON.stringify({planned:cases.length,attempted:results.length,results,screenshots},null,2));
  }
@@ -43,5 +43,3 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  if(process.argv[2]==='--plan'){const fixtures=JSON.parse(await fs.readFile(path.join(here,'fixtures.json'),'utf8')).fixtures;console.log(JSON.stringify({cases:buildMatrix(fixtures),browserExecuted:false},null,2));}
  else capture({readyPath:process.argv[2],output:path.resolve(process.argv[3]??''),admissionPath:process.argv[4]}).then(r=>{console.log(JSON.stringify(r.counts));if(r.errors.length)process.exitCode=1;}).catch(error=>{console.error(error.message);process.exitCode=1;});
 }
-
-
