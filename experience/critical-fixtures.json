@@ -2083,8 +2083,8 @@
     "src/components/app/messages/demo-messages-model.test.ts": "4fb264576bc195d1177c4b72942474478887eec1f94f2a6f257aa7792c1ea05a",
     "src/components/app/messages/demo-messages-model.ts": "ea4c9238a87ef2128ca905d5496c16fa13e0a484e4954849960a42969dd685a0",
     "src/components/app/messages/direct-message-directory.tsx": "b296426ef3db4064f80220a7340a7587fa00000b0c580813e6de3685dcb6b266",
-    "src/components/app/messages/floating-chat-root.tsx": "2fefc3e946d7f52f7ac0d87607850de1cf91c77b92087ed24820aa94a922168c",
-    "src/components/app/messages/floating-chat.module.css": "eb894b151c415969a82fc774d462356e889f669f6a32b4b87a6e5c461771ef14",
+    "src/components/app/messages/floating-chat-root.tsx": "e2de2977d672e5d4bda2f504823ed9843a49d6e4a6d730f2f958e57066b5ed11",
+    "src/components/app/messages/floating-chat.module.css": "6bd2ce92424a047798aef043fe20356887b27109f3e564775f6c190ca89283a9",
     "src/components/app/messages/hidden-conversations.test.ts": "7f9a4846046cd07f85e9e45e5fde26616cbb958e5dbf104a236e776f0803639c",
     "src/components/app/messages/hidden-conversations.ts": "e3aff212cf4d957f76e300ed44feb4c0f5fb785911f81910713e4fcc696e157c",
     "src/components/app/messages/member-mention-picker.tsx": "28fc43967a414d1e974a499a6ebe5e7fcccb192ad51e2b5e1c679179452009d5",
@@ -3900,13 +3900,13 @@
     "src/server/ping/telemetry.ts": "ad1904456fe027bf22d481d14d91b79db8f52ba3617c55d6f905592a7256315c",
     "src/server/ping/typed-session-selected-read.test.ts": "dc509dede1ed9611763985844e9835c7d5333d5f6246bd8408046aa872b23374",
     "src/app/app/timeline/[projectSlug]/current-preview/page.tsx": "67c1b139c140c3837ad63c45e1b22c7e40cffef706ceec110fd1af98073e5a83",
-    "src/components/app/messages/ping-personal-assistant.tsx": "5fdf85939e24adeb5a27932ef4f5e3fb8ba69a30761631dd944a0f45540cba5b",
-    "src/components/app/messages/ping-personal-assistant.module.css": "a125e5dc32e3b7d9c43a335899245c791386abf4bc2f8fac75b0a7b433e69d01",
-    "src/components/app/messages/ping-personal-assistant-client.ts": "3fe72bc3b250d19517884a8fa6559ce2f163d1c194864f7451bf8eedb29b1c79",
+    "src/components/app/messages/ping-personal-assistant.tsx": "a47d3d061dbd02d48e09d8c7474f4b92b40e303d5ceaef72da439fa6b3dd6762",
+    "src/components/app/messages/ping-personal-assistant.module.css": "3f80c8431ff2ffc47bb562f9aae70b0874132ab401f6126a8930ef19028d5c4b",
+    "src/components/app/messages/ping-personal-assistant-client.ts": "f56949070bb5616c215703a55807af919ee6366d72c0f9ce3a0b230ac1b3aa65",
     "src/modules/timeline/app/audience/current-project-preview.tsx": "3586839ba5cd0ba010bcd8a7be7a01ef63922655afab1410302542734889d34b",
     "src/modules/timeline/app/audience/current-project-preview-view.tsx": "128b9df98d63bfc20cb80e23933d7b943a6f3abca71b3a43f075188bc21dacde",
     "src/modules/timeline/app/audience/current-project-preview-model.ts": "c5eb5ce68347b468a6784de0b5da4f7557ef4c39d2ca4f140410ad3484f446a3",
     "src/modules/timeline/app/audience/current-project-preview.module.css": "4ba1fa1a3ccae304659014e437a4f9a177bb5bf6aad4cd6c82f0666193c5e3e1",
-    "src/components/app/messages/ping-personal-assistant-client.test.ts": "ed6f1eae52cec9954d69dd3b3df945a7a000dd4d0c5f07dbcd0175761aa8f6a0"
+    "src/components/app/messages/ping-personal-assistant-client.test.ts": "497a0b0c281ed10e3b230b34c9733388ef6921b2d2abbf7865e1c809a0b88351"
   }
 }
