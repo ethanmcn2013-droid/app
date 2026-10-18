@@ -3908,6 +3908,7 @@
     "src/modules/timeline/app/audience/current-project-preview-model.ts": "c5eb5ce68347b468a6784de0b5da4f7557ef4c39d2ca4f140410ad3484f446a3",
     "src/modules/timeline/app/audience/current-project-preview.module.css": "4ba1fa1a3ccae304659014e437a4f9a177bb5bf6aad4cd6c82f0666193c5e3e1",
     "src/components/app/messages/ping-personal-assistant-client.test.ts": "497a0b0c281ed10e3b230b34c9733388ef6921b2d2abbf7865e1c809a0b88351",
-    "src/components/app/messages/use-floating-chat-viewport.ts": "e726cb60d9f8ecbb17b2017e69d99326adf773d4351dbb5faac633a66f85492b"
+    "src/components/app/messages/use-floating-chat-viewport.ts": "e726cb60d9f8ecbb17b2017e69d99326adf773d4351dbb5faac633a66f85492b",
+    "src/app/welcome/layout.tsx": "66e430f2ea2c52d8942d12c2fa4476f6f665b036b0f22c67e9e19f180c4ec5e1"
   }
 }
