@@ -1,6 +1,6 @@
-import { pingTelemetryRecord } from "@/lib/ping/telemetry-client";
+import { createBrowserPingTelemetry, createPingTelemetryRequest, pingTelemetryBegin, pingTelemetryHeaders, pingTelemetryRecord } from "@/lib/ping/telemetry-client";
 import type { PingTelemetryRecorder, PingTelemetryEnd, PingTelemetryOutcome } from "@/lib/ping/telemetry";
-import { ASSISTANT_VERSION, isAssistantInternalHref, type AssistantApiResponse, type AssistantRunView, type AssistantScope, type AssistantStepView, type AssistantStepStatus } from "@/lib/ping/assistant/contract";
+import { ASSISTANT_VERSION, isAssistantInternalHref, type AssistantApiCommand, type AssistantApiResponse, type AssistantRunView, type AssistantScope, type AssistantStepView, type AssistantStepStatus } from "@/lib/ping/assistant/contract";
 export type PendingAssistantRequest = Readonly<{ version: 1; requestId: string; runId?: string }>;
 const requestId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$/.test(value);
 const runId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9_-]{8,160}$/.test(value);
@@ -64,7 +64,54 @@ export function assistantNavigationTarget(operation: "submit" | "apply" | "resum
 }
 
 
-export type AssistantVisibleTiming = { requestId: string; startedAt: number; recorder: PingTelemetryRecorder | null; endAttempt: PingTelemetryEnd; done: boolean };
+export type AssistantVisibleTiming = { requestId: string; startedAt: number; receivedAt?: number; recorder: PingTelemetryRecorder | null; endAttempt: PingTelemetryEnd; done: boolean };
+export function finishAssistantTiming(timing: AssistantVisibleTiming | null | undefined, outcome: PingTelemetryOutcome) {
+  if (!timing || timing.done) return;
+  timing.done = true;
+  try { timing.endAttempt(outcome); } catch { /* Diagnostic only; never affects request ownership. */ }
+}
+function elapsed(start: number | undefined, now: () => number): number | null {
+  try { const value = start === undefined ? NaN : now() - start; return Number.isFinite(value) && value >= 0 && value <= 300000 ? value : null; }
+  catch { return null; }
+}
+/** One physical product request: request includes body receipt; decode is JSON/contract work.
+ * Optional diagnostics are best effort, never a retry or payload log. */
+export async function assistantRequest(query = "", command?: AssistantApiCommand, signal?: AbortSignal,
+  timing?: AssistantVisibleTiming | null, dependencies: { fetcher?: typeof fetch; now?: () => number } = {}): Promise<AssistantApiResponse> {
+  const recorder = timing ? createPingTelemetryRequest(timing.recorder) : createBrowserPingTelemetry("typed");
+  const ownsAttempt = !timing || timing.done;
+  const endAttempt = ownsAttempt ? pingTelemetryBegin(recorder, "attempt") : null;
+  const endRequest = pingTelemetryBegin(recorder, "request");
+  let endDecode: PingTelemetryEnd | null = null;
+  const now = dependencies.now ?? (() => performance.now());
+  let startedAt: number | undefined;
+  try { startedAt = now(); } catch { /* Missing clock is not zero latency. */ }
+  try {
+    const response = await (dependencies.fetcher ?? fetch)(`/api/ping/assistant${query}`, {
+      method: command ? "POST" : "GET", credentials: "same-origin", cache: "no-store", signal,
+      headers: { ...pingTelemetryHeaders(recorder), ...(command ? { "content-type": "application/json" } : {}) },
+      ...(command ? { body: JSON.stringify(command) } : {}),
+    });
+    const body = await response.text();
+    endRequest("completed");
+    endDecode = pingTelemetryBegin(recorder, "decode");
+    const value = parseAssistantApiResponse(JSON.parse(body));
+    if (!value) throw new Error("Ping's response could not be read. Check the original request before trying again.");
+    endDecode("completed");
+    const outcome: PingTelemetryOutcome = signal?.aborted ? "cancelled" : value.ok ? "completed" : value.code === "unauthenticated" ? "unauthenticated" :
+      value.code === "invalid_input" ? "invalid_input" : value.code === "unavailable" || value.code === "temporarily_unavailable" ? "unavailable" : "failed";
+    pingTelemetryRecord(recorder, { stage: "receipt", outcome, durationMs: elapsed(startedAt, now) });
+    if (timing && !timing.done) { try { timing.receivedAt = now(); } catch { timing.receivedAt = undefined; } }
+    if ((!value.ok || signal?.aborted) && !ownsAttempt) finishAssistantTiming(timing, outcome);
+    endAttempt?.(outcome);
+    return value;
+  } catch (failure) {
+    const outcome = signal?.aborted ? "cancelled" : "unknown";
+    endRequest(outcome); endDecode?.(outcome); endAttempt?.(outcome);
+    if (!ownsAttempt) finishAssistantTiming(timing, outcome);
+    throw failure;
+  }
+}
 /** Called after the matching result commits. A frame is a render opportunity, never proof of paint. */
 export function observeAssistantResultCommit(options: {
   timing: AssistantVisibleTiming; run: Pick<AssistantRunView, "status" | "mode">;
@@ -76,16 +123,14 @@ export function observeAssistantResultCommit(options: {
   let disposed = false;
   const current = () => { try { return !disposed && options.isCurrent(); } catch { return false; } };
   if (!current()) return () => {};
-  pingTelemetryRecord(timing.recorder, { stage: "react-commit", outcome });
+  const now = options.now ?? (() => performance.now());
+  pingTelemetryRecord(timing.recorder, { stage: "react-commit", outcome, durationMs: elapsed(timing.receivedAt, now) });
   let frame: number;
   try { frame = options.requestFrame(() => {
     if (!current() || timing.done) return;
-    timing.done = true;
-    let durationMs: number | null = null;
-    try { const elapsed = (options.now ?? (() => performance.now()))() - timing.startedAt; if (Number.isFinite(elapsed) && elapsed >= 0 && elapsed <= 300000) durationMs = elapsed; } catch { /* Missing timing is not zero latency. */ }
-    pingTelemetryRecord(timing.recorder, { stage: "render-opportunity", outcome, durationMs });
-    try { timing.endAttempt(outcome); } catch { /* Diagnostic only. */ }
-  }); } catch { return () => {}; }
+    pingTelemetryRecord(timing.recorder, { stage: "render-opportunity", outcome, durationMs: elapsed(timing.startedAt, now) });
+    finishAssistantTiming(timing, outcome);
+  }); } catch { finishAssistantTiming(timing, "unavailable"); return () => {}; }
   return () => { disposed = true; try { options.cancelFrame(frame); } catch { /* Diagnostic only. */ } };
 }
 
