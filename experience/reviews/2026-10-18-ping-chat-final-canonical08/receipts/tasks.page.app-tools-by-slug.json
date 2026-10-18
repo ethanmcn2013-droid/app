@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-tools-by-slug",
+  "source": "tasks/src/app/app/tools/[slug]/page.tsx",
+  "materialityHash": "4a1b05486b44306f",
+  "reviewedAt": "2026-10-18",
+  "reviewer": "Codex ai_typed_76_100: actual all18 contact sheets; root independently viewed and accepted six representative sheets",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-c126ef79f0426102c3fd2c5d-59136208d8d021b1.json",
+    "attestationSha256": "15246b048775894219b5153603c5518ec4222a88a602c51436e9bbbe53c688ce",
+    "runId": "tasks-playwright-c126ef79f0426102c3fd2c5d",
+    "canonicalEvidenceSha256": "c126ef79f0426102c3fd2c5d7bfe956a19baaeb37098c4b9102d0c1487e057db",
+    "rawArtifactSha256": "59136208d8d021b14dd05ba86d0828ac615fb023c3f6a0ea66224c2085aac31d",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-tools-by-slug",
+    "caseName": "wedding hub in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh canonical actualbuilt6bfcc28de8a47eca7764fc3df9d65e90c2ef26dc;204/204 oneattempt each. Wedding hub project entry and coming-soon boundaries visible across four variants. No production, new Ping behavior or numerical design rating claim.",
+  "decision": "accepted"
+}
