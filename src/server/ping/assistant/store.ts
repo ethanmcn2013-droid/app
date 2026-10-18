@@ -11,6 +11,36 @@ export type AssistantStoredStep = typeof assistantSteps.$inferSelect;
 export class AssistantStoreError extends Error {
   constructor(public readonly code: "unavailable" | "request_conflict" | "busy" | "cancelled" | "lease_lost" | "uncertain" | "invalid_input") { super(code); }
 }
+const admissions = new WeakMap<AssistantDatabase, { tail: Promise<void>; pending: number }>();
+function admissionBusy(error: unknown): boolean {
+  for (let depth=0; error && typeof error==='object' && depth<5; depth++) {
+    const value=error as {code?:unknown;cause?:unknown};
+    if(typeof value.code==='string' && /^SQLITE_BUSY(?:_|$)/.test(value.code))return true;
+    error=value.cause;
+  }
+  return false;
+}
+/** Shared local admission only; a callback or uncertain commit is never replayed. */
+export async function assistantDatabaseTransaction<T>(database: AssistantDatabase, operation: (tx: AssistantTransaction)=>Promise<T>): Promise<T> {
+  let gate=admissions.get(database);
+  if(!gate){gate={tail:Promise.resolve(),pending:0};admissions.set(database,gate);}
+  if(gate.pending>=128)throw new AssistantStoreError('busy');
+  gate.pending++;
+  const previous=gate.tail;
+  let release!:()=>void;
+  gate.tail=new Promise<void>(resolve=>{release=resolve;});
+  try {
+    await previous;
+    for(let attempt=0;;attempt++){
+      let entered=false;
+      try{return await database.transaction(async tx=>{entered=true;return operation(tx);},{behavior:'immediate'});}
+      catch(error){
+        if(entered||attempt>=2||!admissionBusy(error))throw error;
+        await new Promise(resolve=>setTimeout(resolve,attempt===0?25:75));
+      }
+    }
+  }finally{gate.pending--;release();}
+}
 const stable = (value: unknown): string => Array.isArray(value) ? `[${value.map(stable).join(",")}]` : value && typeof value === "object"
   ? `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${stable((value as Record<string, unknown>)[k])}`).join(",")}}` : JSON.stringify(value);
 export const assistantPayloadHash = (value: unknown) => createHash("sha256").update(stable(value)).digest("hex");
@@ -29,7 +59,7 @@ export const assistantDeliverySummary = (records:Record<string,Delivery>)=>({que
 /** Injected database only. No auth fallback, environment, provider, UI or global DB. */
 export function createAssistantStore(database: AssistantDatabase, options: { now?: () => number; uuid?: () => string } = {}) {
   const now = options.now ?? Date.now, uuid = options.uuid ?? randomUUID;
-  const transaction = <T>(operation: (tx: AssistantTransaction) => Promise<T>) => database.transaction(operation, { behavior: "immediate" });
+  const transaction = <T>(operation: (tx: AssistantTransaction) => Promise<T>) => assistantDatabaseTransaction(database, operation);
   async function ownRun(tx: Pick<AssistantTransaction, "select">, actorId: string, runId: string) {
     const [run] = await tx.select().from(assistantRuns).where(and(eq(assistantRuns.id, runId), eq(assistantRuns.actorId, actorId))).limit(1);
     if (!run) throw new AssistantStoreError("unavailable");

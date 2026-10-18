@@ -115,3 +115,28 @@ test('Timeline result settlement enriches only its pending original and then sta
   await assert.rejects(f.store.settleTimelineResult('alice',p.run.id,p.stepId,{...done,href:'/app/tasks'}),/request_conflict/);
  }finally{await f.close();}
 });
+
+test('shared database admission serializes concurrent same and distinct request custody',async()=>{
+ const f=await assistantFixture();try{
+  const stores=Array.from({length:16},()=>createAssistantStore(f.database));
+  const same=await Promise.all(stores.map(store=>store.createRun(runInput('concurrent-same'))));
+  assert.equal(same.filter(value=>value.created).length,1);assert.equal(new Set(same.map(value=>value.run.id)).size,1);
+  const distinct=await Promise.all(stores.map((store,index)=>store.createRun(runInput(`concurrent-distinct-${index}`))));
+  assert.equal(distinct.filter(value=>value.created).length,16);assert.equal(new Set(distinct.map(value=>value.run.id)).size,16);
+ }finally{await f.close();}
+});
+
+test('admission retries only SQLITE_BUSY before callback entry, never callback or commit errors',async()=>{
+ const {assistantDatabaseTransaction}=await import('./store');
+ type Database=import('./store').AssistantDatabase;type Tx=import('./store').AssistantTransaction;
+ const busy=()=>Object.assign(new Error('locked'),{code:'SQLITE_BUSY'});
+ let attempts=0,calls=0;
+ const early={transaction:async(callback:(tx:Tx)=>Promise<unknown>)=>{if(++attempts<3)throw busy();return callback({} as Tx);}} as unknown as Database;
+ assert.equal(await assistantDatabaseTransaction(early,async()=>{calls++;return 'known';}),'known');assert.equal(attempts,3);assert.equal(calls,1);
+ let lateAttempts=0,lateCalls=0;
+ const late={transaction:async(callback:(tx:Tx)=>Promise<unknown>)=>{lateAttempts++;await callback({} as Tx);throw busy();}} as unknown as Database;
+ await assert.rejects(assistantDatabaseTransaction(late,async()=>{lateCalls++;return 'effect';}),/locked/);assert.equal(lateAttempts,1);assert.equal(lateCalls,1);
+ let callbackCalls=0;
+ const callbackError={transaction:async(callback:(tx:Tx)=>Promise<unknown>)=>callback({} as Tx)} as unknown as Database;
+ await assert.rejects(assistantDatabaseTransaction(callbackError,async()=>{callbackCalls++;throw busy();}),/locked/);assert.equal(callbackCalls,1);
+});
