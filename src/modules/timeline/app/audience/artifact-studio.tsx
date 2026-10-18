@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeline";
+import { master3TimelineTitle } from "@/modules/timeline/lib/master3-labels";
 import {
   TimelineArtifact,
   TimelinePhonePreview,
@@ -101,7 +102,7 @@ export function TimelineArtifactStudio({
         </div>
         <div className={styles.canvas}>
           <TimelineArtifact timeline={timeline} embedded owner={{
-            initial: (timeline.ownerDisplayLabel || timeline.label).slice(0, 1),
+            initial: master3TimelineTitle(timeline).slice(0, 1),
             ...(settingsAvailable ? { onEdit: openSettings } : { editHref: managerHref }),
             menu: [...(settingsAvailable ? [{ label: "Timeline details", onSelect: openSettings }] : []), { label: "Preview as guest", href: guestPreviewHref }, { label: "Manage sharing", href: managerHref }, { label: "Your timelines", href: timelinesHref }],
             ...(followerCount !== undefined ? { followerCount } : {}),
