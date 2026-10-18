@@ -46,6 +46,7 @@
   [
     "node",
     "--test",
+    "scripts/check-module-boundaries.test.mjs",
     "src/server/instrumentation-call-site-contract.test.mjs",
     "scripts/db/waiting-migration.test.mjs",
     "scripts/db/backup-restore.test.mjs",
