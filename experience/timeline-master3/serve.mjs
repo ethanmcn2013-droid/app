@@ -26,7 +26,7 @@ export async function startFixtureHost({source=process.cwd(),output,expectedHead
   const shared=url.pathname.match(/^\/s\/([A-Za-z0-9_-]{43})$/);if(url.pathname!=='/fixture'&&!shared){res.writeHead(404);res.end('No API or product actions in this fixture');return;}
   const fixture=shared?guest.fixtureForToken(shared[1]):fixtures.find(f=>f.fixtureId===url.searchParams.get('id'));if(!fixture){res.writeHead(404);res.end('Unknown fixture');return;}
   const theme=url.searchParams.get('theme')??(shared?fixture.sourceTheme:null);if(!['light','dark'].includes(theme)){res.writeHead(400);res.end('Explicit theme required');return;}
-  res.setHeader('content-type','text/html');res.setHeader('cache-control','no-store');res.setHeader('content-security-policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'");res.end(fixtureHtml(guest.decorate(fixture,res),theme,url.searchParams.get('spacing')==='1'));
+  res.setHeader('content-type','text/html');res.setHeader('cache-control','no-store');res.setHeader('content-security-policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'");res.end(fixtureHtml(guest.decorate(fixture,res,{guestOnly:!!shared}),theme,url.searchParams.get('spacing')==='1'));
  }catch{res.writeHead(500);res.end('Synthetic fixture render failed');}});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  guest.bindOrigin(`http://127.0.0.1:${server.address().port}`);
