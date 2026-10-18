@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "tasks-reviewed-migration-candidate/1",
+  "id": "ping-assistant-0044-20261018",
+  "repository": "ethanmcn2013-droid/app",
+  "pullRequestNumber": 294,
+  "candidateSourceRevision": "6ceafe9c43e2053b74e33c06d52bd2d65a459ba6",
+  "candidateBaseRevision": "90488477fda068b1ca3fca8c0d914a9908f75b6d",
+  "baseLedgerSha256": "504e8c8506a7f736221d8fe30f41161351cd0736c033068984d7c5b77fc5584a",
+  "candidateLedgerSha256": "b222de6e46c9b896149c57677da0b0a5355a9ea118cecccd8342a21ae756c717",
+  "expectedLastMigrationId": "0043_personal_chat",
+  "targetUrlSha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "databaseIdentitySha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "notBefore": "2026-10-18T01:11:54.000Z",
+  "expiresAt": "2026-10-18T13:11:54.000Z",
+  "authorization": {
+    "source": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/111#issuecomment-6244084630",
+    "authorizedBy": "Root delegated coordinator under standing user autonomy/completion authority; additive0044 only after exactDreview, verified backup/rehearsal/upload and target/source fences; population OFF until App erasure handler received"
+  },
+  "review": {
+    "verdict": "approved",
+    "sourceRevision": "6ceafe9c43e2053b74e33c06d52bd2d65a459ba6",
+    "reviewedBy": "ai_typed_51_75, independent source-package reviewer; root receives prospective preparation ONLY",
+    "reference": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/111#issuecomment-6244084630; independent-review.json SHA256 71d5746578dbb6ccfbdb08ca4e374eab7f9c1a3229ffa1c1db5f6dfa30a6bb14; SOURCE PACKAGE preparation accepted ONLY; production execution HOLD FOR EVIDENCE; exactDreview and encryptedworkflow proof required; population OFF until App erasure handler received",
+    "reviewedAt": "2026-10-18T01:05:54.1296857Z"
+  },
+  "migrations": [
+    {
+      "id": "0044_assistant_execution",
+      "sha256": "5706de9847aaeb94d6c1b8459aaec1b15888411d384cc7792b4fd59874b73fa3",
+      "receiptSha256": "7c0b0ab236a15a6052617277db5a51c00f2b810c94396418da6816b41c5c70e6"
+    }
+  ],
+  "files": [
+    {
+      "path": "drizzle/0044_assistant_execution.sql",
+      "sha256": "5706de9847aaeb94d6c1b8459aaec1b15888411d384cc7792b4fd59874b73fa3"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "sha256": "cc5019f67249359dfbcf970b108230a5859d9999728666df89eed56eac0281b5"
+    },
+    {
+      "path": "drizzle/migration-ledger.json",
+      "sha256": "b222de6e46c9b896149c57677da0b0a5355a9ea118cecccd8342a21ae756c717"
+    },
+    {
+      "path": "drizzle/receipts/assistant-execution-2026-10-18.json",
+      "sha256": "7c0b0ab236a15a6052617277db5a51c00f2b810c94396418da6816b41c5c70e6"
+    }
+  ]
+}
