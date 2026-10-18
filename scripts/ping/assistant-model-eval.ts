@@ -149,7 +149,7 @@ async function main() {
   const controller = new AbortController();
   const stop = () => controller.abort(); process.once("SIGINT", stop); process.once("SIGTERM", stop);
   const schemaValue = compileClaudePlannerSchema({ type: "object", properties: { plan: ASSISTANT_PLAN_SCHEMA }, required: ["plan"], additionalProperties: false });
-  let passed = 0, failed = 0, dispatched = 0;
+  let passed = 0, failed = 0, dispatched = 0, stoppedForSafety = false;
   try {
     // The only live credential read occurs here, after admission/output/fixture setup.
     const apiKey = options.live ? process.env.ANTHROPIC_API_KEY : "synthetic-evaluation-key-no-network";
@@ -186,16 +186,26 @@ async function main() {
         await store.finishRun("owner", runId, ok ? "completed" : "failed", { message: ok ? "Synthetic semantic oracle passed" : "Synthetic semantic oracle failed" });
         await append({ event: "attempt_finished", runId, caseId: item.id, model: result.model, passed: ok,
           planningMs: performance.now() - started, usage: result.usage, effects: semanticEffects(result.plan, context) });
+        // A valid proposal is not evidence of settled usage. Retain the charged
+        // reservation and stop before admitting another physical request.
+        if (!result.usage) {
+          stoppedForSafety = true;
+          await append({ event: "evaluation_quarantined", runId, caseId: item.id, code: "planner_usage_unknown" });
+          break;
+        }
       } catch (error) {
         failed++;
         const safe = error instanceof Error && /^planner_[a-z_]+$/.test(error.message) ? error.message : "evaluation_attempt_failed";
         await append({ event: "attempt_failed", runId, caseId: item.id, model, code: safe, planningMs: performance.now() - started });
         await store.finishRun("owner", runId, "failed", { message: safe });
-        // A timeout may leave physical work running. Never start another provider request after uncertainty.
-        if (["planner_deadline", "planner_cancelled", "planner_provider_unavailable", "planner_request_failed"].includes(safe)) break;
+        // Any operational exception, including invalid usage or a denied budget
+        // reservation, ends this evaluation. Semantic-oracle mismatches above
+        // remain measured failures, never an excuse to retry inference.
+        stoppedForSafety = true;
+        break;
       }
     }
-    if (!options.live) {
+    if (!options.live && !stoppedForSafety) {
       const requestId = `eval-expected-failure-${randomUUID()}`;
       const created = await store.createRun({ actorId: "owner", requestId, requestHash: assistantPayloadHash({ fault: "synthetic_http_503" }) });
       let calls = 0;
@@ -212,7 +222,7 @@ async function main() {
     const rows = await database.all<{ reserved: number; estimated: number; unknown: number }>(sql`SELECT COALESCE(SUM(reserved_micro_usd),0) reserved,
       COALESCE(SUM(estimated_micro_usd),0) estimated, SUM(CASE WHEN usage_state='unknown' THEN 1 ELSE 0 END) unknown FROM assistant_runs`);
     const summary = { synthetic: true, live: options.live, semanticAttempts: attempts.length, expectedFailureSelfTests: options.live ? 0 : 1, passed, failed, dispatched,
-      interrupted: controller.signal.aborted, budget: rows[0], estimatesAreNotBilling: true };
+      interrupted: controller.signal.aborted, stoppedForSafety, budget: rows[0], estimatesAreNotBilling: true };
     await append({ event: "evaluation_finished", ...summary });
     await writeFile(resolve(options.output, "summary.json"), JSON.stringify(summary, null, 2));
     if (!options.live) {
@@ -220,7 +230,7 @@ async function main() {
       assert.equal(rows[0].unknown, 1); assert.ok(rows[0].reserved > rows[0].estimated, "Unknown reservation must remain charged");
     }
     console.log(JSON.stringify({ output: options.output, passed, failed, dispatched, synthetic: true, live: options.live }));
-    if (failed || controller.signal.aborted) process.exitCode = 1;
+    if (failed || controller.signal.aborted || stoppedForSafety) process.exitCode = 1;
   } finally { process.removeListener("SIGINT", stop); process.removeListener("SIGTERM", stop); await ledger.close(); proof.client.close(); }
 }
 
