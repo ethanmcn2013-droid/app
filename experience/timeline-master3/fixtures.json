@@ -1448,7 +1448,7 @@
         "audienceKind": "couple",
         "publicationId": "synthetic-master3-board-10",
         "label": "Aoife Ní Bhriain & Seán Ó Conchobhair",
-        "ownerDisplayLabel": "Aoife & Seán",
+        "ownerDisplayLabel": "Aoife Ní Bhriain & Seán Ó Conchobhair",
         "lastUpdatedAt": "2026-07-15T12:00:00Z",
         "today": "2026-07-16",
         "presentation": {
@@ -1590,7 +1590,8 @@
         "Opaque IDs are fixture-only, not realpublication authority.",
         "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
         "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
-        "No followercount/confirmation/email/sent/consent state fabricated."
+        "No followercount/confirmation/email/sent/consent state fabricated.",
+        "Long-name couple display uses exact extracted source title with full names, not abbreviated owner field."
       ]
     },
     {
