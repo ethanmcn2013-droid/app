@@ -37,6 +37,7 @@ function finitePlan(text:string,mode:'execute'|'draft'):AssistantPlan{
  else if(text==='Create new Project and one task')actions=[{id:'project',kind:'create_project',name:'Synthetic new Project'},{id:'new-task',kind:'create_tasks',project:{kind:'created',stepId:'project'},tasks:[{title:'Synthetic new Project task'}]}];
  else if(text==='Make a partial result')actions=[create(1),{id:'blocked',kind:'open_project',project:{kind:'name',name:'Missing synthetic Project'}}];
  else if(text==='Open private preview')actions=[{id:'preview',kind:'preview_timeline',project:current}];
+ else if(text==='Make an unknown result')actions=[{id:'unknown',kind:'open_project',project:current}];
  else return {version:'ping.assistant.v1',outcome:'unsupported',message:'This finite synthetic planner supports only the documented receiving commands.'};
  return {version:'ping.assistant.v1',outcome:'plan',mode,actions};
 }
@@ -45,7 +46,7 @@ const service=createAssistantService({store,
  context:(actor,request)=>transact(async tx=>{const c=await getAssistantContext(tx,actor,request.scope.kind==='project'?request.scope.projectId:null);return {actorName:'Synthetic owner',projectName:c.project?.name??null,projects:c.projects.map(p=>({name:p.name})),members:c.members.map(m=>({name:m.name??'Unnamed'})),selectedTaskCount:0,previousTaskCount:0,referenceDate:'2026-10-18',timeZone:'Europe/Dublin'};}),
  priorTaskResult:async actor=>{for(const run of await store.listRuns(actor)){const prior=Object.values(await store.getStepResults<AssistantActionResult>(actor,run.id)).filter(r=>r.kind==='create_tasks'&&r.status==='completed').at(-1);if(prior)return prior;}return null;},
  authorizeView:(actor,run)=>transact(async tx=>{try{for(const p of new Set(run.steps.flatMap(s=>s.result?.projectId?[s.result.projectId]:[])))await authorizeAssistantProject(tx,actor,p);return true;}catch{return false;}}),
- execute:async input=>{executions++;return executeAssistantAction({...input,deliveryTransaction:transact,dispatch:async()=>{deliveries++;return {outcome:'accepted'};},prepareTimeline:async action=>{provisions++;return {href:`/app/timeline/synthetic/current-preview?workspaceId=${action.projectId}`};}});}
+ execute:async input=>{executions++;if(input.step.id==='unknown')throw Error('Injected executor uncertainty');return executeAssistantAction({...input,deliveryTransaction:transact,dispatch:async()=>{deliveries++;return {outcome:'accepted'};},prepareTimeline:async action=>{provisions++;return {href:`/app/timeline/synthetic/current-preview?workspaceId=${action.projectId}`};}});}
 });
 const http=createAssistantHttp({authenticate:async()=> 'owner',service:async()=>service});
 const html=await buildUi(source.replaceAll('\\','/'),output);

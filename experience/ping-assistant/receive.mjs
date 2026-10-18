@@ -47,6 +47,9 @@ try{
   const reentered=await snapshot();assert.equal(reentered.tasks.length,absentBefore.tasks.length+2);assert.equal(reentered.requests.at(-1).requestId,absentRequest.requestId);await shot(page,id+'-same-id-reentry');
   await page.getByLabel('Draft only',{exact:true}).check();await send(page,'Draft two tasks');await settled(page);const cancelBefore=await snapshot();await page.getByRole('button',{name:'Cancel remaining work',exact:true}).first().click();await settled(page);assert.equal((await snapshot()).tasks.length,cancelBefore.tasks.length);await shot(page,id+'-cancelled');
   await page.getByLabel('Draft only',{exact:true}).uncheck();await send(page,'Make a partial result');await settled(page);await shot(page,id+'-partial');
+  await send(page,'Make an unknown result');await page.getByRole('button',{name:'Check status',exact:true}).waitFor();await shot(page,id+'-unknown');
+  const unknownBefore=await snapshot();await page.getByRole('button',{name:'Cancel remaining work',exact:true}).first().click();await settled(page);
+  assert.equal((await snapshot()).tasks.length,unknownBefore.tasks.length);assert.equal(await page.getByRole('button',{name:'Check status',exact:true}).count(),0);await shot(page,id+'-cancelled-unknown-unlocked');
   // Long user text is rendered by the real unsupported-plan path; no generated result is substituted.
   await send(page,'Long synthetic request '.repeat(70));await settled(page);await shot(page,id+'-long-content');
   await page.getByRole('textbox',{name:'Request for Ping'}).focus();await page.keyboard.press('Tab');assert.ok(await page.evaluate(()=>document.activeElement instanceof HTMLButtonElement));await shot(page,id+'-keyboard-reduced-motion');

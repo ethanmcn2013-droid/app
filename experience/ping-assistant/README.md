@@ -20,6 +20,7 @@ Finite supported requests:
 - `Create new Project and one task`
 - `Make a partial result`
 - `Open private preview`
+- `Make an unknown result` (explicit executor uncertainty injection; cancellation must preserve the unknown receipt and unlock the next request)
 
 Other text exercises the actual unsupported-plan service path. Browser checks run at 390×844, 768×1024, 1280×900 and 1440×960 with reduced motion. They assert actual SQL effects, draft non-effects/apply, cancellation, postcommit lost-response recovery, and absent-original re-entry retaining the client request ID. A fresh request after re-entry is deliberately required. Reload never submits or executes the original again. Keyboard focus is checked separately.
 
