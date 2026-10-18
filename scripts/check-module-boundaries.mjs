@@ -185,6 +185,12 @@ const MODULE_GDPR_IMPORT = {
 const PROJECT_RECOVERY_HOST = path.join(srcDir, "server", "project-recovery.ts");
 const PROJECT_RECOVERY_IMPORT = "@/modules/timeline/server/project-recovery";
 
+// Exact assistant host composition: current private Timeline preparation only.
+// The module port independently proves the Clerk actor and fresh Tasks ownership;
+// no other assistant file or Timeline internal is admitted by this exception.
+const ASSISTANT_TIMELINE_HOST = path.join(srcDir, "server", "ping", "assistant", "timeline.ts");
+const ASSISTANT_TIMELINE_IMPORT = "@/modules/timeline/server/assistant-preparation";
+
 // Collect all source files outside each module to check their imports.
 const allSrcFiles = walk(srcDir);
 
@@ -250,8 +256,10 @@ for (const mod of MODULES) {
 
       const isProjectRecoveryBridge = mod === "timeline" &&
         file === PROJECT_RECOVERY_HOST && imp === PROJECT_RECOVERY_IMPORT;
+      const isAssistantTimelineBridge = mod === "timeline" &&
+        file === ASSISTANT_TIMELINE_HOST && imp === ASSISTANT_TIMELINE_IMPORT;
 
-      if (!inAllowedDir && !isGdprOrchestratorForThisModule && !isProjectRecoveryBridge) {
+      if (!inAllowedDir && !isGdprOrchestratorForThisModule && !isProjectRecoveryBridge && !isAssistantTimelineBridge) {
         failures.push(
           `[rule-2] ${rel(file)}: imports from src/modules/${mod} but is not ` +
             `inside src/app/app/${segment}/ or src/modules/${mod}/. ` +

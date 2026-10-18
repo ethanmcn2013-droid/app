@@ -1,0 +1,8 @@
+.page { display:flex; flex:1; flex-direction:column; min-width:0; background:var(--v3-canvas); }
+.header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:20px 24px; border-bottom:1px solid var(--v3-border); color:var(--v3-text); }
+.header h1 { margin:0; font-size:18px; font-weight:600; letter-spacing:-.02em; }
+.header p { margin:6px 0 0; max-width:65ch; font-size:13px; line-height:1.6; color:var(--v3-text-2); }
+.header a { flex:none; padding:8px 10px; border-radius:6px; font-size:13px; color:var(--v3-accent); text-decoration:underline; text-underline-offset:3px; }
+.header a:hover { background:var(--v3-hover); }
+.header a:focus-visible { outline:2px solid var(--v3-accent); outline-offset:3px; }
+@media(max-width:679px) { .header { padding:16px; gap:8px; } }

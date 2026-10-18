@@ -1,0 +1,12 @@
+✔ 001:create-1-1 (2338.3088ms)
+ℹ {"synthetic":true,"id":"001:create-1-1","serverSpanMs":158.672,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+✔ stress scenario inventory and bounded latency summary (0.4289ms)
+ℹ {"synthetic":true,"scenarios":1,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":158.672,"p95":158.672,"p99":158.672,"max":158.67179999999962,"statuses":{"completed":1},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4282.1184

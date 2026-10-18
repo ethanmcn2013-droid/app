@@ -1434,6 +1434,84 @@
       "remainingStates": [
         "loading"
       ]
+    },
+    {
+      "id": "tasks.page.app-timeline-by-project-slug-current-preview",
+      "evidence": "source-contract",
+      "sourceReviewedAt": "2026-10-18",
+      "sourceAssertions": [
+        {
+          "label": "authenticated access",
+          "contains": "await requireAppAccessTasks()"
+        },
+        {
+          "label": "current projection entrypoint",
+          "contains": "<CurrentProjectPreview {...props} />"
+        },
+        {
+          "label": "uncached current read",
+          "contains": "dynamic = \"force-dynamic\""
+        }
+      ],
+      "remainingStates": [
+        "empty",
+        "populated",
+        "loading",
+        "error",
+        "restricted",
+        "read-only",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ]
+    },
+    {
+      "id": "tasks.workspace.ping-personal-assistant",
+      "evidence": "source-contract",
+      "sourceReviewedAt": "2026-10-18",
+      "sourceAssertions": [
+        {
+          "label": "accessible assistant region",
+          "contains": "aria-label=\"Ping personal assistant\""
+        },
+        {
+          "label": "explicit request identity",
+          "contains": "requestId:"
+        },
+        {
+          "label": "manual recovery action",
+          "contains": "Check status"
+        },
+        {
+          "label": "draft application",
+          "contains": "Apply this draft"
+        },
+        {
+          "label": "original re-entry recovery",
+          "contains": "Re-enter original request"
+        },
+        {
+          "label": "no automatic replay copy",
+          "contains": "will not be sent again automatically"
+        }
+      ],
+      "remainingStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "restricted",
+        "disabled",
+        "saved",
+        "unsaved",
+        "dense",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ]
     }
   ],
   "operatorBlocked": [
@@ -1925,7 +2003,7 @@
     "src/components/app/blockers/blocker-badge.tsx": "552c807da9c3c57240e3ea17f51c8b02f259a71b83cb282e87befda6b0faab31",
     "src/components/app/cards/recurrence-chip.tsx": "4da73dd09f27e4de18466204270a3037c6b14560521edba549aecadc40372f0c",
     "src/components/app/conversation-navigation-runtime.tsx": "389cb75af7fd072a17bd1f5c3ee7f6f0a04cd0d106f74aaa6bc50c3f2dec8c4a",
-    "src/components/app/conversation-session-runtime.tsx": "566971a40e4d089772efb7fe03a9c0412267ed60766af0b90ef8627a09fd28a7",
+    "src/components/app/conversation-session-runtime.tsx": "1b6a0fd4071670a420bc48b25fc39faea918d647d4a979c51e9786045ec92dbb",
     "src/components/app/copy-slack-summary.tsx": "af7d5624f10e48d8c56c9d4c008f9921542d29c640a03ce930f16dd0ac55c800",
     "src/components/app/cross-workspace-overdue.tsx": "1a71f42e306d9f6a991fc102c36dcfac11267bbc5989013e5a7617a5ef971f86",
     "src/components/app/cross-workspace-search.tsx": "54251833d1439a125de49fa531d230d56ee5b8103ab63f31ced37c86be779ee5",
@@ -2005,8 +2083,8 @@
     "src/components/app/messages/demo-messages-model.test.ts": "4fb264576bc195d1177c4b72942474478887eec1f94f2a6f257aa7792c1ea05a",
     "src/components/app/messages/demo-messages-model.ts": "ea4c9238a87ef2128ca905d5496c16fa13e0a484e4954849960a42969dd685a0",
     "src/components/app/messages/direct-message-directory.tsx": "b296426ef3db4064f80220a7340a7587fa00000b0c580813e6de3685dcb6b266",
-    "src/components/app/messages/floating-chat-root.tsx": "d663bc65674603ce0a4e49d4393fff9397a4cd625aca28c0025ef3247b176f09",
-    "src/components/app/messages/floating-chat.module.css": "40caa4a63ea52d89f2928789a33e976462e118eb6d349abfbca35ea570d3d4bd",
+    "src/components/app/messages/floating-chat-root.tsx": "388216748a8ac1a1fa57f5243140dd52b6992b7c9ca7bfc69a9669e65ee93c2a",
+    "src/components/app/messages/floating-chat.module.css": "a5780592071c965ff38d2693e5674f3135f16f6c3b7b7b9223be08a1e31996f0",
     "src/components/app/messages/hidden-conversations.test.ts": "7f9a4846046cd07f85e9e45e5fde26616cbb958e5dbf104a236e776f0803639c",
     "src/components/app/messages/hidden-conversations.ts": "e3aff212cf4d957f76e300ed44feb4c0f5fb785911f81910713e4fcc696e157c",
     "src/components/app/messages/member-mention-picker.tsx": "28fc43967a414d1e974a499a6ebe5e7fcccb192ad51e2b5e1c679179452009d5",
@@ -3253,12 +3331,12 @@
     "src/modules/timeline/app/plan/[projectSlug]/loading.tsx": "75f4857a500fd528fca70e9bcb2c472f5322d715d6e37d67185d633523a132b1",
     "src/modules/timeline/app/plan/[projectSlug]/page.tsx": "29d5eafd94e00f1458075945d383062561d9f22ff7314b1c09036d63685527ed",
     "src/modules/timeline/components/artifact/index.ts": "7f2d179782ad5da583741624d24f3194cc9e1b12ddfc0aee638e332ef83fe4b5",
-    "src/modules/timeline/components/artifact/timeline-artifact-contract.test.mjs": "51b03bf62dd7d27adcd0dd5bfbf71f4494de85a5e73d3c80ae29e2ae385b60df",
+    "src/modules/timeline/components/artifact/timeline-artifact-contract.test.mjs": "c17244faf1eab7c3c6d0b567bd3a66512a210765430fbb1184290a2045b73338",
     "src/modules/timeline/components/artifact/timeline-artifact-layout.test.mjs": "32febdf4ebfff7ccf06d06261b1d8c5b946d8146a05176a455520133f9c1a55b",
     "src/modules/timeline/components/artifact/timeline-artifact-model.test.ts": "3f7ddff985f8116776012d2099cbf80c1b8d2eb71ec1d9b2a1c7085578e87e2f",
     "src/modules/timeline/components/artifact/timeline-artifact-model.ts": "e5a1ac0daccb678780308f0f17420a2657173d6efcaf810bc5034952021a6b21",
     "src/modules/timeline/components/artifact/timeline-artifact.module.css": "ea439b9c08344755beb79b05074871bfa8c3beb8b078733a374d0df9004dcb66",
-    "src/modules/timeline/components/artifact/timeline-artifact.tsx": "3472a89f4a92918741548b8ebd13ba8b03b31d012750d1062528f4c50da5e82a",
+    "src/modules/timeline/components/artifact/timeline-artifact.tsx": "2c2eb844d5d1067d3323a1da723039048b876aae6157a3faa944c2af9c959025",
     "src/modules/timeline/components/artifact/timeline-phone-preview.module.css": "56f1599743846875f627a5413042d58fb6e0df106d34ec4a2f247e4f1666cc45",
     "src/modules/timeline/components/artifact/timeline-phone-preview.tsx": "b2fa48f0a1cb5e6bc3606a9b8086c555c815000ea2c1045baf0769eeed6418a9",
     "src/modules/timeline/index.ts": "55a2053972a74743f607f0ac5b00adccb38022c087a66932d1e0af4e3e51b2c4",
@@ -3360,11 +3438,11 @@
     "src/server/account-deletion-lifecycle-contract.test.mjs": "fc1c1bed3f062707eb4eee2e229d73673ca3af1025005e511c8cdc97a5e97a10",
     "src/server/account-deletion-lifecycle.test.ts": "e9977741923745dca849b3c2328a6a44c0fe524cc7e4d9f80a42c79ef950c965",
     "src/server/account-deletion-lifecycle.ts": "31742f7e4a58188136ee666c4c66a0bf1a04931242adfd2f3d270a5eb70848e9",
-    "src/server/account-erasure.test.ts": "fcfca94233fa8c07022eef9e3b75e974302fee6225b88caa9d3d9ae2a1eda7d0",
-    "src/server/account-erasure.ts": "95c9e39799e2e874b20dd02314d85b0f35a8e6b28503326d738ff7841a553a1e",
+    "src/server/account-erasure.test.ts": "e53ed0993a5d6364ebe645e5e70f37ac073b6d24c2525ebe1a32d69ba36c7de4",
+    "src/server/account-erasure.ts": "b4701e88a0e1e4d1b36f86eddf67da19838baa643ba65696a81d6db2faa7c6c8",
     "src/server/account-event-export.test.ts": "44871872edbb2cd247ea05192d617f46adbc7086ad87890bdd3fa95039c11b42",
     "src/server/account-export.test.ts": "07535c403acfa75fd1328878fa1d6dc4a03abb8626e381e3b44edf1e80e2d081",
-    "src/server/account-export.ts": "91b829082ba01407f8a77777a17b392be323505785703b7fd6c218cbf0f70389",
+    "src/server/account-export.ts": "4b7588137f33aab9b3e17bfe0a20854f177aad8c1b416450d16ec16deaf7b7af",
     "src/server/account-native-upload-erasure.test.ts": "77a52c4f5d96753fbf44d6a38b76a8f2ed6e0fbb7de3e511b801895c8615283c",
     "src/server/account-unified-erasure.test.ts": "ea8608ea534a1c3cb6abfa093941d287f5e2029f4108427f4aabc58c54e0cae3",
     "src/server/account-unified-erasure.ts": "c2579bc5567db07e49b9da74381b6ef83b4a1eca455e2fac86d7db4d0435b30d",
@@ -3606,7 +3684,7 @@
     "src/server/db/retry.test.ts": "d55e331ade79816db443fce42b8d144f7893b5bfc47012e18c059ad9a6a79bc1",
     "src/server/db/retry.ts": "42db5f9d48318867c0ff8a40154794876c2869403b72b7d8263219c74b52a907",
     "src/server/db/row-mappers.ts": "1542ddd0f88863ad61e184a51c0ec623b6edd9f6093a3d7b5f08242812426702",
-    "src/server/db/schema.ts": "e42ff9c39edf9230686575b9c39dc67e37bdc25f156edba5a22010f0744d992e",
+    "src/server/db/schema.ts": "8a6dadec16878cab28224de78cfc5086580bec2b968310412a9b4323829cfdf4",
     "src/server/db/seed-published-wedding.ts": "b61aa7a34467532d77a075b30c9b79524acfe84a26f9114a254c78675cc6285b",
     "src/server/db/seed.ts": "b1bd4576e77277314e50aba08d600b2a06fa8c5809ab3f9926226190f8588cc8",
     "src/server/db/serialized-provisioning.ts": "90eae8cff6e3083138b20175a73aeb77b16e105db9a3832c1d20536c2f1a7742",
@@ -3744,8 +3822,8 @@
     "src/server/provider-token-custody.test.ts": "e45a190f681db465066f6ffb06250eac0f70e85d0100e5042ebea2d4f18bb552",
     "src/server/public-surface-analytics-contract.test.mjs": "48837b003101592ecb77be0252ecbb3c660872bf5a5a9008fcea3bc252aecc89",
     "src/server/published-surface-revalidation.test.mjs": "2a33ff6c0ae9fedf96481079c1c115587833c0a59d77a27f3105c6a6b0693cfb",
-    "src/server/release/preview-reliability-attestation.test.ts": "e86e4b3d96551f94de3cd7411aa8df244fcb354eedc7cbbb95d1dbccbb5c182a",
-    "src/server/release/preview-reliability-attestation.ts": "570177596273b9a248148690333674a3072bbb22411ca01a9adcd4081078a3be",
+    "src/server/release/preview-reliability-attestation.test.ts": "eba9a2df463aecddd686860b8290718b96c9777dad55086d5cbe5b197ecd5903",
+    "src/server/release/preview-reliability-attestation.ts": "8c5a697bf3f9b9bbc1fe8459f71fa53e30ae60b2aad12db341b2b3a1e08ab601",
     "src/server/release/production-binding-attestation.test.ts": "3410516f435027944956c97da0bb3f9815db1a5b414be70804ed737c3a777778",
     "src/server/release/production-binding-attestation.ts": "28e18fcf6a4fe654d78fcb49608e241245673248d34a0fda011205eeae9180f1",
     "src/server/require-app-access.ts": "7e8661cc4f1ca080ad97e957cb6acff1a3ed45826fc855a87dcde3170249ce96",
@@ -3821,13 +3899,25 @@
     "src/server/ping/telemetry.test.ts": "6955ccbdd3724556f1286fd512dd8b4812bf554b21f9d5c4df65a9e3b8179d0a",
     "src/server/ping/telemetry.ts": "ad1904456fe027bf22d481d14d91b79db8f52ba3617c55d6f905592a7256315c",
     "src/server/ping/typed-session-selected-read.test.ts": "dc509dede1ed9611763985844e9835c7d5333d5f6246bd8408046aa872b23374",
+    "src/app/app/timeline/[projectSlug]/current-preview/page.tsx": "67c1b139c140c3837ad63c45e1b22c7e40cffef706ceec110fd1af98073e5a83",
+    "src/components/app/messages/ping-personal-assistant.tsx": "58dddd6b8e51573d8f1a6627754bb0e5e1e058ac493dfb20413ce25a29c037b9",
+    "src/components/app/messages/ping-personal-assistant.module.css": "3f80c8431ff2ffc47bb562f9aae70b0874132ab401f6126a8930ef19028d5c4b",
+    "src/components/app/messages/ping-personal-assistant-client.ts": "65d6bfba069c64631ce04956f06beb23dd9067d5a8aa8e096503589bd34c473d",
+    "src/modules/timeline/app/audience/current-project-preview.tsx": "3586839ba5cd0ba010bcd8a7be7a01ef63922655afab1410302542734889d34b",
+    "src/modules/timeline/app/audience/current-project-preview-view.tsx": "128b9df98d63bfc20cb80e23933d7b943a6f3abca71b3a43f075188bc21dacde",
+    "src/modules/timeline/app/audience/current-project-preview-model.ts": "c5eb5ce68347b468a6784de0b5da4f7557ef4c39d2ca4f140410ad3484f446a3",
+    "src/modules/timeline/app/audience/current-project-preview.module.css": "4ba1fa1a3ccae304659014e437a4f9a177bb5bf6aad4cd6c82f0666193c5e3e1",
+    "src/components/app/messages/ping-personal-assistant-client.test.ts": "f50c0a2909e1f143713170a3dea15424ceac82328246035fd347cc429b6f3d15",
+    "src/components/app/messages/use-floating-chat-viewport.ts": "e726cb60d9f8ecbb17b2017e69d99326adf773d4351dbb5faac633a66f85492b",
+    "src/app/welcome/layout.tsx": "66e430f2ea2c52d8942d12c2fa4476f6f665b036b0f22c67e9e19f180c4ec5e1",
+    "src/lib/ping/assistant/contract.ts": "2424c685bd3dae7de0b2c0419e6cd0e15bfa4f904b0d26a81815dc703f60444c",
+    "src/server/ping/assistant/controls.ts": "1286ca268e6416bd5e7193f20da315069872a46b9d54e4b723a33d03506da236",
     "src/app/api/personal-chat/attachments/[id]/route.ts": "b73b316b27fccf351e3ecff13d56aa025723e20b745e4a5f88baca5922b59070",
     "src/app/api/personal-chat/attachments/route.ts": "935057cca4ab254ab8e3f1dbb844dbf8addeb5c31c47b60052b3a1691686e1c4",
     "src/components/app/messages/personal-attachment-client.test.ts": "65e4beab3a3ed6e5a22a86dd4da9717edaf018f3f70cc9025c6ded83c3f06f3b",
     "src/components/app/messages/personal-attachment-client.ts": "707528066b0718b5d5ed62fa9befaf0d8992f015f0cced5231196e295f4a0390",
     "src/components/app/messages/personal-attachments.module.css": "2c7cb18ca6d0b2ce9ae286f1b5dbc412021f5c0b3d74e7b3144b28db1219a549",
     "src/components/app/messages/personal-attachments.tsx": "c0e69d3382729ce97ade51ef1a572def0588f56e14fc6e2d0d2db3d40758fc11",
-    "src/components/app/messages/use-floating-chat-viewport.ts": "e726cb60d9f8ecbb17b2017e69d99326adf773d4351dbb5faac633a66f85492b",
     "src/components/app/messages/use-personal-attachments.ts": "a7e46a418c9f070a07476c0333d4600e5b5f3d4e7bf09fec2de2bcdbb1e8acf0",
     "src/server/conversations/personal-chat-attachment-erasure.ts": "53a0fb2e8b26be7340f274102af19f538fdaa288efedf8d700290c16e0835c41",
     "src/server/conversations/personal-chat-attachment-http.ts": "0dbbdcff16440f04e1df35b992c2f5ffcd336a39aa276b562e493cf60600fb3d",

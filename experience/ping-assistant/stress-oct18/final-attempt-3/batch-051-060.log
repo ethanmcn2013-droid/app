@@ -1,0 +1,87 @@
+TAP version 13
+# Subtest: 051:lost-response-idempotency-100
+ok 1 - 051:lost-response-idempotency-100
+  ---
+  duration_ms: 2054.3837
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"051:lost-response-idempotency-100","serverSpanMs":247.035,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 052:conversation-and-notification-comment
+ok 2 - 052:conversation-and-notification-comment
+  ---
+  duration_ms: 2459.3964
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"052:conversation-and-notification-comment","serverSpanMs":271.98,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 053:conversation-and-notification-message
+ok 3 - 053:conversation-and-notification-message
+  ---
+  duration_ms: 1974.4367
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"053:conversation-and-notification-message","serverSpanMs":214.96,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 054:conversation-and-notification-nudge-accepted
+ok 4 - 054:conversation-and-notification-nudge-accepted
+  ---
+  duration_ms: 1979.8942
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"054:conversation-and-notification-nudge-accepted","serverSpanMs":274.461,"status":"completed","plans":1,"executions":2,"deliveries":1,"provisions":0}
+# Subtest: 055:conversation-and-notification-nudge-unknown
+ok 5 - 055:conversation-and-notification-nudge-unknown
+  ---
+  duration_ms: 2407.5935
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"055:conversation-and-notification-nudge-unknown","serverSpanMs":295.995,"status":"partial","plans":1,"executions":2,"deliveries":1,"provisions":0}
+# Subtest: 056:conversation-and-notification-nudge-muted
+ok 6 - 056:conversation-and-notification-nudge-muted
+  ---
+  duration_ms: 2944.7369
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"056:conversation-and-notification-nudge-muted","serverSpanMs":328.943,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 057:refusal-archive_tasks-0
+ok 7 - 057:refusal-archive_tasks-0
+  ---
+  duration_ms: 2610.9632
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"057:refusal-archive_tasks-0","serverSpanMs":214.869,"status":"partial","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 058:refusal-update_tasks-0
+ok 8 - 058:refusal-update_tasks-0
+  ---
+  duration_ms: 2611.2213
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"058:refusal-update_tasks-0","serverSpanMs":223.414,"status":"partial","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 059:refusal-archive_tasks-1
+ok 9 - 059:refusal-archive_tasks-1
+  ---
+  duration_ms: 2631.4441
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"059:refusal-archive_tasks-1","serverSpanMs":202.459,"status":"partial","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 060:refusal-update_tasks-1
+ok 10 - 060:refusal-update_tasks-1
+  ---
+  duration_ms: 2485.6348
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"060:refusal-update_tasks-1","serverSpanMs":223.6,"status":"partial","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: stress scenario inventory and bounded latency summary
+ok 11 - stress scenario inventory and bounded latency summary
+  ---
+  duration_ms: 0.7832
+  type: 'test'
+  ...
+# {"synthetic":true,"scenarios":10,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":223.6,"p95":328.943,"p99":328.943,"max":328.9429,"statuses":{"completed":5,"partial":5},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 26462.2947

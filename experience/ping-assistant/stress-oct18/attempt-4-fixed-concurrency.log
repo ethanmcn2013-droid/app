@@ -1,0 +1,71 @@
+TAP version 13
+# Subtest: 091:concurrent-duplicate-2
+ok 1 - 091:concurrent-duplicate-2
+  ---
+  duration_ms: 2358.2504
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"091:concurrent-duplicate-2","serverSpanMs":291.901,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 092:concurrent-duplicate-3
+ok 2 - 092:concurrent-duplicate-3
+  ---
+  duration_ms: 2499.9042
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"092:concurrent-duplicate-3","serverSpanMs":290.891,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 093:concurrent-duplicate-4
+ok 3 - 093:concurrent-duplicate-4
+  ---
+  duration_ms: 2990.0376
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"093:concurrent-duplicate-4","serverSpanMs":319.144,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 094:concurrent-duplicate-5
+ok 4 - 094:concurrent-duplicate-5
+  ---
+  duration_ms: 2788.9815
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"094:concurrent-duplicate-5","serverSpanMs":289.043,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 095:concurrent-duplicate-6
+ok 5 - 095:concurrent-duplicate-6
+  ---
+  duration_ms: 3447.0261
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"095:concurrent-duplicate-6","serverSpanMs":432.283,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 096:cross-domain-create-project-1
+ok 6 - 096:cross-domain-create-project-1
+  ---
+  duration_ms: 3056.9347
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"096:cross-domain-create-project-1","serverSpanMs":285.963,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 097:cross-domain-create-project-2
+ok 7 - 097:cross-domain-create-project-2
+  ---
+  duration_ms: 3188.9666
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"097:cross-domain-create-project-2","serverSpanMs":252.645,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: src\\server\\ping\\assistant\\stress.test.ts
+not ok 1 - src\\server\\ping\\assistant\\stress.test.ts
+  ---
+  duration_ms: 25150.649
+  type: 'test'
+  location: 'D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\src\\server\\ping\\assistant\\stress.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 3221225477
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 7
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25162.5941

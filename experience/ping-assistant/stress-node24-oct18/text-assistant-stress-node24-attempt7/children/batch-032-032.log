@@ -1,0 +1,36 @@
+TAP version 13
+# Subtest: 032:update-field-8
+ok 1 - 032:update-field-8
+  ---
+  duration_ms: 2263.1375
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"032:update-field-8","serverSpanMs":247.805,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: stress scenario inventory and bounded latency summary
+ok 2 - stress scenario inventory and bounded latency summary
+  ---
+  duration_ms: 0.6841
+  type: 'test'
+  ...
+# {"synthetic":true,"scenarios":1,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":247.805,"p95":247.805,"p99":247.805,"max":247.80459999999994,"statuses":{"completed":1},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+# Subtest: src\\server\\ping\\assistant\\stress.test.ts
+not ok 1 - src\\server\\ping\\assistant\\stress.test.ts
+  ---
+  duration_ms: 4091.3731
+  type: 'test'
+  location: 'D:\\Codex-scratch\\project-ping\\text-assistant-stress-node24-oct18\\src\\server\\ping\\assistant\\stress.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 3221225477
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4101.654

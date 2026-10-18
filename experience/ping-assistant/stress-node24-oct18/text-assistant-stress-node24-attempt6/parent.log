@@ -1,0 +1,39 @@
+✖ 100 actual SQLite service/action scenarios in isolated native-client processes (4605.7518ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8059.5885
+
+✖ failing tests:
+
+test at src\server\ping\assistant\stress.test.ts:2:17848
+✖ 100 actual SQLite service/action scenarios in isolated native-client processes (4605.7518ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /# fail 0\b/. Input:
+  
+  '✔ 001:create-1-1 (2338.3088ms)\n' +
+    'ℹ {"synthetic":true,"id":"001:create-1-1","serverSpanMs":158.672,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}\n' +
+    '✔ stress scenario inventory and bounded latency summary (0.4289ms)\n' +
+    'ℹ {"synthetic":true,"scenarios":1,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":158.672,"p95":158.672,"p99":158.672,"max":158.67179999999962,"statuses":{"completed":1},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}\n' +
+    'ℹ tests 2\n' +
+    'ℹ suites 0\n' +
+    'ℹ pass 2\n' +
+    'ℹ fail 0\n' +
+    'ℹ cancelled 0\n' +
+    'ℹ skipped 0\n' +
+    'ℹ todo 0\n' +
+    'ℹ duration_ms 4282.1184\n'
+  
+      at TestContext.<anonymous> (D:\Codex-scratch\project-ping\text-assistant-stress-node24-oct18\src\server\ping\assistant\stress.test.ts:229:12)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '✔ 001:create-1-1 (2338.3088ms)\nℹ {"synthetic":true,"id":"001:create-1-1","serverSpanMs":158.672,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}\n✔ stress scenario inventory and bounded latency summary (0.4289ms)\nℹ {"synthetic":true,"scenarios":1,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":158.672,"p95":158.672,"p99":158.672,"max":158.67179999999962,"statuses":{"completed":1},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 4282.1184\n',
+    expected: /# fail 0\b/,
+    operator: 'match',
+    diff: 'simple'
+  }

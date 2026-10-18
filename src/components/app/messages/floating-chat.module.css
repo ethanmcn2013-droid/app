@@ -213,6 +213,7 @@
     height: min(72dvh, max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 24px)));
     max-height: max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 24px));
   }
+  .panel[data-assistant] { height: max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 24px)); }
   .personalHead { padding-block: 7px; }
   .personalIntro { margin-block: 12px; }
 }

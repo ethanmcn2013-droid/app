@@ -10,6 +10,8 @@ import { ConversationWorkspace } from "./conversation-workspace";
 import { DemoMessagesApp } from "./demo-messages-app";
 import type { DemoMessagesSnapshot } from "./demo-messages-model";
 import { PersonalChat } from "./personal-chat";
+import dynamic from "next/dynamic";
+const PingPersonalAssistant = dynamic(() => import("./ping-personal-assistant").then(module => module.PingPersonalAssistant));
 import { ChatIcon } from "./chat-ui";
 import styles from "./floating-chat.module.css";
 import { parseFloatingChatTarget, type ChatNavigationTarget } from "./chat-navigation";
@@ -39,13 +41,15 @@ export function AuthenticatedFloatingChatRoot(props: Parameters<typeof FloatingC
   return <FloatingChatRoot {...props} actorName={user?.fullName || props.actorName} />;
 }
 
-export function FloatingChatRoot({ actorId, actorName, projects, directMessagesEnabled, demoSnapshot, children, catalogUnavailable = false }: {
+export function FloatingChatRoot({ actorId, actorName, projects, directMessagesEnabled, demoSnapshot, children, catalogUnavailable = false, assistantEnabled = false }: {
   actorId: string; actorName: string; projects: readonly { id: ProjectId; name: string }[];
-  directMessagesEnabled?: boolean; demoSnapshot?: DemoMessagesSnapshot; children: ReactNode; catalogUnavailable?: boolean;
+  directMessagesEnabled?: boolean; demoSnapshot?: DemoMessagesSnapshot; children: ReactNode; catalogUnavailable?: boolean; assistantEnabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [started, setStarted] = useState(false);
-  const [tab, setTab] = useState<"project" | "self">("project");
+  const [tab, setTab] = useState<"project" | "self" | "ping">("project");
+  const [assistantStarted, setAssistantStarted] = useState(false);
+  const activeTab = tab === "ping" && !assistantEnabled ? "project" : tab;
   const [requested, setRequested] = useState<RequestedConversation>({});
   const [navigationVersion, setNavigationVersion] = useState(0);
   const router = useRouter();
@@ -133,7 +137,7 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
   return <Context.Provider value={context}>{children}
     {!bare && !visible ? <button aria-label="Open chat" title="Open chat" className={styles.launcher} onClick={() => show()} ref={launcher} type="button"><ChatIcon.thread size={22} /></button> : null}
     {mobile && visible && !page ? <button aria-label="Close chat" className={styles.scrim} onClick={close} tabIndex={-1} type="button" /> : null}
-    {started ? <div aria-label="Chat" aria-modal={mobile && !page ? true : undefined} id={page ? "app-main-content" : undefined} className={styles.panel} data-full={page ? "" : undefined} hidden={!visible} inert={!visible} onKeyDown={(event) => {
+    {started ? <div aria-label="Chat" aria-modal={mobile && !page ? true : undefined} id={page ? "app-main-content" : undefined} className={styles.panel} data-full={page ? "" : undefined} data-assistant={activeTab === "ping" ? "" : undefined} hidden={!visible} inert={!visible} onKeyDown={(event) => {
       if (event.key === "Escape" && !event.defaultPrevented && !page) close();
       if (event.key === "Tab" && mobile && !page && !(event.target as Element).closest("dialog[open]")) {
         const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],textarea:not(:disabled),summary,[tabindex="0"]')].filter((node) => node.getClientRects().length > 0);
@@ -142,12 +146,13 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
     }} ref={panel} role={page ? "main" : mobile ? "dialog" : "region"} style={page ? bounds : viewportBounds} tabIndex={-1}>
-      <div className={styles.head}><div className={styles.tabs} aria-label="Chat type"><button aria-pressed={tab === "project"} onClick={() => setTab("project")} type="button">Conversations</button><button aria-pressed={tab === "self"} onClick={() => setTab("self")} type="button">{actorName} <span>(you)</span></button></div><div className={styles.headActions}>{!page ? <Link aria-label="Open chat in full view" data-chat-full-page href="/app/messages" title="Full view"><ChatIcon.panel /></Link> : null}{!page ? <button aria-label="Close chat" onClick={close} title="Close chat · your draft stays here" type="button"><ChatIcon.close /></button> : null}</div></div>
-      <div className={styles.body} hidden={tab !== "project"} inert={tab !== "project"}>{demoSnapshot
-        ? <DemoMessagesApp embedded requestedConversationId={requested.demoId} snapshot={demoSnapshot} visible={visible && tab === "project"} />
+      <div className={styles.head}><div className={styles.tabs} aria-label="Chat type"><button aria-pressed={activeTab === "project"} onClick={() => setTab("project")} type="button">Conversations</button><button aria-pressed={activeTab === "self"} onClick={() => setTab("self")} type="button">{actorName} <span>(you)</span></button>{assistantEnabled ? <button aria-pressed={activeTab === "ping"} onClick={() => { setAssistantStarted(true); setTab("ping"); }} type="button">Ping</button> : null}</div><div className={styles.headActions}>{!page ? <Link aria-label="Open chat in full view" data-chat-full-page href="/app/messages" title="Full view"><ChatIcon.panel /></Link> : null}{!page ? <button aria-label="Close chat" onClick={close} title="Close chat · your draft stays here" type="button"><ChatIcon.close /></button> : null}</div></div>
+      <div className={styles.body} hidden={activeTab !== "project"} inert={activeTab !== "project"}>{demoSnapshot
+        ? <DemoMessagesApp embedded requestedConversationId={requested.demoId} snapshot={demoSnapshot} visible={visible && activeTab === "project"} />
         : catalogUnavailable || pageCatalogUnavailable ? <ChatCatalogUnavailable className={styles.personalIntro} retrying={catalogRetrying} onRetry={() => startCatalogRetry(() => router.refresh())} />
-        : <ConversationWorkspace actorId={actorId} directMessagesEnabled={directMessagesEnabled} initialProjectId={requested.projectId} initialRootId={requested.rootId} initialMessageId={requested.messageId} initialMessageSeq={requested.messageSeq} navigationVersion={navigationVersion} projects={availableProjects} visible={visible && tab === "project"} />}</div>
-      <div className={styles.body} hidden={tab !== "self"} inert={tab !== "self"}><PersonalChat actorId={actorId} actorName={actorName} demo={!!demoSnapshot} visible={visible && tab === "self"} /></div>
+        : <ConversationWorkspace actorId={actorId} directMessagesEnabled={directMessagesEnabled} initialProjectId={requested.projectId} initialRootId={requested.rootId} initialMessageId={requested.messageId} initialMessageSeq={requested.messageSeq} navigationVersion={navigationVersion} projects={availableProjects} visible={visible && activeTab === "project"} />}</div>
+      {assistantEnabled && assistantStarted ? <div className={styles.body} hidden={activeTab !== "ping"} inert={activeTab !== "ping"}><PingPersonalAssistant key={actorId} actorId={actorId} projects={availableProjects} visible={visible && activeTab === "ping"} /></div> : null}
+      <div className={styles.body} hidden={activeTab !== "self"} inert={activeTab !== "self"}><PersonalChat actorId={actorId} actorName={actorName} demo={!!demoSnapshot} visible={visible && activeTab === "self"} /></div>
     </div> : null}
   </Context.Provider>;
 }

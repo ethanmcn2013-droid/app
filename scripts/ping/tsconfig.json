@@ -7,6 +7,7 @@
     ]
   },
   "include": [
+    "./assistant-model-eval.ts",
     "./proof-contention-worker.ts",
     "./bridge/*.ts",
     "./prepare-typed-fixture.ts",

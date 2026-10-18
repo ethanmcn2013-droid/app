@@ -1,0 +1,28 @@
+{
+  "version": "ping.assistant.stress.finding.v1",
+  "sourceHead": "52e1e665c38dfa2417c9e3402bd38deab50019cb",
+  "status": "failed",
+  "scenarioPasses": 95,
+  "scenarioFailures": 5,
+  "failedIds": [
+    "091",
+    "092",
+    "093",
+    "094",
+    "095"
+  ],
+  "finding": "Concurrent duplicate submit at concurrency 2 through 6 rejects SQLITE_BUSY in store createRun transaction",
+  "productFixRequired": true,
+  "nativeCauseClaim": false,
+  "evidence": [
+    {
+      "path": "final-attempt-3/batch-091-100.log",
+      "sha256": "e1eb276ba086ec3ae5225be13355c5a5ab1838beae9f9854a3af49e5ed21963f"
+    },
+    {
+      "path": "attempt-3-parent.log",
+      "sha256": "7041d6593b78ac61137d814794afb958ea44e5b95560786547c5fdf55fe09ffa"
+    }
+  ],
+  "limits": "Synthetic SQLite/service/actions with fake planner and outbound dispatcher; no model quality, production, browser, real delivery or publication claim"
+}

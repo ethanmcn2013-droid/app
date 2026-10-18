@@ -107,7 +107,7 @@ test("identity proof rejects invalid test keys and alternative issuer configurat
 
 test("every configured external provider prevents a receipt", () => {
   for (const key of ["RESEND_API_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "GOOGLE_OAUTH_CLIENT_SECRET",
-    "BLOB_READ_WRITE_TOKEN", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "AI_GATEWAY_API_KEY", "NOTES_TO_TASKS_SECRET",
+    "BLOB_READ_WRITE_TOKEN", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PING_ASSISTANT_ANTHROPIC_API_KEY", "AI_GATEWAY_API_KEY", "NOTES_TO_TASKS_SECRET",
     "NOTES_TO_TIMELINE_SECRET", "STUDIO_CRON_PING_SECRET"]) {
     const response = previewReliabilityAttestation(request(), { ...environment, [key]: "synthetic-provider-secret" }, now);
     assert.equal(response.status, 404, key);

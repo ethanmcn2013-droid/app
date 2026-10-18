@@ -63,6 +63,8 @@ export type TimelineArtifactProps = Readonly<{
    * it rather than stacking two wordmarks.
    */
   showProductHeader?: boolean;
+  /** Owner-only current preview: no guest-sharing copy or marketing footer. */
+  privatePreview?: boolean;
   className?: string;
   onShare?: () => Promise<TimelineShareOutcome>;
   shareLabel?: string;
@@ -265,7 +267,7 @@ function ProductIdentity({
 
 /* ── Hero: the count and the day ──────────────────────────────────────────── */
 
-function Hero({ timeline, model, nouns }: { timeline: AudienceTimelineDto; model: TimelineArtifactModel; nouns: ReturnType<typeof timelineNouns> }) {
+function Hero({ timeline, model, nouns, privatePreview = false }: { timeline: AudienceTimelineDto; model: TimelineArtifactModel; nouns: ReturnType<typeof timelineNouns>; privatePreview?: boolean }) {
   const day = timeline.primaryDate;
   const countdown = buildTimelineCountdown(day?.date, timeline.today);
   const dayName = day?.label.toLowerCase() ?? "";
@@ -314,7 +316,7 @@ function Hero({ timeline, model, nouns }: { timeline: AudienceTimelineDto; model
   // away; the hero says only what no other part of the page says.
   return (
     <div className={styles.hero}>
-      <p className={styles.heroKicker}>{nouns.kicker}</p>
+      <p className={styles.heroKicker}>{privatePreview ? "Your current project timeline" : nouns.kicker}</p>
       <h1>{timeline.label}</h1>
       <div className={styles.heroBody}>
         <div className={styles.count} data-timeline-metric data-count-kind={countdown?.kind ?? "progress"} role="group" aria-label={spoken}>
@@ -695,6 +697,7 @@ export function TimelineArtifact({
   compact = false,
   embedded = false,
   showProductHeader = true,
+  privatePreview = false,
   className,
   onShare,
   shareLabel,
@@ -731,7 +734,7 @@ export function TimelineArtifact({
       <a className={styles.skipLink} href={`#${sectionId}`}>Skip to timeline</a>
       <header className={styles.header}>
         {showProductHeader ? <ProductIdentity timeline={timeline} onShare={onShare} shareLabel={shareLabel} /> : null}
-        <Hero timeline={timeline} model={model} nouns={nouns} />
+        <Hero timeline={timeline} model={model} nouns={nouns} privatePreview={privatePreview} />
       </header>
 
       <Strip timeline={timeline} model={model} finaleId={finaleId} />
@@ -741,7 +744,7 @@ export function TimelineArtifact({
       <Finale timeline={timeline} id={finaleId} onShare={showProductHeader ? undefined : onShare} shareLabel={shareLabel} />
       <PlanningDecisions timeline={timeline} model={model} />
 
-      <footer className={styles.footer}>
+      {!privatePreview ? <footer className={styles.footer}>
         <span>Updated {formatTimelineDate(timeline.lastUpdatedAt.slice(0, 10))}</span>
         {/* The artifact is the product's own advertisement, and the
             attribution walks. The /s tree already sends no-referrer, so the
@@ -750,7 +753,7 @@ export function TimelineArtifact({
           <span className={styles.footerMark} aria-hidden="true">timeline<span /></span>
           Made with Signal Timeline · Make one for your day
         </a>
-      </footer>
+      </footer> : null}
     </article>
   );
 }

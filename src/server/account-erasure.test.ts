@@ -65,6 +65,13 @@ async function seed(client: Client, probePath: string) {
       ('u-target','clerk_target','#111','TT'),
       ('u-bystander','clerk_bystander','#222','BB');
 
+    INSERT INTO assistant_runs(id,actor_id,request_id,request_hash,request_json,plan_json,result_json,status,created_at,updated_at,reserved_micro_usd,usage_state) VALUES
+      ('ar-target','u-target','target-request','${"a".repeat(64)}','{"text":"private target"}','{"private":true}','{"private":true}','ready',1,1,100,'unknown'),
+      ('ar-bystander','u-bystander','bystander-request','${"b".repeat(64)}','{"text":"private bystander"}',NULL,NULL,'planning',1,1,50,'reserved');
+    INSERT INTO assistant_steps(id,run_id,ordinal,step_key,payload_json,payload_hash,created_at,updated_at) VALUES
+      ('as-target','ar-target',0,'one','{"private":true}','${"c".repeat(64)}',1,1),
+      ('as-bystander','ar-bystander',0,'one','{"private":true}','${"d".repeat(64)}',1,1);
+
     INSERT INTO personal_chat_messages (id, owner_id, body, client_request_id, request_hash, created_at) VALUES
       ('pc-target','u-target','target private note','request_target_private_0001','${"a".repeat(64)}',1756800000),
       ('pc-bystander','u-bystander','bystander private note','request_bystander_private_0001','${"b".repeat(64)}',1756800001);
@@ -252,6 +259,10 @@ test("erasure removes every target row across every table, leaves the bystander 
 
   try {
     await seed(client, probePath);
+    const accountExport=await exportAccountData(db,'clerk_target');
+    assert.ok('assistant' in accountExport);
+    assert.deepEqual(accountExport.assistant?.runs.map(run=>run.id),['ar-target']);
+    assert.deepEqual(accountExport.assistant?.steps.map(step=>step.id),['as-target']);
 
     const revokedGrantIds: string[] = [];
     const revokedRefreshTokens: string[] = [];
@@ -288,6 +299,8 @@ test("erasure removes every target row across every table, leaves the bystander 
     const residual: Array<[string, string]> = [
       ["users", "users WHERE id='u-target'"],
       ["personal_chat_messages", "personal_chat_messages WHERE owner_id='u-target'"],
+      ["assistant_runs", "assistant_runs WHERE actor_id='u-target' OR request_json LIKE '%target%' OR plan_json IS NOT NULL OR result_json IS NOT NULL"],
+      ["assistant_steps", "assistant_steps WHERE run_id='ar-target'"],
       ["workspaces", "workspaces WHERE id='ws-a' OR owner_user_id='u-target'"],
       ["tasks", "tasks WHERE workspace_id='ws-a'"],
       ["comments", "comments WHERE user_id='u-target' OR workspace_id='ws-a' OR task_id='task-a1'"],
@@ -321,11 +334,14 @@ test("erasure removes every target row across every table, leaves the bystander 
         `residual rows left in ${table} after erasure, erasure is incomplete`,
       );
     }
+    const billing=(await client.execute("SELECT actor_id,request_id,request_hash,request_json,plan_json,result_json,reserved_micro_usd,usage_state FROM assistant_runs WHERE id='ar-target'")).rows[0];
+    assert.deepEqual({...billing},{actor_id:null,request_id:'ar-target',request_hash:'0'.repeat(64),request_json:null,plan_json:null,result_json:null,reserved_micro_usd:100,usage_state:'unknown'});
 
     // ── Invariant 2: bystander account/product data + globals intact ───
     const survivors: Array<[string, number]> = [
       ["users", 1], // only u-bystander
       ["personal_chat_messages", 1], // only the bystander's private self-chat
+      ["assistant_steps", 1], // only the bystander's execution payload
       ["workspaces", 1], // only ws-b
       ["tasks", 2], // shared artifact + unrelated Notes task
       ["comments", 2], // c-b2 and an identity-free c-b1 structural tombstone

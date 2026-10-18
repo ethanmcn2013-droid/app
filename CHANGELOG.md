@@ -1,5 +1,15 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-18 · Internal candidate · Give Ping a text request
+
+Ping can turn one text request into a bounded sequence of Project and task actions, with saved results for each step. Create up to 100 tasks in one action, assign work, set dates and milestones, archive with an exact Undo, or prepare the current Timeline in private preview. Draft mode lets you inspect a saved plan before applying it. Comments, chat, invitations and nudges retain their permission and receipt checks; an unconfirmed external delivery is never automatically repeated.
+
+The initial production planner uses Sonnet for every text request, retaining the existing bounded output caps and single-call deadline. Haiku remains an evaluation path pending separate qualification.
+
+Private attempt records retain model configuration, timing, token estimates and incomplete outcomes beside the spending guard. Optional browser diagnostics connect request receipt to the displayed result. Bulk updates use fewer database statements while preserving per-task activity and saved receipts; local speed measurements remain separate from production performance.
+
+The assistant and external email remain off by default, with an explicit database target and actor allowlist. This is an internal candidate: production receiving, live provider quality, end-to-end latency and delivery remain separate. Speech is deferred. Operator setup and evidence limits: `docs/PING_TEXT_ASSISTANT.md`.
+
 ## 2026-10-18 · Internal candidate · Keep files in your personal chat
 
 Personal chat can hold a small image or file beside a note, or save the file on its own. Reopen the conversation to download it. The floating panel keeps its composer reachable on short screens, and ordinary chat retains keyboard mentions. Shared notifications use one queue across the app and leave room for Chat.

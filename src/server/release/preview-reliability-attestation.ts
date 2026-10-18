@@ -4,7 +4,7 @@ import { resolveConversationControls } from "../../lib/conversations/flags";
 import { resolveConversationRuntimeTarget } from "../conversations/runtime-target";
 
 const STORE_KEYS = ["TASKS_DATABASE_URL", "NOTES_DATABASE_URL", "TIMELINE_DATABASE_URL", "SIGNAL_DATABASE_URL", "ENTITLEMENTS_DATABASE_URL"] as const;
-const PROVIDER_KEYS = ["RESEND_API_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "GOOGLE_OAUTH_CLIENT_SECRET", "BLOB_READ_WRITE_TOKEN", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "AI_GATEWAY_API_KEY", "NOTES_TO_TASKS_SECRET", "NOTES_TO_TIMELINE_SECRET", "STUDIO_CRON_PING_SECRET"] as const;
+const PROVIDER_KEYS = ["RESEND_API_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "GOOGLE_OAUTH_CLIENT_SECRET", "BLOB_READ_WRITE_TOKEN", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "PING_ASSISTANT_ANTHROPIC_API_KEY", "AI_GATEWAY_API_KEY", "NOTES_TO_TASKS_SECRET", "NOTES_TO_TIMELINE_SECRET", "STUDIO_CRON_PING_SECRET"] as const;
 const IDENTITY_OVERRIDE_KEYS = ["CLERK_DOMAIN", "NEXT_PUBLIC_CLERK_DOMAIN", "CLERK_PROXY_URL", "NEXT_PUBLIC_CLERK_PROXY_URL", "CLERK_IS_SATELLITE", "NEXT_PUBLIC_CLERK_IS_SATELLITE"] as const;
 const headers = { "Cache-Control": "private, no-store", "CDN-Cache-Control": "no-store", "Vercel-CDN-Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Robots-Tag": "noindex, nofollow" };
 type Environment = Readonly<Record<string, string | undefined>>;

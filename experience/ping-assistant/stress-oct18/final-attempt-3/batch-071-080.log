@@ -1,0 +1,87 @@
+TAP version 13
+# Subtest: 071:clarification-5
+ok 1 - 071:clarification-5
+  ---
+  duration_ms: 2756.1042
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"071:clarification-5","serverSpanMs":152.122,"status":"clarification","plans":1,"executions":0,"deliveries":0,"provisions":0}
+# Subtest: 072:clarification-6
+ok 2 - 072:clarification-6
+  ---
+  duration_ms: 2872.0166
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"072:clarification-6","serverSpanMs":99.886,"status":"clarification","plans":1,"executions":0,"deliveries":0,"provisions":0}
+# Subtest: 073:clarification-7
+ok 3 - 073:clarification-7
+  ---
+  duration_ms: 2557.071
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"073:clarification-7","serverSpanMs":104.708,"status":"clarification","plans":1,"executions":0,"deliveries":0,"provisions":0}
+# Subtest: 074:clarification-8
+ok 4 - 074:clarification-8
+  ---
+  duration_ms: 3022.8817
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"074:clarification-8","serverSpanMs":120.732,"status":"clarification","plans":1,"executions":0,"deliveries":0,"provisions":0}
+# Subtest: 075:invite-accepted-1
+ok 5 - 075:invite-accepted-1
+  ---
+  duration_ms: 2756.9747
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"075:invite-accepted-1","serverSpanMs":364.643,"status":"completed","plans":1,"executions":1,"deliveries":1,"provisions":0}
+# Subtest: 076:invite-accepted-2
+ok 6 - 076:invite-accepted-2
+  ---
+  duration_ms: 3027.7213
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"076:invite-accepted-2","serverSpanMs":368.337,"status":"completed","plans":1,"executions":1,"deliveries":2,"provisions":0}
+# Subtest: 077:invite-unknown-1
+ok 7 - 077:invite-unknown-1
+  ---
+  duration_ms: 2586.2705
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"077:invite-unknown-1","serverSpanMs":242.889,"status":"partial","plans":1,"executions":1,"deliveries":1,"provisions":0}
+# Subtest: 078:invite-unknown-2
+ok 8 - 078:invite-unknown-2
+  ---
+  duration_ms: 2793.3313
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"078:invite-unknown-2","serverSpanMs":547.895,"status":"partial","plans":1,"executions":1,"deliveries":2,"provisions":0}
+# Subtest: 079:invite-suppressed-1
+ok 9 - 079:invite-suppressed-1
+  ---
+  duration_ms: 2764.447
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"079:invite-suppressed-1","serverSpanMs":349.036,"status":"completed","plans":1,"executions":1,"deliveries":1,"provisions":0}
+# Subtest: 080:invite-suppressed-2
+ok 10 - 080:invite-suppressed-2
+  ---
+  duration_ms: 2847.6598
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"080:invite-suppressed-2","serverSpanMs":599.687,"status":"completed","plans":1,"executions":1,"deliveries":2,"provisions":0}
+# Subtest: stress scenario inventory and bounded latency summary
+ok 11 - stress scenario inventory and bounded latency summary
+  ---
+  duration_ms: 0.5492
+  type: 'test'
+  ...
+# {"synthetic":true,"scenarios":10,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":242.889,"p95":599.687,"p99":599.687,"max":599.6870000000017,"statuses":{"clarification":4,"completed":4,"partial":2},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 33195.4691
