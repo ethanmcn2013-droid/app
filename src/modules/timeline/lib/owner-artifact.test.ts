@@ -271,3 +271,13 @@ test("review owner artifact is the approved Mara and Finn public projection", ()
     9,
   );
 });
+
+// Public settings are explicit snapshots; private node descriptions and identity never supply them.
+test('Master3 owner projection copies only explicit settings and does not leak private node ids',()=>{
+ const nodes=demoEffectiveNodes(demoWorkspace.slug).slice(0,2);
+ const settings={presentation:{market:'event' as const,onDayNote:'Public owner note'},items:{[nodes[0].id]:{note:'Public milestone note',forYou:true}}};
+ const projected=ownerProjectToTimelineDto({project:{slug:'test',name:'Test'},workspace:{ownerName:null,templateId:null},nodes,presentationSettings:settings,now:new Date('2026-10-18T00:00:00Z')});
+ assert.equal(projected.presentation?.onDayNote,'Public owner note');assert.ok(!JSON.stringify(projected).includes(nodes[0].id));assert.equal(projected.sections.flatMap(x=>x.items).find(x=>x.title===nodes[0].title)?.presentation?.note,'Public milestone note');
+ const frozen=ownerPublicationToTimelineDto({...publication,presentation:{market:'event',onDayNote:'Frozen'},items:publication.items.map((item,index)=>({...item,...(index===0?{presentation:{note:'Frozen item'}}:{})}))},new Date('2026-10-18T00:00:00Z'));
+ settings.presentation.onDayNote='Changed current plan';settings.items[nodes[0].id].note='Changed';assert.equal(frozen.presentation?.onDayNote,'Frozen');assert.equal(frozen.sections.flatMap(x=>x.items).find(item=>item.publicId===publication.items[0].publicId)?.presentation?.note,'Frozen item');
+});

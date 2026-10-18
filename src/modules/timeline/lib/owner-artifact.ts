@@ -1,3 +1,4 @@
+import type { Master3ProjectSettings } from './master3-presentation';
 import {
   AUDIENCE_ITEM_STATES,
   AUDIENCE_TIMELINE_DTO_VERSION,
@@ -24,6 +25,7 @@ export function ownerPublicationToTimelineDto(
     audienceKind: publication.audienceKind,
     publicationId: publication.id,
     label: publication.label,
+    ...(publication.presentation ? {presentation:publication.presentation} : {}),
     ...(publication.ownerDisplayLabel
       ? { ownerDisplayLabel: publication.ownerDisplayLabel }
       : {}),
@@ -45,6 +47,7 @@ export function ownerPublicationToTimelineDto(
         .sort((left, right) => left.sortOrder - right.sortOrder)
         .map((item) => ({
           publicId: item.publicId,
+          ...(item.presentation ? {presentation:item.presentation} : {}),
           title: item.title,
           ...(item.calendarDate ? { date: item.calendarDate } : {}),
           state: item.state,
@@ -88,9 +91,10 @@ export function ownerProjectToTimelineDto(input: {
   nodes: readonly EffectiveNode[];
   settings?: OwnerPreviewSettings;
   now?: Date;
+  presentationSettings?: Master3ProjectSettings;
 }): AudienceTimelineDto {
   const now = input.now ?? new Date();
-  const timezone = input.settings?.timezone ?? "Europe/Dublin";
+  const timezone = input.presentationSettings?.presentation?.timezone ?? input.settings?.timezone ?? "Europe/Dublin";
   const visible = input.nodes
     .filter((node) => !node.hidden)
     .sort((left, right) => left.sortOrder - right.sortOrder);
@@ -123,6 +127,7 @@ export function ownerProjectToTimelineDto(input: {
     publicationId:
       input.settings?.publicationId ?? `owner-preview-${input.project.slug}`,
     label: input.settings?.label ?? input.project.name,
+    ...(input.presentationSettings?.presentation ? {presentation:input.presentationSettings.presentation} : {}),
     ...((input.settings?.ownerDisplayLabel ??
     (input.workspace.ownerName
       ? `Shared by ${input.workspace.ownerName}`
@@ -149,6 +154,7 @@ export function ownerProjectToTimelineDto(input: {
       items: visible
         .map((node, index) => ({
           publicId: `owner-preview-${index + 1}`,
+          ...(input.presentationSettings?.items?.[node.id] ? {presentation:input.presentationSettings.items[node.id]} : {}),
           title: node.title,
           ...(node.targetDate ? { date: node.targetDate } : {}),
           state: node.audienceState,
