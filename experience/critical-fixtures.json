@@ -3192,7 +3192,7 @@
     "src/lib/tips.test.ts": "fe54df5f0029b596475269d7289941a384c2fc2a707065531cc4817d9fa66a4e",
     "src/lib/tips.ts": "3002f721441bdb50453d0b9d1f96a4bd7c99f6e9371a85477448f4debc326c17",
     "src/lib/ui-wave2-contract.test.ts": "247ab88a9c4e0f7e7a878b56b7723d275d18791dd76827b86c6a1b8708f900cf",
-    "src/lib/ui-wave3-contract.test.ts": "f6713fcf2848b3c571f64b0b732f7d9c9948ca1b6ddb9f0bb616f3da9c4b1b9d",
+    "src/lib/ui-wave3-contract.test.ts": "d809fa2d957276b8aa1f4b7abb1f0759d73ef7295065b446a79656f0d2a33bb3",
     "src/lib/upload-limit.ts": "f60584a0a1409e3754332dcdc50eb0f821177020695534cc9b4a05f0fb17e7db",
     "src/lib/upload-validation.ts": "349bfd19b490fd7c96b6b0f76ab7dcd1d682443b7bab779a962abeef0f8739ab",
     "src/lib/use-hydrated.ts": "8cee4c0f2a1c8b01490174fcd7177ddd375bebb69bcc09afd2062d7c7f8c9454",
@@ -4099,7 +4099,7 @@
     "src/modules/timeline/components/artifact/master3-model.ts": "18a7903b3f579b025b94a5229c11ae7213c1fe90350691c4b84be7759e0a4f45",
     "src/modules/timeline/components/artifact/master3-ui-regression.test.mjs": "2cc56fd402ec2a7ff94d896faf5f772a0959ab06e23affec96a85f5fc03ea5a1",
     "src/modules/timeline/components/artifact/timeline-follow.module.css": "c909430af4d4022b99ef8cd9ff9b13a0d7ca86ca27b7862b55b2c6fe13dfbe81",
-    "src/modules/timeline/components/artifact/timeline-follow.tsx": "9e2754a730a9191909ba6c2343413b5cc9ee1800574984da39674dddb3241086",
+    "src/modules/timeline/components/artifact/timeline-follow.tsx": "1137d7d212df2ccf0619ff43b1c779296129c9f5801b9e73d548fd9a32f9689e",
     "src/modules/timeline/lib/master3-calendar.test.ts": "75c9fa6967d339b4980506e8f7346f3420be3cc63b32e7390e121bb52960df3c",
     "src/modules/timeline/lib/master3-calendar.ts": "9beb90900ab917ee56cba5c18acedf8c4c77ca5dfdde3006b7fb7d32aa7374e6",
     "src/modules/timeline/lib/master3-presentation.test.ts": "ee52b9aea95b185828ec27cbd35f1394ffe11bdb6b8cebb831fa7061177341ff",
@@ -4115,10 +4115,11 @@
     "src/modules/timeline/server/guest-services.ts": "0d859589c2d7b24ad51915192032c4215a5b220ede19a06e2cd91364feb33989",
     "src/modules/timeline/server/master3-settings.test.ts": "6262c74e93e878275b470ac815e72e43ff3c7089c672023191a3c0c402bac8ef",
     "src/modules/timeline/server/master3-settings.ts": "18c185b073831ffe5d2bff95ce224d0283d403d58ca4aaff54eeee08b64796ec",
-    "src/modules/timeline/components/artifact/master3-follow-copy.test.ts": "6ff6e1be02e2988bdbb10cd0bfb7a3d619a60d646072105d79e506dc3fdbc268",
-    "src/modules/timeline/components/artifact/master3-follow-copy.ts": "803fc79426d54f444cb3aec9c75da5772de5f19ca05b0b9e36c8a3fdb0f9f1db",
+    "src/modules/timeline/components/artifact/master3-follow-copy.test.ts": "b014ef32958177c0d13644208b1e665165f9c2e6178c739a6718885f055ec5ad",
+    "src/modules/timeline/components/artifact/master3-follow-copy.ts": "040ccc2f8a41537de6d10d4592e0631ccd2659865537d50e0a86d6cae7185c8e",
     "src/modules/timeline/lib/master3-labels.ts": "60c1a980d9e092ddbde764883b4329bde5274db8d01d6248acd9a59811611691",
     "src/modules/timeline/server/owner-guest-summary.test.ts": "71e3c670192decccadbe4c1ee9f02440a3641fc46822dbfdf1948732b9a5c98a",
-    "src/modules/timeline/server/owner-guest-summary.ts": "e23535678c109bdb07ed5145841531b711e6750b8433534e518d4ae959513bd6"
+    "src/modules/timeline/server/owner-guest-summary.ts": "e23535678c109bdb07ed5145841531b711e6750b8433534e518d4ae959513bd6",
+    "src/modules/timeline/components/artifact/timeline-follow-focus.browser.test.mjs": "971631d747e29f8374be8fa74b1748245bc383a25ab3ff18667daa4a798df142"
   }
 }
