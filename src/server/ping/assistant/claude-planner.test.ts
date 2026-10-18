@@ -105,9 +105,26 @@ test("concrete planner validates full plan, strips internal context, honors draf
   const plan={version:"ping.assistant.v1",outcome:"plan",mode:"execute",actions:[{id:"tasks",kind:"create_tasks",project:{kind:"current"},
     tasks:Array.from({length:100},(_,i)=>({title:`Invented distinct task ${i+1}`,description:""}))},{id:"preview",kind:"preview_timeline",project:{kind:"current"}}]};
   const planner=createPingAssistantPlanner({apiKey:key,budget,fetch:(async(_url,init)=>{const body=JSON.parse(String(init?.body));bodies.push(body);
-    return response(String(body.model),{content:[{type:"text",text:JSON.stringify({plan})}]});}) as typeof fetch});
+    assert.deepEqual(body.output_config.format.schema,{type:"object",properties:{plan_json:{type:"string"}},required:["plan_json"],additionalProperties:false});
+    assert.ok(body.system.includes(JSON.stringify(ASSISTANT_PLAN_SCHEMA)));
+    return response(String(body.model),{content:[{type:"text",text:JSON.stringify({plan_json:JSON.stringify({plan})})}]});}) as typeof fetch});
   const input={runId:"run-1",requestId:"request-1",text:"Create 100 tasks and leave the timeline preview open",context:{...context,actorId:"DO-NOT-SEND",privateToken:"DO-NOT-SEND"}};
   const result=await planner.plan(input,signal());assert.equal(result.model,"claude-sonnet-5-5");assert.equal(result.plan.outcome,"plan");
   assert.equal(bodies.length,1);assert.ok(!JSON.stringify(bodies).includes("DO-NOT-SEND"));assert.equal(records[0].state,"usage_observed");
   await assert.rejects(planner.plan({...input,requestId:"request-2",mode:"draft"},signal()),/plan_invalid/);
+});
+
+test("compact envelope keeps canonical bounds, actions and decoded JSON fail closed without retry",async()=>{
+  const valid={version:"ping.assistant.v1",outcome:"plan",mode:"execute",actions:[{id:"one",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Synthetic"}]}]};
+  const cases=["not-json",JSON.stringify({plan:{...valid,actions:[{...valid.actions[0],tasks:Array.from({length:101},()=>({title:"Synthetic"}))}]}}),
+    JSON.stringify({plan:{...valid,actions:[{id:"one",kind:"publish_project",project:{kind:"current"}}]}}),
+    JSON.stringify({plan:{...valid,mode:"draft"}})];
+  for(const plan_json of cases){let calls=0;
+    const planner=createPingAssistantPlanner({apiKey:key,budget:{reserve:async()=>true,recordUsage:async()=>{}},fetch:(async()=>{calls++;
+      return response(undefined,{content:[{type:"text",text:JSON.stringify({plan_json})}]});}) as typeof fetch});
+    await assert.rejects(planner.plan({runId:"run",requestId:"request",text:"Make a task",context},signal()),/^Error: planner_/);
+    assert.equal(calls,1);
+  }
+  const original=JSON.stringify(schema);const f=fixture(async()=>response(),{planJsonEnvelope:true,instructions:"x".repeat(66_000)});
+  await assert.rejects(f.planner.plan(request(),signal()),/input_invalid/);assert.equal(f.calls.length,0);assert.equal(JSON.stringify(schema),original);
 });

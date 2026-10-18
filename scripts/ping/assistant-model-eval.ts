@@ -14,7 +14,7 @@ import { sql } from "drizzle-orm";
 import * as schema from "../../src/server/db/schema";
 import { createPingProofFixture, PROOF_PROJECT } from "../../src/server/ping/proof-fixture";
 import { assistantPayloadHash, createAssistantStore } from "../../src/server/ping/assistant/store";
-import { createClaudeAssistantPlanner, compileClaudePlannerSchema, PING_ASSISTANT_PLANNER_INSTRUCTIONS, type PlannerTier } from "../../src/server/ping/assistant/claude-planner";
+import { createClaudeAssistantPlanner, PING_ASSISTANT_PLANNER_INSTRUCTIONS, type PlannerTier } from "../../src/server/ping/assistant/claude-planner";
 import { ASSISTANT_PLAN_SCHEMA, parseAssistantPlan, resolveAssistantDate, type AssistantPlan,
   type AssistantPlannerContext, type AssistantTaskFields } from "../../src/lib/ping/assistant/contract";
 
@@ -22,6 +22,37 @@ type Model = "haiku" | "sonnet" | "opus";
 type Case = { id: string; text: string; mode?: "execute" | "draft"; context?: Partial<AssistantPlannerContext>;
   expected?: AssistantPlan; expectedOutcomes?: readonly string[]; opusSample?: boolean };
 type Manifest = { version: string; synthetic: true; context: AssistantPlannerContext; cases: Case[] };
+async function providerErrorMetadata(response: Response): Promise<{ errorType: string | null; reason: string }> {
+  const unknown = { errorType: null, reason: "unclassified" };
+  if (response.ok) return unknown;
+  const reader = response.clone().body?.getReader(); if (!reader) return unknown;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const decode = async () => {
+      const chunks: Uint8Array[] = []; let size = 0;
+      while (true) { const part = await reader.read(); if (part.done) break;
+        size += part.value.byteLength; if (size > 16_384) return unknown; chunks.push(part.value); }
+      const bytes = new Uint8Array(size); let offset = 0;
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+      const value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+      const allowed = new Set(["invalid_request_error", "authentication_error", "billing_error", "permission_error", "not_found_error",
+        "request_too_large", "rate_limit_error", "api_error", "overloaded_error"]);
+      const errorType = allowed.has(value?.error?.type) ? value.error.type as string : null;
+      const message = typeof value?.error?.message === "string" ? value.error.message.toLowerCase() : "";
+      // Return fixed labels only. Never retain provider-supplied message fragments.
+      const reason = message.includes("schema is too complex") ? "schema_complexity"
+        : message.includes("optional") && message.includes("24") ? "schema_optional_limit"
+        : message.includes("union") && message.includes("16") ? "schema_union_limit"
+        : message.includes("schema") && /unsupported|not supported/.test(message) ? "schema_unsupported"
+        : message.includes("thinking") ? "thinking_parameter"
+        : message.includes("model") ? "model_parameter"
+        : message.includes("max_tokens") ? "token_parameter" : "unclassified";
+      return { errorType, reason };
+    };
+    return await Promise.race([decode(), new Promise<typeof unknown>(resolve => { timer = setTimeout(() => resolve(unknown), 2000); })]);
+  } catch { return unknown; }
+  finally { clearTimeout(timer); void reader.cancel().catch(() => {}); }
+}
 const MAX_ATTEMPTS = 60, CAP_MICRO_USD = 5_000_000;
 const fixed = (value: unknown): string => JSON.stringify(value, (_key, item) => item && typeof item === "object" && !Array.isArray(item)
   ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item);
@@ -148,7 +179,7 @@ async function main() {
   const database = drizzle(proof.client, { schema }), store = createAssistantStore(database);
   const controller = new AbortController();
   const stop = () => controller.abort(); process.once("SIGINT", stop); process.once("SIGTERM", stop);
-  const schemaValue = compileClaudePlannerSchema({ type: "object", properties: { plan: ASSISTANT_PLAN_SCHEMA }, required: ["plan"], additionalProperties: false });
+  const schemaValue = { type: "object", properties: { plan: ASSISTANT_PLAN_SCHEMA }, required: ["plan"], additionalProperties: false };
   let passed = 0, failed = 0, dispatched = 0, stoppedForSafety = false;
   try {
     // The only live credential read occurs here, after admission/output/fixture setup.
@@ -175,7 +206,7 @@ async function main() {
         const rawId = response.headers.get("request-id");
         const providerRequestId = rawId && /^req_[A-Za-z0-9_-]{1,100}$/.test(rawId) ? rawId : null;
         await append({ event: "provider_transport", runId, caseId: item.id, outcome: "response_received",
-          status: response.status, providerRequestId });
+          status: response.status, providerRequestId, ...await providerErrorMetadata(response) });
         return response;
       }
         : async (_url, init) => {
@@ -184,9 +215,9 @@ async function main() {
           assert.equal(request.messages.length, 1); assert.ok(request.system.includes("finite Ping assistant plan"));
           const plan = item.expected ?? { version: "ping.assistant.v1", outcome: item.expectedOutcomes![0], message: "Synthetic refusal or clarification" };
           return Response.json({ type: "message", role: "assistant", model: request.model, stop_reason: "end_turn",
-            content: [{ type: "text", text: JSON.stringify({ plan }) }], usage: { input_tokens: 1000, output_tokens: 500 } });
+            content: [{ type: "text", text: JSON.stringify({ plan_json: JSON.stringify({ plan }) }) }], usage: { input_tokens: 1000, output_tokens: 500 } });
         };
-      const planner = createClaudeAssistantPlanner<AssistantPlan>({ apiKey, fetch: transport, budget: store.budget, schema: schemaValue,
+      const planner = createClaudeAssistantPlanner<AssistantPlan>({ apiKey, fetch: transport, budget: store.budget, schema: schemaValue, planJsonEnvelope: true,
         instructions: PING_ASSISTANT_PLANNER_INSTRUCTIONS, allowEvaluation: model === "opus", deadlineMs: 60_000,
         validate: value => {
           if (!value || typeof value !== "object" || Object.keys(value).length !== 1 || !("plan" in value)) return null;
@@ -234,8 +265,9 @@ async function main() {
     }
     const rows = await database.all<{ reserved: number; estimated: number; unknown: number }>(sql`SELECT COALESCE(SUM(reserved_micro_usd),0) reserved,
       COALESCE(SUM(estimated_micro_usd),0) estimated, SUM(CASE WHEN usage_state='unknown' THEN 1 ELSE 0 END) unknown FROM assistant_runs`);
-    // Actual semantic attempts count admitted planner invocations; planned count preserves the denominator.
-    const summary = { synthetic: true, live: options.live, plannedSemanticAttempts: attempts.length, semanticAttempts: dispatched,
+    // Exclude the deliberate HTTP-failure self-test from semantic attempts.
+    const summary = { synthetic: true, live: options.live, plannedSemanticAttempts: attempts.length,
+      semanticAttempts: dispatched - (!options.live && !stoppedForSafety ? 1 : 0),
       expectedFailureSelfTests: !options.live && !stoppedForSafety ? 1 : 0, passed, failed, dispatched,
       interrupted: controller.signal.aborted, stoppedForSafety, budget: rows[0], estimatesAreNotBilling: true };
     await append({ event: "evaluation_finished", ...summary });

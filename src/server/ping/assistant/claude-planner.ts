@@ -45,14 +45,16 @@ const object = (value: unknown): value is Record<string, unknown> => typeof valu
 export function createClaudeAssistantPlanner<Plan>(options: {
   apiKey: string; fetch: typeof fetch; budget: PlannerBudgetPort; schema: Readonly<Record<string, unknown>>;
   instructions: string; validate: (value: unknown, request: PlannerRequest) => Plan | null;
-  allowEvaluation?: boolean; deadlineMs?: number;
+  allowEvaluation?: boolean; deadlineMs?: number; planJsonEnvelope?: boolean;
 }): AssistantPlannerPort<Plan> {
   if (!options.apiKey || !/^[\x21-\x7e]{16,512}$/.test(options.apiKey) || typeof options.fetch !== "function" ||
     typeof options.validate !== "function" || !object(options.schema) || !options.instructions ||
     !Number.isInteger(options.deadlineMs ?? 60_000) || (options.deadlineMs ?? 60_000) < 1 || (options.deadlineMs ?? 60_000) > 120_000)
     throw new Error("planner_configuration_invalid");
   const schema = JSON.parse(JSON.stringify(options.schema));
-  const {apiKey, fetch: fetchResponse, budget, instructions, validate} = options;
+  const wireSchema = options.planJsonEnvelope ? {type:"object",properties:{plan_json:{type:"string"}},required:["plan_json"],additionalProperties:false} : schema;
+  const wireInstructions = options.planJsonEnvelope ? `${options.instructions} Encode the complete response object as JSON in the single plan_json string. The decoded object must satisfy this canonical schema: ${JSON.stringify(schema)}` : options.instructions;
+  const {apiKey, fetch: fetchResponse, budget, validate} = options;
   const allowEvaluation = options.allowEvaluation === true, deadlineMs = options.deadlineMs ?? 60_000;
   let physicalBusy = false;
   return { async plan(request, signal) {
@@ -67,8 +69,8 @@ export function createClaudeAssistantPlanner<Plan>(options: {
     const reservation = plannerReservation({runId:request.runId, requestId:request.requestId, model,
       inputTokenUpperBound:INPUT_CONTEXT_CEILING, maxOutputTokens});
     const body = JSON.stringify({model, max_tokens:maxOutputTokens, stream:false,
-      system:instructions, messages:[{role:"user", content:JSON.stringify({text:request.text, context:request.context})}],
-      output_config:{format:{type:"json_schema", schema}},
+      system:wireInstructions, messages:[{role:"user", content:JSON.stringify({text:request.text, context:request.context})}],
+      output_config:{format:{type:"json_schema", schema:wireSchema}},
       ...(model === "claude-haiku-5-5" ? {thinking:{type:"disabled"}} : {thinking:{type:"adaptive"}})});
     if (Buffer.byteLength(body,"utf8") > REQUEST_BYTES || body.includes(apiKey)) throw new Error("planner_input_invalid");
     physicalBusy = true;
@@ -111,7 +113,12 @@ export function createClaudeAssistantPlanner<Plan>(options: {
         if (textBlocks.length !== 1 || !object(textBlocks[0]) || typeof textBlocks[0].text !== "string" ||
           value.content.some(block=>!object(block)||!["text","thinking","redacted_thinking"].includes(String(block.type))) ||
           textBlocks[0].text.includes(apiKey)) throw new Error("planner_response_invalid");
-        const plan = validate(JSON.parse(textBlocks[0].text),request);
+        let decoded = JSON.parse(textBlocks[0].text);
+        if(options.planJsonEnvelope){
+          if(!object(decoded)||Object.keys(decoded).length!==1||typeof decoded.plan_json!=="string")throw new Error("planner_plan_invalid");
+          decoded=JSON.parse(decoded.plan_json);
+        }
+        const plan = validate(decoded,request);
         if (plan === null) throw new Error("planner_plan_invalid");
         if (stopped || signal.aborted) throw new Error("planner_cancelled");
         return {plan,model,requestId:request.requestId,usage};
@@ -179,8 +186,8 @@ export const PING_ASSISTANT_PLANNER_INSTRUCTIONS="Turn the entire user request i
 export function createPingAssistantPlanner(options: {
   apiKey:string;fetch:typeof fetch;budget:PlannerBudgetPort;deadlineMs?:number;
 }):PingAssistantPlannerPort {
-  const wire=compileClaudePlannerSchema({type:"object",properties:{plan:ASSISTANT_PLAN_SCHEMA},required:["plan"],additionalProperties:false});
-  const planner=createClaudeAssistantPlanner<AssistantPlan>({...options,schema:wire,instructions:PING_ASSISTANT_PLANNER_INSTRUCTIONS,
+  const wire={type:"object",properties:{plan:ASSISTANT_PLAN_SCHEMA},required:["plan"],additionalProperties:false};
+  const planner=createClaudeAssistantPlanner<AssistantPlan>({...options,schema:wire,planJsonEnvelope:true,instructions:PING_ASSISTANT_PLANNER_INSTRUCTIONS,
     validate:(value,request)=>{
       if(!object(value)||Object.keys(value).length!==1||!Object.hasOwn(value,"plan"))return null;
       const plan=parseAssistantPlan(value.plan);
