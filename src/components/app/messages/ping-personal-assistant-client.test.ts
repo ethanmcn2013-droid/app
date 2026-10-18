@@ -159,6 +159,16 @@ test("unmount or actor invalidation cannot be overwritten by late network settle
   assert.deepEqual(ended, ["context_invalidated"]); assert.equal(timing.receivedAt, undefined);
 });
 
+test("lifecycle closure also terminates the physical request's diagnostics while its product promise stays owned", async () => {
+  const { timing, ended, events } = trace(); let settled = false;
+  const request = assistantRequest("", undefined, undefined, timing, { fetcher: () => new Promise<Response>(() => {}) });
+  void request.then(() => { settled = true; }, () => { settled = true; });
+  finishAssistantTiming(timing, "context_invalidated"); await tick();
+  assert.equal(settled, false); assert.deepEqual(ended, ["context_invalidated"]);
+  assert.equal(events.filter(event => event.stage === "request" && event.outcome === "context_invalidated").length, 1);
+  assert.ok(!events.some(event => event.stage === "receipt"));
+});
+
 test("body-read failure and a fetcher ignoring abort do not leave diagnostic attempts open", async () => {
   const broken = trace(); let calls = 0;
   await assert.rejects(assistantRequest("", undefined, undefined, broken.timing, { fetcher: async () => {
@@ -170,6 +180,35 @@ test("body-read failure and a fetcher ignoring abort do not leave diagnostic att
   const request = assistantRequest("", undefined, controller.signal, cancelled.timing, { fetcher: () => new Promise(resolve => { settle = resolve; }) });
   controller.abort(); settle(reply()); await request;
   assert.deepEqual(cancelled.ended, ["cancelled"]);
+});
+
+test("abort closes history and closed-attempt recovery diagnostics even when fetch or body never settles", async () => {
+  const savedFlag = process.env.NEXT_PUBLIC_PING_TELEMETRY_ENABLED, savedFetch = globalThis.fetch;
+  const events: PingTelemetryEvent[] = [];
+  process.env.NEXT_PUBLIC_PING_TELEMETRY_ENABLED = "1";
+  globalThis.fetch = async (url, init) => {
+    assert.equal(String(url), "/api/ping/telemetry");
+    events.push(...JSON.parse(String(init?.body)).events);
+    return new Response(null, { status: 202 });
+  };
+  try {
+    for (const phase of ["fetch", "body"] as const) for (const parentState of ["none", "closed"] as const) {
+      const before = events.length, controller = new AbortController(); let settled = false, calls = 0;
+      const parent = parentState === "closed" ? trace().timing : undefined;
+      if (parent) finishAssistantTiming(parent, "unknown");
+      const request = assistantRequest("", undefined, controller.signal, parent, { fetcher: async () => {
+        calls++;
+        return phase === "fetch" ? new Promise<Response>(() => {}) : new Response(new ReadableStream());
+      } });
+      void request.then(() => { settled = true; }, () => { settled = true; });
+      await tick(); controller.abort(); await tick(); await tick();
+      const captured = events.slice(before);
+      assert.equal(calls, 1); assert.equal(settled, false);
+      assert.equal(captured.filter(event => event.stage === "attempt" && event.outcome === "cancelled").length, 1);
+      assert.equal(captured.filter(event => event.stage === "request" && event.outcome === "cancelled").length, 1);
+      assert.ok(!captured.some(event => event.stage === "receipt"));
+    }
+  } finally { globalThis.fetch = savedFetch; if (savedFlag === undefined) delete process.env.NEXT_PUBLIC_PING_TELEMETRY_ENABLED; else process.env.NEXT_PUBLIC_PING_TELEMETRY_ENABLED = savedFlag; }
 });
 
 test("default-off reads add no correlation headers and still make exactly one product request", async () => {

@@ -33,6 +33,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
   const generation = useRef(0);
   const latch = useRef(false);
   const visibleTiming = useRef<AssistantVisibleTiming | null>(null);
+  const lookupAbort = useRef<AbortController | null>(null);
   const historyRef = useRef<HTMLDivElement>(null);
   const keepPending = useCallback((next: PendingAssistantRequest | null) => {
     const key = pendingAssistantKey(actorId);
@@ -61,13 +62,14 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
     latch.current = true; setBusy(true); setError(null);
     const epoch = generation.current;
     const timing = visibleTiming.current?.requestId === pendingRef.current.requestId ? visibleTiming.current : null;
+    const controller = new AbortController(); lookupAbort.current = controller;
     try {
-      const response = await assistantRequest(queryFor(pendingRef.current), undefined, undefined, timing);
+      const response = await assistantRequest(queryFor(pendingRef.current), undefined, controller.signal, timing);
       if (!mounted.current || epoch !== generation.current) return;
       const accepted = receive(response);
       if (!accepted.run) { setAbsent(true); setError("The original request is not recorded yet. Check again before starting another request."); }
     } catch (failure) { finishAssistantTiming(timing, "unknown"); if (mounted.current && epoch === generation.current) setError(failure instanceof Error ? failure.message : "The original result could not be checked."); }
-    finally { if (epoch === generation.current) { latch.current = false; if (mounted.current) setBusy(false); } }
+    finally { if (lookupAbort.current === controller) lookupAbort.current = null; if (epoch === generation.current) { latch.current = false; if (mounted.current) setBusy(false); } }
   }, [receive]);
   useEffect(() => {
     mounted.current = true;
@@ -92,6 +94,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
       } catch (failure) { if (!controller.signal.aborted && mounted.current && epoch === generation.current) setError(failure instanceof Error ? failure.message : "Ping could not load your saved requests."); }
     })();
     return () => { mounted.current = false; generation.current = epoch + 1; controller.abort();
+      lookupAbort.current?.abort(); lookupAbort.current = null;
       finishAssistantTiming(visibleTiming.current, "context_invalidated");
       visibleTiming.current = null;
     };

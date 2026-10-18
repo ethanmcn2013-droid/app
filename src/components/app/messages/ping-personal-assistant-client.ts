@@ -64,10 +64,11 @@ export function assistantNavigationTarget(operation: "submit" | "apply" | "resum
 }
 
 
-export type AssistantVisibleTiming = { requestId: string; startedAt: number; receivedAt?: number; recorder: PingTelemetryRecorder | null; endAttempt: PingTelemetryEnd; done: boolean };
+export type AssistantVisibleTiming = { requestId: string; startedAt: number; receivedAt?: number; recorder: PingTelemetryRecorder | null; endAttempt: PingTelemetryEnd; requestEnd?: PingTelemetryEnd; done: boolean };
 export function finishAssistantTiming(timing: AssistantVisibleTiming | null | undefined, outcome: PingTelemetryOutcome) {
   if (!timing || timing.done) return;
   timing.done = true;
+  try { timing.requestEnd?.(outcome); } catch { /* Closes diagnostics, never the physical product promise. */ }
   try { timing.endAttempt(outcome); } catch { /* Diagnostic only; never affects request ownership. */ }
 }
 function elapsed(start: number | undefined, now: () => number): number | null {
@@ -86,6 +87,18 @@ export async function assistantRequest(query = "", command?: AssistantApiCommand
   const now = dependencies.now ?? (() => performance.now());
   let startedAt: number | undefined;
   try { startedAt = now(); } catch { /* Missing clock is not zero latency. */ }
+  let diagnosticClosed = false;
+  const closeRequest: PingTelemetryEnd = outcome => {
+    diagnosticClosed = true;
+    endRequest(outcome); endDecode?.(outcome); endAttempt?.(outcome);
+  };
+  if (timing && !ownsAttempt) timing.requestEnd = closeRequest;
+  const onAbort = () => {
+    closeRequest("cancelled");
+    if (!ownsAttempt) finishAssistantTiming(timing, "cancelled");
+  };
+  signal?.addEventListener("abort", onAbort, { once: true });
+  if (signal?.aborted) onAbort();
   try {
     const response = await (dependencies.fetcher ?? fetch)(`/api/ping/assistant${query}`, {
       method: command ? "POST" : "GET", credentials: "same-origin", cache: "no-store", signal,
@@ -93,14 +106,13 @@ export async function assistantRequest(query = "", command?: AssistantApiCommand
       ...(command ? { body: JSON.stringify(command) } : {}),
     });
     const body = await response.text();
-    endRequest("completed");
-    endDecode = pingTelemetryBegin(recorder, "decode");
+    if (!diagnosticClosed) { endRequest("completed"); endDecode = pingTelemetryBegin(recorder, "decode"); }
     const value = parseAssistantApiResponse(JSON.parse(body));
     if (!value) throw new Error("Ping's response could not be read. Check the original request before trying again.");
-    endDecode("completed");
+    endDecode?.("completed");
     const outcome: PingTelemetryOutcome = signal?.aborted ? "cancelled" : value.ok ? "completed" : value.code === "unauthenticated" ? "unauthenticated" :
       value.code === "invalid_input" ? "invalid_input" : value.code === "unavailable" || value.code === "temporarily_unavailable" ? "unavailable" : "failed";
-    pingTelemetryRecord(recorder, { stage: "receipt", outcome, durationMs: elapsed(startedAt, now) });
+    if (!diagnosticClosed) pingTelemetryRecord(recorder, { stage: "receipt", outcome, durationMs: elapsed(startedAt, now) });
     if (timing && !timing.done) { try { timing.receivedAt = now(); } catch { timing.receivedAt = undefined; } }
     if ((!value.ok || signal?.aborted) && !ownsAttempt) finishAssistantTiming(timing, outcome);
     endAttempt?.(outcome);
@@ -110,6 +122,9 @@ export async function assistantRequest(query = "", command?: AssistantApiCommand
     endRequest(outcome); endDecode?.(outcome); endAttempt?.(outcome);
     if (!ownsAttempt) finishAssistantTiming(timing, outcome);
     throw failure;
+  } finally {
+    signal?.removeEventListener("abort", onAbort);
+    if (timing?.requestEnd === closeRequest) delete timing.requestEnd;
   }
 }
 /** Called after the matching result commits. A frame is a render opportunity, never proof of paint. */
