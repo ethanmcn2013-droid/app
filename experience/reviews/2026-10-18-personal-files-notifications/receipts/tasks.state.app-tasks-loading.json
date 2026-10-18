@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-tasks-loading",
+  "source": "tasks/src/app/app/tasks/loading.tsx",
+  "materialityHash": "12140b4bae611a58",
+  "reviewedAt": "2026-10-18",
+  "reviewer": "Independent agent task /root/canonical_capture_receiving",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-a8cef223f0403d92f3db0fc7-757e84ba2d749b4b.json",
+    "attestationSha256": "9f0a335280a629b41e11e5ca4b890c69a742cda52565faff5fedb2263b7e78c4",
+    "runId": "tasks-playwright-a8cef223f0403d92f3db0fc7",
+    "canonicalEvidenceSha256": "a8cef223f0403d92f3db0fc7493196dbcb4ff68d86fa6cd443c03957ee0ebcb7",
+    "rawArtifactSha256": "757e84ba2d749b4b4a875bb81084107a4d92e9016e9c1c5f0ac18beea8f89b44",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-tasks-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh exact-candidate canonical capture after compact personal files and independently reviewed notification collision correction.",
+  "decision": "Acceptance is limited to visually inspected synthetic/demo receiving states for these 18 mapped fixtures at mobile, tablet, desktop, and wide. This is not authentication, production/provider/Google Drive behavior or continuity, deployment acceptance, full feature approval, human utility evidence, or a 9.5/design score. Known limits: The preview-only whole-page .signal-devbanner remains visible and overlays lower content on mobile, including the chat composer. It is distinct from .signal-toast and unchanged from base 90488477; retain this composer occlusion as an explicit known limit.; The tasks.page.welcome capture covers only unavailable explicit-project recovery and its Open Home action; it does not establish a successful project grant or authentication flow.; The tasks.resources.drive-upload capture shows the Task detail Files and links / Attach file surface only; it does not establish actual upload or Google Drive provider behavior.; Loading and error screenshots prove only the specified synthetic fixture renderings and recovery affordances.; A 204/204 attestation and passing mapped results are candidate browser evidence, not independent proof of live production behavior, registry or stale receipt freshness, or broader required-state coverage."
+}

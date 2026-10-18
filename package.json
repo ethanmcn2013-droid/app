@@ -22,6 +22,7 @@
     "experience:review": "node scripts/experience/review-materiality.mjs",
     "experience:validate": "node scripts/experience/validate.mjs",
     "experience:test": "playwright test --config experience/playwright.config.ts && node scripts/experience/attest-playwright.mjs --verify-receipts",
+    "test:personal-chat-files:browser": "playwright test --config experience/personal-chat-files-browser/playwright.config.ts",
     "experience:test:timeline-switcher": "playwright test --config experience/timeline-switcher.playwright.config.ts",
     "experience:test:utility-navigation": "playwright test --config experience/utility-navigation.playwright.config.ts",
     "experience:test:project-switch": "playwright test --config experience/project-switch.playwright.config.ts",

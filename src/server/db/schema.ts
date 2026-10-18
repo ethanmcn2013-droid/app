@@ -1915,3 +1915,23 @@ export const personalChatMessages = sqliteTable("personal_chat_messages", {
   index("idx_personal_chat_owner_created").on(table.ownerId, table.createdAt, table.id),
   check("personal_chat_request_hash", sql`length(${table.requestHash}) = 64`),
 ]);
+
+/** Private file claims retain exact cleanup custody after owner erasure. */
+export const personalChatAttachments = sqliteTable("personal_chat_attachments", {
+  id: text("id").primaryKey(), ownerId: text("owner_id").notNull(), messageId: text("message_id"), position: integer("position"),
+  clientRequestId: text("client_request_id").notNull(), requestHash: text("request_hash").notNull(),
+  filename: text("filename").notNull(), mimeType: text("mime_type").notNull(), sizeBytes: integer("size_bytes").notNull(),
+  backend: text("backend").$type<"disk" | "blob">().notNull(), storeIdentity: text("store_identity").notNull(), storageKey: text("storage_key").notNull(), storedPath: text("stored_path"),
+  state: text("state").$type<"uploading" | "ready" | "bound" | "cleanup" | "deleted">().notNull(),
+  writerSettled: integer("writer_settled").notNull().default(0), custodyUntil: integer("custody_until").notNull(),
+  expiresAt: integer("expires_at").notNull(), createdAt: integer("created_at").notNull(),
+}, table => [
+  uniqueIndex("idx_personal_chat_attachment_request").on(table.ownerId, table.clientRequestId),
+  index("idx_personal_chat_attachment_owner").on(table.ownerId, table.state, table.createdAt),
+  index("idx_personal_chat_attachment_message").on(table.ownerId, table.messageId, table.position),
+  check("personal_chat_attachment_state", sql`${table.state} IN ('uploading','ready','bound','cleanup','deleted')`),
+  check("personal_chat_attachment_backend", sql`${table.backend} IN ('disk','blob')`),
+  check("personal_chat_attachment_bytes", sql`${table.sizeBytes} > 0 AND ${table.sizeBytes} <= 2097152`),
+  check("personal_chat_attachment_hash", sql`length(${table.requestHash})=64`),
+  check("personal_chat_attachment_binding", sql`(${table.state}='bound' AND ${table.messageId} IS NOT NULL AND ${table.position} IS NOT NULL) OR ${table.state}!='bound'`),
+]);

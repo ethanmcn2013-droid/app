@@ -14,6 +14,7 @@ import { ChatIcon } from "./chat-ui";
 import styles from "./floating-chat.module.css";
 import { parseFloatingChatTarget, type ChatNavigationTarget } from "./chat-navigation";
 import { ChatCatalogUnavailable } from "./chat-catalog-unavailable";
+import { useFloatingChatViewport } from "./use-floating-chat-viewport";
 
 type RequestedConversation = ChatNavigationTarget;
 type ChatContext = { registerPage: (node: HTMLDivElement | null, requested?: RequestedConversation, unavailable?: boolean) => void };
@@ -59,6 +60,7 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
   const mobile = useSyncExternalStore(subscribeMobile, () => window.matchMedia(mobileQuery).matches, () => false);
   const bare = isBareChromePath(pathname ?? "");
   const visible = !bare && (open || !!page);
+  const viewportBounds = useFloatingChatViewport(visible && !page);
   const availableProjects = requested.projectId && requested.projectName && !projects.some((project) => project.id === requested.projectId)
     ? [...projects, { id: requested.projectId, name: requested.projectName }] : projects;
   const registerPage = useCallback((node: HTMLDivElement | null, next?: RequestedConversation, unavailable?: boolean) => {
@@ -106,10 +108,27 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
     const element = document.documentElement;
     if (!visible || page) return;
     element.dataset.floatingChatOpen = "true";
-    const measure = () => element.style.setProperty("--signal-floating-chat-width", `${panel.current?.getBoundingClientRect().width ?? 760}px`);
+    const measure = () => {
+      const rect = panel.current?.getBoundingClientRect();
+      element.style.setProperty("--signal-floating-chat-width", `${rect?.width ?? 500}px`);
+      // Notifications on narrow screens fit above the actual panel, including
+      // when the visual keyboard moves it without changing its width.
+      element.style.setProperty("--signal-floating-chat-top", `${Math.max(0, rect?.top ?? 0)}px`);
+    };
     measure(); const observer = new ResizeObserver(measure); if (panel.current) observer.observe(panel.current);
-    return () => { observer.disconnect(); delete element.dataset.floatingChatOpen; element.style.removeProperty("--signal-floating-chat-width"); };
-  }, [visible, page]);
+    window.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("scroll", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("scroll", measure);
+      delete element.dataset.floatingChatOpen;
+      element.style.removeProperty("--signal-floating-chat-width");
+      element.style.removeProperty("--signal-floating-chat-top");
+    };
+  }, [visible, page, viewportBounds]);
 
   return <Context.Provider value={context}>{children}
     {!bare && !visible ? <button aria-label="Open chat" title="Open chat" className={styles.launcher} onClick={() => show()} ref={launcher} type="button"><ChatIcon.thread size={22} /></button> : null}
@@ -122,8 +141,8 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
         if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
-    }} ref={panel} role={page ? "main" : mobile ? "dialog" : "region"} style={page ? bounds : undefined} tabIndex={-1}>
-      <header className={styles.head}><div className={styles.tabs} aria-label="Chat type"><button aria-pressed={tab === "project"} onClick={() => setTab("project")} type="button">Conversations</button><button aria-pressed={tab === "self"} onClick={() => setTab("self")} type="button">{actorName} <span>(you)</span></button></div><div className={styles.headActions}>{!page ? <Link aria-label="Open chat in full view" data-chat-full-page href="/app/messages" title="Full view"><ChatIcon.panel /></Link> : null}{!page ? <button aria-label="Close chat" onClick={close} title="Close chat · your draft stays here" type="button"><ChatIcon.close /></button> : null}</div></header>
+    }} ref={panel} role={page ? "main" : mobile ? "dialog" : "region"} style={page ? bounds : viewportBounds} tabIndex={-1}>
+      <div className={styles.head}><div className={styles.tabs} aria-label="Chat type"><button aria-pressed={tab === "project"} onClick={() => setTab("project")} type="button">Conversations</button><button aria-pressed={tab === "self"} onClick={() => setTab("self")} type="button">{actorName} <span>(you)</span></button></div><div className={styles.headActions}>{!page ? <Link aria-label="Open chat in full view" data-chat-full-page href="/app/messages" title="Full view"><ChatIcon.panel /></Link> : null}{!page ? <button aria-label="Close chat" onClick={close} title="Close chat · your draft stays here" type="button"><ChatIcon.close /></button> : null}</div></div>
       <div className={styles.body} hidden={tab !== "project"} inert={tab !== "project"}>{demoSnapshot
         ? <DemoMessagesApp embedded requestedConversationId={requested.demoId} snapshot={demoSnapshot} visible={visible && tab === "project"} />
         : catalogUnavailable || pageCatalogUnavailable ? <ChatCatalogUnavailable className={styles.personalIntro} retrying={catalogRetrying} onRetry={() => startCatalogRetry(() => router.refresh())} />

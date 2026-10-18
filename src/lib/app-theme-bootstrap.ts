@@ -1,7 +1,7 @@
 import { APP_BAR_DARK, APP_BAR_LIGHT } from "./document-paper";
 import { resolveThemeChoice, THEME_EVENT, THEME_STORAGE_KEY, type ThemeChoice } from "./theme-mode";
 
-type ThemeConfiguration = Readonly<{ event: string; storageKey: string; darkBar: string; lightBar: string }>;
+type ThemeConfiguration = Readonly<{ event: string; storageKey: string; darkBar: string; lightBar: string; metaProperty: string }>;
 export type AppThemeRuntime = { apply: () => void; retain: () => () => void; dispose: () => void };
 export type AppThemeHost = Pick<Window, "document" | "localStorage" | "matchMedia" | "setTimeout" | "clearTimeout" | "addEventListener" | "removeEventListener" | "dispatchEvent"> & {
   Event: typeof Event;
@@ -10,6 +10,7 @@ export type AppThemeHost = Pick<Window, "document" | "localStorage" | "matchMedi
 
 export const APP_THEME_CONFIGURATION: ThemeConfiguration = {
   event: THEME_EVENT, storageKey: THEME_STORAGE_KEY, darkBar: APP_BAR_DARK, lightBar: APP_BAR_LIGHT,
+  metaProperty: "signal:app-theme",
 };
 
 /**
@@ -24,6 +25,13 @@ export function installAppTheme(host: AppThemeHost, config: ThemeConfiguration, 
   const document = host.document;
   const element = document.documentElement;
   const motion = host.matchMedia("(prefers-reduced-motion:reduce)");
+  // React includes `property` in a hoistable meta's identity. A data-* marker
+  // alone is insufficient: React can adopt that node for Next's ordinary
+  // viewport meta, then try to delete it after our cleanup already removed it.
+  // This private identity belongs only to this runtime; Next's viewport meta
+  // remains a separate resource, including when both colors are identical.
+  const metaSelector = `meta[name="theme-color"][property="${config.metaProperty}"][data-app-theme]`;
+  let ownedMeta: HTMLMetaElement | null = null;
   let timer: number | undefined;
   let owners = 0;
   let disposed = false;
@@ -43,13 +51,15 @@ export function installAppTheme(host: AppThemeHost, config: ThemeConfiguration, 
         element.setAttribute("data-theme", theme);
       }
       // Repair metadata even if the theme itself was already correct.
-      let meta = document.querySelector("meta[data-app-theme]");
-      if (!meta && document.head) {
-        meta = document.createElement("meta");
-        meta.setAttribute("name", "theme-color"); meta.setAttribute("data-app-theme", "");
-        document.head.insertBefore(meta, document.head.firstChild);
+      ownedMeta = document.querySelector<HTMLMetaElement>(metaSelector);
+      if (!ownedMeta && document.head) {
+        ownedMeta = document.createElement("meta");
+        ownedMeta.setAttribute("name", "theme-color");
+        ownedMeta.setAttribute("property", config.metaProperty);
+        ownedMeta.setAttribute("data-app-theme", "");
+        document.head.insertBefore(ownedMeta, document.head.firstChild);
       }
-      meta?.setAttribute("content", theme === "light" ? config.lightBar : config.darkBar);
+      ownedMeta?.setAttribute("content", theme === "light" ? config.lightBar : config.darkBar);
     },
     retain() {
       owners += 1;
@@ -65,7 +75,12 @@ export function installAppTheme(host: AppThemeHost, config: ThemeConfiguration, 
       disposed = true;
       host.removeEventListener(config.event, runtime.apply);
       host.clearTimeout(timer); element.classList.remove("theme-resolving");
-      document.querySelector("meta[data-app-theme]")?.remove();
+      // Remove only the exact private resource this runtime used. A foreign
+      // marker, or a node whose identity changed hands, is not ours to remove.
+      if (ownedMeta?.getAttribute("name") === "theme-color"
+        && ownedMeta.getAttribute("property") === config.metaProperty
+        && ownedMeta.hasAttribute("data-app-theme")) ownedMeta.remove();
+      ownedMeta = null;
       element.removeAttribute("data-theme"); element.removeAttribute("data-theme-mode");
       if (host.__signalAppThemeRuntime === runtime) delete host.__signalAppThemeRuntime;
     },

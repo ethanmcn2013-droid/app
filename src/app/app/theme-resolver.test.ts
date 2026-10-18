@@ -117,9 +117,9 @@ function makeDocument(options: {
   // is already there when the resolver runs, as it is in the real document.
   type Meta = { attrs: Map<string, string> };
   const head: Meta[] = [];
-  const makeMeta = (): Meta & { setAttribute: (n: string, v: string) => void; remove: () => void } => {
+  const makeMeta = (): Meta & { setAttribute: (n: string, v: string) => void; getAttribute: (n: string) => string | null; hasAttribute: (n: string) => boolean; remove: () => void } => {
     const attrs = new Map<string, string>();
-    const meta = { attrs, setAttribute: (n: string, v: string) => void attrs.set(n, String(v)), remove: () => { const at = head.indexOf(meta); if (at >= 0) head.splice(at, 1); } };
+    const meta = { attrs, setAttribute: (n: string, v: string) => void attrs.set(n, String(v)), getAttribute: (n: string) => attrs.get(n) ?? null, hasAttribute: (n: string) => attrs.has(n), remove: () => { const at = head.indexOf(meta); if (at >= 0) head.splice(at, 1); } };
     return meta;
   };
   const staticMeta = makeMeta();
@@ -155,10 +155,12 @@ function makeDocument(options: {
         },
       },
       querySelector: (selector: string) => {
-        if (selector !== "meta[data-app-theme]") {
+        if (selector !== 'meta[name="theme-color"][property="signal:app-theme"][data-app-theme]') {
           throw new Error(`the resolver asked for an unmodelled selector: ${selector}`);
         }
-        return head.find((meta) => meta.attrs.has("data-app-theme")) ?? null;
+        return head.find((meta) => meta.attrs.get("name") === "theme-color"
+          && meta.attrs.get("property") === APP_THEME_CONFIGURATION.metaProperty
+          && meta.attrs.has("data-app-theme")) ?? null;
       },
       createElement: (tag: string) => {
         if (tag !== "meta") throw new Error(`the resolver made an unmodelled element: ${tag}`);
@@ -263,6 +265,15 @@ function makeDocument(options: {
     barColours: () =>
       head.filter((meta) => meta.attrs.get("name") === "theme-color").map((meta) => meta.attrs.get("content")),
     ownMetaCount: () => head.filter((meta) => meta.attrs.has("data-app-theme")).length,
+    metaNodes: () => [...head],
+    viewportMeta: () => staticMeta,
+    addForeignMarkedMeta: () => {
+      const meta = makeMeta();
+      meta.setAttribute("name", "theme-color"); meta.setAttribute("data-app-theme", "");
+      meta.setAttribute("property", "other:owner"); meta.setAttribute("content", "#123456");
+      head.unshift(meta);
+      return meta;
+    },
   };
 }
 
@@ -627,6 +638,58 @@ describe("the shared SSR and client bootstrap", () => {
     dom.removeOwnMeta(); runtime.apply();
     assert.equal(dom.themeWrites(), 1); assert.equal(dom.resolving(), false);
     assert.equal(dom.ownMetaCount(), 1); assert.equal(dom.barColours()[0], APP_BAR_LIGHT);
+  });
+
+  it("keeps the App bar and Next viewport as independently owned metadata, even for the same color", () => {
+    for (const choice of ["dark", "light"] as const) {
+      const dom = makeDocument({ stored: choice });
+      const viewport = dom.viewportMeta();
+      const runtime = dom.run(RESOLVER) as ReturnType<typeof installAppTheme>;
+      const release = runtime.retain();
+      const appMeta = dom.metaNodes()[0];
+      assert.equal(appMeta.attrs.get("name"), "theme-color", "browser metadata keeps its standard name");
+      assert.equal(appMeta.attrs.get("property"), "signal:app-theme", "React's resource identity distinguishes this node");
+      assert.notEqual(appMeta, viewport);
+      assert.equal(viewport.attrs.get("property"), undefined);
+      assert.equal(viewport.attrs.get("content"), APP_BAR_DARK, "the runtime never rewrites Next's viewport resource");
+      assert.equal(dom.barColours()[0], choice === "light" ? APP_BAR_LIGHT : APP_BAR_DARK);
+      release();
+      assert.deepEqual(dom.metaNodes(), [viewport], "cleanup leaves the original viewport node attached and unchanged");
+    }
+  });
+
+  it("replays StrictMode retain/release synchronously without borrowing a metadata node or a timer", () => {
+    const dom = makeDocument({ stored: "light", prefersReducedMotion: true });
+    const viewport = dom.viewportMeta();
+    dom.run(RESOLVER);
+    for (let replay = 0; replay < 3; replay += 1) {
+      const runtime = installAppTheme(dom.host, APP_THEME_CONFIGURATION, resolveThemeChoice);
+      const release = runtime.retain();
+      assert.equal(dom.metaNodes()[1], viewport);
+      assert.equal(dom.ownMetaCount(), 1); assert.equal(dom.pendingTimers(), 0);
+      release(); release();
+      assert.deepEqual(dom.metaNodes(), [viewport]);
+      assert.equal(dom.globalListenerCount(THEME_EVENT), 0); assert.equal(dom.pendingTimers(), 0);
+    }
+  });
+
+  it("never removes another owner's marked meta or a private node whose identity was transferred", () => {
+    const dom = makeDocument({});
+    const foreign = dom.addForeignMarkedMeta();
+    const runtime = installAppTheme(dom.host, APP_THEME_CONFIGURATION, resolveThemeChoice);
+    const appMeta = dom.metaNodes()[0];
+    const release = runtime.retain();
+    release();
+    assert.ok(dom.metaNodes().includes(foreign));
+    assert.ok(!dom.metaNodes().includes(appMeta));
+    assert.equal(foreign.attrs.get("content"), "#123456");
+
+    const next = installAppTheme(dom.host, APP_THEME_CONFIGURATION, resolveThemeChoice);
+    const transferred = dom.metaNodes()[0];
+    const releaseNext = next.retain();
+    transferred.attrs.set("property", "other:owner");
+    releaseNext();
+    assert.ok(dom.metaNodes().includes(transferred), "cleanup cannot remove a node after its private identity is gone");
   });
 });
 

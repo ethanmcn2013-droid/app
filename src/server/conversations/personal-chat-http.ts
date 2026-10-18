@@ -1,5 +1,5 @@
 import { conversationAvailability, type ConversationControls } from "@/lib/conversations/flags";
-import { PERSONAL_CHAT_LIMITS, validPersonalChatBody, validPersonalChatRequestId } from "@/lib/conversations/personal-chat-contracts";
+import { PERSONAL_CHAT_LIMITS, validPersonalChatSend, validPersonalChatRequestId } from "@/lib/conversations/personal-chat-contracts";
 import type { createPersonalChatService } from "./personal-chat";
 
 type Service = ReturnType<typeof createPersonalChatService>;
@@ -66,6 +66,7 @@ export function createPersonalChatHttp(deps: Dependencies) {
       const availability = conversationAvailability(controls, actorId);
       if (!availability.read) return json(null, "unavailable");
       const service = await deps.service();
+      const attachmentsEnabled = await service.attachmentsEnabled();
       if (!writing) {
         const params = url.searchParams;
         const allowed = new Set(["format", "requestId", "limit", "before"]);
@@ -80,21 +81,21 @@ export function createPersonalChatHttp(deps: Dependencies) {
           const requestId = params.get("requestId");
           if (params.size !== 1 || !validPersonalChatRequestId(requestId)) return json(null, "invalid_input");
           const result = await service.getReceipt({ ownerId: actorId, clientRequestId: requestId });
-          return result.ok ? json(result.value) : json(null, result.code === "invalid_input" ? result.code : "temporarily_unavailable");
+          return result.ok ? json({ ...result.value, attachmentsEnabled }) : json(null, result.code === "invalid_input" ? result.code : "temporarily_unavailable");
         }
         const limitText = params.get("limit") ?? String(PERSONAL_CHAT_LIMITS.pageDefault);
         const before = params.get("before") ?? undefined;
         if (!/^\d+$/.test(limitText) || !Number.isSafeInteger(Number(limitText)) || Number(limitText) < 1 || Number(limitText) > PERSONAL_CHAT_LIMITS.pageMaximum || (before !== undefined && !/^[A-Za-z0-9_-]{8,128}$/.test(before))) return json(null, "invalid_input");
         const result = await service.list({ ownerId: actorId, limit: Number(limitText), ...(before ? { before } : {}) });
-        return result.ok ? json(result.value) : json(null, result.code === "invalid_input" ? result.code : "temporarily_unavailable");
+        return result.ok ? json({ ...result.value, attachmentsEnabled }) : json(null, result.code === "invalid_input" ? result.code : "temporarily_unavailable");
       }
       if (request.headers.get("origin") !== url.origin || request.headers.get("sec-fetch-site") === "cross-site") return json(null, "unavailable");
       if (!availability.send) return json(null, "unavailable");
       const input = await boundedJson(request);
-      if (!input || Object.keys(input).length !== 2 || !Object.hasOwn(input, "clientRequestId") || !Object.hasOwn(input, "body") ||
-          !validPersonalChatRequestId(input.clientRequestId) || !validPersonalChatBody(input.body)) return json(null, "invalid_input");
-      const result = await service.send({ ownerId: actorId, clientRequestId: input.clientRequestId, body: input.body });
-      if (result.ok) return json(result.value);
+      if (!input || Object.keys(input).some(key => !["clientRequestId", "body", "attachmentIds"].includes(key)) || !Object.hasOwn(input, "clientRequestId") || !Object.hasOwn(input, "body") ||
+          !validPersonalChatRequestId(input.clientRequestId) || !validPersonalChatSend(input.body, input.attachmentIds ?? [])) return json(null, "invalid_input");
+      const result = await service.send({ ownerId: actorId, clientRequestId: input.clientRequestId, body: input.body, attachmentIds: input.attachmentIds as string[] | undefined });
+      if (result.ok) return json({ ...result.value, attachmentsEnabled });
       if (result.code === "rate_limited") return json(null, result.code, { "Retry-After": String(result.retryAfterSeconds ?? 60) });
       return json(null, result.code === "unavailable" ? "temporarily_unavailable" : result.code);
     } catch { return json(null, "temporarily_unavailable"); }
