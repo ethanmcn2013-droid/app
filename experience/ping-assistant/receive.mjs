@@ -69,6 +69,7 @@ try{
   assert.equal(Math.round(pingWidth),width<680?width-16:500);if(width>=680)assert.equal(Math.round(chatWidth),Math.min(760,width-48));
   await shot(page,id+'-floating-assistant');await page.getByRole('button',{name:'Conversations',exact:true}).click();
   await page.waitForFunction(()=>!document.querySelector('[aria-label="Chat"]')?.hasAttribute('data-assistant'));
+  await page.waitForFunction(expected=>Math.round(document.querySelector('[aria-label="Chat"]').getBoundingClientRect().width)===expected,Math.round(chatWidth));
   assert.equal(Math.round(await page.getByLabel('Chat',{exact:true}).evaluate(e=>e.getBoundingClientRect().width)),Math.round(chatWidth));
   await shot(page,id+'-ordinary-chat-width-preserved');
   results.push({viewport:id,status:'passed',lostRequestId:lostRequest.requestId,reentryRequestId:absentRequest.requestId,counts:{created100:100,archived90:90,draftApplied:2,recoverySavedOnce:2,reentrySavedOnce:2},reducedMotion:true,keyboardFocus:true});await context.close();
