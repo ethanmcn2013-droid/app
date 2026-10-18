@@ -3909,6 +3909,8 @@
     "src/modules/timeline/app/audience/current-project-preview.module.css": "4ba1fa1a3ccae304659014e437a4f9a177bb5bf6aad4cd6c82f0666193c5e3e1",
     "src/components/app/messages/ping-personal-assistant-client.test.ts": "497a0b0c281ed10e3b230b34c9733388ef6921b2d2abbf7865e1c809a0b88351",
     "src/components/app/messages/use-floating-chat-viewport.ts": "e726cb60d9f8ecbb17b2017e69d99326adf773d4351dbb5faac633a66f85492b",
-    "src/app/welcome/layout.tsx": "66e430f2ea2c52d8942d12c2fa4476f6f665b036b0f22c67e9e19f180c4ec5e1"
+    "src/app/welcome/layout.tsx": "66e430f2ea2c52d8942d12c2fa4476f6f665b036b0f22c67e9e19f180c4ec5e1",
+    "src/lib/ping/assistant/contract.ts": "2424c685bd3dae7de0b2c0419e6cd0e15bfa4f904b0d26a81815dc703f60444c",
+    "src/server/ping/assistant/controls.ts": "1286ca268e6416bd5e7193f20da315069872a46b9d54e4b723a33d03506da236"
   }
 }
