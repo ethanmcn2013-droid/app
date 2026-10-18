@@ -15,13 +15,19 @@ export function master3WallTime(date:string,time:string,zone:string):Date {
  if(matches.length!==1)throw new TypeError('Calendar time is ambiguous or does not exist in this timezone');return matches[0];
 }
 export function buildMaster3CalendarEvents(dto:Master3CalendarTimeline):Master3CalendarEvent[]{
- const p=dto.presentation,items=dto.sections.flatMap(s=>s.items),final=items.find(i=>i.presentation?.final&&i.date&&validDate(i.date));
- const primary=!final&&dto.primaryDate&&validDate(dto.primaryDate.date)?dto.primaryDate:undefined;
+ const p=dto.presentation,items=dto.sections.flatMap(s=>s.items),active=items.filter(item=>item.state!=='cancelled');
+ // Match the public model's precedence without importing a UI module:
+ // explicit final (including an undated one), primary-date binding, last dated.
+ const flagged=active.filter(item=>item.presentation?.final);if(flagged.length>1)throw new TypeError('Multiple final calendar milestones');
+ const dated=active.filter(item=>item.date&&validDate(item.date)).map((item,index)=>({item,index})).sort((a,b)=>a.item.date!.localeCompare(b.item.date!)||a.index-b.index);
+ const primaryDate=dto.primaryDate&&validDate(dto.primaryDate.date)?dto.primaryDate:undefined;
+ const final=flagged.length?(flagged[0].date&&validDate(flagged[0].date)?flagged[0]:undefined):primaryDate?dated.find(entry=>entry.item.date===primaryDate.date)?.item:!dto.primaryDate?dated.at(-1)?.item:undefined;
+ const primary=!flagged.length&&!final?primaryDate:undefined;
  const anchor=final??(primary?{publicId:'__calendar_primary__',title:primary.label,date:primary.date,state:'next' as const,presentation:{final:true}}:undefined);
  const finalDate=anchor?.date,zone=p?.timezone;
  if(final?.presentation?.time&&!zone)throw new TypeError('A timezone is required for timed calendar events');
  const finalStart=final?.presentation?.time&&zone?master3WallTime(final.date!,final.presentation.time,zone):undefined;
- const candidates=p?.calAll?items:anchor?[anchor,...items.filter(item=>item!==anchor)].filter(item=>item===anchor||(item.date&&finalDate&&(item.date>finalDate||(item.date===finalDate&&item.presentation?.time&&finalStart&&zone&&master3WallTime(item.date,item.presentation.time,zone)>finalStart)))):[];
+ const candidates=p?.calAll?items:anchor?[anchor,...active.filter(item=>item!==anchor)].filter(item=>item===anchor||(item.date&&finalDate&&(item.date>finalDate||(item.date===finalDate&&item.presentation?.time&&finalStart&&zone&&master3WallTime(item.date,item.presentation.time,zone)>finalStart)))):[];
  return candidates.filter(i=>i.date&&validDate(i.date)&&i.date>=dto.today).map(item=>{
   const date=item.date!,time=item.presentation?.time,isFinal=item===anchor;
   if(time&&!zone)throw new TypeError('A timezone is required for timed calendar events');

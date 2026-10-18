@@ -21,11 +21,23 @@ test('wedding calendar excludes eight preparatory dates and includes only final 
 test('missing final dates fail closed; public primary fallback uses only its actual label and date',()=>{
  const item={publicId:'undated',title:'Unscheduled final',state:'next' as const,presentation:{final:true}};
  const noDate=dto([item],{audienceKind:'couple',presentation:{eventTitle:'Must not invent'}});assert.equal(buildMaster3CalendarEvents(noDate).length,0);
- const primary={...noDate,primaryDate:{label:'Published ceremony',date:'2026-07-01'}};const events=buildMaster3CalendarEvents(primary);assert.equal(events.length,1);assert.equal(events[0].title,'Published ceremony');assert.equal(events[0].date,'2026-07-01');assert.equal(events[0].start,undefined);assert.match(renderMaster3Ics(primary),/SUMMARY:Published ceremony/);const extra={...primary,sections:[{state:'later' as const,label:'Later',items:[{publicId:'extra',title:'Later brunch',date:'2026-07-02',state:'later' as const}]}]};assert.equal(new URL(master3CalendarLinks(extra,'A'.repeat(43))!.googleHref!).searchParams.get('text'),'Published ceremony');
+ const primary={...noDate,sections:[],primaryDate:{label:'Published ceremony',date:'2026-07-01'}};const events=buildMaster3CalendarEvents(primary);assert.equal(events.length,1);assert.equal(events[0].title,'Published ceremony');assert.equal(events[0].date,'2026-07-01');assert.equal(events[0].start,undefined);assert.match(renderMaster3Ics(primary),/SUMMARY:Published ceremony/);const extra={...primary,sections:[{state:'later' as const,label:'Later',items:[{publicId:'extra',title:'Later brunch',date:'2026-07-02',state:'later' as const}]}]};assert.equal(new URL(master3CalendarLinks(extra,'A'.repeat(43))!.googleHref!).searchParams.get('text'),'Published ceremony');
  assert.equal(buildMaster3CalendarEvents({...noDate,primaryDate:{label:'Invalid',date:'2026-02-30'}}).length,0);
  assert.equal(buildMaster3CalendarEvents({...primary,today:'2026-07-02'}).length,0);
 });
 
 test('timed final and extras cap at local 23:59 without crossing Dublin daylight offsets',()=>{
  for(const date of ['2026-07-01','2026-12-01']){const next=date==='2026-07-01'?'2026-07-02':'2026-12-02';const d=dto([{publicId:'final',title:'Final',date,state:'next',presentation:{final:true,time:'22:00'}},{publicId:'extra',title:'Extra',date:next,state:'later',presentation:{time:'23:00'}}],{audienceKind:'couple',presentation:{timezone:'Europe/Dublin'}});const [f,e]=buildMaster3CalendarEvents(d);assert.equal(f.end!.toISOString(),master3WallTime(date,'23:59','Europe/Dublin').toISOString());assert.equal(e.end!.toISOString(),master3WallTime(next,'23:59','Europe/Dublin').toISOString());assert.match(renderMaster3Ics(d),new RegExp('DTEND:'+f.end!.toISOString().replace(/[-:]/g,'').replace('.000Z','Z')));}
+});
+
+
+test('legacy unflagged timeline infers the last real dated milestone, with stable same-day source order',()=>{
+ const legacy=dto([{publicId:'last',title:'Published closing ceremony',date:'2026-09-20',state:'later'},{publicId:'first',title:'Preparation',date:'2026-07-01',state:'next'},{publicId:'undated',title:'No invented schedule',state:'later'},{publicId:'cancelled',title:'Cancelled later event',date:'2026-12-01',state:'cancelled'}],{audienceKind:'couple',presentation:{}});
+ const events=buildMaster3CalendarEvents(legacy);assert.equal(events.length,1);assert.equal(events[0].publicId,'last');assert.equal(events[0].date,'2026-09-20');assert.equal(events[0].title,'Published closing ceremony');const ics=renderMaster3Ics(legacy);assert.match(ics,/SUMMARY:Published closing ceremony/);assert.doesNotMatch(ics,/SUMMARY:Preparation|SUMMARY:Cancelled/);
+ const tied={...legacy,sections:[{state:'later' as const,label:'Later',items:[...legacy.sections[0].items,{publicId:'same-day-last',title:'Same day final',date:'2026-09-20',state:'later' as const}]}]};assert.equal(buildMaster3CalendarEvents(tied)[0].publicId,'same-day-last');
+});
+
+test('primary date binds its real public milestone before last-date inference; explicit undated final stays unscheduled',()=>{
+ const d=dto([{publicId:'main',title:'Real main milestone',date:'2026-07-01',state:'next'},{publicId:'extra',title:'Published brunch',date:'2026-07-02',state:'later'}],{presentation:{},primaryDate:{label:'Primary label',date:'2026-07-01'}});assert.deepEqual(buildMaster3CalendarEvents(d).map(e=>e.publicId),['main','extra']);assert.equal(buildMaster3CalendarEvents(d)[0].title,'Real main milestone');
+ const blocked={...d,sections:[{state:'next' as const,label:'Next',items:[...d.sections[0].items,{publicId:'undated-final',title:'Final date to follow',state:'later' as const,presentation:{final:true}}]}]};assert.equal(buildMaster3CalendarEvents(blocked).length,0);
 });
