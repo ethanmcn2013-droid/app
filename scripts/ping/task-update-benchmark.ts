@@ -3,9 +3,9 @@ import {createHash} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
 import {drizzle} from 'drizzle-orm/libsql';
 import * as schema from '@/server/db/schema';
-import {createPingProofFixture,PROOF_PROJECT} from '../proof-fixture';
-import {createAssistantStore,assistantPayloadHash,assistantStepId} from './store';
-import {executeAssistantAction} from './actions';
+import {createPingProofFixture,PROOF_PROJECT} from '@/server/ping/proof-fixture';
+import {createAssistantStore,assistantPayloadHash,assistantStepId} from '@/server/ping/assistant/store';
+import {executeAssistantAction} from '@/server/ping/assistant/actions';
 import type {AssistantAction,AssistantActionResult} from '@/lib/ping/assistant/contract';
 
 export const UPDATE_BENCHMARK_NOW=Date.parse('2026-10-18T09:00:00Z');

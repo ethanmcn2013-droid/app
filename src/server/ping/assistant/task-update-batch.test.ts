@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {executeAssistantAction} from './actions';
-import {updateBenchmarkFixture,UPDATE_BENCHMARK_NOW} from './task-update-benchmark';
+import {updateBenchmarkFixture,UPDATE_BENCHMARK_NOW} from '../../../../scripts/ping/task-update-benchmark';
 import type {AssistantAction} from '@/lib/ping/assistant/contract';
 const action:AssistantAction={id:'update',kind:'update_tasks',project:{kind:'current'},targets:{kind:'selected'},changes:{status:'doing',dueDate:'2026-10-20',assignees:[{kind:'self'}]}};
 
