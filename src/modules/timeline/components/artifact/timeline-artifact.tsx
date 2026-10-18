@@ -1,760 +1,193 @@
 "use client";
 
-import {
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
-import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeline";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
+import type { AudienceTimelineDto } from "../../lib/audience-timeline";
 import { PRODUCT_MARKETING_URLS } from "@/lib/product-urls";
-import {
-  NO_TIMING_LABEL,
-
-  timelineNouns,
-} from "@/modules/timeline/lib/vocabulary";
-import {
-  artifactTitleLength,
-  buildTimelineArtifactModel,
-  buildTimelineCountdown,
-  formatTimelineDate,
-  timelineAxisDescription,
-  timelinePointStatus,
-  type TimelineArtifactModel,
-  type TimelineArtifactPoint,
-} from "./timeline-artifact-model";
+import { buildMaster3Model, type Master3Milestone, type Master3Model } from "./master3-model";
+import { CalendarAction, Icon, OwnerMenu, ShareAction, safeActionHref, type Master3GuestServices, type Master3OwnerControls, type TimelineShareOutcome } from "./master3-actions";
 import styles from "./timeline-artifact.module.css";
 
-/**
- * The shared timeline, as a countdown.
- *
- * Direction picked by the founder on 28 September 2026 from four concepts
- * (remote-redesign `work/2026-09-28-timeline-artifact`): B, The Countdown, as
- * the core, with A's to-scale strip on wide screens and D's finale. It
- * replaces the Option D rail.
- *
- * The page reads top to bottom the way a guest thinks about the day: how long
- * until it, what is next, then every moment in order with its own number, and
- * the day itself last. The layout is chosen by the width it has; the reader
- * never picks one. Every fact comes from the published DTO and the model built
- * from it, so nothing private can reach this page.
- */
-
-/**
- * Outcome of the share affordance. "shared" means the platform share sheet
- * took it from here (the sheet is its own feedback); "dismissed" means the
- * viewer closed the sheet; "copied" means the URL is on the clipboard and
- * the artifact owes the viewer a visible receipt.
- */
-export type TimelineShareOutcome = "shared" | "copied" | "dismissed";
-
+export type { TimelineShareOutcome, Master3GuestServices, Master3OwnerControls } from "./master3-actions";
 export type TimelineArtifactProps = Readonly<{
-  timeline: AudienceTimelineDto;
-  compact?: boolean;
-  embedded?: boolean;
-  /**
-   * The artifact's own product header (wordmark + shared-by row). On the
-   * standalone shared page and in exhibit frames (artifact studio, phone
-   * preview) it IS the page chrome and stays. Inside the owner's app shell
-   * the suite chrome already provides identity, so the owner view suppresses
-   * it rather than stacking two wordmarks.
-   */
-  showProductHeader?: boolean;
-  /** Owner-only current preview: no guest-sharing copy or marketing footer. */
-  privatePreview?: boolean;
-  className?: string;
-  onShare?: () => Promise<TimelineShareOutcome>;
-  shareLabel?: string;
+  timeline: AudienceTimelineDto; compact?: boolean; embedded?: boolean; showProductHeader?: boolean;
+  /** Owner current preview: never expose published URLs, guest services or counters. */
+  privatePreview?: boolean; className?: string; onShare?: () => Promise<TimelineShareOutcome>; shareLabel?: string;
+  owner?: Master3OwnerControls; guestServices?: Master3GuestServices; theme?: "light" | "dark";
 }>;
+const dateText = (date: string | null, long = false) => date ? new Intl.DateTimeFormat("en-GB", long ?
+  { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" } :
+  { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`)) : "Date to be confirmed";
+const monthText = (date: string) => new Intl.DateTimeFormat("en-GB", { month: "long", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
+const when = (item: Master3Milestone) => item.isToday ? "Today" : item.daysUntil === 1 ? "Tomorrow" : item.daysUntil !== null && item.daysUntil > 0 ? `In ${item.daysUntil} days` : dateText(item.date);
 
-type PositionStyle = CSSProperties & { "--at": string };
-type RowStyle = CSSProperties & { "--row-delay": string };
-
-/**
- * The entrance, once per session. The hero rises, the strip draws and the
- * rows settle in the first time a tab opens a timeline; after that every
- * arrival lands in its final state. The inline script runs during parse on a
- * server-streamed page, so a returning viewer never sees a frame of motion;
- * the layout effect covers client navigation, where React never runs it. The
- * guard can only remove motion, so a viewer without JavaScript loses nothing.
- */
-const ENTRANCE_SESSION_KEY = "signal:timeline-entrance";
-const ENTRANCE_GUARD = `(function(){var s=document.currentScript,a=s&&s.parentElement;if(!a)return;a.setAttribute("data-entrance-guard","1");try{var k="${ENTRANCE_SESSION_KEY}";if(sessionStorage.getItem(k))a.setAttribute("data-entrance","seen");else sessionStorage.setItem(k,"1")}catch(e){}})();`;
-
-function markEntranceSeen(article: HTMLElement | null): void {
-  if (!article) return;
-  // Exactly one path decides; the script's mark is the handshake.
-  if (article.hasAttribute("data-entrance-guard")) return;
-  try {
-    if (sessionStorage.getItem(ENTRANCE_SESSION_KEY)) {
-      article.setAttribute("data-entrance", "seen");
-    } else {
-      sessionStorage.setItem(ENTRANCE_SESSION_KEY, "1");
-    }
-  } catch {
-    /* Private modes refuse storage; an entrance that replays is not a fault. */
-  }
+/** Exact board composition only while its text remains readable. */
+function useBoard(root: RefObject<HTMLElement | null>, compact: boolean, embedded: boolean) {
+  const [board, setBoard] = useState({ stage: false, scale: 1 });
+  useLayoutEffect(() => {
+    const element = root.current; if (!element) return;
+    const initialDpr = window.devicePixelRatio || 1;
+    const probe = document.createElement("span"); probe.setAttribute("aria-hidden", "true");
+    probe.style.cssText = "position:absolute;left:-9999px;visibility:hidden;font-size:20px;line-height:20px;letter-spacing:0px;word-spacing:0px";
+    probe.textContent = "a b"; element.append(probe);
+    const fit = () => {
+      const spacing = getComputedStyle(probe);
+      const spaced = (parseFloat(spacing.letterSpacing) || 0) > .5 || (parseFloat(spacing.wordSpacing) || 0) > .5 || (parseFloat(spacing.lineHeight) || 20) > 24;
+      const width = element.clientWidth, height = embedded ? element.parentElement?.clientHeight || window.innerHeight : window.innerHeight;
+      const scale = Math.min(width / 1440, height / 810);
+      const unusualDpr = ![1, 1.25, 1.5, 1.75, 2, 2.5, 3].some(value => Math.abs((window.devicePixelRatio || 1) - value) < .02);
+      const zoom = (window.devicePixelRatio || 1) > initialDpr * 1.04 || (window.visualViewport?.scale ?? 1) > 1.01 || unusualDpr || window.outerWidth / window.innerWidth > 1.05;
+      const next = { stage: !compact && width >= 1024 && scale >= .85 && !spaced && !zoom, scale };
+      setBoard(previous => previous.stage === next.stage && previous.scale === next.scale ? previous : next);
+    };
+    const observer = new ResizeObserver(fit); observer.observe(element); fit();
+    window.addEventListener("resize", fit); window.visualViewport?.addEventListener("resize", fit);
+    const timer = window.setInterval(fit, 1500);
+    return () => { observer.disconnect(); probe.remove(); window.removeEventListener("resize", fit); window.visualViewport?.removeEventListener("resize", fit); window.clearInterval(timer); };
+  }, [root, compact, embedded]);
+  return board;
 }
 
-const WEEKDAY_DATE = new Intl.DateTimeFormat("en-GB", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-/** "Saturday 3 October 2026", for the day itself. */
-function weekdayDate(value: string): string {
-  const parsed = Date.parse(`${value}T00:00:00.000Z`);
-  if (!Number.isFinite(parsed)) return formatTimelineDate(value, "long");
-  return WEEKDAY_DATE.format(new Date(parsed)).replace(",", "");
+function Name({ title, stage }: { title: string; stage: boolean }) {
+  const ref = useRef<HTMLHeadingElement>(null), [fit, setFit] = useState({ size: 64, wrap: false });
+  useLayoutEffect(() => {
+    if (!stage || !ref.current) return;
+    let active = true;
+    const measure = () => {
+      if (!active || !ref.current) return;
+      const context = document.createElement("canvas").getContext("2d"); if (!context) return;
+      context.font = `600 64px ${getComputedStyle(ref.current).fontFamily}`;
+      const width = context.measureText(title).width - Math.max(0, title.length - 1) * 2.56;
+      const size = Math.min(64, 64 * 860 / Math.max(1, width)); setFit({ size: Math.max(40, size), wrap: size < 40 });
+    };
+    measure(); void document.fonts.ready.then(measure); return () => { active = false; };
+  }, [title, stage]);
+  const parts = title.split(/\s*&\s*/);
+  return <h1 ref={ref} className={styles.title} data-wrap={fit.wrap || undefined} style={stage ? { fontSize: fit.size } : undefined}>
+    {parts.length === 2 ? <><span>{parts[0]} &amp;</span>{" "}<span>{parts[1]}</span></> : title}
+  </h1>;
 }
 
-const plural = (count: number, one: string, many: string) => (count === 1 ? one : many);
-
-/** Days from `from` to `to`, both calendar dates; null when either is missing. */
-function daysBetween(from: string | undefined, to: string | undefined): number | null {
-  if (!from || !to) return null;
-  const a = Date.parse(`${from}T00:00:00.000Z`);
-  const b = Date.parse(`${to}T00:00:00.000Z`);
-  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
-  return Math.round((b - a) / 86_400_000);
+function PanelDate({ date, time, stage }: { date: string | null; time?: string; stage: boolean }) {
+  const ref = useRef<HTMLParagraphElement>(null), [size, setSize] = useState(32);
+  useLayoutEffect(() => {
+    if (!stage || !ref.current) return;
+    const context = document.createElement("canvas").getContext("2d"); if (!context) return;
+    const family = getComputedStyle(ref.current).fontFamily, label = dateText(date, true);
+    const width = (px: number) => { context.font = `600 ${px}px ${family}`; return context.measureText(label).width - label.length * px * .035; };
+    setSize(width(32) <= 380 ? 32 : width(28) <= 380 ? 28 : 26);
+  }, [date, stage]);
+  return <p ref={ref} className={styles.panelDate} style={stage ? { fontSize: size } : undefined}><time dateTime={date ?? undefined}>{dateText(date, true)}</time>{time ? <span className={styles.phoneTime}> · {time}</span> : null}</p>;
 }
 
-/* ── Add to my calendar ───────────────────────────────────────────────────── */
+function Mark({ item }: { item: Master3Milestone }) {
+  const state = item.isFinal ? item.datePassed ? "final-done" : item.isNext ? "final-next" : "final" : item.displayState;
+  return <span className={styles.mark} data-state={state} data-for-you={item.presentation.forYou || undefined} aria-hidden="true">
+    {item.isFinal ? <Icon kind="flag" /> : item.displayState === "done" ? <Icon kind="check" /> : item.displayState === "passed" ? <span className={styles.passedDash} /> : null}
+  </span>;
+}
+const spoken = (item: Master3Milestone) => `${item.title}. ${dateText(item.date, true)}. ${item.isNext ? item.isToday ? "Today." : "Next." : item.datePassed ? item.sourceState === "covered" ? "Done." : "Date has passed." : ""}${item.presentation.forYou ? " For you." : ""}`;
 
-const icsText = (value: string) => value.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\r?\n/g, "\\n");
-
-/**
- * An all-day event for the day itself, built in the browser from facts the
- * page already shows. Nothing is requested from a server, so the public page
- * still cannot report who looked at it.
- */
-function calendarFile(timeline: AudienceTimelineDto): string | null {
-  const day = timeline.primaryDate;
-  if (!day) return null;
-  const start = day.date.replaceAll("-", "");
-  const next = new Date(Date.parse(`${day.date}T00:00:00.000Z`) + 86_400_000).toISOString().slice(0, 10).replaceAll("-", "");
-  const stamp = new Date(Date.parse(timeline.lastUpdatedAt) || 0).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  return [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Signal Studio//Timeline//EN",
-    "CALSCALE:GREGORIAN",
-    "BEGIN:VEVENT",
-    `UID:${timeline.publicationId}-${start}@timeline.signalstudio.ie`,
-    `DTSTAMP:${stamp}`,
-    `DTSTART;VALUE=DATE:${start}`,
-    `DTEND;VALUE=DATE:${next}`,
-    `SUMMARY:${icsText(`${timeline.label}: ${day.label}`)}`,
-    "END:VEVENT",
-    "END:VCALENDAR",
-    "",
-  ].join("\r\n");
+function Rail({ model, owner }: { model: Master3Model; owner: boolean }) {
+  const items = model.milestones, dense = items.length > 10;
+  const rail = useRef<HTMLOListElement>(null), [wrapped, setWrapped] = useState(false);
+  useLayoutEffect(() => {
+    let active = true;
+    const measure = () => { if (active && rail.current) setWrapped([...rail.current.querySelectorAll<HTMLElement>("[data-rail-title]")].some(node => node.scrollHeight > 19)); };
+    measure(); void document.fonts.ready.then(measure); return () => { active = false; };
+  }, [items]);
+  const lastDone = items.findLastIndex(item => item.datePassed);
+  return <section className={styles.rail} aria-label="Timeline" data-dense={dense || undefined} data-wrapped={wrapped || undefined}>
+    <div className={styles.railLine} aria-hidden="true" />
+    {lastDone >= 0 ? <div className={styles.doneRail} aria-hidden="true" style={{ width: `${items.length > 1 ? lastDone / (items.length - 1) * 100 : 0}%` }} /> : null}
+    {model.noDates && !items.length ? <div className={styles.emptyRail}><span><Icon kind="flag" /></span><p>Dates to follow</p></div> : <ol ref={rail} className={styles.railItems}>
+      {items.map((item, index) => <li key={item.publicId} className={styles.railItem} data-next={item.isNext || undefined} data-strong={item.isFinal || item.presentation.forYou || item.presentation.key || undefined} style={{ "--x-m3-point": `${items.length > 1 ? index / (items.length - 1) * 100 : 50}%`, "--x-m3-label-width": `${Math.max(40, Math.min(150, (dense ? 2568 : 1284) / Math.max(1, items.length - 1) - 12))}px` } as CSSProperties}>
+        <span className={styles.screenReaderOnly}>{spoken(item)}</span>
+        <span className={styles.railFlag} aria-hidden="true">{item.isNext ? item.isToday ? "Today" : "Next" : item.presentation.forYou && !item.datePassed ? owner ? "For guests" : "For you" : ""}</span>
+        <Mark item={item} /><span className={styles.railLabel} aria-hidden="true"><span data-rail-title>{item.presentation.short || item.title}</span><time dateTime={item.date ?? undefined}>{dateText(item.date)}</time></span>
+        {!dense && !wrapped && item.date && (index === 0 || item.date.slice(0, 7) !== items[index - 1].date?.slice(0, 7)) ? <span className={styles.month} aria-hidden="true">{new Intl.DateTimeFormat("en-GB", { month: "short", ...(index && item.date.slice(0, 4) !== items[index - 1].date?.slice(0, 4) ? { year: "2-digit" } : {}), timeZone: "UTC" }).format(new Date(`${item.date}T12:00:00Z`))}</span> : null}
+      </li>)}
+    </ol>}
+  </section>;
 }
 
-function CalendarButton({ timeline, className }: { timeline: AudienceTimelineDto; className?: string }) {
-  const file = calendarFile(timeline);
-  if (!file) return null;
-  return (
-    <button
-      type="button"
-      className={[styles.pillButton, className].filter(Boolean).join(" ")}
-      onClick={() => {
-        const url = URL.createObjectURL(new Blob([file], { type: "text/calendar;charset=utf-8" }));
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${timeline.label.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "").toLowerCase() || "timeline"}.ics`;
-        document.body.append(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }}
-    >
-      <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-        <rect x="2.25" y="3.25" width="11.5" height="10.5" rx="1.75" />
-        <path d="M2.25 6.5h11.5M5.5 2v2.5M10.5 2v2.5" />
-      </svg>
-      Add to my calendar
-    </button>
-  );
-}
-
-/* ── Product header ───────────────────────────────────────────────────────── */
-
-function useShare(onShare: TimelineArtifactProps["onShare"]) {
-  const [state, setState] = useState<"idle" | "working" | "copied" | "error">("idle");
-  const revertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (revertTimer.current) clearTimeout(revertTimer.current);
-  }, []);
-  const settle = (next: "idle" | "copied" | "error") => {
-    setState(next);
-    if (revertTimer.current) clearTimeout(revertTimer.current);
-    if (next === "copied" || next === "error") {
-      // Receipts rest: the label returns to its verb once the moment passes,
-      // failure lingering a little longer than success.
-      revertTimer.current = setTimeout(() => setState("idle"), next === "copied" ? 2000 : 5000);
-    }
-  };
-  const run = async () => {
-    if (!onShare) return;
-    setState("working");
-    try {
-      const outcome = await onShare();
-      settle(outcome === "copied" ? "copied" : "idle");
-    } catch {
-      settle("error");
-    }
-  };
-  return { state, run };
-}
-
-function ShareButton({
-  onShare,
-  shareLabel,
-  className,
-}: Pick<TimelineArtifactProps, "onShare" | "shareLabel"> & { className?: string }) {
-  const share = useShare(onShare);
-  if (!onShare) return null;
-  return (
-    <>
-      <button
-        type="button"
-        className={className}
-        data-share-state={share.state}
-        disabled={share.state === "working"}
-        onClick={share.run}
-      >
-        {share.state === "copied"
-          ? "Link copied"
-          : share.state === "error"
-            ? "Copy from the address bar"
-            : shareLabel ?? "Share this timeline"}
-      </button>
-      <span className={styles.screenReaderOnly} aria-live="polite" aria-atomic="true">
-        {share.state === "copied" ? "Timeline link copied." : null}
-        {share.state === "error" ? "The link could not be shared. Copy it from the address bar." : null}
-      </span>
-    </>
-  );
-}
-
-function ProductIdentity({
-  timeline,
-  onShare,
-  shareLabel,
-}: Pick<TimelineArtifactProps, "timeline" | "onShare" | "shareLabel">) {
-  // "Shared by Mara & Finn" above a page titled "Mara & Finn" says the same
-  // name twice. The byline shows only when it adds someone the title does not.
-  const byline = timeline.ownerDisplayLabel && !timeline.ownerDisplayLabel.includes(timeline.label) ? timeline.ownerDisplayLabel : null;
-  return (
-    <div className={styles.productHeader}>
-      <span className={styles.productMark} aria-label="timeline" data-timeline-wordmark>
-        timeline<span aria-hidden="true" />
-      </span>
-      <div className={styles.productMeta}>
-        {byline ? <span>{byline}</span> : null}
-        <ShareButton onShare={onShare} shareLabel={shareLabel} className={styles.textButton} />
-      </div>
-    </div>
-  );
-}
-
-/* ── Hero: the count and the day ──────────────────────────────────────────── */
-
-function Hero({ timeline, model, nouns, privatePreview = false }: { timeline: AudienceTimelineDto; model: TimelineArtifactModel; nouns: ReturnType<typeof timelineNouns>; privatePreview?: boolean }) {
-  const day = timeline.primaryDate;
-  const countdown = buildTimelineCountdown(day?.date, timeline.today);
-  const dayName = day?.label.toLowerCase() ?? "";
-  const completion = `${model.completedCount} of ${model.totalCount} complete`;
-  // A plan with no day still has an end: its last dated milestone.
-  // Only claimed when every milestone is dated; an undated one could land later.
-  const lastDate = model.points.every((point) => point.item.date)
-    ? model.points.reduce<string | null>((latest, point) => (point.item.date && (!latest || point.item.date > latest) ? point.item.date : latest), null)
-    : null;
-
-  // A plan with a day counts down to it. A plan without one leads with what is
-  // done, stated as one count rather than a percentage.
-  let value: string;
-  let unit: string;
-  let spoken: string;
-  if (day && countdown?.kind === "future") {
-    value = String(countdown.days);
-    unit = `${plural(countdown.days, "day", "days")} until the ${dayName}`;
-    spoken = `${countdown.days} ${plural(countdown.days, "day", "days")} until the ${dayName}`;
-  } else if (day && countdown?.kind === "today") {
-    value = "Today";
-    unit = `is the ${dayName}`;
-    spoken = `Today is the ${dayName}`;
-  } else if (day && countdown?.kind === "past") {
-    value = String(countdown.days);
-    unit = `${plural(countdown.days, "day", "days")} since the ${dayName}`;
-    spoken = `${countdown.days} ${plural(countdown.days, "day", "days")} since the ${dayName}`;
-  } else if (model.completedCount === 0) {
-    // Nothing done yet: a giant zero is a sad way to open a plan, so the page
-    // leads with what is ahead instead.
-    value = String(model.remainingCount);
-    unit = `${plural(model.remainingCount, "milestone", "milestones")} still to come`;
-    spoken = `${model.remainingCount} ${plural(model.remainingCount, "milestone", "milestones")} still to come`;
-  } else {
-    value = String(model.completedCount);
-    unit = `of ${model.totalCount} ${plural(model.totalCount, "milestone", "milestones")} complete`;
-    spoken = `${model.completedCount} of ${model.totalCount} milestones complete`;
-  }
-  const aside = day
-    ? completion
-    : model.completedCount === 0
-      ? "None complete yet"
-      : `${model.remainingCount} still to come`;
-
-  // What the next moment is lives in its row and on the strip, one scroll
-  // away; the hero says only what no other part of the page says.
-  return (
-    <div className={styles.hero}>
-      <p className={styles.heroKicker}>{privatePreview ? "Your current project timeline" : nouns.kicker}</p>
-      <h1>{timeline.label}</h1>
-      <div className={styles.heroBody}>
-        <div className={styles.count} data-timeline-metric data-count-kind={countdown?.kind ?? "progress"} role="group" aria-label={spoken}>
-          <strong className={styles.countValue} data-scale={value.length >= 4 ? "long" : undefined} aria-hidden="true" data-timeline-metric-value>
-            {value}
-          </strong>
-          <span className={styles.countUnit} aria-hidden="true">{unit}</span>
+function TimelineList({ model, owner, expanded, expand, all = false }: { model: Master3Model; owner: boolean; expanded: boolean; expand: () => void; all?: boolean }) {
+  const visible = all ? model.milestones : model.phone.visible;
+  const earlier = model.phone.earlier.filter(item => !model.returningHint?.items.some(value => value.publicId === item.publicId));
+  const hidden = model.phone.hidden, firstHiddenIndex = hidden.length ? model.milestones.findIndex(item => item.publicId === hidden[0].publicId) : -1;
+  const insertBefore = !all && !expanded && hidden.length ? visible.find(item => model.milestones.findIndex(value => value.publicId === item.publicId) > firstHiddenIndex)?.publicId : null;
+  return <>
+    {!all && earlier.length ? <p className={styles.earlier}><span className={styles.earlierDot} aria-hidden="true">{earlier.every(item => item.sourceState === "covered") ? <Icon kind="check" /> : <span className={styles.passedDash} />}</span>{earlier.length} earlier {earlier.length === 1 ? "milestone" : "milestones"} {earlier.every(item => item.sourceState === "covered") ? "done" : "passed"}.</p> : null}
+    <ol className={styles.phoneList}>
+      {visible.map(item => <li key={item.publicId} id={all ? undefined : `m-${item.publicId}`} tabIndex={-1} className={styles.phoneItem} data-next={item.isNext || undefined}>
+        {insertBefore === item.publicId ? <button className={styles.expandButton} onClick={expand}>Show {hidden.length} more{model.phone.hiddenRange ? ` · ${monthText(model.phone.hiddenRange.from)} to ${monthText(model.phone.hiddenRange.to)}` : ""}</button> : null}
+        <time dateTime={item.date ?? undefined}>{dateText(item.date)}</time><Mark item={item} />
+        <div className={styles.phoneItemBody}><span className={styles.screenReaderOnly}>{spoken(item)}</span><p aria-hidden="true" className={item.isNext || item.isFinal || item.presentation.forYou ? styles.strong : undefined}>{item.title}{item.presentation.forYou && !item.datePassed ? <span className={styles.tag}>{owner ? "For guests" : "For you"}</span> : null}</p>
+          {!item.datePassed && (item.isNext || item.presentation.forYou || item.presentation.note) ? <p className={styles.itemNote}>{item.isNext && !item.isToday ? "Next · " : ""}{item.isNext || item.presentation.forYou ? when(item) : ""}{item.presentation.note ? `${item.isNext || item.presentation.forYou ? " · " : ""}${item.presentation.note}` : ""}</p> : null}
+          {!item.datePassed && item.presentation.rsvpUrl ? <a className={styles.textButton} href={safeActionHref(item.presentation.rsvpUrl)} target="_blank" rel="noopener noreferrer">Reply</a> : null}
         </div>
-        <div className={styles.heroAside}>
-          {day ? (
-            <p className={styles.heroDay}>
-              <time dateTime={day.date}>{weekdayDate(day.date)}</time>
-            </p>
-          ) : null}
-          {!day && lastDate ? (
-            <p className={styles.heroDay}>
-              Ends <time dateTime={lastDate}>{weekdayDate(lastDate)}</time>
-            </p>
-          ) : null}
-          <p className={styles.heroFacts}>{aside}</p>
-          {day && countdown?.kind !== "past" ? <CalendarButton timeline={timeline} /> : null}
-        </div>
-      </div>
-    </div>
-  );
+      </li>)}
+    </ol>
+  </>;
 }
 
-/* ── A · the strip: the run of time still to come, to scale ───────────────── */
-
-const DAY_MS = 86_400_000;
-const dayOf = (value: string) => Date.parse(`${value}T00:00:00.000Z`);
-/* The artifact's own three letters: en-GB would print "Sept" beside "Sep". */
-const STRIP_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-type StripGeometry = Readonly<{
-  /** Rail-percent for a calendar date, inside the drawn range. */
-  at: (value: string) => number;
-  /** Where the drawn range starts; left of it sits the stub for earlier work. */
-  base: number;
-  /** Milestones dated before the drawn range, summarised by the stub. */
-  earlier: readonly TimelineArtifactPoint[];
-  earliestDate: string | null;
-  months: readonly { label: string; position: number }[];
-  todayAt: number | null;
-  frontier: number;
-}>;
-
-/**
- * The strip is for the time a guest cares about: from a little before today
- * to the day. Work finished long ago would otherwise take most of the line,
- * as it did when the strip began at the plan's first milestone, and squeeze
- * everything still to come into its last third. Earlier work folds into a
- * short stub at the left edge that says what it holds.
- */
-function stripGeometry(timeline: AudienceTimelineDto, model: TimelineArtifactModel): StripGeometry | null {
-  const dated = model.points.filter((point) => point.item.date);
-  if (model.axis.mode !== "dated" || dated.length < 2) return null;
-  const times = dated.map((point) => dayOf(point.item.date as string));
-  const today = dayOf(timeline.today);
-  const first = Math.min(...times);
-  const end = Math.max(...times, timeline.primaryDate ? dayOf(timeline.primaryDate.date) : -Infinity);
-  if (!Number.isFinite(today) || end <= first) return null;
-  const lead = 12 * DAY_MS;
-  const start = today >= end ? first : today < first ? today : Math.max(first, today - lead);
-  const earlier = dated.filter((point) => dayOf(point.item.date as string) < start);
-  const base = earlier.length ? 9 : 1.5;
-  const span = Math.max(DAY_MS, end - start);
-  const toAt = (time: number) => base + ((time - start) / span) * (98.5 - base);
-  const months: { label: string; position: number }[] = [];
-  const cursor = new Date(start);
-  cursor.setUTCDate(1);
-  cursor.setUTCMonth(cursor.getUTCMonth() + 1);
-  while (cursor.getTime() <= end) {
-    months.push({ label: STRIP_MONTHS[cursor.getUTCMonth()], position: toAt(cursor.getTime()) });
-    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
-  }
-  const doneInRange = dated.filter((point) => point.state === "complete" && dayOf(point.item.date as string) >= start);
-  const frontier = doneInRange.length
-    ? Math.max(...doneInRange.map((point) => toAt(dayOf(point.item.date as string))))
-    : earlier.some((point) => point.state === "complete")
-      ? base
-      : 0;
-  return {
-    at: (value) => toAt(dayOf(value)),
-    base,
-    earlier,
-    earliestDate: earlier.length ? (earlier[0].item.date as string) : null,
-    months,
-    todayAt: today >= start && today <= end ? toAt(today) : null,
-    frontier,
-  };
+function ReferralControl({ owner, announce }: { owner: Master3OwnerControls; announce: (message: string) => void }) {
+  const [saving, setSaving] = useState(false), [error, setError] = useState("");
+  if (!owner.referral) return null;
+  return <div className={styles.referral}><label><input type="checkbox" role="switch" checked={owner.referral.enabled} disabled={saving} onChange={async event => { const enabled = event.target.checked; setSaving(true); setError(""); try { await owner.referral!.save(enabled); announce("Referral preference saved."); } catch { setError("Could not save. Try again."); } finally { setSaving(false); } }} />Show the venue’s referral link</label>{saving ? <p role="status">Saving…</p> : null}{error ? <p className={styles.error} role="alert">{error}</p> : null}</div>;
 }
 
-function Strip({ timeline, model, finaleId }: { timeline: AudienceTimelineDto; model: TimelineArtifactModel; finaleId: string }) {
-  const geometry = stripGeometry(timeline, model);
-  if (!geometry) return null;
-  const next = model.points.find((point) => point.isNext);
-  const last = model.points[model.points.length - 1];
-  const destination = timeline.primaryDate && last.item.date === timeline.primaryDate.date ? last : null;
-  const inRange = model.points.filter((point) => point.item.date && !geometry.earlier.includes(point));
-  const align = (position: number) => (position < 14 ? "start" : position > 86 ? "end" : "middle");
-  const at = (position: number): PositionStyle => ({ "--at": `${position}%` });
-  const earlierDone = geometry.earlier.filter((point) => point.state === "complete").length;
-
-  return (
-    <figure className={styles.strip} aria-label={timelineAxisDescription(model)}>
-      <div className={styles.stripTrack}>
-        <div
-          className={styles.stripLine}
-          role="progressbar"
-          aria-label="Milestone completion"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(geometry.frontier)}
-          aria-valuetext={`${model.completedCount} of ${model.totalCount} milestones complete`}
-        >
-          {/* The ink runs to the furthest completed dot, never to a count
-              percentage, so the line and the dots make one statement. */}
-          <span className={styles.stripInk} style={{ transform: `scaleX(${geometry.frontier / 100})` }} aria-hidden="true" />
-        </div>
-        {geometry.earlier.length ? (
-          <a className={styles.stripStub} href={`#m-${geometry.earlier[0].item.publicId}`} tabIndex={-1} style={at(geometry.base)} aria-hidden="true">
-            <span>
-              {earlierDone === geometry.earlier.length ? `${earlierDone} done` : `${geometry.earlier.length} earlier`}
-              {geometry.earliestDate ? <small>since {formatTimelineDate(geometry.earliestDate).replace(/ \d{4}$/, "")}</small> : null}
-            </span>
-          </a>
-        ) : null}
-        {geometry.months.map((tick) => (
-          <span className={styles.stripMonth} key={`${tick.label}-${tick.position}`} style={at(tick.position)} aria-hidden="true">
-            <span>{tick.label}</span>
-          </span>
-        ))}
-        {geometry.todayAt !== null ? (
-          <span className={styles.stripToday} data-today-marker style={at(geometry.todayAt)} role="img" aria-label={`Today, ${formatTimelineDate(timeline.today, "long")}`}>
-            <span aria-hidden="true">Today</span>
-          </span>
-        ) : null}
-        {/* The dots are a pointer's shortcut into the rows. The rows are the
-            keyboard's path, so the dots stay out of the tab order. */}
-        {inRange.map((point) => {
-          const isDestination = point === destination;
-          return (
-            <a
-              key={point.item.publicId}
-              className={styles.stripDot}
-              href={isDestination ? `#${finaleId}` : `#m-${point.item.publicId}`}
-              tabIndex={-1}
-              data-state={point.state}
-              data-next={point.isNext ? "true" : undefined}
-              data-destination={isDestination ? "true" : undefined}
-              style={at(geometry.at(point.item.date as string))}
-              aria-label={`${point.item.title}, ${formatTimelineDate(point.item.date as string, "long")}`}
-            />
-          );
-        })}
-        {next?.item.date && !geometry.earlier.includes(next) ? (
-          <span className={styles.stripLabel} data-align={align(geometry.at(next.item.date))} data-kind="next" style={at(geometry.at(next.item.date))} aria-hidden="true">
-            <small>Next</small>
-            {next.item.title}
-          </span>
-        ) : null}
-        {destination?.item.date && destination !== next ? (
-          <span className={styles.stripLabel} data-align="end" data-kind="destination" style={at(geometry.at(destination.item.date))} aria-hidden="true">
-            {destination.item.title}
-          </span>
-        ) : null}
-      </div>
-    </figure>
-  );
-}
-
-/* ── B · the rows: every moment with its own number ───────────────────────── */
-
-function RowFigure({ point, today }: { point: TimelineArtifactPoint; today: string }) {
-  const days = point.item.date ? daysBetween(today, point.item.date) : null;
-  if (days === null) {
-    return (
-      <span className={styles.rowFigure} data-kind="undated" aria-hidden="true">
-        <strong>–</strong>
-      </span>
-    );
-  }
-  if (days === 0) {
-    return (
-      <span className={styles.rowFigure} data-kind="today">
-        <strong>Today</strong>
-      </span>
-    );
-  }
-  if (days < 0) {
-    return (
-      <span className={styles.rowFigure} data-kind="late">
-        <strong>{-days}</strong> <small>{plural(-days, "day late", "days late")}</small>
-      </span>
-    );
-  }
-  return (
-    <span className={styles.rowFigure} data-kind="ahead">
-      <strong>{days}</strong> <small>{plural(days, "day", "days")}</small>
-    </span>
-  );
-}
-
-/** "2 weeks later", said between two moments when the wait is worth noticing. */
-function gapWords(from: string | undefined, to: string | undefined): string | null {
-  const gap = daysBetween(from, to);
-  if (gap === null || gap < 10) return null;
-  const weeks = Math.round(gap / 7);
-  return `${weeks} ${plural(weeks, "week", "weeks")} later`;
-}
-
-function Rows({
-  heading,
-  timeline,
-  model,
-  sectionId,
-  destinationId,
-}: {
-  heading: string;
-  timeline: AudienceTimelineDto;
-  model: TimelineArtifactModel;
-  sectionId: string;
-  destinationId: string | null;
-}) {
-  const points = model.points.filter((point) => point.item.publicId !== destinationId);
-  const done = points.filter((point) => point.state === "complete");
-  const ahead = points.filter((point) => point.state !== "complete");
-
-  // Every row is plain, readable text in reading order, so a screen reader
-  // hears what a sighted guest sees: the count, the status where it matters,
-  // the title and the date. Only the decorative pin is hidden.
-  const row = (point: TimelineArtifactPoint, index: number, previous: TimelineArtifactPoint | null) => {
-    const complete = point.state === "complete";
-    const gap = previous && !complete ? gapWords(previous.item.date, point.item.date) : null;
-    const rowStyle: RowStyle = { "--row-delay": `${Math.min(80 + index * 40, 440)}ms` };
-    return (
-      <li
-        key={point.item.publicId}
-        id={`m-${point.item.publicId}`}
-        className={styles.row}
-        data-state={point.state}
-        data-next={point.isNext ? "true" : undefined}
-        data-gap={gap ? "true" : undefined}
-        style={rowStyle}
-        aria-current={point.isNext ? "step" : undefined}
-      >
-        {gap ? <span className={styles.gap}>{gap}</span> : null}
-        <span className={styles.pin} aria-hidden="true">
-          {complete ? (
-            <svg viewBox="0 0 16 16" width="16" height="16">
-              <circle cx="8" cy="8" r="7" fill="currentColor" />
-              <path d="M5 8.3 7.1 10.4 11 6" fill="none" stroke="var(--paper)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          ) : null}
-        </span>
-        {complete ? null : (
-          <span className={styles.rowFigureCell}>
-            <RowFigure point={point} today={timeline.today} />
-          </span>
-        )}
-        <span className={styles.rowText}>
-          {complete ? <span className={styles.screenReaderOnly}>{timelinePointStatus(point)}: </span> : null}
-          {point.isNext || point.state === "overdue" ? <span className={styles.rowStatus}>{timelinePointStatus(point)}</span> : null}
-          <span className={styles.rowTitle}>{point.item.title}</span>
-          <span className={styles.rowDate}>
-            {point.item.date ? <time dateTime={point.item.date}>{formatTimelineDate(point.item.date, "long")}</time> : NO_TIMING_LABEL}
-          </span>
-        </span>
-      </li>
-    );
-  };
-
-  return (
-    <section className={styles.moments} id={sectionId} aria-labelledby={`${sectionId}-title`}>
-      <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>{heading}</h2>
-      {points.length === 0 && destinationId ? (
-        <p className={styles.empty} data-kind="only-the-day">
-          <span>Nothing else is planned before the day.</span>
-        </p>
-      ) : points.length === 0 ? (
-        <p className={styles.empty}>
-          <strong>No milestones shared yet.</strong>
-          <span>Milestones will appear here when they are ready.</span>
-        </p>
-      ) : (
-        <>
-          {done.length ? (
-            <ol className={styles.list} data-part="done" aria-label="Complete">
-              {done.map((point, index) => row(point, index, null))}
-            </ol>
-          ) : null}
-          {done.length && ahead.length ? (
-            <p className={styles.todayRule} data-today-marker>
-              <span className={styles.todayDot} aria-hidden="true" />
-              <span>Today</span>
-              <time dateTime={timeline.today}>{weekdayDate(timeline.today)}</time>
-            </p>
-          ) : null}
-          {ahead.length ? (
-            <ol className={styles.list} data-part="ahead" aria-label="Still to come">
-              {ahead.map((point, index) => row(point, done.length + index, index ? ahead[index - 1] : null))}
-            </ol>
-          ) : null}
-        </>
-      )}
-      {model.axis.mode === "ordered" && points.length > 1 ? (
-        <p className={styles.axisNote}>Shown in order. Some timings are not set yet.</p>
-      ) : null}
-    </section>
-  );
-}
-
-/* ── D · the finale: the day itself ───────────────────────────────────────── */
-
-/** "11 weeks and 2 days to go": the same wait as the hero's number, felt differently. */
-function waitWords(days: number): string {
-  if (days < 14) return `${days} ${plural(days, "day", "days")} to go.`;
-  const weeks = Math.floor(days / 7);
-  const rest = days % 7;
-  return `${weeks} weeks${rest ? ` and ${rest} ${plural(rest, "day", "days")}` : ""} to go.`;
-}
-
-function Finale({
-  timeline,
-  id,
-  onShare,
-  shareLabel,
-}: Pick<TimelineArtifactProps, "timeline" | "onShare" | "shareLabel"> & { id: string }) {
-  const day = timeline.primaryDate;
-  if (!day) return null;
-  const countdown = buildTimelineCountdown(day.date, timeline.today);
-  const line = countdown?.kind === "future"
-    ? waitWords(countdown.days)
-    : countdown?.kind === "today"
-      ? "It is today."
-      : countdown?.kind === "past"
-        ? `${countdown.days} ${plural(countdown.days, "day", "days")} ago.`
-        : null;
-  return (
-    <section className={styles.finale} id={id} aria-labelledby={`${id}-title`}>
-      <p className={styles.finaleDate}>
-        <time dateTime={day.date}>{weekdayDate(day.date)}</time>
-      </p>
-      <h2 className={styles.finaleTitle} id={`${id}-title`}>The {day.label.toLowerCase()}</h2>
-      {line ? <p className={styles.finaleLine}>{line}</p> : null}
-      {onShare ? (
-        <div className={styles.finaleActions}>
-          <ShareButton onShare={onShare} shareLabel={shareLabel} className={styles.pillButton} />
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-function PlanningDecisions({ timeline, model }: { timeline: AudienceTimelineDto; model: TimelineArtifactModel }) {
-  if (!model.cancelled.length) return null;
-  return (
-    <details className={styles.decisions}>
-      <summary>
-        {model.cancelled.length} planning {model.cancelled.length === 1 ? "decision" : "decisions"}
-      </summary>
-      <div>
-        {model.cancelled.map((item) => (
-          <span key={item.publicId}>
-            {item.title}
-            {item.date ? <time dateTime={item.date}>{formatTimelineDate(item.date)}</time> : null}
-          </span>
-        ))}
-      </div>
-      <span className={styles.screenReaderOnly}>{timeline.label}</span>
-    </details>
-  );
-}
-
-export function TimelineArtifact({
-  timeline,
-  compact = false,
-  embedded = false,
-  showProductHeader = true,
-  privatePreview = false,
-  className,
-  onShare,
-  shareLabel,
-}: TimelineArtifactProps) {
-  const reactId = useId().replaceAll(":", "");
-  const model = useMemo(() => buildTimelineArtifactModel(timeline), [timeline]);
-  const nouns = timelineNouns(timeline.audienceKind);
-  const sectionId = `${reactId}-timeline`;
-  const finaleId = `${reactId}-day`;
-  // The day itself closes the page as the finale, so when it is also published
-  // as a milestone it is not listed a second time among the rows.
-  const last = model.points[model.points.length - 1];
-  const destinationId = timeline.primaryDate && last?.item.date === timeline.primaryDate.date ? last.item.publicId : null;
-
-  const artifactRef = useRef<HTMLElement | null>(null);
-  useLayoutEffect(() => markEntranceSeen(artifactRef.current), []);
-
-  return (
-    <article
-      ref={artifactRef}
-      // ENTRANCE_GUARD writes data-entrance and data-entrance-guard onto this
-      // element before hydration; CSS reads them, so they cannot move to a
-      // property, and React is told not to report the difference.
-      suppressHydrationWarning
-      className={[styles.artifact, className].filter(Boolean).join(" ")}
-      data-timeline-artifact
-      data-compact={compact ? "true" : undefined}
-      data-embedded={embedded ? "true" : undefined}
-      data-density={model.density}
-      data-axis={model.axis.mode}
-      data-title-length={artifactTitleLength(timeline.label)}
-    >
-      <script dangerouslySetInnerHTML={{ __html: ENTRANCE_GUARD }} />
-      <a className={styles.skipLink} href={`#${sectionId}`}>Skip to timeline</a>
-      <header className={styles.header}>
-        {showProductHeader ? <ProductIdentity timeline={timeline} onShare={onShare} shareLabel={shareLabel} /> : null}
-        <Hero timeline={timeline} model={model} nouns={nouns} privatePreview={privatePreview} />
+export function TimelineArtifact({ timeline, compact = false, embedded = false, showProductHeader = true, privatePreview = false,
+  className, onShare, shareLabel, owner, guestServices, theme }: TimelineArtifactProps) {
+  const root = useRef<HTMLElement>(null), dialog = useRef<HTMLDialogElement>(null), allButton = useRef<HTMLButtonElement>(null);
+  const [expanded, setExpanded] = useState(false), [lastVisit, setLastVisit] = useState<string>(), [live, setLive] = useState("");
+  const board = useBoard(root, compact, embedded), id = useId(), isOwner = !!owner || privatePreview;
+  const model = useMemo(() => buildMaster3Model(timeline, { lastVisit, expanded, viewer: isOwner ? "owner" : "guest" }), [timeline, lastVisit, expanded, isOwner]);
+  const p = model.presentation, title = timeline.ownerDisplayLabel || timeline.label;
+  const passedProgress = p.market === "school" || p.progressNoun?.includes("passed");
+  const progressCount = passedProgress ? model.progress.passed : model.milestones.filter(item => item.sourceState === "covered").length;
+  const progressNoun = p.progressNoun || (passedProgress ? "dates passed" : "milestones done");
+  useEffect(() => {
+    if (isOwner || !timeline.publicationId) return;
+    const timer = window.setTimeout(() => {
+      try { const key = `signal:timeline:last-visit:${timeline.publicationId}`, previous = localStorage.getItem(key);
+        if (previous && /^\d{4}-\d{2}-\d{2}$/.test(previous) && Number.isFinite(Date.parse(`${previous}T12:00:00Z`)) && new Date(`${previous}T12:00:00Z`).toISOString().slice(0, 10) === previous) setLastVisit(previous);
+        localStorage.setItem(key, timeline.today);
+      } catch { /* Optional local preference; no tracking or network. */ }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [timeline.publicationId, timeline.today, isOwner]);
+  const day = model.hero.targetDate, time = model.milestones.find(item => item.isFinal)?.presentation.time;
+  const place = p.locationConsent ? p.place : undefined, address = p.locationConsent ? p.address : undefined;
+  const maps = place || address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([place, address].filter(Boolean).join(", "))}` : undefined;
+  const nearDay = model.dayBefore || model.onDay, editHref = safeActionHref(owner?.editHref), canEdit = owner?.onEdit || editHref;
+  const share = !privatePreview && (!!onShare || !!safeActionHref(guestServices?.shareUrl));
+  const primaryAction = isOwner ? canEdit ? owner?.onEdit ? <button className={styles.solidButton} onClick={owner.onEdit}><Icon kind="edit" /><span className={styles.editFull}>Edit this timeline</span><span className={styles.editShort}>Edit</span></button> : <a className={styles.solidButton} href={editHref}><Icon kind="edit" /><span className={styles.editFull}>Edit this timeline</span><span className={styles.editShort}>Edit</span></a> : null : nearDay && maps ? <a className={styles.solidButton} href={maps} target="_blank" rel="noopener noreferrer"><Icon kind="pin" />Get directions</a> : !model.noDates && !model.after ? <CalendarAction timeline={timeline} model={model} service={guestServices?.calendar} announce={setLive} /> : null;
+  const gift = !privatePreview && p.giftName ? <span>{p.giftLead || "Gifted by"} {safeActionHref(p.giftUrl) ? <a href={p.giftUrl} target="_blank" rel="noopener noreferrer"><strong>{p.giftName}</strong></a> : <strong>{p.giftName}</strong>}</span> : null;
+  const openAll = () => dialog.current?.showModal();
+  const expand = () => { const first = model.phone.hidden[0]?.publicId; setExpanded(true); setLive("All timeline dates shown."); requestAnimationFrame(() => { if (first) document.getElementById(`m-${first}`)?.focus(); }); };
+  return <article ref={root} className={[styles.artifact, className].filter(Boolean).join(" ")} data-timeline-artifact data-master3-artifact data-layout={board.stage ? "stage" : "stack"} data-theme={theme} data-compact={compact ? "true" : undefined} data-embedded={embedded ? "true" : undefined} style={{ "--x-m3-board-scale": board.scale } as CSSProperties}>
+    <a className={styles.skipLink} href={`#${id}-milestones`}>Skip to timeline</a><p className={styles.screenReaderOnly} role="status" aria-live="polite" aria-atomic="true">{live}</p>
+    <div className={styles.board}>
+      <header className={styles.productHeader}>
+        {showProductHeader ? <a href={PRODUCT_MARKETING_URLS.timeline} className={styles.productMark} data-timeline-wordmark aria-label="Signal Timeline" target="_blank" rel="noopener noreferrer">timeline<span>.</span></a> : <span />}
+        <div className={styles.headerActions}>{share ? <ShareAction title={title} date={day} url={guestServices?.shareUrl} onShare={onShare} label={shareLabel} phone={!board.stage} iconOnly={isOwner && !board.stage} announce={setLive} /> : null}<div className={styles.phoneEdit}>{isOwner ? primaryAction : null}</div>{owner ? <OwnerMenu owner={owner} announce={setLive} /> : null}</div>
       </header>
-
-      <Strip timeline={timeline} model={model} finaleId={finaleId} />
-      <Rows heading={nouns.heading} timeline={timeline} model={model} sectionId={sectionId} destinationId={destinationId} />
-      {/* One Share per page: the header carries it when it shows; the finale
-          offers it only where there is no header (the embedded frames). */}
-      <Finale timeline={timeline} id={finaleId} onShare={showProductHeader ? undefined : onShare} shareLabel={shareLabel} />
-      <PlanningDecisions timeline={timeline} model={model} />
-
-      {!privatePreview ? <footer className={styles.footer}>
-        <span>Updated {formatTimelineDate(timeline.lastUpdatedAt.slice(0, 10))}</span>
-        {/* The artifact is the product's own advertisement, and the
-            attribution walks. The /s tree already sends no-referrer, so the
-            bearer URL stays put. */}
-        <a className={styles.footerLink} href={`${PRODUCT_MARKETING_URLS.timeline}?src=shared-timeline`} target="_blank" rel="noopener">
-          <span className={styles.footerMark} aria-hidden="true">timeline<span /></span>
-          Made with Signal Timeline · Make one for your day
-        </a>
-      </footer> : null}
-    </article>
-  );
+      <section className={styles.hero} aria-label="Timeline countdown"><p className={styles.eyebrow}>{privatePreview ? "Your current project timeline" : p.eyebrow || "A shared timeline"}</p><Name title={title} stage={board.stage} /><p className={styles.count}><span className={styles.screenReaderOnly}>{model.noDates ? "No dates yet. Dates to follow." : `${model.hero.value} ${model.hero.line1} ${model.hero.line2}.`}</span><span className={styles.countValue} aria-hidden="true" data-word={model.hero.kind !== "countdown" || undefined}>{model.hero.value}</span><span className={styles.countUnit} aria-hidden="true"><span>{model.hero.line1}</span><span>{model.hero.line2}</span></span></p></section>
+      <section className={styles.dayPanel} aria-label={p.panelLabel || model.final?.title || "Next date"}>
+        <h2 className={styles.eyebrow}>{p.panelLabel || (p.countTo === "next" ? "Next date" : model.final?.title || "Timeline dates")}</h2><PanelDate date={day} time={time} stage={board.stage} />
+        {(place || time) ? <p className={styles.placeLine}>{time ? <span className={styles.desktopTime}>{time}{place ? " · " : ""}</span> : null}{place ? <a href={maps} target="_blank" rel="noopener noreferrer"><Icon kind="pin" />{place}</a> : null}</p> : null}
+        {model.progress.show ? <div className={styles.progress}><p>{progressCount} of {model.progress.total} {progressNoun}</p><div role="progressbar" aria-label="Timeline progress" aria-valuemin={0} aria-valuemax={model.progress.total} aria-valuenow={progressCount} aria-valuetext={`${progressCount} of ${model.progress.total} ${progressNoun}`}><span style={{ width: `${model.progress.total ? progressCount / model.progress.total * 100 : 0}%` }} /></div></div> : null}<div className={styles.panelAction}>{primaryAction}</div>
+      </section>
+      <div className={styles.desktopRail} id={board.stage ? `${id}-milestones` : undefined}><Rail model={model} owner={isOwner} /></div>
+      <section className={styles.phoneTimeline} id={!board.stage ? `${id}-milestones` : undefined}><div className={styles.sectionHeading}><h2>Milestones</h2><span>{progressCount} of {model.progress.total} {passedProgress ? "passed" : "done"}</span></div>{model.returningHint ? <p className={styles.since}><strong>Since you were here:</strong> {model.returningHint.text}</p> : null}{model.noDates && !model.milestones.length ? <div className={styles.emptyPhone}><span className={styles.emptyFlag}><Icon kind="flag" /></span><div><strong>Dates to follow</strong><p>Dates appear here when {timeline.ownerDisplayLabel || "the owner"} adds them.</p></div></div> : <TimelineList model={model} owner={isOwner} expanded={expanded} expand={expand} />}</section>
+      <div className={styles.phoneActions}>{isOwner ? share ? <ShareAction title={title} date={day} url={guestServices?.shareUrl} onShare={onShare} label="Share this timeline" announce={setLive} /> : null : nearDay ? null : primaryAction}{!isOwner && !model.after ? <div className={styles.gift}>{gift}</div> : null}</div>
+      {nearDay ? <section className={styles.onDayPhone}><h2 className={styles.eyebrow}>On the day</h2>{!isOwner ? primaryAction : null}{p.onDayNote ? <p>{p.onDayNote}</p> : null}{p.venueNote ? <p className={styles.quiet}>{p.giftName ? <strong>From {p.giftName} · </strong> : null}{p.venueNote}</p> : null}<div className={styles.gift}>{gift}</div></section> : null}
+      <section className={styles.comingUp} data-phase={model.after ? "after" : nearDay ? "day" : undefined}><div className={styles.sectionHeading}><h2>{nearDay ? "On the day" : model.after ? `From ${timeline.ownerDisplayLabel || "the owner"}` : "Coming up"}</h2><div>{!nearDay && !model.after && model.progress.total > 3 ? <span>{model.milestones.filter(item => !item.datePassed).length} to go</span> : null}{model.milestones.length > 10 ? <button ref={allButton} className={styles.textButton} onClick={openAll}>See all {model.milestones.length} dates</button> : null}</div></div>{model.returningHint?.showInComingUp ? <p className={styles.since}><strong>Since you were here:</strong> {model.returningHint.text}</p> : null}{nearDay || model.after ? p[nearDay ? "onDayNote" : "afterNote"] ? <p className={styles.ownerNote}>{p[nearDay ? "onDayNote" : "afterNote"]}</p> : null : model.noDates ? <p className={styles.emptyCopy}>Dates appear here when {timeline.ownerDisplayLabel || "the owner"} adds them.</p> : null}
+        <ul className={styles.upcomingRows}>{[...model.comingUp, ...model.then.slice(0, 1)].map(item => <li key={item.publicId} data-next={item.isNext || undefined}><span className={styles.rowCount}>{item.isPostFinal ? item.isToday ? "Today" : "Then" : item.isToday ? "Today" : <>{item.daysUntil}<small>{item.daysUntil === 1 ? "day" : "days"}</small></>}</span><div><p className={item.isNext || item.presentation.forYou ? styles.strong : undefined}>{item.title}{item.isNext && !item.isToday ? <span className={styles.nextWord}>Next</span> : null}{item.presentation.forYou ? <span className={styles.tag}>{isOwner ? "For guests" : "For you"}</span> : null}</p>{item.presentation.note ? <small>{item.presentation.note}</small> : null}</div><time dateTime={item.date ?? undefined}>{dateText(item.date)}{item.presentation.time ? ` · ${item.presentation.time}` : ""}</time></li>)}</ul>
+      </section>
+      <aside className={styles.sidePanel}>{isOwner ? <><h2 className={styles.eyebrow}>Guest updates</h2>{owner?.followerCount !== undefined ? <p className={styles.followerCount}>{owner.followerCount > 0 ? <><strong>{owner.followerCount}</strong> guests get email updates</> : "No guests follow yet."}</p> : null}{owner?.nextEmail ? <p>{owner.nextEmail}</p> : null}{owner?.shareCue ? <p>{owner.shareCue}</p> : null}{privatePreview ? <p className={styles.quiet}>This current preview is private. Your tasks stay private.</p> : null}{owner && model.after ? <ReferralControl owner={owner} announce={setLive} /> : null}</> : nearDay ? <><h2 className={styles.eyebrow}>Getting there</h2>{maps ? <a className={styles.address} href={maps} target="_blank" rel="noopener noreferrer">{[place, address].filter(Boolean).join(", ")}</a> : null}{p.venueNote ? <p>{p.giftName ? <strong>From {p.giftName} · </strong> : null}{p.venueNote}</p> : null}</> : model.after && p.photosUrl ? <><h2 className={styles.eyebrow}>The photos</h2><a className={styles.outlineButton} href={safeActionHref(p.photosUrl)} target="_blank" rel="noopener noreferrer">Open the album</a></> : model.after && !model.duringNow && model.allDone && p.next ? <><h2 className={styles.eyebrow}>Next year</h2><a className={styles.textButton} href={safeActionHref(p.next.url)}>{p.next.label}</a></> : !model.duringNow && (!model.after || p.afterFollow || !model.allDone) && guestServices?.follow ? <><h2 className={styles.eyebrow}>{model.after && p.afterFollow ? "The photos" : "Follow along"}</h2>{p.pitch ? <p>{p.pitch}</p> : null}{guestServices.follow}</> : null}</aside>
+      <footer className={styles.footer}><div className={styles.footerCredit}>{board.stage || isOwner || model.after ? gift : null}{!privatePreview && model.after && p.referral !== false && p.giftUrl ? <a className={styles.textButton} href={safeActionHref(p.giftUrl)} target="_blank" rel="noopener noreferrer">Planning your own day?</a> : null}</div><p>{model.updated ? <><span>Updated {dateText(model.updated)}</span><span aria-hidden="true">·</span></> : null}{!privatePreview ? <a href={`${PRODUCT_MARKETING_URLS.timeline}?src=shared-timeline`} target="_blank" rel="noopener noreferrer">Made with <strong>signal<span className={styles.accentDot}>.</span></strong></a> : <span>Private current preview</span>}</p></footer>
+    </div>
+    <dialog ref={dialog} className={styles.allDatesDialog} aria-label="All timeline dates" onClose={() => allButton.current?.focus()} onClick={event => { if (event.target === event.currentTarget) dialog.current?.close(); }}><header><h2>All {model.milestones.length} dates</h2><button className={styles.outlineButton} autoFocus onClick={() => dialog.current?.close()}>Close</button></header><TimelineList model={model} owner={isOwner} expanded expand={() => {}} all /></dialog>
+  </article>;
 }
-
