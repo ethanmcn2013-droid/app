@@ -1,5 +1,5 @@
 import 'server-only';
-import {createGuestFollowService,createGuestFollowStore,guestSigningAvailable,resolveGuestSubscriberWith,type FollowResult} from './guest-services';
+import {createGuestFollowService,createGuestFollowStore,guestSigningAvailable,verifyGuestSubscriberProof,resolveGuestSubscriberWith,type FollowResult} from './guest-services';
 import {master3CalendarLinks,renderMaster3Ics,type GuestTimelineServices} from '../lib/master3-calendar';
 import type {AudienceTimelineDto} from '../lib/audience-timeline';
 export type GuestHttpPorts={resolve:(token:string)=>Promise<{kind:string;dto?:AudienceTimelineDto}>;follow:ReturnType<typeof createGuestFollowService>;followAvailable:()=>Promise<boolean>};
@@ -36,6 +36,7 @@ export async function handleTimelineGuestRequest(request:Request,token:string,op
 }
 /** Signed subscriber routes use the same live share policy; no raw share token is persisted. */
 export async function resolveGuestSubscriber(proof:string,purpose:'view'|'unsubscribe',allowUnsubscribed=false){
+ if(!verifyGuestSubscriberProof(proof,process.env.TIMELINE_FOLLOW_SIGNING_SECRET,purpose))return null;
  const [{db},{timelineGuestSubscriptions},{eq},{resolveAudienceTimelineDigest}]=await Promise.all([import('./db/timeline-client'),import('./db/timeline-schema'),import('drizzle-orm'),import('./audience-timeline')]);
  return resolveGuestSubscriberWith({secret:process.env.TIMELINE_FOLLOW_SIGNING_SECRET,findSubscription:async id=>(await db.select().from(timelineGuestSubscriptions).where(eq(timelineGuestSubscriptions.id,id)).limit(1))[0]??null,resolveDigest:resolveAudienceTimelineDigest},proof,purpose,allowUnsubscribed);
 }
