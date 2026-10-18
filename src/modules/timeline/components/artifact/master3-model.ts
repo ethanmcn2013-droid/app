@@ -162,13 +162,14 @@ export function buildMaster3Model(dto: Input, options: {
     const scheduled = timestamp - daysBefore * DAY;
     if (scheduled >= today) reminders.push({ date: new Date(scheduled).toISOString().slice(0, 10), milestoneId: id, kind, daysBefore });
   };
-  for (const item of active) {
+  const weddingAfterFinal = after && (dto.audienceKind === "couple" || p.market === "wedding");
+  for (const item of weddingAfterFinal ? [] : active) {
     if (item.sourceState === "covered") continue;
     const postFinalReminder = item.isPostFinal && (p.market === "launch" || p.market === "school");
     if (postFinalReminder) addReminder(day(item.date!), item.publicId, "post-final", 7);
     else if (item.presentation.forYou) addReminder(day(item.date!), item.publicId, "for-you", 7);
   }
-  if (final) for (const daysBefore of [30, 7, 1]) addReminder(day(final.date), final.publicId, "final", daysBefore);
+  if (final && !weddingAfterFinal) for (const daysBefore of [30, 7, 1]) addReminder(day(final.date), final.publicId, "final", daysBefore);
   reminders.sort((a, b) => a.date.localeCompare(b.date));
   return { title: master3TimelineTitle(dto), presentation: p, today: dto.today, milestones, undated, final, next, postFinal, hero,
     noDates, after, onDay, dayBefore, duringNow,

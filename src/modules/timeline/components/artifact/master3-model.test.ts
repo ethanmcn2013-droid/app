@@ -32,6 +32,7 @@ test("follow reminders match active market-specific events and omit already cove
     [{ date: "2026-11-04", milestoneId: "post", kind: "post-final", daysBefore: 7 }]);
   const wedding = buildMaster3Model({ ...source, presentation: { market: "wedding" } });
   assert.ok(!wedding.reminders.some(reminder => reminder.kind === "post-final"));
+  assert.deepEqual(buildMaster3Model({ ...source, audienceKind: "couple", today: "2026-11-02" }).reminders, []);
 });
 
 test("empty and undated models never synthesize dates, RSVP completion, or wedding content", () => {
