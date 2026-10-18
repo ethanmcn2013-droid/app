@@ -199,16 +199,35 @@ export async function master3SchemaAvailable(): Promise<boolean> {
     return result.rows.length === 4;
 }
 
-/** Enqueue only after the primary write committed. Failure cannot erase a saved change or claim mail was sent. */
-export async function queueMaster3PublishedUpdate(database:typeof db,input:{publicationId:string;kind:'update'|'date_change'|'photos';eventKey:string;now?:Date}):Promise<boolean>{
-    try{
-        const tables=await database.run(sql`SELECT name FROM sqlite_master WHERE type='table' AND name IN ('timeline_guest_subscriptions','timeline_guest_deliveries')`);
-        if(tables.rows.length!==2)return false;
-        const {enqueuePublishedGuestUpdate}=await import('./guest-notifications');
-        await database.transaction(tx=>enqueuePublishedGuestUpdate(tx,input),{behavior:'immediate'});
+/** Enqueue after the primary write committed. No external transport runs here. */
+export async function queueMaster3PublishedUpdate(
+    database: typeof db,
+    input: {
+        publicationId: string;
+        kind: 'update' | 'date_change' | 'photos';
+        eventKey: string;
+        now?: Date;
+    },
+): Promise<boolean> {
+    try {
+        const tables = await database.run(sql`
+            SELECT name FROM sqlite_master
+            WHERE type='table'
+            AND name IN ('timeline_guest_subscriptions','timeline_guest_deliveries')
+        `);
+        if (tables.rows.length !== 2) return false;
+        const { enqueuePublishedGuestUpdate } = await import('./guest-notifications');
+        await database.transaction(
+            tx => enqueuePublishedGuestUpdate(tx, input),
+            { behavior: 'immediate' },
+        );
         return true;
-    }catch{
-        try{opLog('warn','timeline-guest-update','notification_queue_unavailable');}catch{/* Diagnostics cannot alter a successful save. */}
+    } catch {
+        try {
+            opLog('warn', 'timeline-guest-update', 'notification_queue_unavailable');
+        } catch {
+            // Diagnostics cannot alter a successful primary save.
+        }
         return false;
     }
 }
