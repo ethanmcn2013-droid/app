@@ -190,3 +190,62 @@ test("a share expiring during source authorization is rechecked at physical disp
     assert.equal(result.suppressed, 1); assert.equal(calls, 0);
   } finally { f.client.close(); }
 });
+
+for (const audienceSize of [21, 1002]) {
+  test(`${audienceSize} reminder recipients make bounded progress across same-day wakes without replay or bystander changes`, async () => {
+    const f = await fixture(); try {
+      await f.client.execute({ sql: `WITH RECURSIVE n(i) AS(SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i<?)
+        INSERT INTO timeline_guest_subscriptions(id,publication_id,share_token_hash,email,email_hash,state,confirmed_at,delivery_state)
+        SELECT 'scale-'||i,'publication',?,'scale'||i||'@example.invalid','scale-hash-'||i,'confirmed',1,'sent' FROM n`,
+        args: [audienceSize - 1, 'b'.repeat(64)] });
+      await f.db.insert(schema.timelineGuestSubscriptions).values({ id: 'bystander', publicationId: 'publication',
+        shareTokenHash: 'b'.repeat(64), email: 'unconfirmed@example.invalid', emailHash: 'untouched', state: 'pending' });
+      const beforeSubscriptions = await f.db.select().from(schema.timelineGuestSubscriptions);
+      assert.equal((await scheduleGuestReminders(f.db, now)).inserted, audienceSize * 3);
+      const calls = new Map<string, number>(); let wakes = 0, totalSent = 0, totalUnknown = 0;
+      const sender = transport(async message => {
+        assert.notEqual(message.to, 'unconfirmed@example.invalid');
+        calls.set(message.to, (calls.get(message.to) ?? 0) + 1);
+        if (message.to === 'invented@example.invalid') return { state: 'unknown' };
+        return { state: 'sent', providerMessageId: `scale-provider-${calls.size}` };
+      });
+      for (; wakes < Math.ceil(audienceSize / 20); wakes++) {
+        const wake = new Date(now.getTime() + wakes * 5 * 60_000);
+        assert.equal((await scheduleGuestReminders(f.db, wake)).inserted, 0);
+        const result = await f.dispatch(sender, wake);
+        assert.equal(result.suppressed, 0); assert.equal(result.failed, 0);
+        assert.equal(result.sent + result.unknown, Math.min(20, audienceSize - wakes * 20));
+        totalSent += result.sent; totalUnknown += result.unknown;
+        const rows = await f.rows();
+        assert.equal(rows.filter(row => row.kind === 'final30' && row.status === 'pending').length,
+          Math.max(0, audienceSize - (wakes + 1) * 20));
+        assert.equal(rows.filter(row => row.kind !== 'final30' && row.status === 'pending').length, audienceSize * 2);
+      }
+      assert.equal(totalSent, audienceSize - 1); assert.equal(totalUnknown, 1);
+      assert.equal(calls.size, audienceSize); assert.ok([...calls.values()].every(count => count === 1));
+      const extra = await f.dispatch(sender, new Date(now.getTime() + wakes * 5 * 60_000));
+      assert.equal(extra.sent + extra.unknown + extra.suppressed + extra.failed, 0);
+      assert.equal(calls.size, audienceSize);
+      assert.deepEqual(await f.db.select().from(schema.timelineGuestSubscriptions), beforeSubscriptions);
+      const rows = await f.rows();
+      assert.equal(rows.filter(row => row.status === 'unknown').length, 1);
+      assert.equal(rows.filter(row => row.status === 'sent').length, audienceSize - 1);
+      assert.ok(rows.filter(row => row.status === 'sent').every(row => row.attemptId && row.providerMessageId && row.sentAt));
+    } finally { f.client.close(); }
+  });
+}
+
+test('a bounded backlog is suppressed if the physical dispatch clock crosses the reminder calendar cutoff', async () => {
+  const f = await fixture(); try {
+    const beforeCutoff = new Date('2026-11-01T23:59:59Z');
+    await scheduleGuestReminders(f.db, beforeCutoff);
+    let instant = beforeCutoff, calls = 0;
+    const result = await dispatchDueGuestNotifications({ database: f.db, links, clock: () => instant,
+      authorize: async () => { instant = new Date('2026-11-02T00:00:00Z'); return true; },
+      transport: transport(async () => { calls++; return { state: 'sent', providerMessageId: 'too-late' }; }) });
+    assert.equal(result.suppressed, 1); assert.equal(calls, 0);
+    const rows = await f.rows();
+    assert.equal(rows.find(row => row.kind === 'final30')?.status, 'suppressed');
+    assert.equal(rows.filter(row => row.status === 'pending').length, 2);
+  } finally { f.client.close(); }
+});
