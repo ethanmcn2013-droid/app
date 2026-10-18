@@ -101,6 +101,17 @@ test("during-exam mode has no follow invitation, and explicit pitch is retained 
   assert.equal(copy.invitation, "Hear about this public event.");
 });
 
+test("an undated final does not hide real preparatory reminder dates or invent a generic photo promise", () => {
+  const source = dto({ sections: [{ state: "later", label: "Dates", items: [
+    item("prep", "2026-10-26", { forYou: true }),
+    { publicId: "final", title: "Final date to follow", state: "later", presentation: { final: true } },
+  ] }] });
+  assert.match(master3FollowCopy(source).nextEmail, /Public prep reminder/);
+  const generic = master3FollowCopy(dto({ audienceKind: "module", today: "2026-11-21", presentation: { afterFollow: true } }));
+  assert.equal(generic.offer, null);
+  assert.doesNotMatch(generic.invitation, /one email.*photos/);
+});
+
 test("email validation gives a specific empty error and rejects server-invalid shapes", () => {
   assert.equal(master3FollowEmailError("  "), "Enter your email address.");
   for (const value of ["person", "person@example", "a@b@c.invalid", "a<@example.invalid", "a\n@example.invalid", "a".repeat(255) + "@example.invalid"]) {

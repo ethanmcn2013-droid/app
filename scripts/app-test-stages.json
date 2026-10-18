@@ -471,6 +471,7 @@
     "./src/test/register-server-only.mjs",
     "--test",
     "src/modules/timeline/components/artifact/master3-model.test.ts",
+    "src/modules/timeline/components/artifact/master3-follow-copy.test.ts",
     "src/modules/timeline/lib/master3-presentation.test.ts",
     "src/modules/timeline/lib/master3-calendar.test.ts",
     "src/modules/timeline/lib/master3-social.test.ts",
