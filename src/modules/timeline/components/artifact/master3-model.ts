@@ -40,7 +40,7 @@ export type Master3Model = Readonly<{
   returningHint: Readonly<{ items: readonly Master3Milestone[]; text: string; showInComingUp: boolean }> | null;
   phone: Readonly<{ visible: readonly Master3Milestone[]; hidden: readonly Master3Milestone[];
     earlier: readonly Master3Milestone[]; hiddenRange: Readonly<{ from: string; to: string }> | null }>;
-  progress: Readonly<{ passed: number; total: number; percent: number; show: boolean }>;
+  progress: Readonly<{ passed: number; completed: number; total: number; percent: number; show: boolean }>;
   updated: string | null;
   /** Projected schedule only, never evidence that an email was sent. */
   reminders: readonly Readonly<{ date: string; milestoneId: string | null; kind: "for-you" | "final" | "post-final"; daysBefore: number }>[];
@@ -83,9 +83,9 @@ export function buildMaster3Model(dto: Input, options: {
     return { publicId: item.publicId, title: item.title, date: item.date ?? null,
       sourceState: item.state, presentation, datePassed, isToday,
       daysUntil: timestamp === null ? null : (timestamp - today) / DAY,
-      isFinal: final?.publicId === item.publicId,
+      isFinal: (flagged?.item.publicId ?? final?.publicId) === item.publicId,
       isNext, isPostFinal: finalTimestamp !== null && timestamp !== null && timestamp > finalTimestamp,
-      displayState: timestamp === null ? "undated" : datePassed ? presentation.forYou ? "passed" : "done"
+      displayState: timestamp === null ? "undated" : datePassed ? presentation.forYou || item.state !== "covered" ? "passed" : "done"
         : isToday ? "today" : isNext ? "next" : "upcoming" };
   });
   const undated = milestones.filter(item => item.date === null);
@@ -97,7 +97,7 @@ export function buildMaster3Model(dto: Input, options: {
   const target = countNext ? { date: next.date!, title: next.title } : final;
   const noun = countNext ? next.title : p.unitNoun ?? p.panelLabel ?? final?.title ?? "the next milestone";
   let hero: Master3Hero;
-  if (!target) hero = { kind: "soon", value: "Soon", line1: "dates to follow", line2: "", targetDate: null };
+  if (!target) hero = { kind: "soon", value: "Soon", line1: flagged ? "final date to follow" : "dates to follow", line2: "", targetDate: null };
   else if (duringNow) hero = { kind: "during", value: p.during!.word, line1: p.during!.l1 ?? "", line2: p.during!.l2 ?? "", targetDate: final!.date };
   else if (after) hero = { kind: "after", value: p.after?.word ?? "Past", line1: p.after?.l1 ?? "The final date has passed", line2: p.after?.l2 ?? "", targetDate: final!.date };
   else {
@@ -136,8 +136,20 @@ export function buildMaster3Model(dto: Input, options: {
   const earlier = milestones.slice(0, start), candidates = milestones.slice(start);
   const dense = milestones.length > 10 && !options.expanded && !after;
   const nextIndex = Math.max(0, candidates.findIndex(item => item.isNext));
-  const visible = dense ? candidates.filter((item, index) => index < nextIndex + 5 || item.presentation.forYou ||
-    item.isFinal || item.date === null || index === candidates.length - 1) : candidates;
+  const phoneKeep = new Set<number>();
+  if (dense) candidates.forEach((item, index) => {
+    if (index < nextIndex + 5 || item.isFinal || item.date === null || index === candidates.length - 1) phoneKeep.add(index);
+    if (item.presentation.forYou) {
+      phoneKeep.add(index);
+      // Keep at most three immediately preceding plain dates, never the whole
+      // gap to a distant required date. The final filter preserves chronology.
+      for (let prior = index - 1, count = 0; prior >= 0 && count < 3; prior--) {
+        if (candidates[prior].presentation.forYou || candidates[prior].isFinal) break;
+        phoneKeep.add(prior); count++;
+      }
+    }
+  });
+  const visible = dense ? candidates.filter((_, index) => phoneKeep.has(index)) : candidates;
   const visibleIds = new Set(visible.map(item => item.publicId));
   const hidden = candidates.filter(item => !visibleIds.has(item.publicId));
   const passed = milestones.filter(item => item.datePassed).length;
@@ -160,7 +172,8 @@ export function buildMaster3Model(dto: Input, options: {
     allDone: milestones.length > 0 && undated.length === 0 && passed === milestones.length && !duringNow,
     comingUp, then, returningHint,
     phone: { visible, hidden, earlier, hiddenRange: hidden.length ? { from: hidden[0].date!, to: hidden.at(-1)!.date! } : null },
-    progress: { passed, total: milestones.length, percent: milestones.length ? Math.round(passed / milestones.length * 100) : 0,
+    progress: { passed, completed: milestones.filter(item => item.sourceState === "covered").length,
+      total: milestones.length, percent: milestones.length ? Math.round(passed / milestones.length * 100) : 0,
       show: dated.length > 0 && !after && !onDay && !dayBefore },
     updated: updateAge >= 0 && updateAge <= 60 * DAY ? updateDate : null, reminders };
 }

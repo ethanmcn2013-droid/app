@@ -14,7 +14,7 @@ function dto(items: readonly AudienceTimelineItemDto[], changes: Partial<Audienc
 test("empty and undated models never synthesize dates, RSVP completion, or wedding content", () => {
   const empty = buildMaster3Model(dto([]));
   assert.deepEqual(empty.hero, { kind: "soon", value: "Soon", line1: "dates to follow", line2: "", targetDate: null });
-  assert.deepEqual(empty.progress, { passed: 0, total: 0, percent: 0, show: false });
+  assert.deepEqual(empty.progress, { passed: 0, completed: 0, total: 0, percent: 0, show: false });
   assert.equal(empty.final, null); assert.equal(empty.allDone, false); assert.deepEqual(empty.reminders, []);
   const undated = buildMaster3Model(dto([item("rsvp", undefined, { forYou: true })]));
   assert.equal(undated.undated[0].displayState, "undated");
@@ -29,7 +29,11 @@ test("date passage is independent of original Tasks state; today remains unpasse
   assert.equal(model.milestones[0].displayState, "passed"); assert.equal(model.milestones[0].sourceState, "later");
   assert.equal(model.milestones[1].datePassed, false); assert.equal(model.milestones[1].sourceState, "covered");
   assert.equal(model.next?.publicId, "today"); assert.equal(model.progress.passed, 1);
+  assert.equal(model.progress.completed, 1);
   assert.equal(JSON.stringify(source), before);
+  const ordinary = buildMaster3Model(dto([item("ordinary", "2026-10-18"), { ...item("actually-done", "2026-10-18"), state: "covered" }]));
+  assert.equal(ordinary.milestones[0].displayState, "passed");
+  assert.equal(ordinary.milestones[1].displayState, "done");
 });
 
 test("countdown has singular, today, after, and explicit school next modes", () => {
@@ -124,4 +128,36 @@ test("Updated is hidden in future and after60days; reminders omit elapsed dates"
   assert.ok(reminders.some(r => r.kind === "for-you" && r.date === base.today));
   assert.ok(reminders.every(r => r.date >= base.today));
   assert.equal(buildMaster3Model(dto([])).reminders.length, 0);
+});
+
+test("an explicitly undated final keeps its flag and never borrows the primary date", () => {
+  const model = buildMaster3Model(dto([item("dated", "2026-10-20"), item("final", undefined, { final: true })],
+    { primaryDate: { label: "Separate actual date", date: "2026-11-01" } }));
+  assert.equal(model.final, null); assert.equal(model.hero.kind, "soon");
+  assert.equal(model.hero.line1, "final date to follow");
+  assert.equal(model.hero.targetDate, null);
+  assert.equal(model.undated[0].isFinal, true);
+  assert.equal(model.undated[0].title, "Milestone final");
+  assert.equal(model.allDone, false);
+});
+
+test("dense distant For-you keeps at most three preceding plain dates, not the whole gap", () => {
+  const items = Array.from({ length: 24 }, (_, n) => item(String(n), `2026-11-${String(n + 1).padStart(2, "0")}`,
+    { forYou: n === 20, final: n === 23 }));
+  const model = buildMaster3Model(dto(items));
+  assert.deepEqual(model.phone.visible.map(i => i.publicId), ["0", "1", "2", "3", "4", "17", "18", "19", "20", "23"]);
+  assert.equal(model.phone.hidden.length, 14);
+  assert.deepEqual(buildMaster3Model(dto(items), { expanded: true }).phone.visible.map(i => i.publicId), items.map(i => i.publicId));
+});
+
+test("partial timing stays visible through folding; missing today fails closed", () => {
+  const items = [item("undated-first"), item("old", "2026-10-10"), item("past2", "2026-10-11"),
+    item("past3", "2026-10-12"), item("future", "2026-11-01"), item("undated-end")];
+  const model = buildMaster3Model(dto(items));
+  assert.deepEqual(model.phone.earlier.map(i => i.publicId), ["old", "past2"]);
+  assert.ok(model.phone.visible.some(i => i.publicId === "undated-first"));
+  assert.ok(model.phone.visible.some(i => i.publicId === "undated-end"));
+  assert.equal(model.allDone, false);
+  assert.throws(() => buildMaster3Model({ ...dto([]), today: "" }), /calendar date/);
+  assert.throws(() => buildMaster3Model({ ...dto([]), today: "2026-13-01" }), /calendar date/);
 });
