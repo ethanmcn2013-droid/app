@@ -22,6 +22,18 @@ test("legacy shared attribution becomes the public couple title without guessing
   assert.equal(buildMaster3Model(dto([], { ownerDisplayLabel: "Shared by Orla" })).title, "Community project");
 });
 
+test("follow reminders match active market-specific events and omit already covered work", () => {
+  const source = dto([item("main", "2026-11-01", { final: true }),
+    { ...item("covered", "2026-11-10", { forYou: true }), state: "covered" },
+    item("post", "2026-11-11", { forYou: true })], { presentation: { market: "school" } });
+  const reminders = buildMaster3Model(source).reminders;
+  assert.ok(!reminders.some(reminder => reminder.milestoneId === "covered"));
+  assert.deepEqual(reminders.filter(reminder => reminder.milestoneId === "post"),
+    [{ date: "2026-11-04", milestoneId: "post", kind: "post-final", daysBefore: 7 }]);
+  const wedding = buildMaster3Model({ ...source, presentation: { market: "wedding" } });
+  assert.ok(!wedding.reminders.some(reminder => reminder.kind === "post-final"));
+});
+
 test("empty and undated models never synthesize dates, RSVP completion, or wedding content", () => {
   const empty = buildMaster3Model(dto([]));
   assert.deepEqual(empty.hero, { kind: "soon", value: "Soon", line1: "dates to follow", line2: "", targetDate: null });
