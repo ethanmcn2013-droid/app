@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import * as schema from "@/server/db/schema";
 import { isDemoMode } from "@/lib/access-mode";
 import { assistantTarget, createAssistantAuthentication } from "./controls";
-import { createAssistantStore } from "./store";
+import { assistantDatabaseTransaction, createAssistantStore } from "./store";
 import { createAssistantService } from "./service";
 import { createPingAssistantPlanner } from "./claude-planner";
 import { assertAssistantActor, authorizeAssistantProject, getAssistantContext } from "./context";
@@ -28,7 +28,7 @@ function createInstance(target: Target) {
   const stillCurrent = () => currentTarget()?.cacheKey === target.cacheKey;
   const transact = <T>(operation: Parameters<typeof database.transaction<T>>[0]) => {
     if (!stillCurrent()) throw new Error("assistant_configuration_changed");
-    return database.transaction(operation, { behavior: "immediate" });
+    return assistantDatabaseTransaction(database, operation);
   };
   const key = process.env.ANTHROPIC_API_KEY;
   // One instance retains transport quarantine after a logical timeout. Changing
