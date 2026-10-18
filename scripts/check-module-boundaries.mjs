@@ -258,8 +258,14 @@ for (const mod of MODULES) {
         file === PROJECT_RECOVERY_HOST && imp === PROJECT_RECOVERY_IMPORT;
       const isAssistantTimelineBridge = mod === "timeline" &&
         file === ASSISTANT_TIMELINE_HOST && imp === ASSISTANT_TIMELINE_IMPORT;
+      // Public guest HTTP hosts may compose only the dedicated guest port.
+      // A neighboring API route or an internal writer is not admitted.
+      const isTimelineGuestHost = mod === "timeline" && (
+        file.startsWith(path.join(srcDir, "app", "api", "timeline", "share") + path.sep) ||
+        file === path.join(srcDir, "app", "api", "timeline", "reminders", "route.ts")
+      ) && imp === "@/modules/timeline/server/guest-http";
 
-      if (!inAllowedDir && !isGdprOrchestratorForThisModule && !isProjectRecoveryBridge && !isAssistantTimelineBridge) {
+      if (!inAllowedDir && !isGdprOrchestratorForThisModule && !isProjectRecoveryBridge && !isAssistantTimelineBridge && !isTimelineGuestHost) {
         failures.push(
           `[rule-2] ${rel(file)}: imports from src/modules/${mod} but is not ` +
             `inside src/app/app/${segment}/ or src/modules/${mod}/. ` +

@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
+import { resolveAudienceTimeline } from "@/modules/timeline/server/audience-timeline";
+import { master3SocialDetails } from "@/modules/timeline/lib/master3-social";
 
 /**
  * The social card for every bearer-link timeline (`/s/[token]`).
@@ -19,6 +21,8 @@ import { ImageResponse } from "next/og";
  */
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 export const alt =
   "A shared timeline — milestones on a single line, from Signal Studio";
 export const size = { width: 1200, height: 630 };
@@ -39,12 +43,35 @@ function geistFont(file: string): Promise<Buffer> {
   );
 }
 
-export default async function SharedTimelineOpenGraphImage() {
+export default async function SharedTimelineOpenGraphImage({
+  params,
+}: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
+  const result = await resolveAudienceTimeline(token);
+  const details = result.kind === "ok" ? master3SocialDetails(result.dto) : null;
   const [sans, sansSemi, mono] = await Promise.all([
     geistFont("geist-sans/Geist-Medium.ttf"),
     geistFont("geist-sans/Geist-SemiBold.ttf"),
     geistFont("geist-mono/GeistMono-Medium.ttf"),
   ]);
+
+  if (details) return new ImageResponse(
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column",
+      padding: "60px 72px", background: "#FFFFFF", color: "#0E0E12", fontFamily: "GeistSans" }}>
+      <div style={{ display: "flex", fontSize: 30, fontWeight: 600 }}>timeline<span style={{ color: "#4B3DF2" }}>.</span></div>
+      <div style={{ display: "flex", marginTop: 86, fontSize: details.title.length > 45 ? 54 : 76,
+        fontWeight: 600, lineHeight: 1.08, letterSpacing: "-0.04em" }}>{details.title}</div>
+      {details.date ? <div style={{ display: "flex", marginTop: 30, fontSize: 32 }}>{details.date}</div> : null}
+      {details.place ? <div style={{ display: "flex", marginTop: 12, fontSize: 26, color: "#55555E" }}>{details.place}</div> : null}
+      <div style={{ display: "flex", marginTop: "auto", paddingTop: 24, borderTop: "1px solid #E6E6EA",
+        justifyContent: "space-between", color: "#55555E", fontSize: 22 }}>
+        <span>A shared timeline</span><span>Made with signal.</span>
+      </div>
+    </div>,
+    { ...size, headers: { "Cache-Control": "private, no-store, max-age=0", "Referrer-Policy": "no-referrer" },
+      fonts: [{ name: "GeistSans", data: sans, weight: 500, style: "normal" },
+        { name: "GeistSans", data: sansSemi, weight: 600, style: "normal" }] },
+  );
 
   const railY = 430;
   const dot = (
@@ -219,6 +246,7 @@ export default async function SharedTimelineOpenGraphImage() {
     ),
     {
       ...size,
+      headers: { "Cache-Control": "private, no-store, max-age=0", "Referrer-Policy": "no-referrer" },
       fonts: [
         { name: "GeistSans", data: sans, weight: 500, style: "normal" },
         { name: "GeistSans", data: sansSemi, weight: 600, style: "normal" },

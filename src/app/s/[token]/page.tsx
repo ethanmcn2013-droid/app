@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { SharedTimelineArtifact } from "@/modules/timeline/app/audience/shared-timeline-artifact";
 import type { AudienceKind } from "@/modules/timeline/lib/audience-timeline";
 import { resolveAudienceTimeline } from "@/modules/timeline/server/audience-timeline";
+import { master3SocialDetails } from "@/modules/timeline/lib/master3-social";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,12 +33,13 @@ export async function generateMetadata({
   // the generic not-found body and no-store/noindex headers are the contract.
   if (result.kind !== "ok") notFound();
 
-  const description = KIND_DESCRIPTIONS[result.dto.audienceKind];
+  const details = master3SocialDetails(result.dto);
+  const description = details?.description ?? KIND_DESCRIPTIONS[result.dto.audienceKind];
   // Twitter-style consumers read their own tags or fall back to the layout's
   // generic containment card — which drops the timeline's name. Mirror the
   // OpenGraph facts explicitly so every unfurl carries the label. The card
   // image comes from the segment's file convention (`../opengraph-image`),
-  // which is deliberately data-free.
+  // which remains data-free unless the owner explicitly includes public details.
   return {
     title: `${result.dto.label} · timeline`,
     description,
