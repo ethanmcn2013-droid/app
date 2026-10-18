@@ -20,7 +20,7 @@ import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
 // authentication, provider, email, or Timeline publication is imported here.
 const FIXED_NOW = Date.parse("2026-10-18T09:00:00.000Z");
 const project = { kind: "current" } as const;
-const create = (count: number, extra = {}): AssistantAction => ({ id: "create", kind: "create_tasks", project,
+const create = (count: number, extra = {}): Extract<AssistantAction, { kind: "create_tasks" }> => ({ id: "create", kind: "create_tasks", project,
   template: { count, titlePrefix: "Synthetic stress", ...extra } });
 const plan = (actions: readonly AssistantAction[], mode: "draft" | "execute" = "execute"): AssistantPlan =>
   ({ version: "ping.assistant.v1", outcome: "plan", mode, actions });
