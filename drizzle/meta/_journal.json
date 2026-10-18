@@ -309,6 +309,20 @@
       "when": 1792060800000,
       "tag": "0043_personal_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1792281600000,
+      "tag": "0044_assistant_execution",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1792281600001,
+      "tag": "0045_personal_chat_attachments",
+      "breakpoints": true
     }
   ]
 }

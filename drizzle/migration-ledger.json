@@ -575,6 +575,26 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/personal-chat-2026-10-15.json",
       "receiptSha256": "3dcc45ce702dbcc9015db969ce9169f43140e1eb2426fbf1556f2328c9ea3f76"
+    },
+    {
+      "ordinal": 44,
+      "id": "0044_assistant_execution",
+      "file": "drizzle/0044_assistant_execution.sql",
+      "when": 1792281600000,
+      "sha256": "5706de9847aaeb94d6c1b8459aaec1b15888411d384cc7792b4fd59874b73fa3",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/assistant-execution-2026-10-18.json",
+      "receiptSha256": "7c0b0ab236a15a6052617277db5a51c00f2b810c94396418da6816b41c5c70e6"
+    },
+    {
+      "ordinal": 45,
+      "id": "0045_personal_chat_attachments",
+      "file": "drizzle/0045_personal_chat_attachments.sql",
+      "when": 1792281600001,
+      "sha256": "dc7c28d307d1c606dec3dccd1f09db51150156d440d8df4aaf4483e5b71e49b6",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/personal-chat-attachments-2026-10-18.json",
+      "receiptSha256": "8cc68a7bbc59c8c4bd3926cd8bdf7d2cfecdc055f2c92ba8c9a5a25133024739"
     }
   ]
 }

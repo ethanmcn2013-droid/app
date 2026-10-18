@@ -15,7 +15,33 @@ export type PersonalChatMessage = Readonly<{
   body: string;
   createdAt: number;
   editedAt: number | null;
+  attachments?: readonly PersonalChatAttachment[];
 }>;
+
+export type PersonalChatAttachment = Readonly<{
+  id: string; filename: string; mimeType: string; sizeBytes: number; href: string;
+}>;
+
+export const PERSONAL_CHAT_ATTACHMENT_LIMITS = Object.freeze({
+  fileBytes: 2 * 1024 * 1024,
+  multipartBytes: 2 * 1024 * 1024 + 32 * 1024,
+  filesPerMessage: 3,
+  ownerBytes: 50 * 1024 * 1024,
+  uploadsPerMinute: 10,
+  draftMilliseconds: 24 * 60 * 60_000,
+  writerMilliseconds: 60_000,
+  drainMilliseconds: 30 * 60_000,
+});
+
+export function validPersonalChatAttachmentIds(value: unknown): value is readonly string[] {
+  return Array.isArray(value) && value.length <= PERSONAL_CHAT_ATTACHMENT_LIMITS.filesPerMessage &&
+    value.every(id => typeof id === "string" && /^pca_[a-f0-9]{32}$/.test(id)) && new Set(value).size === value.length;
+}
+
+export function validPersonalChatSend(body: unknown, attachmentIds: unknown = []): body is string {
+  return validPersonalChatAttachmentIds(attachmentIds) && typeof body === "string" &&
+    (body.trim().length > 0 ? validPersonalChatBody(body) : attachmentIds.length > 0 && body.length <= PERSONAL_CHAT_LIMITS.bodyCharacters);
+}
 
 export type PersonalChatPage = Readonly<{
   messages: readonly PersonalChatMessage[];
