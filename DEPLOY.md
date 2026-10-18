@@ -171,7 +171,8 @@ route's own call, confirms an anonymous request is refused, and deletes it. No
 database row is created.
 
 Optional, provision deliberately (see INFRASTRUCTURE.md before adding):
-`ANTHROPIC_API_KEY` (+ `TASKS_AI_*` tuning), `SENTRY_DSN` /
+`ANTHROPIC_API_KEY` (+ `TASKS_AI_*` tuning for legacy Tasks/Notes AI),
+`PING_ASSISTANT_ANTHROPIC_API_KEY` (Ping only; no generic fallback), `SENTRY_DSN` /
 `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_ENVIRONMENT`, `POSTHOG_API_KEY` /
 `NEXT_PUBLIC_POSTHOG_HOST`, `UPSTASH_REDIS_REST_URL` /
 `UPSTASH_REDIS_REST_TOKEN`,

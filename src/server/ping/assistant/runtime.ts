@@ -10,6 +10,7 @@ import { assistantTarget, createAssistantAuthentication } from "./controls";
 import { assistantDatabaseTransaction, createAssistantStore } from "./store";
 import { createAssistantService } from "./service";
 import { createPingAssistantPlanner } from "./claude-planner";
+import { pingAssistantApiKey } from "./provider-key";
 import { assertAssistantActor, authorizeAssistantProject, getAssistantContext } from "./context";
 import { executeAssistantAction } from "./actions";
 import { prepareAssistantTimeline } from "./timeline";
@@ -35,14 +36,14 @@ function createInstance(target: Target) {
       return operation(tx);
     });
   };
-  const key = process.env.ANTHROPIC_API_KEY;
+  const key = pingAssistantApiKey(process.env);
   // One instance retains transport quarantine after a logical timeout. Changing
   // credentials requires restart; old result reads remain available meanwhile.
   const planner = key ? createPingAssistantPlanner({ apiKey: key, fetch, budget: store.budget, retainCompletion: completion => after(() => completion) }) : null;
   const dispatcher = createAssistantDispatcher(database);
   const service = createAssistantService({ store,
     planner: { plan: (input, signal) => {
-      if (!planner || !stillCurrent() || process.env.ANTHROPIC_API_KEY !== key) throw new Error("planner_unavailable");
+      if (!planner || !stillCurrent() || pingAssistantApiKey(process.env) !== key) throw new Error("planner_unavailable");
       return pingTelemetrySpan("prepare", () => planner.plan(input, signal ?? new AbortController().signal));
     } },
     priorTaskResult: async (actorId, request) => {

@@ -51,9 +51,11 @@ Use approved secret storage; never put values in this document, source control o
 | `PING_ASSISTANT_TASKS_URL_SHA256` | SHA-256 of the exact configured database URL. A mismatch refuses admission. |
 | `PING_ASSISTANT_ACTOR_IDS` | Explicit persisted Tasks user IDs, not Clerk subjects; 1–20 unique IDs, no wildcard. |
 | `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Both must be configured. There is no development identity fallback. |
-| `ANTHROPIC_API_KEY` | Server-only planner credential. Changing it requires a runtime restart; there is no automatic provider fallback. |
+| `PING_ASSISTANT_ANTHROPIC_API_KEY` | Dedicated server-only Ping planner credential. There is no fallback to `ANTHROPIC_API_KEY`. Changing it requires a runtime restart. |
 | `PING_ASSISTANT_EXTERNAL_DELIVERY_ENABLED` | Must be `1` for external email; independent of assistant enablement. Default is off. |
 | `RESEND_API_KEY`, `RESEND_FROM` | Existing email transport credential and optional sender. No credential means no external dispatch. |
+
+Keep the generic `ANTHROPIC_API_KEY` unset for a Ping-only cohort: that key separately enables existing Tasks reply/summary/weekly narration and Notes extraction outside Ping's allowlist and budget ledger. A dedicated Ping key does not configure those features. Both credential names prevent a provider-free sterile-preview attestation.
 
 The candidate requires Tasks migration `0044_assistant_execution` and the canonical Timeline configuration for preview preparation. Follow `DEPLOY.md` and `drizzle/MIGRATIONS.md`; this guide does not authorize a production migration or flag change.
 
