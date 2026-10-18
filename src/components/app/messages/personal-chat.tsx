@@ -5,10 +5,14 @@ import { normalizeMessageBody, validMessageBody } from "@/lib/conversations/cont
 import { Composer, MessageBody, useBottomAnchor, JumpToLatest } from "./chat-ui";
 import { appendDictatedText } from "./chat-composer-model";
 import { ChatDictationTools, ChatDraftCounter } from "./chat-composer-tools";
+import type { PersonalChatAttachment } from "@/lib/conversations/personal-chat-contracts";
+import { usePersonalAttachments } from "./use-personal-attachments";
+import { DraftPersonalFiles, PersonalFilePicker, PersonalMessageFiles } from "./personal-attachments";
+import fileStyles from "./personal-attachments.module.css";
 import styles from "./floating-chat.module.css";
 
-type PersonalMessage = { id: string; body: string; createdAt: number; editedAt: number | null };
-type Attempt = { clientRequestId: string; body: string; state: "sending" | "uncertain" };
+type PersonalMessage = { id: string; body: string; createdAt: number; editedAt: number | null; attachments?: readonly PersonalChatAttachment[] };
+type Attempt = { clientRequestId: string; body: string; attachments: readonly PersonalChatAttachment[]; state: "sending" | "uncertain" };
 const dateLabel = (timestamp: number) => new Date(timestamp).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -35,18 +39,26 @@ export function PersonalChat({ actorId, actorName, demo, visible }: { actorId: s
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [attachmentsEnabled, setAttachmentsEnabled] = useState(demo);
+  const files = usePersonalAttachments(demo);
+  const validDraft = !draft.trim() ? files.ready.length > 0 : validMessageBody(draft);
   const pending = useRef<Attempt | null>(null);
   const alive = useRef(true);
   const { ref: scrollRef, pin, away } = useBottomAnchor();
+  const fileProgress = files.files.map(file => `${file.localId}:${file.status}`).join("|");
+  const attemptState = attempt?.state;
+  useEffect(() => {
+    if (fileProgress || files.notice || attemptState || error) pin();
+  }, [fileProgress, files.notice, attemptState, error, pin]);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   const load = useCallback(async (before?: string, signal?: AbortSignal) => {
     setLoading(true); setError(null);
     try {
-      const result = await request<{ messages: PersonalMessage[]; nextCursor: string | null }>(`/api/personal-chat?limit=50${before ? `&before=${encodeURIComponent(before)}` : ""}`, { signal });
+      const result = await request<{ messages: PersonalMessage[]; nextCursor: string | null; attachmentsEnabled?: boolean }>(`/api/personal-chat?limit=50${before ? `&before=${encodeURIComponent(before)}` : ""}`, { signal });
       if (!alive.current || signal?.aborted) return;
       setMessages((current) => [...new Map([...result.messages, ...current].map((message) => [message.id, message])).values()].sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id)));
-      setNextCursor(result.nextCursor); setReady(true);
+      setNextCursor(result.nextCursor); setAttachmentsEnabled(result.attachmentsEnabled === true); setReady(true);
     } catch (failure) { if (alive.current && !signal?.aborted) setError(failure instanceof Error ? failure.message : "Chat could not load. Try again."); }
     finally { if (alive.current && !signal?.aborted) setLoading(false); }
   }, []);
@@ -59,21 +71,23 @@ export function PersonalChat({ actorId, actorName, demo, visible }: { actorId: s
   function settle(message: PersonalMessage, sent: Attempt) {
     if (!alive.current) return;
     setMessages((current) => [...current.filter((item) => item.id !== message.id), message].sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id)));
+    files.consumed(sent.attachments.map(file => file.id));
     setDraft((current) => current === sent.body ? "" : current); rememberAttempt(null); pin();
   }
   async function submit(checkReceipt = false) {
     if (pending.current?.state === "sending") return;
-    const body = normalizeMessageBody(draft);
-    if (!pending.current && !validMessageBody(body)) return;
-    const sent: Attempt = { ...(pending.current ?? { body, clientRequestId: `self_${crypto.randomUUID().replaceAll("-", "")}` }), state: "sending" };
+    const normalized = normalizeMessageBody(draft);
+    const body = normalized.trim() ? normalized : "";
+    if (!pending.current && (!validDraft || files.waiting)) return;
+    const sent: Attempt = { ...(pending.current ?? { body, attachments: files.ready, clientRequestId: `self_${crypto.randomUUID().replaceAll("-", "")}` }), state: "sending" };
     rememberAttempt(sent); setError(null);
-    if (demo) { settle({ id: sent.clientRequestId, body: sent.body, createdAt: Date.now(), editedAt: null }, sent); return; }
+    if (demo) { settle({ id: sent.clientRequestId, body: sent.body, createdAt: Date.now(), editedAt: null, attachments: sent.attachments }, sent); return; }
     try {
       if (checkReceipt) {
         const receipt = await request<{ message: PersonalMessage | null }>(`/api/personal-chat?requestId=${encodeURIComponent(sent.clientRequestId)}`);
         if (receipt.message) { settle(receipt.message, sent); return; }
       }
-      const result = await request<{ message: PersonalMessage }>("/api/personal-chat", { method: "POST", body: JSON.stringify({ clientRequestId: sent.clientRequestId, body: sent.body }) });
+      const result = await request<{ message: PersonalMessage }>("/api/personal-chat", { method: "POST", body: JSON.stringify({ clientRequestId: sent.clientRequestId, body: sent.body, ...(sent.attachments.length ? { attachmentIds: sent.attachments.map(file => file.id) } : {}) }) });
       settle(result.message, sent);
     } catch (failure) {
       if (!alive.current) return;
@@ -84,7 +98,7 @@ export function PersonalChat({ actorId, actorName, demo, visible }: { actorId: s
   async function exportChat() {
     setExporting(true); setError(null);
     try {
-      const markdown = demo ? `# Personal chat\n\nPreview only — these messages live in this browser tab.\n\n${messages.map((message) => `## ${new Date(message.createdAt).toISOString()} · You\n\n${message.body}`).join("\n\n")}`
+      const markdown = demo ? `# Personal chat\n\nPreview only — these messages and files live in this browser tab. Files are not embedded in this export.\n\n${messages.map((message) => `## ${new Date(message.createdAt).toISOString()} · You\n\n${message.body}${message.attachments?.length ? `\n\n${message.attachments.map(file => `File: ${file.filename} (${file.sizeBytes} bytes; preview only)`).join("\n")}` : ""}`).join("\n\n")}`
         : (await request<{ markdown: string }>("/api/personal-chat?format=markdown")).markdown;
       if (alive.current) download(markdown);
     } catch (failure) { if (alive.current) setError(failure instanceof Error ? failure.message : "Export failed. Try again."); }
@@ -93,15 +107,17 @@ export function PersonalChat({ actorId, actorName, demo, visible }: { actorId: s
 
   return <section aria-label="Your private conversation" className={styles.personal}>
     <header className={styles.personalHead}><div><h2>{actorName} <span>(you)</span></h2><p>{demo ? "Preview · messages stay in this tab" : "Private to you · saved to your account"}</p></div><button disabled={exporting || (!demo && !ready)} onClick={() => void exportChat()} type="button">{exporting ? "Exporting…" : "Export Markdown"}</button></header>
-    {error ? <div className={styles.error} role="alert">{error}{!ready ? <button disabled={loading} onClick={() => void load()} type="button">Try again</button> : null}</div> : null}
     <div aria-label="Personal chat history" className={styles.personalScroll} ref={scrollRef} tabIndex={0}>
       {nextCursor ? <button disabled={loading} onClick={() => void load(nextCursor)} type="button">{loading ? "Loading…" : "Load earlier messages"}</button> : null}
       {!ready && loading ? <p role="status">Loading your messages…</p> : null}
       {ready && !messages.length ? <div className={styles.personalIntro}><h3>A place to think out loud.</h3><p>Keep a thought, a link or a reminder here. Only you can read this conversation.</p><p>Export it as Markdown whenever you want to take your notes with you.</p></div> : null}
-      <ol className={styles.personalMessages}>{messages.map((message) => <li key={message.id}><div><strong>You</strong><time dateTime={new Date(message.createdAt).toISOString()}>{dateLabel(message.createdAt)}</time>{message.editedAt ? <span>Edited</span> : null}</div><p><MessageBody body={message.body} people={[]} selfId={actorId} /></p></li>)}</ol>
+      <ol className={styles.personalMessages}>{messages.map((message) => <li key={message.id}><div><strong>You</strong><time dateTime={new Date(message.createdAt).toISOString()}>{dateLabel(message.createdAt)}</time>{message.editedAt ? <span>Edited</span> : null}</div>{message.body ? <p><MessageBody body={message.body} people={[]} selfId={actorId} /></p> : null}<PersonalMessageFiles files={message.attachments} demo={demo} /></li>)}</ol>
+      {error ? <div className={styles.error} role="alert">{error}{!ready ? <button disabled={loading} onClick={() => void load()} type="button">Try again</button> : null}</div> : null}
+      {attempt ? <div className={styles.sendStatus} role="status">{attempt.state === "sending" ? "Saving your message…" : <>This send is unconfirmed. Your message stays in the draft.<button onClick={() => void submit(true)} type="button">Check receipt, then retry</button></>}</div> : null}
+      <DraftPersonalFiles files={files.files} disabled={!!attempt} demo={demo} onRemove={files.remove} onRetry={files.retry} />
+      {files.notice ? <p className={fileStyles.note} role="status">{files.notice}</p> : null}
     </div>
     {away ? <JumpToLatest onClick={() => pin(true)} /> : null}
-    {attempt ? <div className={styles.sendStatus} role="status">{attempt.state === "sending" ? "Saving your message…" : <>This send is unconfirmed. Your message stays in the draft.<button onClick={() => void submit(true)} type="button">Check receipt, then retry</button></>}</div> : null}
-    <Composer value={draft} onChange={(value) => { draftRef.current = value; setDraft(value); }} onSend={() => void submit()} label="Message yourself" placeholder="Write a thought or paste a link" people={[]} selfId={actorId} mentionIds={[]} sendDisabled={!ready || !!attempt || !validMessageBody(draft)} disabled={!!attempt} showHint={false} count={<ChatDraftCounter value={draft} />} additionalTools={<ChatDictationTools active={visible && !attempt} contextKey={`${actorId}:self`} append={(text) => { const next = appendDictatedText(draftRef.current, text); if (next === null) return false; draftRef.current = next; setDraft(next); return true; }} />} />
+    <Composer value={draft} onChange={(value) => { draftRef.current = value; setDraft(value); }} onSend={() => void submit()} label="Message yourself" placeholder={attachmentsEnabled ? "Write a thought or add a file" : "Write a thought or paste a link"} people={[]} selfId={actorId} mentionIds={[]} sendDisabled={!ready || !!attempt || !validDraft || files.waiting} allowEmpty={files.ready.length > 0} disabled={!!attempt} showHint={false} count={<ChatDraftCounter value={draft} />} additionalTools={<>{attachmentsEnabled ? <PersonalFilePicker disabled={!ready || !!attempt || files.files.length >= 3} onFiles={files.add} /> : null}<ChatDictationTools active={visible && !attempt} contextKey={`${actorId}:self`} append={(text) => { const next = appendDictatedText(draftRef.current, text); if (next === null) return false; draftRef.current = next; setDraft(next); return true; }} /></>} />
   </section>;
 }

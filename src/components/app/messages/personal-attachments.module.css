@@ -1,0 +1,18 @@
+.drafts { display: grid; gap: 6px; margin: 0; padding: 8px 0 4px; list-style: none; }
+.file { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 12px; background: var(--v3-surface); border: 1px solid var(--v3-border); border-radius: 10px; }
+.file > svg { flex: none; color: var(--v3-text-2); }
+.description { min-width: 0; flex: 1; display: grid; gap: 3px; }
+.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; line-height: 1.4; font-weight: 600; color: var(--v3-text); }
+.meta { font-size: 11.5px; line-height: 1.45; color: var(--v3-text-2); overflow-wrap: anywhere; }
+.failed { color: var(--v3-danger-text); }
+.action, .attach { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 0; border-radius: 6px; min-width: 32px; min-height: 32px; padding: 4px 6px; background: transparent; color: var(--v3-text-2); font: inherit; font-size: 12px; cursor: pointer; }
+.action:hover, .attach:hover { background: var(--v3-hover); color: var(--v3-text); }
+.action:focus-visible, .attach:focus-visible, .download:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 3px; }
+.action:disabled, .attach:disabled { opacity: .5; cursor: default; }
+.download { display: flex; gap: 10px; align-items: center; min-width: 0; padding: 11px 12px; border: 1px solid var(--v3-border); border-radius: 10px; color: var(--v3-text); text-decoration: none; background: var(--v3-canvas); }
+.download:hover { border-color: var(--v3-border-strong); background: var(--v3-hover); }
+.download > svg { flex: none; color: var(--v3-accent); }
+.downloads { display: grid; gap: 6px; padding: 0; list-style: none; margin: 10px 0 0; }
+.note { margin: 0; padding: 5px 0 8px; font-size: 11.5px; line-height: 1.5; color: var(--v3-text-2); }
+.hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 679px) { .file { padding: 8px 10px; } .action, .attach { min-width: 40px; min-height: 40px; } }

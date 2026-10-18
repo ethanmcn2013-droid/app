@@ -451,7 +451,7 @@ const EMOJI: readonly (readonly [string, string])[] = [
 
 export type ComposerHandle = Readonly<{ focus: () => void }>;
 
-export function Composer({ value, onChange, onSend, label, placeholder, people, selfId, mentionIds, onMentionIdsChange, unavailableMentionIds, sendDisabled, disabled, blocked, count, note, onArrowUpEmpty, onEscape, inputRef, autoFocus, showHint = true, toolbar, additionalTools }: {
+export function Composer({ value, onChange, onSend, label, placeholder, people, selfId, mentionIds, onMentionIdsChange, unavailableMentionIds, sendDisabled, disabled, blocked, count, note, onArrowUpEmpty, onEscape, inputRef, autoFocus, showHint = true, toolbar, additionalTools, allowEmpty = false }: {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
@@ -477,6 +477,8 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
   /** The full toolbar: an insert menu behind a round plus, then the tools. */
   toolbar?: "full";
   additionalTools?: ReactNode;
+  /** A caller with verified ready attachments may send without a text body. */
+  allowEmpty?: boolean;
 }) {
   const textareaRef = useAutosize(value);
   const [caret, setCaret] = useState<number | null>(null);
@@ -490,7 +492,7 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
   const options = open ? mentionCandidates(mentionable, query.query, selfId) : [];
   const listId = `composer-mentions-${useId().replace(/[^a-z0-9]/gi, "")}`;
   const active = options[Math.min(activeIndex, Math.max(0, options.length - 1))];
-  const canSend = !sendDisabled && !disabled && value.trim().length > 0;
+  const canSend = !sendDisabled && !disabled && (allowEmpty || value.trim().length > 0);
 
   function setNode(node: HTMLTextAreaElement | null) {
     textareaRef.current = node;
@@ -573,7 +575,7 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
           aria-activedescendant={open && active ? `${listId}-${active.id}` : undefined}
           aria-autocomplete={onMentionIdsChange ? "list" : undefined}
           aria-controls={open ? listId : undefined}
-          aria-expanded={onMentionIdsChange ? open : undefined}
+          aria-haspopup={onMentionIdsChange ? "listbox" : undefined}
           aria-label={label}
           autoFocus={autoFocus}
           className={styles.composerInput}
@@ -586,7 +588,6 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
           onKeyUp={(event) => { if (event.key.startsWith("Arrow") || event.key === "Home" || event.key === "End") setCaret(event.currentTarget.selectionStart); }}
           placeholder={placeholder}
           ref={setNode}
-          role={onMentionIdsChange ? "combobox" : undefined}
           rows={1}
           value={value}
         />

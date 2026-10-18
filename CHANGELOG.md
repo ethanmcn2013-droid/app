@@ -10,6 +10,12 @@ Private attempt records retain model configuration, timing, token estimates and 
 
 The assistant and external email remain off by default, with an explicit database target and actor allowlist. This is an internal candidate: production receiving, live provider quality, end-to-end latency and delivery remain separate. Speech is deferred. Operator setup and evidence limits: `docs/PING_TEXT_ASSISTANT.md`.
 
+## 2026-10-18 · Internal candidate · Keep files in your personal chat
+
+Personal chat can hold a small image or file beside a note, or save the file on its own. Reopen the conversation to download it. The floating panel keeps its composer reachable on short screens, and ordinary chat retains keyboard mentions. Shared notifications use one queue across the app and leave room for Chat.
+
+This candidate is not released or enabled in production. Attachments are private to the signed-in account, with three files per message and 2 MiB per file. Shared conversation files and personal AI assistance are outside this increment. Storage qualification, migration 0045 and final receiving remain required; see `docs/ops/PERSONAL_CHAT_FILES.md`.
+
 ## 2026-10-15 · Internal candidate · Measure Ping from activation to confirmed changes
 
 Ping can record where time goes through speech readiness, command preparation, saving, recovery and the refreshed result. The optional diagnostics use fixed categories and random correlation values; they exclude speech, task content and account identities. Collection is off by default, bounded and separate from command execution. A delayed telemetry service cannot repeat a task action.

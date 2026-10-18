@@ -8,6 +8,7 @@ import { createConversationTaskOutcomeService } from "./work-links";
 import { createTaskDiscussionService } from "./task-discussion";
 import { createMessageAttentionService } from "./attention";
 import { createPersonalChatService } from "./personal-chat";
+import { createPersonalChatAttachmentService, type PersonalChatAttachmentService } from "./personal-chat-attachments";
 import { createLocalConversationDatabaseAdapter, createRemoteConversationDatabaseAdapter, createUnavailableConversationDatabaseAdapter, type ConversationDatabaseAdapter } from "./database";
 import { resolveConversationRuntimeTarget } from "./runtime-target";
 
@@ -16,17 +17,20 @@ type TaskOutcomes = ReturnType<typeof createConversationTaskOutcomeService>;
 type TaskDiscussion = ReturnType<typeof createTaskDiscussionService>;
 type Attention = ReturnType<typeof createMessageAttentionService>;
 type PersonalChat = ReturnType<typeof createPersonalChatService>;
-type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes; taskDiscussion: TaskDiscussion; attention: Attention; personalChat: PersonalChat }>;
+type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes; taskDiscussion: TaskDiscussion; attention: Attention; personalChat: PersonalChat; personalChatAttachments: PersonalChatAttachmentService }>;
 const runtimeGlobal = globalThis as typeof globalThis & { conversationRuntime?: { cacheKey: string; services: RuntimeServices } };
 
 function servicesFor(adapter: ConversationDatabaseAdapter): RuntimeServices {
   const directMessagesEnabled = resolveConversationControls(process.env).directMessagesEnabled;
+  const filesEnabled = process.env.SIGNAL_PERSONAL_CHAT_ATTACHMENTS_ENABLED === "true";
+  const personalChatAttachments = createPersonalChatAttachmentService(adapter, { enabled: filesEnabled });
   return {
     conversation: createConversationService(adapter, { directMessagesEnabled }),
     taskOutcomes: createConversationTaskOutcomeService(adapter, { directMessagesEnabled }),
     taskDiscussion: createTaskDiscussionService(adapter),
     attention: createMessageAttentionService(adapter),
-    personalChat: createPersonalChatService(adapter),
+    personalChat: createPersonalChatService(adapter, undefined, filesEnabled ? personalChatAttachments : undefined),
+    personalChatAttachments,
   };
 }
 
@@ -38,7 +42,7 @@ function unavailableServices(reason: string): RuntimeServices {
 async function getRuntimeServices(): Promise<RuntimeServices> {
   const target = resolveConversationRuntimeTarget(process.env, isDemoMode());
   if (target.mode === "unavailable") return unavailableServices(target.reason);
-  const cacheKey = `${target.cacheKey}:dm=${resolveConversationControls(process.env).directMessagesEnabled}`;
+  const cacheKey = `${target.cacheKey}:dm=${resolveConversationControls(process.env).directMessagesEnabled}:personal-files=${process.env.SIGNAL_PERSONAL_CHAT_ATTACHMENTS_ENABLED === "true"}`;
   const cached = runtimeGlobal.conversationRuntime;
   if (cached) return cached.cacheKey === cacheKey ? cached.services : unavailableServices("runtime_configuration_changed");
   const client = createClient(target.mode === "remote"
@@ -86,6 +90,10 @@ export async function getMessageAttentionService(): Promise<Attention> {
 
 export async function getPersonalChatService(): Promise<PersonalChat> {
   return (await getRuntimeServices()).personalChat;
+}
+
+export async function getPersonalChatAttachmentService(): Promise<PersonalChatAttachmentService> {
+  return (await getRuntimeServices()).personalChatAttachments;
 }
 
 export async function authenticateConversationActor(mode: "read" | "write" = "read"): Promise<string | null> {

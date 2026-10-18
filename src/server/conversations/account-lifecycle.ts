@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "@/server/db/schema";
+import { erasePersonalChatAttachmentsWith } from "./personal-chat-attachment-erasure";
 import {
   comments, conversationChanges, conversationMessages, conversations,
   taskCommentChanges, taskDiscussionState,
@@ -35,6 +36,8 @@ export async function eraseConversationUserFootprint(database: Database, userId:
   const dm = await database.select({ id: conversations.id }).from(conversations)
     .where(sql`${userId} IN (${conversations.dmLowUserId}, ${conversations.dmHighUserId})`).limit(1);
   if (dm.length) throw new Error("account erasure blocked: existing DM requires its separate retention decision");
+
+  await erasePersonalChatAttachmentsWith(database, userId);
 
   // Private self-chat is owner-keyed and has no conversation/project parent.
   // Delete it explicitly because the production libSQL connection cannot rely on FK cascades.
