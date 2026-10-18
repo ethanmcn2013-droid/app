@@ -219,7 +219,7 @@ else test("100 actual SQLite service/action scenarios in isolated native-client 
       // starting. This is a fresh test runner, not an in-process nested run().
       const childEnvironment: NodeJS.ProcessEnv = { ...process.env, PING_ASSISTANT_STRESS_RANGE: `${first}:${first}` };
       delete childEnvironment.NODE_TEST_CONTEXT;
-      const child = spawn(process.execPath, ["--import", "tsx", "--import", "./src/test/register-server-only.mjs", "--test", "--test-concurrency=1", "src/server/ping/assistant/stress.test.ts"],
+      const child = spawn(process.execPath, ["--import", "tsx", "--import", "./src/test/register-server-only.mjs", "--test", "--test-reporter=tap", "--test-concurrency=1", "src/server/ping/assistant/stress.test.ts"],
         { cwd: process.cwd(), env: childEnvironment, windowsHide: true });
       let raw = ""; child.stdout.on("data", chunk => { raw += String(chunk); }); child.stderr.on("data", chunk => { raw += String(chunk); });
       child.on("error", reject); child.on("close", (code, signal) => resolve({ code, signal, raw }));
