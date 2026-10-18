@@ -7,7 +7,8 @@ const output=path.resolve(process.argv[2]);
 const ready=JSON.parse(await fs.readFile(path.join(output,'ready.json'),'utf8'));
 const browser=await chromium.launch({headless:true});
 const results=[],screenshots=[],errors=[],network=[],consoleMessages=[];
-const dimensions=[[390,844],[768,1024],[1280,900],[1440,960]];
+const dimensions=[[390,844],[768,1024],[1280,900],[1440,960]].filter(([width,height])=>!process.argv[3]||process.argv[3]===`${width}x${height}`);
+assert.ok(dimensions.length,'Unknown viewport');
 async function snapshot(){return fetch(ready.url+'/fixture/snapshot').then(r=>r.json());}
 async function shot(page,id){const file=path.join(output,id+'.png');await page.screenshot({path:file,fullPage:true});const bytes=await fs.readFile(file);screenshots.push({id,path:file,sha256:createHash('sha256').update(bytes).digest('hex'),bytes:bytes.length});}
 async function open(page){await page.goto(ready.url+'/assistant');await page.getByRole('button',{name:'Ping',exact:true}).click();await page.getByRole('textbox',{name:'Request for Ping'}).waitFor();}

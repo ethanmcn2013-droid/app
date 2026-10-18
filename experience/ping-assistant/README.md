@@ -5,9 +5,10 @@ Run from the repository root with Node 22 and the existing dependencies:
 ```powershell
 node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/serve.ts D:/scratch/unique-receiving-run
 node experience/ping-assistant/receive.mjs D:/scratch/unique-receiving-run
+node experience/ping-assistant/matrix.mjs D:/scratch/unique-four-viewport-matrix
 ```
 
-Use a fresh output directory for every server run. `owner.json` is exclusively created; an existing run is never overwritten. The server binds an ephemeral loopback port and records its PID, source revision, URL and synthetic database path in `ready.json`. Create `STOP` in that exact output directory to close only this server and retain its final SQL snapshot. An eight-hour bound also closes it. The proof database is retained for inspection.
+Use a fresh output directory for every server run. `matrix.mjs` starts and retires one independent server process and SQLite database per viewport, preserving each process outcome; it is the preferred complete receiving command. `receive.mjs` accepts an optional viewport such as `390x844` after its output path. `owner.json` is exclusively created; an existing run is never overwritten. The server binds an ephemeral loopback port and records its PID, source revision, URL and synthetic database path in `ready.json`. Create `STOP` in that exact output directory to close only this server and retain its final SQL snapshot. An eight-hour bound also closes it. The proof database is retained for inspection.
 
 The harness renders the actual `FloatingChatRoot`, `PingPersonalAssistant`, and `CurrentProjectPreviewView`. Next navigation/link and unrelated conversation panes are fixture seams. Assistant HTTP requests enter the actual `createAssistantHttp`, service, durable store and domain actions against `createPingProofFixture` SQLite. All fixture transactions use the runtime's shared transaction admission helper. Actor `owner` admission, finite planner, outbound transport and Timeline provisioner are explicitly injected. Timeline items are read from actual saved milestone tasks; no Timeline publication helper or real publication is invoked. No keys, ambient Tasks connection or provider runtime are loaded.
 
