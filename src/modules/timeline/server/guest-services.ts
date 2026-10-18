@@ -8,7 +8,9 @@ export interface GuestFollowStore{
  insert(record:GuestFollowRecord):Promise<boolean>;
  update(id:string,expectedAttempt:string|null,patch:Partial<GuestFollowRecord>):Promise<boolean>;
 }
-export type FollowResult={ok:true;state:'pending'|'confirmed'|'unsubscribed'|'check_email';confirmationSent?:boolean;managementToken?:string;undoToken?:string;undoUntil?:string;retryAfterSeconds?:number}|{ok:false;code:string;message:string;managementToken?:string};
+export type FollowResult={ok:true;state:'pending'|'confirmed'|'unsubscribed'|'check_email';emailHint?:string;confirmationSent?:boolean;managementToken?:string;undoToken?:string;undoUntil?:string;retryAfterSeconds?:number}|{ok:false;code:string;message:string;managementToken?:string};
+/** Only authorized management responses use this deliberately coarse hint. */
+export const guestEmailHint=(email:string)=>{const [local,domain]=email.split('@');return `${local.slice(0,1)}***@${domain.slice(0,1)}***`;};
 export type GuestFollowPorts={store:GuestFollowStore;resolve:(shareToken:string)=>Promise<{kind:string;dto?:AudienceTimelineDto}>;deliveryAvailable:()=>boolean;limit:(identity:string)=>Promise<boolean>;send:(input:{to:string;label:string;confirmationUrl:string;manageUrl:string;attemptId:string})=>Promise<{kind:'sent';providerMessageId:string}|{kind:'failed'|'unknown'}>;origin:string;now?:()=>Date;token?:()=>string;id?:()=>string};
 export const guestDigest=(v:string)=>createHash('sha256').update(v).digest('hex');
 const tokenShape=(v:string)=>/^[A-Za-z0-9_-]{43}$/.test(v);
@@ -25,7 +27,7 @@ export function createGuestFollowService(ports:GuestFollowPorts){
   const a=await access(shareToken);if(!a)return failure('share_unavailable','This shared timeline is unavailable.');
   const current=input.managementToken?await managed(a.shareHash,input.managementToken,'unsubscribeTokenHash'):null;
   if(input.managementToken&&!current)return failure('link_unavailable','This follow link is unavailable.');
-  if(input.operation==='status'){if(!current)return failure('link_unavailable','This follow link is unavailable.');if(current.deliveryState==='unknown'||current.deliveryState==='sending')return failure('delivery_unknown','Delivery could not be confirmed. Use the email link if it arrives.');return {ok:true,state:current.state};}
+  if(input.operation==='status'){if(!current)return failure('link_unavailable','This follow link is unavailable.');if(current.deliveryState==='unknown'||current.deliveryState==='sending')return failure('delivery_unknown','Delivery could not be confirmed. Use the email link if it arrives.');return {ok:true,state:current.state,emailHint:guestEmailHint(current.email)};}
   if(input.operation!=='subscribe'&&!current)return failure('link_unavailable','Use the link in your confirmation email to manage this follow.');
   if(input.operation==='resend'&&current?.state==='confirmed')return {ok:true,state:'confirmed',confirmationSent:false};
   if(!ports.deliveryAvailable())return failure('delivery_unavailable','Email confirmation is unavailable right now.');

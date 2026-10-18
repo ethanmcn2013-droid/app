@@ -2,7 +2,7 @@ import type { AudienceTimelineDto } from './audience-timeline';
 export type Master3CalendarTimeline = AudienceTimelineDto;
 export type Master3CalendarEvent = Readonly<{ uid:string; title:string; date:string; start?:Date; end?:Date; location?:string; description?:string; cancelled:boolean; publicId:string }>;
 export type GuestCalendarLinks = Readonly<{icsHref:string;feedHref:string;googleHref?:string;copyText:string;label:string;fileName:string}>;
-export type GuestTimelineServices = Readonly<{available:true;followAvailable:boolean;calendar:GuestCalendarLinks|null}>;
+export type GuestTimelineServices = Readonly<{available:true;followAvailable:boolean;followStatus?:{state:'pending'|'confirmed'|'unsubscribed';emailHint:string};calendar:GuestCalendarLinks|null}>;
 const validDate=(value:string)=>{try{return /^\d{4}-\d{2}-\d{2}$/.test(value)&&new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;}catch{return false;}};
 const dateParts=(instant:Date,zone:string)=>Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(instant).filter(p=>p.type!=='literal').map(p=>[p.type,Number(p.value)]));
 /** Reject nonexistent and ambiguous wall times rather than silently moving an event. */
