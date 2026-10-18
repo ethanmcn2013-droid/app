@@ -44,11 +44,19 @@ test('actual SQLite owner-scoped settings and publication snapshot stay independ
   await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Published update',photosUrl:'https://example.test/album'}});
   assert.equal(Number((await client.execute("SELECT COUNT(*) AS n FROM timeline_guest_deliveries WHERE kind='photos'")).rows[0].n),1);
   await client.execute("CREATE TRIGGER reject_queue BEFORE INSERT ON timeline_guest_deliveries BEGIN SELECT RAISE(ABORT,'synthetic queue failure'); END");
-  await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Primary save survives',photosUrl:'https://example.test/album'}});
-  assert.equal((await store.publication('public'))?.presentation?.onDayNote,'Primary save survives');
+  // Prospective atomic-intent contract supersedes the historical post-commit success behavior.
+  const beforeRejectedSave=await store.publication('public');
+  await assert.rejects(store.savePublication('owner','owned','public',{presentation:{onDayNote:'Retry after queue repair',photosUrl:'https://example.test/album'}}));
+  assert.deepEqual(await store.publication('public'),beforeRejectedSave);
   assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_deliveries')).rows[0].n),2);
+  await client.execute('DROP TRIGGER reject_queue');
+  await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Retry after queue repair',photosUrl:'https://example.test/album'}});
+  assert.equal((await store.publication('public'))?.presentation?.onDayNote,'Retry after queue repair');
+  assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_deliveries')).rows[0].n),3);
+  await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Retry after queue repair',photosUrl:'https://example.test/album'}});
+  assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_deliveries')).rows[0].n),3);
   await store.saveProject('owner','owned','plan',{presentation:{onDayNote:'Private only'}});
-  assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_deliveries')).rows[0].n),2);
+  assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_deliveries')).rows[0].n),3);
 
  }finally{client.close();try{fs.rmSync(dir,{recursive:true,force:true});}catch{/* libSQL may retain the handle after close on Windows, matching test-temp-database.mjs. */}}
 });

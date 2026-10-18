@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validateMaster3Presentation,validateMaster3ItemPresentation,validateMaster3ProjectSettings} from './master3-presentation';
-import {validateAudienceTimelineDto} from './audience-timeline';
+import {validateAudienceTimelineDto,isCoupleDisplayLabel} from './audience-timeline';
 import {master3SettingsFromForm} from './master3-settings-form';
 const dto={version:1,audienceKind:'module',publicationId:'public',label:'Launch',lastUpdatedAt:'2026-10-18T00:00:00Z',today:'2026-10-18',sections:[{state:'next',label:'Next',items:[{publicId:'one',title:'Open',date:'2026-10-20',state:'next'}]}]};
 test('DTOv1 remains unchanged when presentation is absent',()=>assert.deepEqual(validateAudienceTimelineDto(dto),dto));
@@ -26,4 +26,10 @@ test('owner form only accepts actual allowed milestone keys and detailed card co
 test('the public DTO also rejects multiple final flags across sections',()=>{
  const input={...dto,sections:[{...dto.sections[0],items:[{...dto.sections[0].items[0],presentation:{final:true}},{...dto.sections[0].items[0],publicId:'two',presentation:{final:true}}]}]};
  assert.throws(()=>validateAudienceTimelineDto(input),/one final/);
+});
+
+test('genuine couple names retain curly apostrophes and accented letters',()=>{
+ const name='Aoife O\u2019Connor & Se\u00e1n';
+ assert.equal(isCoupleDisplayLabel(name),true);
+ assert.equal(validateAudienceTimelineDto({...dto,audienceKind:'couple',ownerDisplayLabel:name}).ownerDisplayLabel,name);
 });

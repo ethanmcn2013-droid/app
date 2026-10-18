@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto';
-import { opLog } from '@/server/operational-log';
 import 'server-only';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { db } from './db/timeline-client';
@@ -133,7 +132,6 @@ export function createMaster3SettingsStore(database: typeof db) {
         if (!p)
             throw new TypeError('Timeline not found');
         const settings = validateMaster3ProjectSettings(value);
-        const previous=await publication(publicationId);
         const ids = new Set((await database
             .select({
             id: timelinePublicationItems.publicId
@@ -144,6 +142,8 @@ export function createMaster3SettingsStore(database: typeof db) {
             throw new TypeError('A milestone is outside this publication');
         const now = new Date();
         await database.transaction(async (tx) => {
+            const [snapshot]=await tx.select({settings:timelinePublicationPresentation.settingsJson}).from(timelinePublicationPresentation).where(eq(timelinePublicationPresentation.publicationId,publicationId)).limit(1);
+            const previous=snapshot?validateMaster3ProjectSettings(snapshot.settings):undefined;
             const [current] = await tx
             .select({
                 id: workspaces.slug
@@ -169,12 +169,13 @@ export function createMaster3SettingsStore(database: typeof db) {
                 } : {})
             })
             .where(eq(timelinePublications.id, publicationId));
-        });
         if(JSON.stringify(previous??{})!==JSON.stringify(settings)){
             const kind=settings.presentation?.photosUrl && previous?.presentation?.photosUrl!==settings.presentation.photosUrl?'photos':'update';
             const eventKey=createHash('sha256').update(JSON.stringify([settings,Math.floor(now.getTime()/1000)])).digest('hex');
-            await queueMaster3PublishedUpdate(database,{publicationId,kind,eventKey,now});
+            await queueMaster3PublishedUpdate(tx,{publicationId,kind,eventKey,now});
         }
+        }, {behavior:'immediate'});
+
     }
     async function projectUpdatedAt(workspaceSlug: string, projectSlug: string) {
         if (!await available())
@@ -199,35 +200,19 @@ export async function master3SchemaAvailable(): Promise<boolean> {
     return result.rows.length === 4;
 }
 
-/** Enqueue after the primary write committed. No external transport runs here. */
+/** Durable intent is part of the primary transaction. Only the separate worker performs physical mail. */
 export async function queueMaster3PublishedUpdate(
-    database: typeof db,
+    executor: Pick<typeof db, 'select'|'insert'|'update'|'run'>,
     input: {
         publicationId: string;
         kind: 'update' | 'date_change' | 'photos';
         eventKey: string;
         now?: Date;
     },
-): Promise<boolean> {
-    try {
-        const tables = await database.run(sql`
-            SELECT name FROM sqlite_master
-            WHERE type='table'
-            AND name IN ('timeline_guest_subscriptions','timeline_guest_deliveries')
-        `);
-        if (tables.rows.length !== 2) return false;
-        const { enqueuePublishedGuestUpdate } = await import('./guest-notifications');
-        await database.transaction(
-            tx => enqueuePublishedGuestUpdate(tx, input),
-            { behavior: 'immediate' },
-        );
-        return true;
-    } catch {
-        try {
-            opLog('warn', 'timeline-guest-update', 'notification_queue_unavailable');
-        } catch {
-            // Diagnostics cannot alter a successful primary save.
-        }
-        return false;
-    }
+): Promise<number> {
+    const [publication] = await executor.select({state:timelinePublications.state})
+        .from(timelinePublications).where(eq(timelinePublications.id,input.publicationId)).limit(1);
+    if(publication?.state!=='published')return 0;
+    const {enqueuePublishedGuestUpdate}=await import('./guest-notifications');
+    return enqueuePublishedGuestUpdate(executor,input);
 }

@@ -78,7 +78,7 @@ const FORBIDDEN_KEYS = new Set([
 ]);
 
 /**
- * E06.01 — `ownerDisplayLabel` is the only owner-supplied free-text identity
+ * E06.01 â€” `ownerDisplayLabel` is the only owner-supplied free-text identity
  * string that crosses the public boundary. Everything else on the DTO is a
  * label, a date, a state or an opaque id.
  *
@@ -96,7 +96,7 @@ const FORBIDDEN_KEYS = new Set([
  * `class` and `module` publications keep the older rule. "Year 3, 2027" is a
  * legitimate label for those and carries no home in it.
  */
-const COUPLE_DISPLAY_LABEL_RE = /^[\p{L}\p{M}][\p{L}\p{M} '’\-&.,]*$/u;
+const COUPLE_DISPLAY_LABEL_RE = /^[\p{L}\p{M}][\p{L}\p{M} '\u2019\-&.,]*$/u;
 
 /** Shown to the couple. Says what is allowed, not what went wrong. */
 export const COUPLE_DISPLAY_LABEL_REFUSAL =
@@ -297,7 +297,7 @@ export function calendarDateInTimeZone(
 }
 
 /**
- * The UTC instant at which a calendar date ends in a named zone — the last
+ * The UTC instant at which a calendar date ends in a named zone â€” the last
  * millisecond before the zone's next local midnight. A Dublin link that
  * "expires 3 Oct" dies at Dublin midnight, not 00:59 the next morning; a
  * Tokyo link does not outlive its date by nine hours. Converges through the
@@ -429,8 +429,8 @@ export function hasSourceDiverged(
 }
 
 /**
- * The section labels this file used to declare — "Covered / Now / Next /
- * Later / Cancelled" — were one of three copies of the same five words. They
+ * The section labels this file used to declare â€” "Covered / Now / Next /
+ * Later / Cancelled" â€” were one of three copies of the same five words. They
  * live in `./vocabulary` now, with the editor's and the artifact's, so the
  * frozen payload cannot name a state differently from the screen that set it.
  */

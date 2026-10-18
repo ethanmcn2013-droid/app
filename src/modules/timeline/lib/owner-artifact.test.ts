@@ -281,3 +281,15 @@ test('Master3 owner projection copies only explicit settings and does not leak p
  const frozen=ownerPublicationToTimelineDto({...publication,presentation:{market:'event',onDayNote:'Frozen'},items:publication.items.map((item,index)=>({...item,...(index===0?{presentation:{note:'Frozen item'}}:{})}))},new Date('2026-10-18T00:00:00Z'));
  settings.presentation.onDayNote='Changed current plan';settings.items[nodes[0].id].note='Changed';assert.equal(frozen.presentation?.onDayNote,'Frozen');assert.equal(frozen.sections.flatMap(x=>x.items).find(item=>item.publicId===publication.items[0].publicId)?.presentation?.note,'Frozen item');
 });
+
+test('timed public items inherit the actual publication timezone when presentation omits it',()=>{
+ const frozen=ownerPublicationToTimelineDto({...publication,timezone:'America/New_York',items:publication.items.map((item,index)=>({...item,...(index===0?{presentation:{time:'14:00'}}:{})}))},new Date('2026-10-18T00:30:00Z'));
+ assert.equal(frozen.presentation?.timezone,'America/New_York');
+ assert.equal(frozen.today,'2026-10-17');
+});
+test('timed owner items inherit the resolved project timezone without sample fields',()=>{
+ const nodes=demoEffectiveNodes(demoWorkspace.slug).slice(0,1);
+ const projected=ownerProjectToTimelineDto({project:{slug:'test',name:'Test'},workspace:{ownerName:null,templateId:null},nodes,settings:{timezone:'America/New_York'},presentationSettings:{items:{[nodes[0].id]:{time:'14:00'}}},now:new Date('2026-10-18T00:30:00Z')});
+ assert.equal(projected.presentation?.timezone,'America/New_York');
+ assert.equal(projected.today,'2026-10-17');
+});

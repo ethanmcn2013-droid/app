@@ -4,6 +4,7 @@ import {
   AUDIENCE_TIMELINE_DTO_VERSION,
   calendarDateInTimeZone,
   validateAudienceTimelineDto,
+  validateIanaTimezone,
   type AudienceKind,
   type AudienceTimelineDto,
 } from "@/modules/timeline/lib/audience-timeline";
@@ -20,12 +21,14 @@ export function ownerPublicationToTimelineDto(
   publication: AudienceOwnerPublication,
   now = new Date(),
 ): AudienceTimelineDto {
+  const timezone=validateIanaTimezone(publication.presentation?.timezone??publication.timezone);
+  const hasPresentation=Boolean(publication.presentation)||publication.items.some(item=>Boolean(item.presentation?.time));
   return validateAudienceTimelineDto({
     version: AUDIENCE_TIMELINE_DTO_VERSION,
     audienceKind: publication.audienceKind,
     publicationId: publication.id,
     label: publication.label,
-    ...(publication.presentation ? {presentation:publication.presentation} : {}),
+    ...(hasPresentation ? {presentation:{...publication.presentation,timezone}} : {}),
     ...(publication.ownerDisplayLabel
       ? { ownerDisplayLabel: publication.ownerDisplayLabel }
       : {}),
@@ -38,7 +41,7 @@ export function ownerPublicationToTimelineDto(
         }
       : {}),
     lastUpdatedAt: publication.lastUpdatedAt.toISOString(),
-    today: calendarDateInTimeZone(now, publication.timezone),
+    today: calendarDateInTimeZone(now, timezone),
     sections: AUDIENCE_ITEM_STATES.map((state) => ({
       state,
       label: MILESTONE_STATE_LABELS[state],
@@ -95,7 +98,7 @@ export function ownerProjectToTimelineDto(input: {
   settingsUpdatedAt?: Date;
 }): AudienceTimelineDto {
   const now = input.now ?? new Date();
-  const timezone = input.presentationSettings?.presentation?.timezone ?? input.settings?.timezone ?? "Europe/Dublin";
+  const timezone = validateIanaTimezone(input.presentationSettings?.presentation?.timezone ?? input.settings?.timezone ?? "Europe/Dublin");
   const visible = input.nodes
     .filter((node) => !node.hidden)
     .sort((left, right) => left.sortOrder - right.sortOrder);
@@ -128,7 +131,7 @@ export function ownerProjectToTimelineDto(input: {
     publicationId:
       input.settings?.publicationId ?? `owner-preview-${input.project.slug}`,
     label: input.settings?.label ?? input.project.name,
-    ...(input.presentationSettings?.presentation ? {presentation:input.presentationSettings.presentation} : {}),
+    ...((input.presentationSettings?.presentation || Object.values(input.presentationSettings?.items??{}).some(item=>Boolean(item.time))) ? {presentation:{...input.presentationSettings?.presentation,timezone}} : {}),
     ...((input.settings?.ownerDisplayLabel ??
     (input.workspace.ownerName
       ? `Shared by ${input.workspace.ownerName}`

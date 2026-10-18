@@ -560,8 +560,8 @@ export async function publishAudiencePublication(
       expiresAt,
       createdAt: now,
     });
+    await queueMaster3PublishedUpdate(tx,{publicationId,kind:'update',eventKey:`published:${Math.floor(now.getTime()/1000)}`,now});
   });
-  await queueMaster3PublishedUpdate(db,{publicationId,kind:'update',eventKey:`published:${Math.floor(now.getTime()/1000)}`,now});
   return rawToken;
 }
 
@@ -659,10 +659,10 @@ export async function updateAudiencePublicationItem(input: {
           eq(timelinePublications.workspaceSlug, input.workspaceSlug),
         ),
       );
+    if(previous.title!==input.title||previous.date!==input.calendarDate||previous.state!==input.state){
+      await queueMaster3PublishedUpdate(tx,{publicationId:input.publicationId,kind:previous.date!==input.calendarDate?'date_change':'update',eventKey:digestSourceFields({title:input.title,date:input.calendarDate,completionState:`${input.publicId}:${input.state}:${Math.floor(now.getTime()/1000)}`}),now});
+    }
   });
-  if(previous.title!==input.title||previous.date!==input.calendarDate||previous.state!==input.state){
-    await queueMaster3PublishedUpdate(db,{publicationId:input.publicationId,kind:previous.date!==input.calendarDate?'date_change':'update',eventKey:digestSourceFields({title:input.title,date:input.calendarDate,completionState:`${input.publicId}:${input.state}:${Math.floor(now.getTime()/1000)}`}),now});
-  }
 }
 
 /**
@@ -689,7 +689,8 @@ export async function setAudiencePrimaryDate(input: {
   const [previous]=await db.select({label:timelinePublications.primaryDateLabel,date:timelinePublications.primaryDate}).from(timelinePublications).where(and(eq(timelinePublications.id,input.publicationId),eq(timelinePublications.workspaceSlug,input.workspaceSlug))).limit(1);
   const conceal = !input.primaryDate || !input.primaryDateLabel;
   const now = new Date();
-  await db
+  await db.transaction(async tx=>{
+  await tx
     .update(timelinePublications)
     .set({
       primaryDateLabel: conceal ? null : input.primaryDateLabel,
@@ -703,7 +704,8 @@ export async function setAudiencePrimaryDate(input: {
         eq(timelinePublications.workspaceSlug, input.workspaceSlug),
       ),
     );
-  if(previous?.label!==(conceal?null:input.primaryDateLabel)||previous?.date!==(conceal?null:input.primaryDate))await queueMaster3PublishedUpdate(db,{publicationId:input.publicationId,kind:'date_change',eventKey:digestSourceFields({title:conceal?'':input.primaryDateLabel!,date:conceal?null:input.primaryDate,completionState:`primary:${Math.floor(now.getTime()/1000)}`}),now});
+  if(previous?.label!==(conceal?null:input.primaryDateLabel)||previous?.date!==(conceal?null:input.primaryDate))await queueMaster3PublishedUpdate(tx,{publicationId:input.publicationId,kind:'date_change',eventKey:digestSourceFields({title:conceal?'':input.primaryDateLabel!,date:conceal?null:input.primaryDate,completionState:`primary:${Math.floor(now.getTime()/1000)}`}),now});
+  });
   return conceal ? "concealed" : "set";
 }
 
@@ -847,8 +849,10 @@ async function resolveAudienceTimelineByDigest(tokenHash: string, expectedPublic
     .orderBy(asc(timelinePublicationItems.sortOrder));
 
   const presentationSettings=await master3Settings.publication(publication.id);
+  const timezone=validateIanaTimezone(presentationSettings?.presentation?.timezone??publication.timezone);
+  const hasPresentation=Boolean(presentationSettings?.presentation)||Object.values(presentationSettings?.items??{}).some(item=>Boolean(item.time));
   const candidate = {
-    ...(presentationSettings?.presentation?{presentation:presentationSettings.presentation}:{}),
+    ...(hasPresentation?{presentation:{...presentationSettings?.presentation,timezone}}:{}),
     version: AUDIENCE_TIMELINE_DTO_VERSION,
     audienceKind: publication.audienceKind,
     publicationId: publication.id,
@@ -865,7 +869,7 @@ async function resolveAudienceTimelineByDigest(tokenHash: string, expectedPublic
         }
       : {}),
     lastUpdatedAt: publication.lastUpdatedAt.toISOString(),
-    today: calendarDateInTimeZone(new Date(), publication.timezone),
+    today: calendarDateInTimeZone(new Date(), timezone),
     sections: AUDIENCE_ITEM_STATES.map((state) => ({
       state,
       label: MILESTONE_STATE_LABELS[state],
