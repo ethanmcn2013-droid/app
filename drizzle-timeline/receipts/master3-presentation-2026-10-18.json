@@ -35,7 +35,7 @@
           "expected": 0
         }
       ],
-      "rollbackPlan": "Before population drop the three new tables; after population preserve settings/consent and delivery custody before rollback. Never drop a live sending/unknown delivery record to retry."
+      "rollbackPlan": "Before population drop the four new tables; after population preserve settings/consent and delivery custody before rollback. Never drop a live sending/unknown delivery record to retry."
     }
   ]
 }

@@ -60,7 +60,7 @@
       "sha256": "2e9649fade92471918c00ddee2c031b0b96e1fb76782f155079862b6b26da241",
       "policy": "forward",
       "receipt": "drizzle-timeline/receipts/master3-presentation-2026-10-18.json",
-      "receiptSha256": "794f14b3bed930b3826ed07f2acfdd2e89e6d857938d5e0d5d49449d59ccc652",
+      "receiptSha256": "eda9f26724ae5b9eff17ba21cbe624a1b8d5006b397a1223ece100664c09948a",
       "continuousProofIds": [
         "master3-tables",
         "master3-guest-indexes",
