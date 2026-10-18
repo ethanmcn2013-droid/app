@@ -10,7 +10,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "@/server/db/schema";
 import type { AssistantAction, AssistantPlan, AssistantRequest } from "@/lib/ping/assistant/contract";
 import { createPingProofFixture, PROOF_PROJECT, seedProofTask } from "../proof-fixture";
-import { createAssistantStore } from "./store";
+import { assistantDatabaseTransaction, createAssistantStore } from "./store";
 import { createAssistantService } from "./service";
 import { executeAssistantAction, type AssistantActionInput } from "./actions";
 import { getAssistantContext } from "./context";
@@ -29,7 +29,7 @@ async function fixture(planned: AssistantPlan, options: { actor?: string; lost?:
   const database = drizzle(proof.client, { schema });
   const store = createAssistantStore(database, { now: () => FIXED_NOW });
   let plans = 0, executions = 0, deliveries = 0, provisions = 0;
-  const transact = <T>(operation: Parameters<typeof database.transaction<T>>[0]) => database.transaction(operation, { behavior: "immediate" });
+  const transact = <T>(operation: Parameters<typeof database.transaction<T>>[0]) => assistantDatabaseTransaction(database, operation);
   const service = createAssistantService({ store, now: () => FIXED_NOW,
     planner: { plan: async () => { plans++; return { plan: planned, model: "synthetic-one-shot" }; } },
     context: (actor, request) => transact(async tx => {
