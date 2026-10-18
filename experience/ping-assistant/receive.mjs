@@ -23,7 +23,8 @@ try{
   const before=await snapshot();
   await send(page,'Create 100 tasks and open private preview');await settled(page);
   let after=await snapshot();assert.equal(after.tasks.length-before.tasks.length,100);assert.equal(after.plans-before.plans,1);
-  assert.equal(after.tasks.slice(-100).filter(t=>t.milestone===1).length,10);
+  const previousIds=new Set(before.tasks.map(t=>t.id));
+  assert.equal(after.tasks.filter(t=>!previousIds.has(t.id)&&t.milestone===1).length,10);
   await shot(page,id+'-success-populated');
   await page.getByRole('link',{name:'Open result',exact:true}).first().click();await page.getByRole('heading',{name:'Private preview',exact:true}).waitFor();
   assert.equal(await page.locator('button,input,textarea,select').count(),0);await shot(page,id+'-preview-populated-readonly');
