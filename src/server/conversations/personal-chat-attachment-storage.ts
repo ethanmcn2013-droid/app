@@ -51,7 +51,7 @@ const blobPort: BlobPort = {
  * No automatic reconciliation or universal rollback is offered by this seam.
  */
 export function createPersonalAttachmentStorage(options: {
-  env?: () => NodeJS.ProcessEnv; root?: () => string; now?: () => number; blob?: BlobPort;
+  env?: () => Readonly<{ BLOB_READ_WRITE_TOKEN?: string; VERCEL?: string }>; root?: () => string; now?: () => number; blob?: BlobPort;
   disk?: { mkdir: (directory: string) => Promise<void>; write: (path: string, bytes: Uint8Array, signal: AbortSignal) => Promise<void>; remove: (path: string) => Promise<void> };
 } = {}): PersonalAttachmentStorage {
   const env = options.env ?? (() => process.env);

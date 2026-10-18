@@ -575,7 +575,7 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
           aria-activedescendant={open && active ? `${listId}-${active.id}` : undefined}
           aria-autocomplete={onMentionIdsChange ? "list" : undefined}
           aria-controls={open ? listId : undefined}
-          aria-expanded={onMentionIdsChange ? open : undefined}
+          aria-haspopup={onMentionIdsChange ? "listbox" : undefined}
           aria-label={label}
           autoFocus={autoFocus}
           className={styles.composerInput}
@@ -588,7 +588,6 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
           onKeyUp={(event) => { if (event.key.startsWith("Arrow") || event.key === "Home" || event.key === "End") setCaret(event.currentTarget.selectionStart); }}
           placeholder={placeholder}
           ref={setNode}
-          role={onMentionIdsChange ? "combobox" : undefined}
           rows={1}
           value={value}
         />

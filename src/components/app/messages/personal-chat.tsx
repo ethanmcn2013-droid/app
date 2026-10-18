@@ -45,6 +45,11 @@ export function PersonalChat({ actorId, actorName, demo, visible }: { actorId: s
   const pending = useRef<Attempt | null>(null);
   const alive = useRef(true);
   const { ref: scrollRef, pin, away } = useBottomAnchor();
+  const fileProgress = files.files.map(file => `${file.localId}:${file.status}`).join("|");
+  const attemptState = attempt?.state;
+  useEffect(() => {
+    if (fileProgress || files.notice || attemptState || error) pin();
+  }, [fileProgress, files.notice, attemptState, error, pin]);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   const load = useCallback(async (before?: string, signal?: AbortSignal) => {
@@ -102,17 +107,17 @@ export function PersonalChat({ actorId, actorName, demo, visible }: { actorId: s
 
   return <section aria-label="Your private conversation" className={styles.personal}>
     <header className={styles.personalHead}><div><h2>{actorName} <span>(you)</span></h2><p>{demo ? "Preview · messages stay in this tab" : "Private to you · saved to your account"}</p></div><button disabled={exporting || (!demo && !ready)} onClick={() => void exportChat()} type="button">{exporting ? "Exporting…" : "Export Markdown"}</button></header>
-    {error ? <div className={styles.error} role="alert">{error}{!ready ? <button disabled={loading} onClick={() => void load()} type="button">Try again</button> : null}</div> : null}
     <div aria-label="Personal chat history" className={styles.personalScroll} ref={scrollRef} tabIndex={0}>
       {nextCursor ? <button disabled={loading} onClick={() => void load(nextCursor)} type="button">{loading ? "Loading…" : "Load earlier messages"}</button> : null}
       {!ready && loading ? <p role="status">Loading your messages…</p> : null}
       {ready && !messages.length ? <div className={styles.personalIntro}><h3>A place to think out loud.</h3><p>Keep a thought, a link or a reminder here. Only you can read this conversation.</p><p>Export it as Markdown whenever you want to take your notes with you.</p></div> : null}
       <ol className={styles.personalMessages}>{messages.map((message) => <li key={message.id}><div><strong>You</strong><time dateTime={new Date(message.createdAt).toISOString()}>{dateLabel(message.createdAt)}</time>{message.editedAt ? <span>Edited</span> : null}</div>{message.body ? <p><MessageBody body={message.body} people={[]} selfId={actorId} /></p> : null}<PersonalMessageFiles files={message.attachments} demo={demo} /></li>)}</ol>
+      {error ? <div className={styles.error} role="alert">{error}{!ready ? <button disabled={loading} onClick={() => void load()} type="button">Try again</button> : null}</div> : null}
+      {attempt ? <div className={styles.sendStatus} role="status">{attempt.state === "sending" ? "Saving your message…" : <>This send is unconfirmed. Your message stays in the draft.<button onClick={() => void submit(true)} type="button">Check receipt, then retry</button></>}</div> : null}
+      <DraftPersonalFiles files={files.files} disabled={!!attempt} demo={demo} onRemove={files.remove} onRetry={files.retry} />
+      {files.notice ? <p className={fileStyles.note} role="status">{files.notice}</p> : null}
     </div>
     {away ? <JumpToLatest onClick={() => pin(true)} /> : null}
-    {attempt ? <div className={styles.sendStatus} role="status">{attempt.state === "sending" ? "Saving your message…" : <>This send is unconfirmed. Your message stays in the draft.<button onClick={() => void submit(true)} type="button">Check receipt, then retry</button></>}</div> : null}
-    <DraftPersonalFiles files={files.files} disabled={!!attempt} demo={demo} onRemove={files.remove} onRetry={files.retry} />
-    {files.notice ? <p className={fileStyles.note} role="status">{files.notice}</p> : null}
     <Composer value={draft} onChange={(value) => { draftRef.current = value; setDraft(value); }} onSend={() => void submit()} label="Message yourself" placeholder={attachmentsEnabled ? "Write a thought or add a file" : "Write a thought or paste a link"} people={[]} selfId={actorId} mentionIds={[]} sendDisabled={!ready || !!attempt || !validDraft || files.waiting} allowEmpty={files.ready.length > 0} disabled={!!attempt} showHint={false} count={<ChatDraftCounter value={draft} />} additionalTools={<>{attachmentsEnabled ? <PersonalFilePicker disabled={!ready || !!attempt || files.files.length >= 3} onFiles={files.add} /> : null}<ChatDictationTools active={visible && !attempt} contextKey={`${actorId}:self`} append={(text) => { const next = appendDictatedText(draftRef.current, text); if (next === null) return false; draftRef.current = next; setDraft(next); return true; }} /></>} />
   </section>;
 }
