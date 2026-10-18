@@ -1,7 +1,7 @@
 "use client";
 
 import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeline";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import type { GuestTimelineServices } from "../../lib/master3-calendar";
 import { TimelineFollow, TimelineFollowAction } from "../../components/artifact/timeline-follow";
 import {
@@ -41,19 +41,22 @@ async function shareCurrentUrl(label: string): Promise<TimelineShareOutcome> {
   return "copied";
 }
 
+// The origin cannot change within this document. The server snapshot keeps
+// hydration deterministic without an effect that immediately schedules a render.
+const subscribeOrigin = () => () => {};
+const getBrowserOrigin = () => window.location.origin;
+const getServerOrigin = () => undefined;
+
 export function SharedTimelineArtifact({ timeline, shareToken, services, subscriber }: {
   timeline: AudienceTimelineDto;
   shareToken?: string;
   services?: GuestTimelineServices | null;
   subscriber?: { emailHint: string; unsubscribeProof: string };
 }) {
-  const [shareUrl, setShareUrl] = useState<string>();
-  useEffect(() => {
-    if (!shareToken) return;
-    // Only a normal public share is shareable. A signed subscriber URL is a
-    // personal management capability and must never enter the share sheet.
-    setShareUrl(new URL(`/s/${encodeURIComponent(shareToken)}`, window.location.origin).href);
-  }, [shareToken]);
+  const origin = useSyncExternalStore<string | undefined>(subscribeOrigin, getBrowserOrigin, getServerOrigin);
+  // A signed subscriber URL is a personal capability and is never shareable.
+  const shareUrl = shareToken && origin
+    ? new URL(`/s/${encodeURIComponent(shareToken)}`, origin).href : undefined;
   return (
     <>
       <TimelineArtifact
