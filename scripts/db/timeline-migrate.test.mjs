@@ -115,14 +115,15 @@ async function writeAdoptionReceipt(dir, client, { databaseUrl, overrides = {} }
   return { file, receipt };
 }
 
-test("the ledger registers both Timeline SQL files with receipt and journal parity", () => {
+test("the ledger registers all Timeline SQL files with receipt and journal parity", () => {
   assert.equal(context.module, "timeline");
   assert.deepEqual(context.entries.map((entry) => entry.id), [
     "0000_timeline_baseline",
     "0001_suite_project_bindings",
+    "0002_master3_presentation",
   ]);
   assert.equal(context.baseline.id, "0000_timeline_baseline");
-  assert.deepEqual(context.forward.map((entry) => entry.id), ["0001_suite_project_bindings"]);
+  assert.deepEqual(context.forward.map((entry) => entry.id), ["0001_suite_project_bindings", "0002_master3_presentation"]);
   assert.equal(context.ledger.databaseLedgerTable, "signal_timeline_schema_migrations");
   assert.equal(context.ledger.legacyDrizzleTable, "__drizzle_migrations");
 });
@@ -139,8 +140,8 @@ test("a tampered Timeline migration fails the content-addressed contract", () =>
 
 test("a fresh database applies the baseline plus forwards and reruns as a no-op", async () => withClient(async (client) => {
   const first = await runTimelineMigrations({ client, context, releaseSha: "test-release", now: () => 1_786_600_000_000 });
-  assert.deepEqual(first.applied, ["0000_timeline_baseline", "0001_suite_project_bindings"]);
-  assert.equal(first.proofs.length, 33);
+  assert.deepEqual(first.applied, ["0000_timeline_baseline", "0001_suite_project_bindings", "0002_master3_presentation"]);
+  assert.equal(first.proofs.length, 37);
 
   const second = await runTimelineMigrations({ client, context, releaseSha: "test-release" });
   assert.deepEqual(second, { status: "no-op", applied: [] });
@@ -201,7 +202,7 @@ test("adoption registers the observed fingerprint, is idempotent, and unlocks fo
       environment: "development",
       releaseSha: "forward-release",
     });
-    assert.deepEqual(forward.applied, ["0001_suite_project_bindings"]);
+    assert.deepEqual(forward.applied, ["0001_suite_project_bindings", "0002_master3_presentation"]);
     assert.equal((await timelineMigrationStatus({ client, context })).state, "current");
 
     // Second run of the forward migration proves no-op (plan §12 step 8).
@@ -346,10 +347,10 @@ test("dry run writes nothing to the target and rehearses on a copy", async () =>
     const dry = await dryRunTimelineMigrations({ client, context, databaseUrl, environment: "development" });
 
     assert.equal(dry.status, "would-apply");
-    assert.deepEqual(dry.wouldApply.map((entry) => entry.id), ["0001_suite_project_bindings"]);
+    assert.deepEqual(dry.wouldApply.map((entry) => entry.id), ["0001_suite_project_bindings", "0002_master3_presentation"]);
     assert.equal(dry.wouldApply[0].statements, 5);
     assert.equal(dry.rehearsal.status, "passed");
-    assert.deepEqual(dry.rehearsal.applied, ["0001_suite_project_bindings"]);
+    assert.deepEqual(dry.rehearsal.applied, ["0001_suite_project_bindings", "0002_master3_presentation"]);
     assert.equal(dry.rehearsal.secondRun, "no-op");
     assert.match(dry.rehearsal.databaseSha256, /^[a-f0-9]{64}$/);
 
