@@ -2,6 +2,14 @@
 
 This candidate adds a text-first Ping tab to the existing Chat panel. It is off by default. Speech is deferred; this guide does not qualify production use, provider quality, delivery or end-to-end performance.
 
+## Interaction direction
+
+The founder's October 18 references are [Agently's action demonstration](https://x.com/omarships/status/2110155655399006303/video/1) and [its contextual interface demonstration](https://x.com/ahmadafterhours/status/2108325993979277417/video/1). They establish the desired feel: a compact assistant beside the work, visible action progress, and a result view suited to the request.
+
+Ping applies that direction within Signal: a floating text command panel, progress derived from saved steps, and structured results linking to the actual Project, tasks, chat or private Timeline preview. The current request stays prominent; older requests remain available. Closing the panel hides the interface while preserving saved work and recovery identifiers. Motion must respect reduced-motion preferences. No percentage, completion marker or preview is invented while a result is uncertain.
+
+The references do not add desktop control, arbitrary generated components or a new speech dependency to this version. Existing Signal views remain the result surfaces; requested task changes are saved and the current Timeline stays unpublished.
+
 ## Request and result
 
 Choose an account or Project scope, enter the whole request, and choose execution or draft mode. One bounded model response produces a finite plan; server validation and domain operations decide what can run. The model cannot supply internal IDs, change permissions, publish a Timeline or choose another database.
