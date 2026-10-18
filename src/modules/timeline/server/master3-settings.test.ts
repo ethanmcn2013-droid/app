@@ -37,6 +37,11 @@ test('actual SQLite owner-scoped settings and publication snapshot stay independ
   const tokenHash='a'.repeat(64);
   await client.execute({sql:"INSERT INTO audience_shares(id,publication_id,token_hash,state) VALUES('share','public',?,'active')",args:[tokenHash]});
   await client.execute({sql:"INSERT INTO timeline_guest_subscriptions(id,publication_id,share_token_hash,email,email_hash,state,delivery_state,confirmed_at) VALUES('sub','public',?,'synthetic@example.test',?,'confirmed','sent',unixepoch())",args:[tokenHash,'b'.repeat(64)]});
+  // Undated publications intentionally do not enqueue general updates. Give
+  // this non-wedding fixture a real public date before testing atomic intent.
+  await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Undated update'}});
+  assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_deliveries')).rows[0].n),0);
+  await client.execute("UPDATE timeline_publication_items SET calendar_date='2030-11-20' WHERE public_id='public_item' AND publication_id='public'");
   await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Published update'}});
   assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_deliveries')).rows[0].n),1);
   await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Published update'}});
@@ -67,7 +72,9 @@ test('atomic referral patch preserves a concurrent details save; authority, dedu
   for(const file of ['0000_timeline_baseline.sql','0002_master3_presentation.sql'])await client.executeMultiple(fs.readFileSync('drizzle-timeline/'+file,'utf8'));
   await client.execute("INSERT INTO workspaces(slug,name,owner_user_id) VALUES('owned','Synthetic','owner'),('foreign','Foreign','other')");
   await client.execute("INSERT INTO timeline_publications(id,workspace_slug,source_workspace_id,source_digest,label,audience_kind,timezone,state) VALUES('public','owned','tasks','digest','Synthetic','class','Europe/Dublin','published'),('draft','owned','tasks','draft-digest','Private','class','Europe/Dublin','draft'),('foreign','foreign','other','other-digest','Foreign','class','Europe/Dublin','published')");
-  await client.execute("INSERT INTO timeline_publication_items(public_id,publication_id,title,state,source_relation,source_digest) VALUES('item','public','Public milestone','next','private-source','digest')");
+  await client.execute("INSERT INTO timeline_publication_items(public_id,publication_id,title,calendar_date,state,source_relation,source_digest) VALUES('item','public','Public milestone','2030-11-20','next','private-source','digest')");
+  // Class publication with an active dated item is eligible for update intent;
+  // wedding post-final and no-date suppression are separate notifier contracts.
   const database=drizzle(client,{schema}),store=createMaster3SettingsStore(database);
   await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Old note',photosUrl:'https://example.invalid/old',referral:true},items:{item:{note:'Old milestone note',final:false}}});
   const stale=await store.publication('public');const latest={presentation:{onDayNote:'Concurrent note',photosUrl:'https://example.invalid/new',referral:true,calAll:true},items:{item:{note:'Concurrent milestone note',final:false}}};
