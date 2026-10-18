@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { ASSISTANT_LIMITS, type AssistantApiResponse, type AssistantRequest, type AssistantRunView, isAssistantInternalHref } from "@/lib/ping/assistant/contract";
 import { createBrowserPingTelemetry, pingTelemetryBegin } from "@/lib/ping/telemetry-client";
+import { invalidateTaskSnapshotEpoch } from "@/lib/tasks/task-snapshot-epoch";
 import { Composer } from "./chat-ui";
-import { assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
+import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
 import styles from "./ping-personal-assistant.module.css";
 function readEventTime() { return performance.now(); }
 const queryFor = (pending: PendingAssistantRequest) => pending.runId ? `?runId=${encodeURIComponent(pending.runId)}` : `?clientRequestId=${encodeURIComponent(pending.requestId)}`;
@@ -34,6 +35,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
   const latch = useRef(false);
   const visibleTiming = useRef<AssistantVisibleTiming | null>(null);
   const lookupAbort = useRef<AbortController | null>(null);
+  const taskRefresh = useRef<AssistantTaskRefreshState>({ actorId, receipts: new Set() });
   const historyRef = useRef<HTMLDivElement>(null);
   const keepPending = useCallback((next: PendingAssistantRequest | null) => {
     const key = pendingAssistantKey(actorId);
@@ -61,16 +63,18 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
     if (latch.current || !pendingRef.current) return;
     latch.current = true; setBusy(true); setError(null);
     const epoch = generation.current;
+    const pendingRequestId = pendingRef.current.requestId;
     const timing = visibleTiming.current?.requestId === pendingRef.current.requestId ? visibleTiming.current : null;
     const controller = new AbortController(); lookupAbort.current = controller;
     try {
       const response = await assistantRequest(queryFor(pendingRef.current), undefined, controller.signal, timing);
       if (!mounted.current || epoch !== generation.current) return;
       const accepted = receive(response);
+      refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "read", response: accepted, pendingRequestId, invalidate: invalidateTaskSnapshotEpoch });
       if (!accepted.run) { setAbsent(true); setError("The original request is not recorded yet. Check again before starting another request."); }
     } catch (failure) { finishAssistantTiming(timing, "unknown"); if (mounted.current && epoch === generation.current) setError(failure instanceof Error ? failure.message : "The original result could not be checked."); }
     finally { if (lookupAbort.current === controller) lookupAbort.current = null; if (epoch === generation.current) { latch.current = false; if (mounted.current) setBusy(false); } }
-  }, [receive]);
+  }, [receive, actorId]);
   useEffect(() => {
     mounted.current = true;
     const epoch = ++generation.current;
@@ -88,6 +92,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
           const response = await assistantRequest(queryFor(saved), undefined, controller.signal);
           if (!mounted.current || epoch !== generation.current) return;
           const accepted = receive(response);
+          refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "read", response: accepted, pendingRequestId: saved.requestId, invalidate: invalidateTaskSnapshotEpoch });
           if (!accepted.run) { setAbsent(true); setError("The original request is not recorded yet. Check its status before starting another request."); }
         }
         setReady(true);
@@ -143,7 +148,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
       keepPending({ version: 1, requestId: request.requestId });
       original.current = request; setHasOriginal(true);
       const response = await assistantRequest("", { operation: "submit", request }, undefined, timing);
-      if (mounted.current && epoch === generation.current) { receive(response); openCommandResult("submit", response); }
+      if (mounted.current && epoch === generation.current) { receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "submit", response, invalidate: invalidateTaskSnapshotEpoch }); openCommandResult("submit", response); }
     } catch (failure) {
       finishAssistantTiming(timing, pendingRef.current ? "unknown" : "not_invoked");
       if (mounted.current && epoch === generation.current) setError(pendingRef.current ? "The result is not confirmed. Check status before trying again. Your original request will not be sent again automatically." : failure instanceof Error ? failure.message : "This browser could not keep a recovery note. No request was sent.");
@@ -157,7 +162,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
     try {
       keepPending({ version: 1, requestId: run.requestId, runId: run.id });
       const response = await assistantRequest("", { operation, runId: run.id }, undefined, timing);
-      if (mounted.current && epoch === generation.current) { receive(response); openCommandResult(operation, response); }
+      if (mounted.current && epoch === generation.current) { receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation, response, invalidate: invalidateTaskSnapshotEpoch }); openCommandResult(operation, response); }
     } catch { finishAssistantTiming(timing, "unknown"); if (mounted.current && epoch === generation.current) setError("The latest result is not confirmed. Check status; work already saved stays saved."); }
     finally { if (epoch === generation.current) { latch.current = false; if (mounted.current) setBusy(false); } }
   }

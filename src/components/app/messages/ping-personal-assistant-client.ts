@@ -162,3 +162,29 @@ export function assistantCreatedProjects(run: AssistantRunView): readonly { id: 
   }
   return [...projects.values()];
 }
+
+/** Freshness only: saved receipts trigger an authoritative Tasks read, never publish task data. */
+export type AssistantTaskRefreshState = { actorId: string | null; receipts: Set<string> };
+export function refreshAssistantTasks(options: {
+  state: AssistantTaskRefreshState; actorId: string; operation: AssistantApiCommand["operation"] | "read";
+  response: AssistantApiResponse; pendingRequestId?: string; invalidate: () => void;
+}): boolean {
+  const { state, actorId, operation, response } = options;
+  if (state.actorId !== actorId) { state.actorId = actorId; state.receipts.clear(); }
+  if (!response.ok || !response.run) return false;
+  const run = response.run;
+  if (operation === "read" && (!options.pendingRequestId || options.pendingRequestId !== run.requestId)) return false;
+  if (run.status === "ready" || run.status === "clarification" || run.status === "planning") return false;
+  const keys = run.steps.filter(step =>
+    ["create_tasks", "update_tasks", "archive_tasks"].includes(step.kind) && step.status === "completed" &&
+    step.result?.status === "completed" && step.result.kind === step.kind &&
+    Number.isSafeInteger(step.result.affectedCount) && step.result.affectedCount > 0
+  ).map(step => JSON.stringify([actorId, run.id, step.id])).filter(key => !state.receipts.has(key));
+  if (!keys.length) return false;
+  try { options.invalidate(); } catch { return false; }
+  for (const key of keys) {
+    state.receipts.add(key);
+    if (state.receipts.size > 2000) state.receipts.delete(state.receipts.values().next().value!);
+  }
+  return true;
+}

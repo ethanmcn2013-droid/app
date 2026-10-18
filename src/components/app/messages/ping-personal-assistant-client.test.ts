@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming } from "./ping-personal-assistant-client";
+import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming } from "./ping-personal-assistant-client";
 import type { AssistantApiCommand, AssistantRunView } from "@/lib/ping/assistant/contract";
 import { createPingTelemetryRecorder, type PingTelemetryEvent } from "@/lib/ping/telemetry";
 const run: AssistantRunView = { id:"run_synthetic_123",requestId:"request_synthetic_123",text:"Create 100 tasks",scope:{kind:"project",projectId:"synthetic-project"},mode:"execute",status:"partial",createdAt:"2026-10-18T09:00:00.000Z",updatedAt:"2026-10-18T09:01:00.000Z",steps:[
@@ -225,4 +225,50 @@ test("unavailable frame scheduling closes diagnostic ownership without claiming 
   observeAssistantResultCommit({ timing, run: { status: "completed", mode: "execute" }, isCurrent: () => true,
     requestFrame: () => { throw Error("frame unavailable"); }, cancelFrame: () => {} });
   assert.deepEqual(ended, ["unavailable"]); assert.equal(timing.done, true);
+});
+
+test("saved task receipts refresh once across direct replies and pending-original recovery", () => {
+  const state: AssistantTaskRefreshState = {actorId: null, receipts: new Set()}; let calls = 0;
+  const response = {version: "ping.assistant.v1", ok: true, available: true, run} as const;
+  const invoke = (operation: "submit" | "apply" | "read", value = response, pendingRequestId?: string, actorId = "actor-a") => refreshAssistantTasks({state, actorId, operation, response: value, pendingRequestId, invalidate: () => { calls++; }});
+  assert.equal(invoke("read"), false);
+  assert.equal(invoke("read", response, "different-request"), false);
+  assert.equal(invoke("read", response, run.requestId), true); // persisted pending after reload
+  assert.equal(invoke("submit"), false);
+  assert.equal(invoke("read", response, run.requestId), false);
+  assert.equal(calls, 1);
+  const next = {...response, run: {...run, steps: [...run.steps, {...run.steps[0], id: "step3", kind: "update_tasks" as const, result: {...run.steps[0].result!, kind: "update_tasks" as const}}]}};
+  assert.equal(invoke("submit", next), true); assert.equal(calls, 2);
+  assert.equal(invoke("submit", next, undefined, "actor-b"), true); assert.equal(calls, 3);
+});
+test("task refresh requires actual saved effects, including applied drafts and partial successes", () => {
+  for (const status of ["ready", "clarification", "planning"] as const) {
+    const state = {actorId: null, receipts: new Set<string>()};
+    assert.equal(refreshAssistantTasks({state, actorId:"a", operation:"submit", response:{version:"ping.assistant.v1",ok:true,available:true,run:{...run,status,mode:"draft"}}, invalidate:()=>assert.fail("not saved")}), false);
+  }
+  for (const step of [ {...run.steps[0],status:"unknown" as const}, {...run.steps[0],result:null}, {...run.steps[0],result:{...run.steps[0].result!,affectedCount:0}}, {...run.steps[0],result:{...run.steps[0].result!,status:"blocked" as const}}, {...run.steps[0],result:{...run.steps[0].result!,kind:"preview_timeline" as const}} ]) {
+    assert.equal(refreshAssistantTasks({state:{actorId:null,receipts:new Set()},actorId:"a",operation:"apply",response:{version:"ping.assistant.v1",ok:true,available:true,run:{...run,steps:[step]}},invalidate:()=>assert.fail("not saved")}),false);
+  }
+  let calls=0;
+  assert.equal(refreshAssistantTasks({state:{actorId:null,receipts:new Set()},actorId:"a",operation:"apply",response:{version:"ping.assistant.v1",ok:true,available:true,run:{...run,mode:"draft"}},invalidate:()=>{calls++;}}),true);
+  assert.equal(calls,1);
+});
+
+test("pending replies refresh completed effects once while history, errors and pending-only steps do not", () => {
+  const state: AssistantTaskRefreshState = {actorId:null, receipts:new Set()}; let calls=0;
+  const invoke=(response: Parameters<typeof refreshAssistantTasks>[0]["response"], pendingRequestId?:string)=>refreshAssistantTasks({state,actorId:"a",operation:"read",response,pendingRequestId,invalidate:()=>{calls++;}});
+  const response={version:"ping.assistant.v1",ok:true,available:true,run:{...run,status:"running",steps:[{...run.steps[0],status:"running",result:null}]}} as const;
+  assert.equal(invoke(response,run.requestId),false);
+  assert.equal(invoke({version:"ping.assistant.v1",ok:true,available:true,runs:[run]},run.requestId),false);
+  assert.equal(invoke({version:"ping.assistant.v1",ok:false,code:"unavailable",message:"Unavailable"},run.requestId),false);
+  const saved={...response,run:{...run,status:"running" as const,steps:[run.steps[0],{...run.steps[0],id:"archive",kind:"archive_tasks" as const,result:{...run.steps[0].result!,kind:"archive_tasks" as const}}]}};
+  assert.equal(invoke(saved,run.requestId),true); assert.equal(calls,1);
+  assert.equal(invoke(saved,run.requestId),false); assert.equal(calls,1);
+});
+test("freshness failure cannot fail the mutation reply and leaves its receipt retryable",()=>{
+  const state:AssistantTaskRefreshState={actorId:null,receipts:new Set()};
+  const options={state,actorId:"a",operation:"submit" as const,response:{version:"ping.assistant.v1",ok:true,available:true,run} as const};
+  assert.equal(refreshAssistantTasks({...options,invalidate:()=>{throw new Error("blocked");}}),false);
+  assert.equal(state.receipts.size,0);
+  assert.equal(refreshAssistantTasks({...options,invalidate:()=>{}}),true);
 });
