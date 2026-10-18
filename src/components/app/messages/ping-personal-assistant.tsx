@@ -73,7 +73,6 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
   }, [receive]);
   useEffect(() => {
     mounted.current = true;
-    setReentering(false);
     const epoch = ++generation.current;
     const controller = new AbortController();
     void (async () => {
