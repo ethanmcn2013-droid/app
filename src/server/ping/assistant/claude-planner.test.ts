@@ -22,6 +22,7 @@ test("one structured JSON generation per model; no tools or forced choice; expli
     const f=fixture(async()=>response(model),{allowEvaluation:true});const result=await f.planner.plan(request(tier),signal());
     assert.equal(result.model,model);assert.equal(f.calls.length,1);assert.equal(f.reservations.length,1);assert.equal(f.usage[0].state,"usage_observed");
     const body=JSON.parse(String(f.calls[0].body));assert.equal(body.output_config.format.type,"json_schema");assert.deepEqual(body.output_config.format.schema,schema);
+    assert.equal(body.output_config.effort,model==="claude-sonnet-5-5"?"medium":undefined);
     assert.equal(body.tools,undefined);assert.equal(body.tool_choice,undefined);assert.equal(body.thinking.type,tier==="simple"?"disabled":"adaptive");
     assert.equal(f.calls[0].redirect,"error");assert.equal(f.calls[0].credentials,"omit");
   }

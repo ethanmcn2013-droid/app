@@ -70,7 +70,7 @@ export function createClaudeAssistantPlanner<Plan>(options: {
       inputTokenUpperBound:INPUT_CONTEXT_CEILING, maxOutputTokens});
     const body = JSON.stringify({model, max_tokens:maxOutputTokens, stream:false,
       system:wireInstructions, messages:[{role:"user", content:JSON.stringify({text:request.text, context:request.context})}],
-      output_config:{format:{type:"json_schema", schema:wireSchema}},
+      output_config:{format:{type:"json_schema", schema:wireSchema},...(model === "claude-sonnet-5-5" ? {effort:"medium"} : {})},
       ...(model === "claude-haiku-5-5" ? {thinking:{type:"disabled"}} : {thinking:{type:"adaptive"}})});
     if (Buffer.byteLength(body,"utf8") > REQUEST_BYTES || body.includes(apiKey)) throw new Error("planner_input_invalid");
     physicalBusy = true;
