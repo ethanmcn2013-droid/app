@@ -210,7 +210,7 @@
 
 @media (max-height: 560px) {
   .panel {
-    height: min(72dvh, max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 24px)));
+    height: max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 24px));
     max-height: max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 24px));
   }
   .personalHead { padding-block: 7px; }
