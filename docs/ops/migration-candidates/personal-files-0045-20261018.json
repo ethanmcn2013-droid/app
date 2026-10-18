@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "tasks-reviewed-migration-candidate/1",
+  "id": "personal-files-0045-20261018",
+  "repository": "ethanmcn2013-droid/app",
+  "pullRequestNumber": 297,
+  "candidateSourceRevision": "b3a2787cd8348bd63b894c4e413f8d8e84ccf0ec",
+  "candidateBaseRevision": "dc41c201b6fc3242f1ade9f29c9bc15e96864860",
+  "baseLedgerSha256": "b222de6e46c9b896149c57677da0b0a5355a9ea118cecccd8342a21ae756c717",
+  "candidateLedgerSha256": "2a4a09191f960c33ff36fcb1d7c89104d06018eeeec453550fcaefd63223bc14",
+  "expectedLastMigrationId": "0044_assistant_execution",
+  "targetUrlSha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "databaseIdentitySha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "notBefore": "2026-10-18T02:31:17Z",
+  "expiresAt": "2026-10-18T14:31:17Z",
+  "authorization": {
+    "source": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/36#issuecomment-6244740736",
+    "authorizedBy": "Active coordinator under Ethan standing execution and safe-deployment authority; additive0045 only through exact receiving review, acknowledged encrypted backup, restore/migration rehearsal and fresh target/source fences. Admission OFF until corrected runtime/lifecycle deployed."
+  },
+  "review": {
+    "verdict": "approved",
+    "sourceRevision": "b3a2787cd8348bd63b894c4e413f8d8e84ccf0ec",
+    "reviewedBy": "Independent chat_files_risk_review task; root receives source-package review only",
+    "reference": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/36#issuecomment-6244740736; managed data-0045-review.json SHA256 29d3e9321065540f68f777439aed5848f770bff54b24d8df63caa35edab306b5; source preparation acceptable with no findings. Actual receiving D review, required checks, trusted encrypted workflow and post-apply proof remain mandatory. Isolated local rehearsal passed12checks. Windows aggregate failure remains recorded.",
+    "reviewedAt": "2026-10-18T02:31:17Z"
+  },
+  "migrations": [
+    {
+      "id": "0045_personal_chat_attachments",
+      "sha256": "ecdebf829dc626450d3a94c9c696135c1a93dd56aef372719f4941292edc80e1",
+      "receiptSha256": "30f8399adefef545831b5217c82af1e233737add1943aa8d991b742ce4a920cf"
+    }
+  ],
+  "files": [
+    {
+      "path": "drizzle/0045_personal_chat_attachments.sql",
+      "sha256": "ecdebf829dc626450d3a94c9c696135c1a93dd56aef372719f4941292edc80e1"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "sha256": "3bae6f785ae021ac50b94d08e54bb78554d266b4f188ce83391b9c612e668fd5"
+    },
+    {
+      "path": "drizzle/migration-ledger.json",
+      "sha256": "2a4a09191f960c33ff36fcb1d7c89104d06018eeeec453550fcaefd63223bc14"
+    },
+    {
+      "path": "drizzle/receipts/personal-chat-attachments-2026-10-18.json",
+      "sha256": "30f8399adefef545831b5217c82af1e233737add1943aa8d991b742ce4a920cf"
+    }
+  ]
+}
