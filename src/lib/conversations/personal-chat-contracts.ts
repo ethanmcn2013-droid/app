@@ -30,7 +30,6 @@ export const PERSONAL_CHAT_ATTACHMENT_LIMITS = Object.freeze({
   uploadsPerMinute: 10,
   draftMilliseconds: 24 * 60 * 60_000,
   writerMilliseconds: 60_000,
-  drainMilliseconds: 30 * 60_000,
 });
 
 export function validPersonalChatAttachmentIds(value: unknown): value is readonly string[] {

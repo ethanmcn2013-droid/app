@@ -7,7 +7,7 @@ import { personalAttachmentStorage, type PersonalAttachmentStorage } from "./per
 
 /** Called only after the account's durable deletion fence is installed. */
 export async function erasePersonalChatAttachmentsWith(database: LibSQLDatabase<typeof schema>, ownerId: string,
-  storage: Pick<PersonalAttachmentStorage, "remove"> = personalAttachmentStorage, now = Date.now()) {
+  storage: Pick<PersonalAttachmentStorage, "remove"> = personalAttachmentStorage) {
   const tables = await database.run(sql`SELECT name FROM sqlite_master WHERE type='table' AND name='personal_chat_attachments'`);
   if (!tables.rows.length) return;
   // Commit cleanup custody BEFORE bytes or identity rows can disappear.
@@ -17,9 +17,9 @@ export async function erasePersonalChatAttachmentsWith(database: LibSQLDatabase<
   let pending = false;
   for (const row of rows) {
     if (row.state === "deleted") continue;
-    if (row.writerSettled !== 1 && row.custodyUntil > now) { pending = true; continue; }
+    if (row.writerSettled !== 1) { pending = true; continue; }
     try {
-      await storage.remove(row.backend, row.storageKey);
+      await storage.remove(row.backend, row.storageKey, row.storeIdentity);
       await database.update(personalChatAttachments).set({ state: "deleted", storedPath: null })
         .where(and(eq(personalChatAttachments.ownerId, ownerId), eq(personalChatAttachments.id, row.id), eq(personalChatAttachments.state, "cleanup")));
     } catch { pending = true; }

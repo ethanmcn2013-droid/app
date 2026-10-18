@@ -8,7 +8,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "@/server/db/schema";
 import { PERSONAL_CHAT_ATTACHMENT_LIMITS as LIMIT } from "@/lib/conversations/personal-chat-contracts";
 import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
-import { createLocalConversationDatabaseAdapter } from "./database";
+import { createLocalConversationDatabaseAdapter, type ConversationDatabaseAdapter } from "./database";
 import { createPersonalChatAttachmentService, type PersonalAttachmentStorage } from "./personal-chat-attachments";
 import { createPersonalChatService } from "./personal-chat";
 import { createPersonalChatHttp } from "./personal-chat-http";
@@ -29,6 +29,7 @@ async function fixture(withSchema = true) {
   let time = 1_800_000_000_000;
   const storage: PersonalAttachmentStorage = {
     backend: () => "disk",
+    identity: () => "test:disk-root",
     put: async (key, data) => { bytes.set(key, Uint8Array.from(data)); return key; },
     remove: async (_backend, key) => { if (failDelete) throw new Error("injected delete failure"); removed.push(key); bytes.delete(key); },
   };
@@ -114,7 +115,7 @@ test("concurrent quota reservations and cancelled uploads cannot bypass private 
     // Existing private files reserve the owner's quota before either concurrent write.
     await f.client.execute("UPDATE personal_chat_attachments SET size_bytes=2097152,created_at=0");
     const seed = (await f.client.execute("SELECT * FROM personal_chat_attachments LIMIT 1")).rows[0];
-    for (let index = 0; index < 23; index++) await f.client.execute({ sql: "INSERT INTO personal_chat_attachments SELECT ?,owner_id,NULL,NULL,?,request_hash,filename,mime_type,size_bytes,backend,?,stored_path,state,writer_settled,custody_until,expires_at,created_at FROM personal_chat_attachments WHERE id=?", args: [`seed_${index}`, `quota_seed_${index}`, `exact_seed_${index}`, String(seed.id)] });
+    for (let index = 0; index < 23; index++) await f.client.execute({ sql: "INSERT INTO personal_chat_attachments SELECT ?,owner_id,NULL,NULL,?,request_hash,filename,mime_type,size_bytes,backend,store_identity,?,stored_path,state,writer_settled,custody_until,expires_at,created_at FROM personal_chat_attachments WHERE id=?", args: [`seed_${index}`, `quota_seed_${index}`, `exact_seed_${index}`, String(seed.id)] });
     const simultaneous = await Promise.all([0, 1].map(index => f.attachments.upload({ ownerId: "a", clientRequestId: `quota_parallel_00${index}`, filename: "x.txt", mimeType: "text/plain", bytes: large })));
     assert.equal(simultaneous.filter(result => result.ok).length, 1);
     assert.ok(simultaneous.some(result => !result.ok && result.code === "quota_exceeded"));
@@ -133,10 +134,10 @@ test("expiry and failed exact-byte cleanup remain retryable; erasure clears owne
     await f.upload("b", "other_owner_0001");
     f.failDelete(true); f.advance(LIMIT.draftMilliseconds + 1);
     assert.deepEqual(await f.attachments.repair("a"), { pending: 1 }); assert.equal(f.bytes.size, 2);
-    await assert.rejects(erasePersonalChatAttachmentsWith(f.database, "a", f.storage, f.now()), /erasure deferred/);
+    await assert.rejects(erasePersonalChatAttachmentsWith(f.database, "a", f.storage), /erasure deferred/);
     assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM personal_chat_attachments WHERE owner_id='a'")).rows[0].n), 1);
     f.failDelete(false);
-    await erasePersonalChatAttachmentsWith(f.database, "a", f.storage, f.now());
+    await erasePersonalChatAttachmentsWith(f.database, "a", f.storage);
     assert.equal(f.bytes.size, 1); assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM personal_chat_attachments WHERE owner_id='a'")).rows[0].n), 0);
   } finally { f.client.close(); }
 });
@@ -150,12 +151,79 @@ test("account erasure during an admitted upload fences finalization and cannot f
     const service = createPersonalChatAttachmentService(f.adapter, { enabled: true, storage, now: f.now });
     const upload = service.upload({ ownerId: "a", clientRequestId: "inflight_upload_01", filename: "x.txt", mimeType: "text/plain", bytes: fileBytes });
     await started;
+    // Neither expiry of the old drain margin nor passage of a day proves that
+    // this paused writer cannot still land bytes.
+    f.advance(2 * LIMIT.draftMilliseconds);
+    assert.deepEqual(await service.repair("a", true), { pending: 1 });
     await f.client.execute({ sql: "INSERT INTO meta(key,value) VALUES(?, 'deleting')", args: [accountDeletionTombstoneKey("clerk-a")] });
-    await assert.rejects(erasePersonalChatAttachmentsWith(f.database, "a", storage, f.now()), /erasure deferred/);
+    await assert.rejects(erasePersonalChatAttachmentsWith(f.database, "a", storage), /erasure deferred/);
     assert.equal(f.bytes.size, 0);
     finish(); assert.equal((await upload).ok, false);
-    await erasePersonalChatAttachmentsWith(f.database, "a", storage, f.now());
+    await erasePersonalChatAttachmentsWith(f.database, "a", storage);
     assert.equal(f.bytes.size, 0); assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM personal_chat_attachments")).rows[0].n), 0);
+  } finally { f.client.close(); }
+});
+
+test("a suspended reservation cannot start a fresh write after its original grant, cancellation or erasure fence", async () => {
+  for (const cause of ["deadline", "cancel", "erasure"] as const) {
+    const f = await fixture();
+    try {
+      let entered!: () => void; const reserved = new Promise<void>(resolve => { entered = resolve; });
+      let finish!: () => void; const resume = new Promise<void>(resolve => { finish = resolve; });
+      const adapter: ConversationDatabaseAdapter = { ...f.adapter, async transaction(mode, action) {
+        const value = await f.adapter.transaction(mode, action);
+        const result = value as { ok?: boolean; value?: { replay?: boolean; row?: unknown } };
+        if (mode === "write" && result?.ok && result.value?.row && result.value.replay === false) { entered(); await resume; }
+        return value;
+      } };
+      const service = createPersonalChatAttachmentService(adapter, { enabled: true, storage: f.storage, now: f.now });
+      const upload = service.upload({ ownerId: "a", clientRequestId: "suspended_claim_01", filename: "x.txt", mimeType: "text/plain", bytes: fileBytes });
+      await reserved;
+      if (cause === "deadline") f.advance(LIMIT.writerMilliseconds + 1);
+      if (cause === "cancel") await f.client.execute("UPDATE personal_chat_attachments SET state='cleanup'");
+      if (cause === "erasure") await f.client.execute({ sql: "INSERT INTO meta(key,value) VALUES(?,'deleting')", args: [accountDeletionTombstoneKey("clerk-a")] });
+      await assert.rejects(erasePersonalChatAttachmentsWith(f.database, "a", f.storage), /erasure deferred/);
+      finish(); assert.equal((await upload).ok, false); assert.equal(f.bytes.size, 0, cause);
+      await erasePersonalChatAttachmentsWith(f.database, "a", f.storage);
+      assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM personal_chat_attachments")).rows[0].n), 0);
+    } finally { f.client.close(); }
+  }
+});
+
+test("unknown remote completion never retires custody by time and storage identity restoration permits exact cleanup", async () => {
+  const f = await fixture();
+  try {
+    f.storage.put = async () => { throw new Error("synthetic uncertain provider rejection"); };
+    assert.equal((await f.upload()).ok, false);
+    f.advance(30 * LIMIT.draftMilliseconds);
+    assert.deepEqual(await f.attachments.repair("a", true), { pending: 1 });
+    await assert.rejects(erasePersonalChatAttachmentsWith(f.database, "a", f.storage), /erasure deferred/);
+    const uncertain = (await f.client.execute("SELECT writer_settled,state FROM personal_chat_attachments")).rows[0];
+    assert.equal(uncertain.writer_settled, 0); assert.equal(uncertain.state, "cleanup"); assert.equal(f.removed.length, 0);
+    // This test supplies affirmative terminal proof directly; passage of time
+    // and provider absence are deliberately not a supported reconciliation API.
+    await f.client.execute("UPDATE personal_chat_attachments SET writer_settled=1");
+    f.storage.remove = async (_backend, key, identity) => { assert.equal(identity, "test:disk-root"); if (f.storage.identity("disk") !== identity) throw new Error("store mismatch"); f.removed.push(key); };
+    f.storage.identity = () => "test:other-root";
+    await assert.rejects(erasePersonalChatAttachmentsWith(f.database, "a", f.storage), /erasure deferred/);
+    assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM personal_chat_attachments")).rows[0].n), 1);
+    f.storage.identity = () => "test:disk-root";
+    await erasePersonalChatAttachmentsWith(f.database, "a", f.storage);
+    assert.equal(f.removed.length, 1);
+    assert.equal(Number((await f.client.execute("SELECT COUNT(*) AS n FROM personal_chat_attachments")).rows[0].n), 0);
+  } finally { f.client.close(); }
+});
+
+test("bound owner reads fail closed when storage identity changes", async () => {
+  const f = await fixture();
+  try {
+    const upload = await f.upload(); assert.ok(upload.ok); if (!upload.ok) return;
+    const id = upload.value.attachment.id;
+    assert.equal((await f.service.send({ ownerId: "a", clientRequestId: "store_identity_send", body: "", attachmentIds: [id] })).ok, true);
+    f.storage.identity = () => "test:other-root";
+    assert.equal((await f.attachments.read({ ownerId: "a", id })).ok, false);
+    f.storage.identity = () => "test:disk-root";
+    assert.equal((await f.attachments.read({ ownerId: "a", id })).ok, true);
   } finally { f.client.close(); }
 });
 

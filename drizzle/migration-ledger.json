@@ -591,10 +591,10 @@
       "id": "0045_personal_chat_attachments",
       "file": "drizzle/0045_personal_chat_attachments.sql",
       "when": 1792281600001,
-      "sha256": "dc7c28d307d1c606dec3dccd1f09db51150156d440d8df4aaf4483e5b71e49b6",
+      "sha256": "ecdebf829dc626450d3a94c9c696135c1a93dd56aef372719f4941292edc80e1",
       "policy": "forward",
       "receipt": "drizzle/receipts/personal-chat-attachments-2026-10-18.json",
-      "receiptSha256": "8cc68a7bbc59c8c4bd3926cd8bdf7d2cfecdc055f2c92ba8c9a5a25133024739"
+      "receiptSha256": "30f8399adefef545831b5217c82af1e233737add1943aa8d991b742ce4a920cf"
     }
   ]
 }

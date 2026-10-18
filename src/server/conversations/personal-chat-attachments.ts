@@ -5,35 +5,12 @@ import { validateUpload } from "@/lib/upload-validation";
 import { PERSONAL_CHAT_ATTACHMENT_LIMITS as LIMIT, validPersonalChatRequestId, type PersonalChatAttachment, type PersonalChatMessage } from "@/lib/conversations/personal-chat-contracts";
 import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
 import type { ConversationDatabaseAdapter, ConversationSqlExecutor } from "./database";
-import { chooseBackend, putBytes, deleteBlobPathnameConfirmed, deleteDiskStorageKeyConfirmed } from "@/server/storage";
+import { personalAttachmentStorage, PersonalAttachmentWriteError, type PersonalAttachmentStorage } from "./personal-chat-attachment-storage";
+export { personalAttachmentStorage, type PersonalAttachmentStorage } from "./personal-chat-attachment-storage";
 
 export type PersonalAttachmentFailure = "invalid_input" | "unavailable" | "request_conflict" | "rate_limited" | "upload_too_large" | "unsupported_file" | "quota_exceeded" | "upload_in_progress" | "storage_unavailable";
 export type PersonalAttachmentResult<T> = { ok: true; value: T } | { ok: false; code: PersonalAttachmentFailure };
 export type PersonalAttachmentRow = Record<string, unknown>;
-export type PersonalAttachmentStorage = {
-  backend: () => "disk" | "blob" | null;
-  /** Must stop admitting writes after signal abort; custody retains a drain margin. */
-  put: (key: string, bytes: Uint8Array, mime: string, signal: AbortSignal, backend: "disk" | "blob") => Promise<string>;
-  remove: (backend: string, key: string) => Promise<void>;
-};
-export const personalAttachmentStorage: PersonalAttachmentStorage = {
-  backend: () => { const value = chooseBackend(); return value === "vercel-no-token" ? null : value; },
-  async put(key, bytes, mime, signal, backend) {
-    if (signal.aborted) throw new Error("upload_expired");
-    if (chooseBackend() !== backend) throw new Error("storage_configuration_changed");
-    if (backend === "blob") {
-      const { put } = await import("@vercel/blob");
-      return (await put(key, Buffer.from(bytes), { access: "private", contentType: mime, addRandomSuffix: false, abortSignal: signal })).url;
-    }
-    return putBytes(key, Buffer.from(bytes), mime);
-  },
-  async remove(backend, key) {
-    // Exact backend is durable custody; do not infer it from the current env.
-    if (backend === "blob") await deleteBlobPathnameConfirmed(key);
-    else if (backend === "disk") await deleteDiskStorageKeyConfirmed(key);
-    else throw new Error("invalid_attachment_backend");
-  },
-};
 
 const TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf", "text/plain", "text/markdown"]);
 const digest = (value: string | Uint8Array) => createHash("sha256").update(value).digest("hex");
@@ -53,7 +30,7 @@ export async function personalChatErasureClear(executor: ConversationSqlExecutor
 
 export async function personalAttachmentSchema(executor: ConversationSqlExecutor): Promise<boolean> {
   try {
-    await executor.execute("SELECT id,owner_id,message_id,position,client_request_id,request_hash,filename,mime_type,size_bytes,backend,storage_key,stored_path,state,writer_settled,custody_until,expires_at,created_at FROM personal_chat_attachments LIMIT 0");
+    await executor.execute("SELECT id,owner_id,message_id,position,client_request_id,request_hash,filename,mime_type,size_bytes,backend,store_identity,storage_key,stored_path,state,writer_settled,custody_until,expires_at,created_at FROM personal_chat_attachments LIMIT 0");
     return true;
   } catch { return false; }
 }
@@ -104,9 +81,10 @@ export function createPersonalChatAttachmentService(adapter: ConversationDatabas
     });
     let pending = 0;
     for (const row of rows) {
-      if (Number(row.writer_settled) !== 1 && Number(row.custody_until) > now()) { pending++; continue; }
+      // Time cannot prove that a suspended or remote writer has terminated.
+      if (Number(row.writer_settled) !== 1) { pending++; continue; }
       try {
-        await storage.remove(String(row.backend), String(row.storage_key));
+        await storage.remove(String(row.backend), String(row.storage_key), String(row.store_identity));
         await run("write", async executor => {
           await executor.execute({ sql: "UPDATE personal_chat_attachments SET state='deleted',stored_path=NULL WHERE id=? AND owner_id=? AND state='cleanup'", args: [String(row.id), ownerId] });
         });
@@ -145,11 +123,12 @@ export function createPersonalChatAttachmentService(adapter: ConversationDatabas
           if (Number(footprint?.recent ?? 0) >= LIMIT.uploadsPerMinute) return failure("rate_limited");
           if (Number(footprint?.bytes ?? 0) + input.bytes.length > LIMIT.ownerBytes) return failure("quota_exceeded");
           const backend = storage.backend();
-          if (!backend) return failure("storage_unavailable");
+          const identity = backend && storage.identity(backend);
+          if (!backend || !identity) return failure("storage_unavailable");
           const id = `pca_${randomUUID().replaceAll("-", "")}`;
           const key = `personal-chat/${digest(input.ownerId)}/${id}-${filename}`;
-          const row = { id, owner_id: input.ownerId, filename, mime_type: mimeType, size_bytes: input.bytes.length, backend, storage_key: key };
-          await executor.execute({ sql: "INSERT INTO personal_chat_attachments(id,owner_id,client_request_id,request_hash,filename,mime_type,size_bytes,backend,storage_key,state,writer_settled,custody_until,expires_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,'uploading',0,?,?,?)", args: [id, input.ownerId, input.clientRequestId, requestHash, filename, mimeType, input.bytes.length, backend, key, time + LIMIT.writerMilliseconds + LIMIT.drainMilliseconds, time + LIMIT.draftMilliseconds, time] });
+          const row = { id, owner_id: input.ownerId, filename, mime_type: mimeType, size_bytes: input.bytes.length, backend, store_identity: identity, storage_key: key, custody_until: time + LIMIT.writerMilliseconds };
+          await executor.execute({ sql: "INSERT INTO personal_chat_attachments(id,owner_id,client_request_id,request_hash,filename,mime_type,size_bytes,backend,store_identity,storage_key,state,writer_settled,custody_until,expires_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,'uploading',0,?,?,?)", args: [id, input.ownerId, input.clientRequestId, requestHash, filename, mimeType, input.bytes.length, backend, identity, key, row.custody_until, time + LIMIT.draftMilliseconds, time] });
           // Keep recent cancelled receipts for rate limits and request-key replay.
           await executor.execute({ sql: "DELETE FROM personal_chat_attachments WHERE owner_id=? AND state='deleted' AND created_at<?", args: [input.ownerId, time - LIMIT.draftMilliseconds] });
           return success({ row, replay: false });
@@ -159,7 +138,16 @@ export function createPersonalChatAttachmentService(adapter: ConversationDatabas
         if (reserved.value.replay) return success({ attachment: personalAttachmentDescriptor(claim) });
       } catch { return failure("unavailable"); }
       try {
-        const path = await storage.put(String(claim.storage_key), input.bytes, mimeType, AbortSignal.timeout(LIMIT.writerMilliseconds), claim.backend as "disk" | "blob");
+        const deadline = Number(claim.custody_until);
+        const admit = async () => run("read", async executor => {
+          const row = (await executor.execute({ sql: "SELECT state,writer_settled,custody_until,backend,store_identity FROM personal_chat_attachments WHERE id=? AND owner_id=?", args: [String(claim.id), input.ownerId] })).rows[0];
+          return !!row && row.state === "uploading" && Number(row.writer_settled) === 0 && Number(row.custody_until) === deadline && now() < deadline &&
+            row.backend === claim.backend && row.store_identity === claim.store_identity && storage.identity(String(row.backend)) === row.store_identity && await personalChatErasureClear(executor, input.ownerId);
+        });
+        if (!await admit()) throw new PersonalAttachmentWriteError(true);
+        const path = await storage.put(String(claim.storage_key), input.bytes, mimeType, claim.backend as "disk" | "blob", String(claim.store_identity), {
+          deadline, signal: AbortSignal.timeout(Math.max(0, deadline - now())), admit,
+        });
         const finalized = await run("write", async executor => {
           await executor.execute({ sql: "UPDATE personal_chat_attachments SET writer_settled=1 WHERE id=? AND owner_id=?", args: [String(claim.id), input.ownerId] });
           if (!await personalChatErasureClear(executor, input.ownerId)) return false;
@@ -167,9 +155,12 @@ export function createPersonalChatAttachmentService(adapter: ConversationDatabas
           return !!result.rows.length;
         });
         if (finalized) return success({ attachment: personalAttachmentDescriptor(claim) });
-      } catch {
-        // Failure is uncertain: a provider may still finish an admitted PUT.
-        // Keep writer_settled=0 and its drain deadline; never delete early.
+      } catch (error) {
+        if (error instanceof PersonalAttachmentWriteError && error.settled) {
+          await run("write", async executor => { await executor.execute({ sql: "UPDATE personal_chat_attachments SET writer_settled=1 WHERE id=? AND owner_id=?", args: [String(claim.id), input.ownerId] }); }).catch(() => undefined);
+        }
+        // A rejected remote PUT has uncertain completion. Keep custody until
+        // affirmative terminal proof or separately reviewed reconciliation.
       }
       await run("write", async executor => { await executor.execute({ sql: "UPDATE personal_chat_attachments SET state='cleanup' WHERE id=? AND owner_id=? AND state IN ('uploading','ready')", args: [String(claim.id), input.ownerId] }); }).catch(() => undefined);
       await repair(input.ownerId).catch(() => undefined);
@@ -192,7 +183,7 @@ export function createPersonalChatAttachmentService(adapter: ConversationDatabas
         return await run("read", async executor => {
           if (!await personalAttachmentSchema(executor) || !await personalChatErasureClear(executor, input.ownerId)) return failure("unavailable");
           const row = (await executor.execute({ sql: "SELECT a.* FROM personal_chat_attachments a JOIN personal_chat_messages m ON m.id=a.message_id AND m.owner_id=a.owner_id WHERE a.id=? AND a.owner_id=? AND a.state='bound'", args: [input.id, input.ownerId] })).rows[0];
-          return row ? success({ row }) : failure("unavailable");
+          return row && storage.identity(String(row.backend)) === row.store_identity ? success({ row }) : failure("unavailable");
         });
       } catch { return failure("unavailable"); }
     },

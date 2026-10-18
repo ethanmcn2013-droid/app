@@ -10,8 +10,8 @@
       "proofs": [
         {
           "id": "private-file-columns",
-          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('personal_chat_attachments') WHERE name IN ('id','owner_id','client_request_id','request_hash','filename','mime_type','size_bytes','backend','storage_key','state','writer_settled','custody_until','expires_at','created_at') AND \"notnull\"=1",
-          "expected": 14
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('personal_chat_attachments') WHERE name IN ('id','owner_id','client_request_id','request_hash','filename','mime_type','size_bytes','backend','store_identity','storage_key','state','writer_settled','custody_until','expires_at','created_at') AND \"notnull\"=1",
+          "expected": 15
         },
         {
           "id": "private-file-indexes",
@@ -43,10 +43,11 @@
         "Owner/request index is unique; owner/message index preserves file order.",
         "States, backends, bounded sizes and request hashes are constrained.",
         "Cleanup custody has no cascading user/Project deletion.",
+        "Store identity pins original credentials or disk root; unknown writer completion never retires custody by elapsed time.",
         "Integrity and foreign-key checks pass."
       ],
       "rollbackPlan": "Disable SIGNAL_PERSONAL_CHAT_ATTACHMENTS_ENABLED. Preserve accepted private files and cleanup custody; do not drop rows or bytes without a separate lifecycle decision. Production apply requires the owning backup and release procedure.",
-      "sha256": "dc7c28d307d1c606dec3dccd1f09db51150156d440d8df4aaf4483e5b71e49b6",
+      "sha256": "ecdebf829dc626450d3a94c9c696135c1a93dd56aef372719f4941292edc80e1",
       "id": "0045_personal_chat_attachments",
       "reviewedAt": "2026-10-18T00:00:00.000Z"
     }

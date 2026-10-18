@@ -10,11 +10,12 @@ CREATE TABLE personal_chat_attachments (
   mime_type text NOT NULL,
   size_bytes integer NOT NULL,
   backend text NOT NULL,
+  store_identity text NOT NULL,
   storage_key text NOT NULL,
   stored_path text,
   state text NOT NULL,
   writer_settled integer NOT NULL DEFAULT 0,
-  custody_until integer NOT NULL,
+  custody_until integer NOT NULL, -- Absolute write-admission grant; never evidence of writer termination.
   expires_at integer NOT NULL,
   created_at integer NOT NULL,
   CONSTRAINT personal_chat_attachment_state CHECK(state IN ('uploading','ready','bound','cleanup','deleted')),
