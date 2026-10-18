@@ -7,7 +7,7 @@
   "migrations": [
     {
       "id": "0044_assistant_execution",
-      "sha256": "c412b0eee56f6f55bd1eeebb1401ee76eaaf9daee8cbfc39d2e8685b22aca2bd",
+      "sha256": "5706de9847aaeb94d6c1b8459aaec1b15888411d384cc7792b4fd59874b73fa3",
       "reviewedAt": "2026-10-18T00:00:00Z",
       "risk": "Two additive private execution tables; transaction-bound local effects and receipts, durable leases and permanent inference budget reservations. Erasure removes steps/content and retains anonymous numeric billing tombstones so erasure cannot reset the global cap.",
       "rollbackPlan": "Disable assistant entry. Preserve custody and pending/unknown reservations. Do not drop tables containing unresolved effects; any production migration requires separate authorized backup and execution receipt.",

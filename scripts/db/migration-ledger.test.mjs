@@ -1466,3 +1466,21 @@ test("Event additive migration preserves populated history; failed proof rolls b
   assert.deepEqual(await snapshot(), original);
   assert.deepEqual((await runMigrations({ client, context: eventOnly, releaseSha: "event-reapply-local" })).applied, ["0031_event_purchase_designations"]);
 }));
+
+test('0044 assistant upgrade proves both tables and four indexes atomically before ledger commit',async()=>withClient(async client=>{
+  const before=loadAndValidateLedger();before.forward=before.forward.filter(entry=>entry.ordinal<=43);
+  await runMigrations({client,context:before,releaseSha:'synthetic-assistant-before44'});
+  await client.execute("INSERT INTO users(id,color,initials) VALUES('assistant-upgrade-owner','#111','AU')");
+  const broken=loadAndValidateLedger();broken.forward.find(entry=>entry.id==='0044_assistant_execution').receipt.record.proofs.find(proof=>proof.id==='assistant-indexes').expected=5;
+  await assert.rejects(runMigrations({client,context:broken,releaseSha:'synthetic-assistant-failed44'}),/assistant-indexes/);
+  assert.equal(Number((await client.execute("SELECT COUNT(*) AS n FROM sqlite_master WHERE name IN ('assistant_runs','assistant_steps')")).rows[0].n),0);
+  assert.equal(Number((await client.execute("SELECT COUNT(*) AS n FROM signal_schema_migrations WHERE id='0044_assistant_execution'")).rows[0].n),0);
+  const result=await runMigrations({client,releaseSha:'synthetic-assistant-upgrade44'});assert.deepEqual(result.applied,['0044_assistant_execution']);
+  assert.equal(Number((await client.execute("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name IN ('assistant_runs','assistant_steps')")).rows[0].n),2);
+  assert.equal(Number((await client.execute("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='index' AND name IN ('assistant_runs_actor_request','assistant_runs_budget_request','assistant_steps_run_key','assistant_steps_run_ordinal')")).rows[0].n),4);
+  await client.execute("INSERT INTO assistant_runs(id,actor_id,request_id,request_hash,created_at,updated_at) VALUES('synthetic-run','assistant-upgrade-owner','synthetic-request','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',1,1)");
+  await client.execute("INSERT INTO assistant_steps(id,run_id,ordinal,step_key,payload_json,payload_hash,created_at,updated_at) VALUES('synthetic-step','synthetic-run',0,'step','{}','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',1,1)");
+  assert.equal((await runMigrations({client})).status,'no-op');
+  assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM assistant_steps')).rows[0].n),1);
+  assert.equal((await migrationStatus({client})).state,'current');
+}));

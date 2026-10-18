@@ -13,8 +13,11 @@ CREATE TABLE assistant_runs (
  input_tokens integer, output_tokens integer, estimated_micro_usd integer,
  usage_state text NOT NULL DEFAULT 'not_reserved'
 );
+--> statement-breakpoint
 CREATE UNIQUE INDEX assistant_runs_actor_request ON assistant_runs(actor_id,request_id);
+--> statement-breakpoint
 CREATE UNIQUE INDEX assistant_runs_budget_request ON assistant_runs(budget_request_id);
+--> statement-breakpoint
 CREATE TABLE assistant_steps (
  id text PRIMARY KEY NOT NULL, run_id text NOT NULL REFERENCES assistant_runs(id) ON DELETE CASCADE,
  ordinal integer NOT NULL, step_key text NOT NULL,
@@ -24,5 +27,7 @@ CREATE TABLE assistant_steps (
  result_json text CONSTRAINT assistant_step_result CHECK(result_json IS NULL OR json_valid(result_json)),
  error_code text, delivery_state text NOT NULL DEFAULT 'not_applicable', delivery_json text CHECK(delivery_json IS NULL OR json_valid(delivery_json)), created_at integer NOT NULL, updated_at integer NOT NULL
 );
+--> statement-breakpoint
 CREATE UNIQUE INDEX assistant_steps_run_key ON assistant_steps(run_id,step_key);
+--> statement-breakpoint
 CREATE UNIQUE INDEX assistant_steps_run_ordinal ON assistant_steps(run_id,ordinal);

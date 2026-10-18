@@ -581,10 +581,10 @@
       "id": "0044_assistant_execution",
       "file": "drizzle/0044_assistant_execution.sql",
       "when": 1792281600000,
-      "sha256": "c412b0eee56f6f55bd1eeebb1401ee76eaaf9daee8cbfc39d2e8685b22aca2bd",
+      "sha256": "5706de9847aaeb94d6c1b8459aaec1b15888411d384cc7792b4fd59874b73fa3",
       "policy": "forward",
       "receipt": "drizzle/receipts/assistant-execution-2026-10-18.json",
-      "receiptSha256": "f4669c7f149185685f70aa2304afd7576f7c1ceee3cb84e37816f219c37600ad"
+      "receiptSha256": "7c0b0ab236a15a6052617277db5a51c00f2b810c94396418da6816b41c5c70e6"
     }
   ]
 }
