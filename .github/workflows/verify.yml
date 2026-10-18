@@ -79,6 +79,8 @@ jobs:
       # Project Drive remains required once via pnpm test's posttest lifecycle.
       - name: Install Chromium for isolated task Provider proof
         run: pnpm exec playwright install --with-deps chromium
+      - name: Timeline follow keyboard transitions
+        run: pnpm test:timeline-follow:browser
       - name: Disabled Ping typed and voice receiving
         run: |
           pnpm test:ping-typed:browser
