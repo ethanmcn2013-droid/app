@@ -1887,7 +1887,7 @@
     "src/app/app/tasks/timeline/page.tsx": "8c7bb71af2f7c985f46e904c94f625bc9acb1caed95f21eef443e01b37dd62df",
     "src/app/app/tasks/wedding-date-entry.test.ts": "7cd41884063c80c44929687dafa663786d8cb2e5a98b5e923324335115cec137",
     "src/app/app/theme-bootstrap.tsx": "a877fa5beff6ee2734b23e7ced2644de4178d437df226e046c4a3776c5225d60",
-    "src/app/app/theme-resolver.test.ts": "216d65399e8824cb084ebc44649467d04a6ef3ee15079c6d94e87e89afc550f7",
+    "src/app/app/theme-resolver.test.ts": "01a74fcbd50b3ca285e4fb8e584aae1d513992dc4cbfd3da6ef6232f4f9fd63c",
     "src/app/app/theme-runtime.tsx": "30c7f43d8b8bd9f0d596e6d51ab16b55d5ad45fe8922d17e945e9942bcb523d3",
     "src/app/app/timeline/[projectSlug]/loading.tsx": "7fb18a74b8982d1184eb556110a572be86bcb45566bea0b6f5171543b98bc6e5",
     "src/app/app/timeline/[projectSlug]/page.tsx": "91958f99d9a3526ac37494e719c16c0a56288247ee5cf6e54a088fc62674175e",
@@ -2083,8 +2083,8 @@
     "src/components/app/messages/demo-messages-model.test.ts": "4fb264576bc195d1177c4b72942474478887eec1f94f2a6f257aa7792c1ea05a",
     "src/components/app/messages/demo-messages-model.ts": "ea4c9238a87ef2128ca905d5496c16fa13e0a484e4954849960a42969dd685a0",
     "src/components/app/messages/direct-message-directory.tsx": "b296426ef3db4064f80220a7340a7587fa00000b0c580813e6de3685dcb6b266",
-    "src/components/app/messages/floating-chat-root.tsx": "e2de2977d672e5d4bda2f504823ed9843a49d6e4a6d730f2f958e57066b5ed11",
-    "src/components/app/messages/floating-chat.module.css": "6bd2ce92424a047798aef043fe20356887b27109f3e564775f6c190ca89283a9",
+    "src/components/app/messages/floating-chat-root.tsx": "fa8f9128227e88b9730f7706ee4cd27fe5ce1066e7701818d6096501b11d9e8f",
+    "src/components/app/messages/floating-chat.module.css": "40caa4a63ea52d89f2928789a33e976462e118eb6d349abfbca35ea570d3d4bd",
     "src/components/app/messages/hidden-conversations.test.ts": "7f9a4846046cd07f85e9e45e5fde26616cbb958e5dbf104a236e776f0803639c",
     "src/components/app/messages/hidden-conversations.ts": "e3aff212cf4d957f76e300ed44feb4c0f5fb785911f81910713e4fcc696e157c",
     "src/components/app/messages/member-mention-picker.tsx": "28fc43967a414d1e974a499a6ebe5e7fcccb192ad51e2b5e1c679179452009d5",
@@ -2781,7 +2781,7 @@
     "src/lib/account/instrumentation/venue-meaningful-action.v1.json": "b444e74bd42688b35a9cd0038fd80442ae277c943a3ac54d004d62d88cbc13fd",
     "src/lib/analytics/client.ts": "026df38b8f361ec87df4706fbd5df4a01e3a16a3d00c31fb591d6da889d11055",
     "src/lib/analytics/posthog.ts": "05dc2f772e95c1019651f47d90b4e77f67dbd1506932668ea5f61265000919cc",
-    "src/lib/app-theme-bootstrap.ts": "6f19bda37c03c6c15297dd0a16a07368e60fc10932adfff7edf5512a9b1fa85d",
+    "src/lib/app-theme-bootstrap.ts": "984cb88fd8fe9e6d6fbc153e5231272a503a819e0331ce4bb901f664bd755ee0",
     "src/lib/attachment-claim.ts": "ca2205eee554ce5f1fa51d6d7163916c763340bb34b480e22b10caa3d6b4ca62",
     "src/lib/auth-context.tsx": "3bfd5f566f424ed8f388a37137432af7b483af5f2bc30b71a6c9587eae8a5598",
     "src/lib/auth/app-return.ts": "ef1c50f16f481ab429889902ad587aea99d500be6e552a0f573a01cdae88f66d",
@@ -3907,6 +3907,7 @@
     "src/modules/timeline/app/audience/current-project-preview-view.tsx": "128b9df98d63bfc20cb80e23933d7b943a6f3abca71b3a43f075188bc21dacde",
     "src/modules/timeline/app/audience/current-project-preview-model.ts": "c5eb5ce68347b468a6784de0b5da4f7557ef4c39d2ca4f140410ad3484f446a3",
     "src/modules/timeline/app/audience/current-project-preview.module.css": "4ba1fa1a3ccae304659014e437a4f9a177bb5bf6aad4cd6c82f0666193c5e3e1",
-    "src/components/app/messages/ping-personal-assistant-client.test.ts": "497a0b0c281ed10e3b230b34c9733388ef6921b2d2abbf7865e1c809a0b88351"
+    "src/components/app/messages/ping-personal-assistant-client.test.ts": "497a0b0c281ed10e3b230b34c9733388ef6921b2d2abbf7865e1c809a0b88351",
+    "src/components/app/messages/use-floating-chat-viewport.ts": "e726cb60d9f8ecbb17b2017e69d99326adf773d4351dbb5faac633a66f85492b"
   }
 }
