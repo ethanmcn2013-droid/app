@@ -31,7 +31,7 @@ CREATE INDEX timeline_guest_publication ON timeline_guest_subscriptions(publicat
 CREATE TABLE timeline_guest_deliveries (
  id TEXT PRIMARY KEY NOT NULL,subscription_id TEXT NOT NULL REFERENCES timeline_guest_subscriptions(id) ON DELETE CASCADE,
  publication_id TEXT NOT NULL REFERENCES timeline_publications(id) ON DELETE CASCADE,
- kind TEXT NOT NULL CHECK(kind IN ('update','date_change','photos','final30','final7','final1','foryou7')),dedupe_key TEXT NOT NULL,
+ kind TEXT NOT NULL CHECK(kind IN ('update','date_change','photos','final30','final7','final1','foryou7','postfinal7')),dedupe_key TEXT NOT NULL,
  due_at INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','sending','sent','failed','unknown','suppressed')),
  created_at INTEGER NOT NULL DEFAULT(unixepoch()),claimed_at INTEGER,sent_at INTEGER,failed_at INTEGER,attempt_id TEXT,last_error_code TEXT,provider_message_id TEXT
 );

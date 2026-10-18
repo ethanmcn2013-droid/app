@@ -824,8 +824,8 @@ export const timelineGuestSubscriptions = sqliteTable('timeline_guest_subscripti
 export const timelineGuestDeliveries = sqliteTable('timeline_guest_deliveries', {
  id:text('id').primaryKey(),subscriptionId:text('subscription_id').notNull().references(()=>timelineGuestSubscriptions.id,{onDelete:'cascade'}),
  publicationId:text('publication_id').notNull().references(()=>timelinePublications.id,{onDelete:'cascade'}),
- kind:text('kind').$type<'update'|'date_change'|'photos'|'final30'|'final7'|'final1'|'foryou7'>().notNull(),dedupeKey:text('dedupe_key').notNull(),
+ kind:text('kind').$type<'update'|'date_change'|'photos'|'final30'|'final7'|'final1'|'foryou7'|'postfinal7'>().notNull(),dedupeKey:text('dedupe_key').notNull(),
  dueAt:integer('due_at',{mode:'timestamp'}).notNull(),status:text('status').$type<'pending'|'sending'|'sent'|'failed'|'unknown'|'suppressed'>().notNull().default('pending'),
  createdAt:integer('created_at',{mode:'timestamp'}).notNull().default(sql`(unixepoch())`),claimedAt:integer('claimed_at',{mode:'timestamp'}),sentAt:integer('sent_at',{mode:'timestamp'}),failedAt:integer('failed_at',{mode:'timestamp'}),
  attemptId:text('attempt_id'),lastErrorCode:text('last_error_code'),providerMessageId:text('provider_message_id'),
-},t=>[uniqueIndex('timeline_guest_delivery_dedupe').on(t.dedupeKey),uniqueIndex('timeline_guest_delivery_attempt').on(t.attemptId),index('timeline_guest_delivery_due').on(t.status,t.dueAt),check('timeline_guest_delivery_kind',sql`${t.kind} IN ('update','date_change','photos','final30','final7','final1','foryou7')`),check('timeline_guest_delivery_status',sql`${t.status} IN ('pending','sending','sent','failed','unknown','suppressed')`)]);
+},t=>[uniqueIndex('timeline_guest_delivery_dedupe').on(t.dedupeKey),uniqueIndex('timeline_guest_delivery_attempt').on(t.attemptId),index('timeline_guest_delivery_due').on(t.status,t.dueAt),check('timeline_guest_delivery_kind',sql`${t.kind} IN ('update','date_change','photos','final30','final7','final1','foryou7','postfinal7')`),check('timeline_guest_delivery_status',sql`${t.status} IN ('pending','sending','sent','failed','unknown','suppressed')`)]);

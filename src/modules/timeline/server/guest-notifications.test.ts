@@ -249,3 +249,140 @@ test('a bounded backlog is suppressed if the physical dispatch clock crosses the
     assert.equal(rows.filter(row => row.status === 'pending').length, 2);
   } finally { f.client.close(); }
 });
+
+
+async function postFinalFixture(market: "launch" | "school" | "event" = "launch") {
+  const f = await fixture();
+  await f.db.update(schema.timelinePublications).set({ primaryDate: "2026-10-01", audienceKind: "module" });
+  await f.db.insert(schema.timelinePublicationItems).values([
+    { publicId: "future", calendarDate: "2026-11-08", state: "later" as const },
+    { publicId: "past", calendarDate: "2026-10-20", state: "later" as const },
+    { publicId: "cancelled", calendarDate: "2026-11-09", state: "cancelled" as const },
+    { publicId: "covered", calendarDate: "2026-11-10", state: "covered" as const },
+    { publicId: "unpublished", calendarDate: "2026-11-11", state: "later" as const, unpublishedAt: now },
+    { publicId: "undated", calendarDate: null, state: "later" as const },
+  ].map(item => ({ ...item, publicationId: "publication", title: item.publicId,
+    sourceRelation: `source-${item.publicId}`, sourceDigest: "d".repeat(64) })));
+  await f.db.insert(schema.timelinePublicationPresentation).values({ publicationId: "publication",
+    settingsJson: { presentation: { market }, items: { future: { forYou: true } } } });
+  return f;
+}
+
+test("post-final launch and school events schedule exactly one week-before reminder with no ForYou duplicate", async () => {
+  for (const market of ["launch", "school"] as const) {
+    const f = await postFinalFixture(market); try {
+      assert.equal((await scheduleGuestReminders(f.db, now)).inserted, 1);
+      assert.equal((await scheduleGuestReminders(f.db, now)).inserted, 0);
+      const rows = await f.rows();
+      assert.equal(rows.length, 1);
+      assert.equal(rows[0].kind, "postfinal7");
+      assert.equal(rows[0].dueAt.toISOString(), "2026-11-01T00:00:00.000Z");
+      let calls = 0;
+      assert.equal((await f.dispatch(transport(async message => {
+        calls++; assert.match(message.text, /upcoming timeline event is seven days away/);
+        return { state: "sent", providerMessageId: "synthetic-postfinal" };
+      }))).sent, 1);
+      await f.dispatch(transport(async () => { calls++; return { state: "unknown" }; }));
+      assert.equal(calls, 1);
+    } finally { f.client.close(); }
+  }
+});
+
+test("post-final reminders require an explicit eligible market and real resolved final date", async () => {
+  const f = await postFinalFixture("event"); try {
+    assert.equal((await scheduleGuestReminders(f.db, now)).inserted, 1);
+    assert.equal((await f.rows())[0].kind, "foryou7");
+    await f.db.delete(schema.timelineGuestDeliveries);
+    await f.db.update(schema.timelinePublicationPresentation).set({ settingsJson: { presentation: { market: "school" }, items: { undated: { final: true } } } });
+    assert.equal((await scheduleGuestReminders(f.db, now)).inserted, 0);
+    assert.equal((await f.rows()).length, 0);
+  } finally { f.client.close(); }
+});
+
+test("post-final stale dates, market removal and midnight cutoff suppress queued delivery", async () => {
+  for (const change of ["date", "market", "cutoff"] as const) {
+    const f = await postFinalFixture(); try {
+      await scheduleGuestReminders(f.db, now);
+      if (change === "date") await f.db.update(schema.timelinePublicationItems).set({ calendarDate: "2026-11-15" }).where(eq(schema.timelinePublicationItems.publicId, "future"));
+      if (change === "market") await f.db.update(schema.timelinePublicationPresentation).set({ settingsJson: { presentation: { market: "event" } } });
+      let calls = 0;
+      const result = await f.dispatch(transport(async () => { calls++; return { state: "sent", providerMessageId: "must-not" }; }), change === "cutoff" ? new Date("2026-11-02T00:00:00Z") : now);
+      assert.equal(result.suppressed, 1); assert.equal(calls, 0);
+    } finally { f.client.close(); }
+  }
+});
+
+
+test("post-final wedding updates stop while exactly one photos intent survives URL changes", async () => {
+  const f = await fixture(); try {
+    // Queue a valid pre-final update, then move beyond the actual final day.
+    await f.enqueue("before-final");
+    await f.db.update(schema.timelinePublications).set({ primaryDate: "2026-10-31" });
+    assert.equal(await f.enqueue("after-final"), 0);
+    assert.equal(await f.enqueue("date-after-final", "date_change"), 0);
+    assert.equal(await f.enqueue("missing-photos", "photos"), 0);
+    let calls = 0;
+    assert.equal((await f.dispatch(transport(async () => { calls++; return { state: "sent", providerMessageId: "must-not" }; }))).suppressed, 1);
+    assert.equal(calls, 0);
+    await f.db.insert(schema.timelinePublicationPresentation).values({ publicationId: "publication",
+      settingsJson: { presentation: { photosUrl: "https://example.invalid/album1" } } });
+    assert.equal(await f.enqueue("photos-1", "photos"), 1);
+    await f.db.update(schema.timelinePublicationPresentation).set({ settingsJson: { presentation: { photosUrl: "https://example.invalid/album2" } } });
+    assert.equal(await f.enqueue("photos-2", "photos"), 0);
+    assert.equal((await f.dispatch(transport(async () => { calls++; return { state: "unknown" }; }))).unknown, 1);
+    assert.equal(await f.enqueue("photos-3", "photos"), 0);
+    await f.dispatch(transport(async () => { calls++; return { state: "sent", providerMessageId: "repeat" }; }));
+    assert.equal(calls, 1);
+    assert.equal((await f.rows()).filter(row => row.kind === "photos").length, 1);
+  } finally { f.client.close(); }
+});
+
+test("post-final wedding policy uses explicit final and actual timezone, not future post-final items", async () => {
+  const f = await fixture(); try {
+    await f.db.update(schema.timelinePublications).set({ audienceKind: "module", primaryDate: "2026-12-01", timezone: "Pacific/Kiritimati" });
+    await f.db.insert(schema.timelinePublicationItems).values([
+      { publicId: "final", calendarDate: "2026-11-01", state: "covered" as const },
+      { publicId: "later", calendarDate: "2026-12-20", state: "later" as const },
+    ].map(item => ({ ...item, publicationId: "publication", title: item.publicId, sourceRelation: item.publicId, sourceDigest: "e".repeat(64) })));
+    await f.db.insert(schema.timelinePublicationPresentation).values({ publicationId: "publication",
+      settingsJson: { presentation: { market: "wedding" }, items: { final: { final: true } } } });
+    // At noon UTC Kiritimati is already November2: actual final day has ended.
+    assert.equal(await f.enqueue("after-explicit-final"), 0);
+    await f.db.update(schema.timelinePublicationPresentation).set({ settingsJson: { presentation: { market: "launch" }, items: { final: { final: true } } } });
+    assert.equal(await f.enqueue("launch-still-open"), 1);
+  } finally { f.client.close(); }
+});
+
+test("post-final wedding photo removal suppresses pending mail rather than downgrading to chatter", async () => {
+  const f = await fixture(); try {
+    await f.db.update(schema.timelinePublications).set({ primaryDate: "2026-10-31" });
+    await f.db.insert(schema.timelinePublicationPresentation).values({ publicationId: "publication",
+      settingsJson: { presentation: { photosUrl: "https://example.invalid/photos" } } });
+    await f.enqueue("photos", "photos");
+    await f.db.update(schema.timelinePublicationPresentation).set({ settingsJson: {} });
+    let calls = 0;
+    assert.equal((await f.dispatch(transport(async () => { calls++; return { state: "sent", providerMessageId: "no" }; }))).suppressed, 1);
+    assert.equal(calls, 0);
+  } finally { f.client.close(); }
+});
+
+
+test("post-final future window waits, share revocation blocks, and unknown acceptance cannot replay", async () => {
+  for (const revoked of [false, true]) {
+    const f = await postFinalFixture(); try {
+      await f.db.update(schema.timelinePublicationItems).set({ calendarDate: "2026-11-15" }).where(eq(schema.timelinePublicationItems.publicId, "future"));
+      assert.equal((await scheduleGuestReminders(f.db, now)).inserted, 1);
+      let calls = 0;
+      const sender = transport(async () => { calls++; return { state: "unknown" }; });
+      assert.equal((await f.dispatch(sender)).unknown, 0);
+      assert.equal(calls, 0);
+      if (revoked) await f.db.update(schema.audienceShares).set({ state: "revoked" });
+      const due = new Date("2026-11-08T12:00:00Z");
+      const result = await f.dispatch(sender, due);
+      assert.equal(result.unknown, revoked ? 0 : 1);
+      assert.equal(result.suppressed, revoked ? 1 : 0);
+      await f.dispatch(sender, due);
+      assert.equal(calls, revoked ? 0 : 1);
+    } finally { f.client.close(); }
+  }
+});

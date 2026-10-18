@@ -24,7 +24,7 @@ const { timelineGuestSubscriptions: subscriptions, timelineGuestDeliveries: deli
   timelinePublications: publications, audienceShares: shares, timelinePublicationItems: items,
   timelinePublicationPresentation: presentations } = schema;
 const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
-const reminderKinds = new Set<Kind>(["final30", "final7", "final1", "foryou7"]);
+const reminderKinds = new Set<Kind>(["final30", "final7", "final1", "foryou7", "postfinal7"]);
 const keyFor = (subscriptionId: string, publicationId: string, kind: Kind, event: string) =>
   `${digest(["timeline.guest.delivery.v1", publicationId, kind, event])}:${subscriptionId}`;
 
@@ -61,7 +61,12 @@ export async function enqueuePublishedGuestUpdate(executor: Executor, input: {
   if (!input.eventKey || input.eventKey.length > 512 || !["update", "date_change", "photos"].includes(input.kind))
     throw new TypeError("Invalid publication notification event");
   const now = input.now ?? new Date();
-  return insertForPublication(executor, { ...input, event: input.eventKey, dueAt: now, now });
+  const [publication] = await executor.select().from(publications).where(eq(publications.id, input.publicationId));
+  if (!publication) return 0;
+  const policy = await weddingAfterFinal(executor, publication, now);
+  if (policy.after && (input.kind !== "photos" || !policy.photos)) return 0;
+  return insertForPublication(executor, { ...input,
+    event: policy.wedding && input.kind === "photos" ? "wedding-photos-once" : input.eventKey, dueAt: now, now });
 }
 
 function dayOffset(day: string, offset: number) {
@@ -70,6 +75,20 @@ function dayOffset(day: string, offset: number) {
   const result = new Date(`${day}T12:00:00Z`); result.setUTCDate(result.getUTCDate() + offset);
   return result.toISOString().slice(0, 10);
 }
+async function weddingAfterFinal(executor: Executor, publication: Recipient["publication"], now: Date) {
+  const [snapshot] = await executor.select().from(presentations).where(eq(presentations.publicationId, publication.id));
+  const settings = validateMaster3ProjectSettings(snapshot?.settingsJson ?? {});
+  const wedding = publication.audienceKind === "couple" || settings.presentation?.market === "wedding";
+  if (!wedding) return { wedding, after: false, photos: false };
+  const publicItems = (await executor.select().from(items).where(eq(items.publicationId, publication.id)))
+    .filter(item => item.state !== "cancelled" && item.unpublishedAt === null);
+  const explicit = publicItems.find(item => settings.items?.[item.publicId]?.final === true);
+  const final = explicit ? explicit.calendarDate : publication.primaryDate ??
+    publicItems.flatMap(item => item.calendarDate ? [item.calendarDate] : []).sort().at(-1);
+  return { wedding, after: Boolean(final && calendarDateInTimeZone(now, publication.timezone) > final),
+    photos: Boolean(settings.presentation?.photosUrl) };
+}
+
 type Reminder = { kind: Kind; event: string; day: string; dueAt: Date };
 async function reminders(executor: Executor, publication: Recipient["publication"]): Promise<Reminder[]> {
   const [snapshot] = await executor.select().from(presentations).where(eq(presentations.publicationId, publication.id));
@@ -90,8 +109,17 @@ async function reminders(executor: Executor, publication: Recipient["publication
       dueAt: new Date(endOfCalendarDayInZone(previous, publication.timezone).getTime() + 1) });
   };
   if (final?.date) for (const days of [30, 7, 1]) add(`final${days}` as Kind, final.id, final.date, days);
-  for (const item of dated) if (settings.items?.[item.publicId]?.forYou === true && item.state !== "covered")
-    add("foryou7", item.publicId, item.calendarDate!, 7);
+  const postFinalMarket = settings.presentation?.market === "launch" || settings.presentation?.market === "school";
+  for (const item of dated) {
+    if (item.state === "covered") continue;
+    // One week-before reminder per item/date: post-final takes precedence over
+    // For you when both rules describe the same launch or school event.
+    if (postFinalMarket && final?.date && item.calendarDate! > final.date) {
+      add("postfinal7", item.publicId, item.calendarDate!, 7);
+    } else if (settings.items?.[item.publicId]?.forYou === true) {
+      add("foryou7", item.publicId, item.calendarDate!, 7);
+    }
+  }
   return result;
 }
 
@@ -102,7 +130,11 @@ export async function scheduleGuestReminders(database: Database, now = new Date(
     let inserted = 0, unavailablePublications = 0;
     for (const publication of published) {
       let specs: Reminder[], today: string;
-      try { today = calendarDateInTimeZone(now, publication.timezone); specs = await reminders(tx, publication); }
+      try {
+        today = calendarDateInTimeZone(now, publication.timezone);
+        if ((await weddingAfterFinal(tx, publication, now)).after) continue;
+        specs = await reminders(tx, publication);
+      }
       catch { unavailablePublications++; continue; }
       for (const reminder of specs) if (reminder.day >= today)
         inserted += await insertForPublication(tx, { publicationId: publication.id, kind: reminder.kind,
@@ -120,6 +152,7 @@ function message(recipient: Recipient, kind: Kind, links: GuestNotificationLinks
   for (const link of [view, unsubscribe]) { const url = new URL(link); if (url.protocol !== "https:" || url.username || url.password) throw new Error("guest_link_unavailable"); }
   const label = recipient.publication.label.replace(/[\r\n]/g, " ").slice(0, 240);
   const summary = kind === "date_change" ? "The published date has changed." : kind === "photos" ? "Photos have been added to the published timeline."
+    : kind === "postfinal7" ? "An upcoming timeline event is seven days away."
     : kind === "foryou7" ? "An item marked For you is seven days away." : kind.startsWith("final") ? `The final date is ${kind.slice(5)} day${kind === "final1" ? "" : "s"} away.`
       : "The published timeline has been updated.";
   const text = `${label}\n\n${summary}\n\nView timeline: ${view}\nUnsubscribe: ${unsubscribe}`;
@@ -180,6 +213,11 @@ export async function dispatchDueGuestNotifications(input: { database: Database;
         }
         if (!recipient || !allowed || !authorized) {
           await tx.update(deliveries).set({ status: "suppressed", lastErrorCode: "recipient_unavailable" }).where(eq(deliveries.id, row.id));
+          return "suppressed" as const;
+        }
+        const weddingPolicy = await weddingAfterFinal(tx, recipient.publication, dispatchNow);
+        if (weddingPolicy.after && (delivery.kind !== "photos" || !weddingPolicy.photos)) {
+          await tx.update(deliveries).set({ status: "suppressed", lastErrorCode: "wedding_updates_finished" }).where(eq(deliveries.id, row.id));
           return "suppressed" as const;
         }
         let messageKind = delivery.kind;
