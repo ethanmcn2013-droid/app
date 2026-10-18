@@ -15,7 +15,8 @@
  *
  * Behavioural, like `unpublished-timeline-boundary.test.ts`: the real
  * `createAudiencePublication` and `resolveAudienceTimeline` run against a real
- * libSQL database created from the committed Timeline baseline migration. Env
+ * libSQL database created from the committed Timeline baseline and approved
+ * additive presentation/guest migration. Env
  * is set before the dynamic import because the Timeline client builds its
  * connection at module load.
  *
@@ -111,6 +112,25 @@ before(async () => {
     const trimmed = statement.trim();
     if (!trimmed) continue;
     await run(trimmed);
+  }
+
+  // These are real publication writes, including their atomic notification
+  // intent. Apply the approved schema rather than weakening missing-table
+  // failure behavior. Intentionally baseline-only boundary tests stay separate.
+  const presentationAndGuestSchema = readFileSync(
+    new URL("../../../../drizzle-timeline/0002_master3_presentation.sql", import.meta.url),
+    "utf8",
+  );
+  for (const statement of presentationAndGuestSchema.split("--> statement-breakpoint")) {
+    const trimmed = statement.trim();
+    if (trimmed) await run(trimmed);
+  }
+  const installed = await dbModule.db.all<{ name: string }>(
+    (await import("drizzle-orm")).sql`SELECT name FROM sqlite_master WHERE type='table'`,
+  );
+  const tableNames = new Set(installed.map(row => row.name));
+  for (const name of ["timeline_project_presentation", "timeline_publication_presentation", "timeline_guest_subscriptions", "timeline_guest_deliveries"]) {
+    assert.ok(tableNames.has(name), `publication fixture missing approved table: ${name}`);
   }
 
   await run(`
