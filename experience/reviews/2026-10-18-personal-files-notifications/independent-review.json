@@ -1,0 +1,274 @@
+{
+  "schemaVersion": "signal-bounded-receiving-review/1",
+  "head": "0ba4b4979d45c78de5108816b1a2a03f02ed6364",
+  "tree": "03b9c67e8c1517dded6bf586f2d7e49b72800fc4",
+  "rawArtifactSha256": "757e84ba2d749b4b4a875bb81084107a4d92e9016e9c1c5f0ac18beea8f89b44",
+  "attestation": {
+    "runId": "tasks-playwright-a8cef223f0403d92f3db0fc7",
+    "testCount": 204,
+    "passedCount": 204,
+    "unexpectedCount": 0
+  },
+  "verifiedMappedCaptureResults": {
+    "count": 72,
+    "passed": 72,
+    "viewportProjects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewer": "Independent agent task /root/canonical_capture_receiving",
+  "decision": "accept-bounded-synthetic-materiality",
+  "boundary": "Acceptance is limited to visually inspected synthetic/demo receiving states for these 18 mapped fixtures at mobile, tablet, desktop, and wide. This is not authentication, production/provider/Google Drive behavior or continuity, deployment acceptance, full feature approval, human utility evidence, or a 9.5/design score.",
+  "knownLimits": [
+    "The preview-only whole-page .signal-devbanner remains visible and overlays lower content on mobile, including the chat composer. It is distinct from .signal-toast and unchanged from base 90488477; retain this composer occlusion as an explicit known limit.",
+    "The tasks.page.welcome capture covers only unavailable explicit-project recovery and its Open Home action; it does not establish a successful project grant or authentication flow.",
+    "The tasks.resources.drive-upload capture shows the Task detail Files and links / Attach file surface only; it does not establish actual upload or Google Drive provider behavior.",
+    "Loading and error screenshots prove only the specified synthetic fixture renderings and recovery affordances.",
+    "A 204/204 attestation and passing mapped results are candidate browser evidence, not independent proof of live production behavior, registry or stale receipt freshness, or broader required-state coverage."
+  ],
+  "captureHashIndex": "capture-hash-index.json",
+  "visualContactSheets": "contact-sheets/",
+  "cases": [
+    {
+      "id": "tasks.page.app-settings",
+      "fixtureId": "tasks.page.app-settings",
+      "caseName": "own surface in demo",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.page.welcome",
+      "fixtureId": "tasks.page.welcome",
+      "caseName": "unavailable explicit project recovery",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.page.app-project",
+      "fixtureId": "tasks.page.app-project",
+      "caseName": "own surface in demo",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.state.app-project-loading",
+      "fixtureId": "tasks.state.app-project-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-loading",
+      "fixtureId": "tasks.state.app-home-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-error",
+      "fixtureId": "tasks.state.app-home-error",
+      "caseName": "actual component with deterministic local inputs",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.state.app-tasks-loading",
+      "fixtureId": "tasks.state.app-tasks-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.resources.drive-upload",
+      "fixtureId": "tasks.resources.drive-upload",
+      "caseName": "own surface in demo",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.page.app-messages",
+      "fixtureId": "tasks.page.app-messages",
+      "caseName": "own surface in demo",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.page.app-analytics",
+      "fixtureId": "tasks.page.app-analytics",
+      "caseName": "own surface in demo",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-loading",
+      "fixtureId": "tasks.state.app-analytics-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-error",
+      "fixtureId": "tasks.state.app-analytics-error",
+      "caseName": "actual component with deterministic local inputs",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.page.app-tools-by-slug",
+      "fixtureId": "tasks.page.app-tools-by-slug",
+      "caseName": "wedding hub in demo",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.state.app-tools-loading",
+      "fixtureId": "tasks.state.app-tools-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.page.app-concepts",
+      "fixtureId": "tasks.page.app-concepts",
+      "caseName": "own surface in demo",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.page.app-files",
+      "fixtureId": "tasks.page.app-files",
+      "caseName": "own surface in demo",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-loading",
+      "fixtureId": "tasks.state.app-files-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-error",
+      "fixtureId": "tasks.state.app-files-error",
+      "caseName": "actual component with deterministic local inputs",
+      "inspected": true,
+      "projects": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    }
+  ],
+  "reviewerModelMetadata": {
+    "requestedModel": "gpt-6-luna",
+    "runtimeModel": "unverified"
+  },
+  "rawArtifactHashMatchesAttestation": true,
+  "visualFindings": [
+    "No material visual regression observed in the 18 mapped synthetic/demo states across the four viewport profiles.",
+    "The preview-only whole-page .signal-devbanner remains visible and overlaps lower mobile page content, including the chat composer. This is separate from .signal-toast; retain the composer occlusion as an explicit known limit.",
+    "Compared with the preliminary capture, 71/72 PNG hashes are identical. The sole changed image is the mobile tasks.state.app-analytics-loading capture; visual review shows only a minor skeleton-render difference."
+  ],
+  "comparisonToPreliminary": {
+    "samePngSha256": 71,
+    "totalMappedPngs": 72,
+    "changedPngs": [
+      {
+        "id": "tasks.state.app-analytics-loading",
+        "project": "mobile",
+        "priorSha256": "e912f34283a516b18b211febbbde15e62bd96c0a2f4952d89a2c12d189c4792b",
+        "currentSha256": "e278396b61a2815b1795bd8ecd4a82727a1bc23e835c47733f0e00b540a6a450"
+      }
+    ]
+  }
+}
