@@ -1,0 +1,25 @@
+{
+  "version": "ping.assistant.stress.finding.v1",
+  "sourceHead": "606343275a9b99b3fcb2d34f83f178434cef6901",
+  "storeFixOriginal": "95bd22ed4578050a5bae4700214e9c373f31b43d",
+  "status": "failed_native_exit",
+  "qualifiedChildPasses": 16,
+  "scenarioAssertionPasses": 17,
+  "failedChild": "017",
+  "nativeExitCode": 3221225477,
+  "cause": "unattributed",
+  "full100Pass": false,
+  "concurrencyFinding": "All five concurrent duplicate cases asserted pass in attempt4 after actual production transaction admission fix; attempt4 later failed native exit",
+  "evidence": [
+    {
+      "path": "final-attempt-5/batch-017-017.log",
+      "sha256": "8fa87952f2c20fc57f7858440ab98fcecc2043f0529e6def73a2f16a9748b71d"
+    },
+    {
+      "path": "attempt-5-parent.log",
+      "sha256": "1e996b9195913b7ae06efb5ed0e20eb3ed546d5b27cd351152229d9311e52e90"
+    }
+  ],
+  "nextBoundary": "No more repeated local runs; unchanged fail-closed harness requires canonical Linux CI or independently verified actual-SQLite backend qualification",
+  "limits": "No model quality, provider, browser, production or real delivery claim"
+}

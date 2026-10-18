@@ -1,0 +1,400 @@
+TAP version 13
+# Subtest: 001:create-1-1
+ok 1 - 001:create-1-1
+  ---
+  duration_ms: 2307.5658
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"001:create-1-1","serverSpanMs":149.154,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 002:create-2-2
+ok 2 - 002:create-2-2
+  ---
+  duration_ms: 2368.3051
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"002:create-2-2","serverSpanMs":142.876,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 003:create-3-3
+ok 3 - 003:create-3-3
+  ---
+  duration_ms: 2192.6577
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"003:create-3-3","serverSpanMs":128.907,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 004:create-4-4
+ok 4 - 004:create-4-4
+  ---
+  duration_ms: 2454.0762
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"004:create-4-4","serverSpanMs":144.926,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 005:create-5-5
+ok 5 - 005:create-5-5
+  ---
+  duration_ms: 2206.2764
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"005:create-5-5","serverSpanMs":143.014,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 006:create-6-6
+ok 6 - 006:create-6-6
+  ---
+  duration_ms: 2214.7501
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"006:create-6-6","serverSpanMs":145.845,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 007:create-7-7
+ok 7 - 007:create-7-7
+  ---
+  duration_ms: 2482.72
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"007:create-7-7","serverSpanMs":148.374,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 008:create-8-8
+ok 8 - 008:create-8-8
+  ---
+  duration_ms: 2437.6513
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"008:create-8-8","serverSpanMs":189.18,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 009:create-9-9
+ok 9 - 009:create-9-9
+  ---
+  duration_ms: 2932.7361
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"009:create-9-9","serverSpanMs":152.132,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 010:create-10-10
+ok 10 - 010:create-10-10
+  ---
+  duration_ms: 2178.2004
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"010:create-10-10","serverSpanMs":142.67,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 011:create-11-50
+ok 11 - 011:create-11-50
+  ---
+  duration_ms: 2488.6284
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"011:create-11-50","serverSpanMs":189.955,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 012:create-12-100
+ok 12 - 012:create-12-100
+  ---
+  duration_ms: 2126.3977
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"012:create-12-100","serverSpanMs":151.148,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 013:archive-and-exact-undo-1
+ok 13 - 013:archive-and-exact-undo-1
+  ---
+  duration_ms: 2380.6109
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"013:archive-and-exact-undo-1","serverSpanMs":266.347,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 014:archive-and-exact-undo-2
+ok 14 - 014:archive-and-exact-undo-2
+  ---
+  duration_ms: 2123.8268
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"014:archive-and-exact-undo-2","serverSpanMs":262.704,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 015:archive-and-exact-undo-3
+ok 15 - 015:archive-and-exact-undo-3
+  ---
+  duration_ms: 2471.3432
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"015:archive-and-exact-undo-3","serverSpanMs":367.068,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 016:archive-and-exact-undo-5
+ok 16 - 016:archive-and-exact-undo-5
+  ---
+  duration_ms: 2355.8407
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"016:archive-and-exact-undo-5","serverSpanMs":229.51,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 017:archive-and-exact-undo-10
+ok 17 - 017:archive-and-exact-undo-10
+  ---
+  duration_ms: 2030.4337
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"017:archive-and-exact-undo-10","serverSpanMs":232.93,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 018:archive-and-exact-undo-20
+ok 18 - 018:archive-and-exact-undo-20
+  ---
+  duration_ms: 2426.8987
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"018:archive-and-exact-undo-20","serverSpanMs":215.2,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 019:archive-and-exact-undo-30
+ok 19 - 019:archive-and-exact-undo-30
+  ---
+  duration_ms: 1875.3362
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"019:archive-and-exact-undo-30","serverSpanMs":231.983,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 020:archive-and-exact-undo-40
+ok 20 - 020:archive-and-exact-undo-40
+  ---
+  duration_ms: 1901.5193
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"020:archive-and-exact-undo-40","serverSpanMs":224.413,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 021:archive-and-exact-undo-50
+ok 21 - 021:archive-and-exact-undo-50
+  ---
+  duration_ms: 2365.4648
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"021:archive-and-exact-undo-50","serverSpanMs":222.538,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 022:archive-and-exact-undo-75
+ok 22 - 022:archive-and-exact-undo-75
+  ---
+  duration_ms: 2518.5693
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"022:archive-and-exact-undo-75","serverSpanMs":391.855,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 023:archive-and-exact-undo-90
+ok 23 - 023:archive-and-exact-undo-90
+  ---
+  duration_ms: 3978.0098
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"023:archive-and-exact-undo-90","serverSpanMs":691.732,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 024:archive-and-exact-undo-100
+ok 24 - 024:archive-and-exact-undo-100
+  ---
+  duration_ms: 8789.2252
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"024:archive-and-exact-undo-100","serverSpanMs":808.543,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 025:update-field-1
+ok 25 - 025:update-field-1
+  ---
+  duration_ms: 7249.7279
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"025:update-field-1","serverSpanMs":2227.012,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 026:update-field-2
+ok 26 - 026:update-field-2
+  ---
+  duration_ms: 10755.0983
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"026:update-field-2","serverSpanMs":1351.473,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 027:update-field-3
+ok 27 - 027:update-field-3
+  ---
+  duration_ms: 3224.0893
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"027:update-field-3","serverSpanMs":361.735,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 028:update-field-4
+ok 28 - 028:update-field-4
+  ---
+  duration_ms: 3272.8724
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"028:update-field-4","serverSpanMs":471.193,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 029:update-field-5
+ok 29 - 029:update-field-5
+  ---
+  duration_ms: 3648.807
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"029:update-field-5","serverSpanMs":939.237,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 030:update-field-6
+ok 30 - 030:update-field-6
+  ---
+  duration_ms: 3241.8903
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"030:update-field-6","serverSpanMs":270.159,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 031:update-field-7
+ok 31 - 031:update-field-7
+  ---
+  duration_ms: 4402.1424
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"031:update-field-7","serverSpanMs":753.284,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 032:update-field-8
+ok 32 - 032:update-field-8
+  ---
+  duration_ms: 4749.891
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"032:update-field-8","serverSpanMs":510.965,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 033:update-field-9
+ok 33 - 033:update-field-9
+  ---
+  duration_ms: 4788.182
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"033:update-field-9","serverSpanMs":346.826,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 034:update-field-10
+ok 34 - 034:update-field-10
+  ---
+  duration_ms: 3092.0311
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"034:update-field-10","serverSpanMs":303.988,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 035:update-field-11
+ok 35 - 035:update-field-11
+  ---
+  duration_ms: 3024.9634
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"035:update-field-11","serverSpanMs":264.638,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 036:update-field-12
+ok 36 - 036:update-field-12
+  ---
+  duration_ms: 2422.1734
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"036:update-field-12","serverSpanMs":234.805,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 037:draft-apply-1
+ok 37 - 037:draft-apply-1
+  ---
+  duration_ms: 2868.0502
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"037:draft-apply-1","serverSpanMs":321.804,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 038:draft-apply-2
+ok 38 - 038:draft-apply-2
+  ---
+  duration_ms: 2518.9242
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"038:draft-apply-2","serverSpanMs":288.605,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 039:draft-apply-3
+ok 39 - 039:draft-apply-3
+  ---
+  duration_ms: 2477.7058
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"039:draft-apply-3","serverSpanMs":213.178,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 040:draft-apply-5
+ok 40 - 040:draft-apply-5
+  ---
+  duration_ms: 1928.8347
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"040:draft-apply-5","serverSpanMs":207.286,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 041:draft-apply-8
+ok 41 - 041:draft-apply-8
+  ---
+  duration_ms: 1843.5744
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"041:draft-apply-8","serverSpanMs":191.684,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 042:draft-apply-13
+ok 42 - 042:draft-apply-13
+  ---
+  duration_ms: 2723.8886
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"042:draft-apply-13","serverSpanMs":236.567,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 043:draft-apply-21
+ok 43 - 043:draft-apply-21
+  ---
+  duration_ms: 1970.3137
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"043:draft-apply-21","serverSpanMs":213.615,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 044:draft-apply-34
+ok 44 - 044:draft-apply-34
+  ---
+  duration_ms: 2509.6513
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"044:draft-apply-34","serverSpanMs":278.386,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 045:draft-apply-55
+ok 45 - 045:draft-apply-55
+  ---
+  duration_ms: 2012.4206
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"045:draft-apply-55","serverSpanMs":210.577,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 046:draft-apply-100
+ok 46 - 046:draft-apply-100
+  ---
+  duration_ms: 2046.4033
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"046:draft-apply-100","serverSpanMs":235.518,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 047:lost-response-idempotency-1
+ok 47 - 047:lost-response-idempotency-1
+  ---
+  duration_ms: 2639.7799
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"047:lost-response-idempotency-1","serverSpanMs":189.989,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 048:lost-response-idempotency-2
+ok 48 - 048:lost-response-idempotency-2
+  ---
+  duration_ms: 2156.3344
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"048:lost-response-idempotency-2","serverSpanMs":181.295,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 049:lost-response-idempotency-4
+ok 49 - 049:lost-response-idempotency-4
+  ---
+  duration_ms: 2504.3224
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"049:lost-response-idempotency-4","serverSpanMs":216.713,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 050:lost-response-idempotency-8
+ok 50 - 050:lost-response-idempotency-8
+  ---
+  duration_ms: 2227.1274
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"050:lost-response-idempotency-8","serverSpanMs":183.951,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 051:lost-response-idempotency-16
+ok 51 - 051:lost-response-idempotency-16
+  ---
+  duration_ms: 2615.5081
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"051:lost-response-idempotency-16","serverSpanMs":204.299,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 052:lost-response-idempotency-32
+ok 52 - 052:lost-response-idempotency-32
+  ---
+  duration_ms: 2126.3004
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"052:lost-response-idempotency-32","serverSpanMs":204.797,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 053:lost-response-idempotency-50
+ok 53 - 053:lost-response-idempotency-50
+  ---
+  duration_ms: 2741.3695
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"053:lost-response-idempotency-50","serverSpanMs":418.622,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 054:lost-response-idempotency-75
+ok 54 - 054:lost-response-idempotency-75
+  ---
+  duration_ms: 2687.2679
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"054:lost-response-idempotency-75","serverSpanMs":262.042,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: src\\server\\ping\\assistant\\stress.test.ts
+not ok 1 - src\\server\\ping\\assistant\\stress.test.ts
+  ---
+  duration_ms: 164168.3459
+  type: 'test'
+  location: 'D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\src\\server\\ping\\assistant\\stress.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 3221225477
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..55
+# tests 55
+# suites 0
+# pass 54
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 164182.693

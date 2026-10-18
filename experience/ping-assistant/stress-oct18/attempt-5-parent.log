@@ -1,0 +1,85 @@
+TAP version 13
+# Subtest: 100 actual SQLite service/action scenarios in isolated native-client processes
+not ok 1 - 100 actual SQLite service/action scenarios in isolated native-client processes
+  ---
+  duration_ms: 83911.3998
+  type: 'test'
+  location: 'D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\src\\server\\ping\\assistant\\stress.test.ts:2:17848'
+  failureType: 'testCodeFailure'
+  error: |-
+    Batch 017-017 exited 1/null; preserved D:\Codex-scratch\project-ping\text-assistant-stress-oct18\experience\ping-assistant\stress-oct18\final-attempt-5
+    TAP version 13
+    # Subtest: 017:archive-and-exact-undo-10
+    ok 1 - 017:archive-and-exact-undo-10
+      ---
+      duration_ms: 2232.0028
+      type: 'test'
+      ...
+    # {"synthetic":true,"id":"017:archive-and-exact-undo-10","serverSpanMs":267.323,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+    # Subtest: stress scenario inventory and bounded latency summary
+    ok 2 - stress scenario inventory and bounded latency summary
+      ---
+      duration_ms: 0.4528
+      type: 'test'
+      ...
+    # {"synthetic":true,"scenarios":1,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":267.323,"p95":267.323,"p99":267.323,"max":267.3227000000006,"statuses":{"completed":1},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+    # Subtest: src\\server\\ping\\assistant\\stress.test.ts
+    not ok 1 - src\\server\\ping\\assistant\\stress.test.ts
+      ---
+      duration_ms: 4502.2644
+      type: 'test'
+      location: 'D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\src\\server\\ping\\assistant\\stress.test.ts:1:1'
+      failureType: 'testCodeFailure'
+      exitCode: 3221225477
+      signal: ~
+      error: 'test failed'
+      code: 'ERR_TEST_FAILURE'
+      ...
+    1..3
+    # tests 3
+    # suites 0
+    # pass 2
+    # fail 1
+    # cancelled 0
+    # skipped 0
+    # todo 0
+    # duration_ms 4513.7572
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (D:\Codex-scratch\project-ping\text-assistant-stress-oct18\src\server\ping\assistant\stress.test.ts:228:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"batch":"001-001","completed":1,"rawSha256":"0355b3261552c86d30376a71b509a764bfaa7a041e869a0e7ffd4cacd7c50c6a"}
+# {"batch":"002-002","completed":1,"rawSha256":"cd3c06eb0c453ad5098c3e4c1d1d408eddf567bac6a029dc2c2e1c67b7b9af5b"}
+# {"batch":"003-003","completed":1,"rawSha256":"7a68d7bfa993f678b9d3c7f95b4d51523cd3fd9dd8013250f491fb101668fe44"}
+# {"batch":"004-004","completed":1,"rawSha256":"d889a338cf18a8e04f32be6c73a7c6db22218ebb775c18093084ca06eb4c5cc0"}
+# {"batch":"005-005","completed":1,"rawSha256":"e678ad85f411e86b1c220ff1f97160045ea4ba23761d47259f58132d2562050c"}
+# {"batch":"006-006","completed":1,"rawSha256":"676e129870f41deedd546bdfe2f59ad84efbf32469832d521953291c1c5ba836"}
+# {"batch":"007-007","completed":1,"rawSha256":"c8ac34bb1406696623b6b8cb57f18bf7958f6067dc9c87cdd8e2bd501b1ee5e8"}
+# {"batch":"008-008","completed":1,"rawSha256":"991872ee869311d2397517f361a7866ea07277c7ecdbc13583a1fcea334aa985"}
+# {"batch":"009-009","completed":1,"rawSha256":"d4cb84cdd8f2b5baa1040b2a8ff37affdb2e6f758ffc43219b392dcb70427d76"}
+# {"batch":"010-010","completed":1,"rawSha256":"68ee91b297c924a32226e0d2242a50c833de0d25dcb5ff12ca8bf43592300cfe"}
+# {"batch":"011-011","completed":1,"rawSha256":"84cf5f3e85ba8cdf68c3eeb253daa4c23bcf8ccfcb4adf4c4507f506bd9075a0"}
+# {"batch":"012-012","completed":1,"rawSha256":"07e6f1151abf8df20d72f04ce6c26185d9aa0b5f488c78e106f2b2c3bf5c039e"}
+# {"batch":"013-013","completed":1,"rawSha256":"8ee8ec2f84ecf636e821fc47d178fe530208ce4142981fd98e86d4ac63567f6b"}
+# {"batch":"014-014","completed":1,"rawSha256":"8a3a6f940a1c36190211c565a6c3034381d7f96dc9c133d6c3826ded1759a9ec"}
+# {"batch":"015-015","completed":1,"rawSha256":"d9fc6eb315b0cdd802c3bdbc08a7a6dd2e20ae49fea17524f219e5d6ffcbd632"}
+# {"batch":"016-016","completed":1,"rawSha256":"90cb46301dc672caa319cc2e8b85870e1f552b895f802645da2979ef038d7b02"}
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 90078.0035

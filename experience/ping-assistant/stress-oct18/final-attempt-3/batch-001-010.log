@@ -1,0 +1,87 @@
+TAP version 13
+# Subtest: 001:create-1-1
+ok 1 - 001:create-1-1
+  ---
+  duration_ms: 2198.7867
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"001:create-1-1","serverSpanMs":215.905,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 002:create-2-2
+ok 2 - 002:create-2-2
+  ---
+  duration_ms: 2324.6465
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"002:create-2-2","serverSpanMs":148.637,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 003:create-3-3
+ok 3 - 003:create-3-3
+  ---
+  duration_ms: 1976.9088
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"003:create-3-3","serverSpanMs":143.988,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 004:create-4-4
+ok 4 - 004:create-4-4
+  ---
+  duration_ms: 2403.5284
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"004:create-4-4","serverSpanMs":141.793,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 005:create-5-5
+ok 5 - 005:create-5-5
+  ---
+  duration_ms: 1959.0819
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"005:create-5-5","serverSpanMs":124.415,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 006:create-6-6
+ok 6 - 006:create-6-6
+  ---
+  duration_ms: 1857.0227
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"006:create-6-6","serverSpanMs":118.671,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 007:create-7-7
+ok 7 - 007:create-7-7
+  ---
+  duration_ms: 2455.3502
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"007:create-7-7","serverSpanMs":129.25,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 008:create-8-8
+ok 8 - 008:create-8-8
+  ---
+  duration_ms: 1945.946
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"008:create-8-8","serverSpanMs":124.084,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 009:create-9-9
+ok 9 - 009:create-9-9
+  ---
+  duration_ms: 1877.8867
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"009:create-9-9","serverSpanMs":121.54,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 010:create-10-10
+ok 10 - 010:create-10-10
+  ---
+  duration_ms: 2187.8322
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"010:create-10-10","serverSpanMs":124.661,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: stress scenario inventory and bounded latency summary
+ok 11 - stress scenario inventory and bounded latency summary
+  ---
+  duration_ms: 0.4338
+  type: 'test'
+  ...
+# {"synthetic":true,"scenarios":10,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":124.661,"p95":215.905,"p99":215.905,"max":215.90539999999964,"statuses":{"completed":10},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23436.6304

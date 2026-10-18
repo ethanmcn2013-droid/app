@@ -1,0 +1,24 @@
+TAP version 13
+# Subtest: 005:create-5-5
+ok 1 - 005:create-5-5
+  ---
+  duration_ms: 6242.4854
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"005:create-5-5","serverSpanMs":253.546,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: stress scenario inventory and bounded latency summary
+ok 2 - stress scenario inventory and bounded latency summary
+  ---
+  duration_ms: 1.0744
+  type: 'test'
+  ...
+# {"synthetic":true,"scenarios":1,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":253.546,"p95":253.546,"p99":253.546,"max":253.54609999999957,"statuses":{"completed":1},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9226.9628

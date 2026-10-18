@@ -1,0 +1,270 @@
+{
+  "version": "ping.assistant.synthetic-stress.v1",
+  "input": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5",
+  "inputSha256": "e4e9ef6840f1e51e9f0f48fa17f01fdec6c63c189d011a67ea8505006bfcf68f",
+  "attempts": [
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-001-001.log",
+      "sha256": "0355b3261552c86d30376a71b509a764bfaa7a041e869a0e7ffd4cacd7c50c6a"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-002-002.log",
+      "sha256": "cd3c06eb0c453ad5098c3e4c1d1d408eddf567bac6a029dc2c2e1c67b7b9af5b"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-003-003.log",
+      "sha256": "7a68d7bfa993f678b9d3c7f95b4d51523cd3fd9dd8013250f491fb101668fe44"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-004-004.log",
+      "sha256": "d889a338cf18a8e04f32be6c73a7c6db22218ebb775c18093084ca06eb4c5cc0"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-005-005.log",
+      "sha256": "e678ad85f411e86b1c220ff1f97160045ea4ba23761d47259f58132d2562050c"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-006-006.log",
+      "sha256": "676e129870f41deedd546bdfe2f59ad84efbf32469832d521953291c1c5ba836"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-007-007.log",
+      "sha256": "c8ac34bb1406696623b6b8cb57f18bf7958f6067dc9c87cdd8e2bd501b1ee5e8"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-008-008.log",
+      "sha256": "991872ee869311d2397517f361a7866ea07277c7ecdbc13583a1fcea334aa985"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-009-009.log",
+      "sha256": "d4cb84cdd8f2b5baa1040b2a8ff37affdb2e6f758ffc43219b392dcb70427d76"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-010-010.log",
+      "sha256": "68ee91b297c924a32226e0d2242a50c833de0d25dcb5ff12ca8bf43592300cfe"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-011-011.log",
+      "sha256": "84cf5f3e85ba8cdf68c3eeb253daa4c23bcf8ccfcb4adf4c4507f506bd9075a0"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-012-012.log",
+      "sha256": "07e6f1151abf8df20d72f04ce6c26185d9aa0b5f488c78e106f2b2c3bf5c039e"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-013-013.log",
+      "sha256": "8ee8ec2f84ecf636e821fc47d178fe530208ce4142981fd98e86d4ac63567f6b"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-014-014.log",
+      "sha256": "8a3a6f940a1c36190211c565a6c3034381d7f96dc9c133d6c3826ded1759a9ec"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-015-015.log",
+      "sha256": "d9fc6eb315b0cdd802c3bdbc08a7a6dd2e20ae49fea17524f219e5d6ffcbd632"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-016-016.log",
+      "sha256": "90cb46301dc672caa319cc2e8b85870e1f552b895f802645da2979ef038d7b02"
+    },
+    {
+      "file": "D:\\Codex-scratch\\project-ping\\text-assistant-stress-oct18\\experience\\ping-assistant\\stress-oct18\\final-attempt-5\\batch-017-017.log",
+      "sha256": "8fa87952f2c20fc57f7858440ab98fcecc2043f0529e6def73a2f16a9748b71d"
+    }
+  ],
+  "synthetic": true,
+  "expectedScenarios": 100,
+  "completedScenarios": 17,
+  "uniqueScenarios": 17,
+  "complete": false,
+  "failures": [
+    "not ok 1 - src\\\\server\\\\ping\\\\assistant\\\\stress.test.ts"
+  ],
+  "time": {
+    "referenceInstant": "2026-10-18T09:00:00.000Z",
+    "referenceDate": "2026-10-18",
+    "timeZone": "Europe/Dublin"
+  },
+  "serverSpanMs": {
+    "p50": 227.225,
+    "p95": 290.418,
+    "p99": 290.418,
+    "max": 290.418
+  },
+  "statuses": {
+    "completed": 17
+  },
+  "boundary": "Actual synthetic file-backed SQLite, durable store, service and actions; fake structured one-shot planner and dispatcher; server span includes scenario assertions and excludes migration/setup. No model-quality, browser, production performance, real email, provider, or Timeline publication claim.",
+  "samples": [
+    {
+      "synthetic": true,
+      "id": "001:create-1-1",
+      "serverSpanMs": 165.077,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "002:create-2-2",
+      "serverSpanMs": 232.054,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "003:create-3-3",
+      "serverSpanMs": 232.381,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "004:create-4-4",
+      "serverSpanMs": 227.225,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "005:create-5-5",
+      "serverSpanMs": 253.546,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "006:create-6-6",
+      "serverSpanMs": 191.275,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "007:create-7-7",
+      "serverSpanMs": 181.963,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "008:create-8-8",
+      "serverSpanMs": 172.613,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "009:create-9-9",
+      "serverSpanMs": 156.876,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "010:create-10-10",
+      "serverSpanMs": 148.652,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "011:create-11-50",
+      "serverSpanMs": 158.171,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "012:create-12-100",
+      "serverSpanMs": 193.183,
+      "status": "completed",
+      "plans": 1,
+      "executions": 1,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "013:archive-and-exact-undo-1",
+      "serverSpanMs": 271.196,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "014:archive-and-exact-undo-2",
+      "serverSpanMs": 279.371,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "015:archive-and-exact-undo-3",
+      "serverSpanMs": 258.679,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "016:archive-and-exact-undo-5",
+      "serverSpanMs": 290.418,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    },
+    {
+      "synthetic": true,
+      "id": "017:archive-and-exact-undo-10",
+      "serverSpanMs": 267.323,
+      "status": "completed",
+      "plans": 1,
+      "executions": 3,
+      "deliveries": 0,
+      "provisions": 0
+    }
+  ]
+}

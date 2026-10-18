@@ -1,0 +1,87 @@
+TAP version 13
+# Subtest: 021:archive-and-exact-undo-50
+ok 1 - 021:archive-and-exact-undo-50
+  ---
+  duration_ms: 2666.0019
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"021:archive-and-exact-undo-50","serverSpanMs":599.26,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 022:archive-and-exact-undo-75
+ok 2 - 022:archive-and-exact-undo-75
+  ---
+  duration_ms: 2325.5483
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"022:archive-and-exact-undo-75","serverSpanMs":281.463,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 023:archive-and-exact-undo-90
+ok 3 - 023:archive-and-exact-undo-90
+  ---
+  duration_ms: 2590.276
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"023:archive-and-exact-undo-90","serverSpanMs":375.285,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 024:archive-and-exact-undo-100
+ok 4 - 024:archive-and-exact-undo-100
+  ---
+  duration_ms: 2180.9276
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"024:archive-and-exact-undo-100","serverSpanMs":278.458,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 025:update-field-1
+ok 5 - 025:update-field-1
+  ---
+  duration_ms: 2271.9052
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"025:update-field-1","serverSpanMs":254.952,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 026:update-field-2
+ok 6 - 026:update-field-2
+  ---
+  duration_ms: 2470.0294
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"026:update-field-2","serverSpanMs":178.582,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 027:update-field-3
+ok 7 - 027:update-field-3
+  ---
+  duration_ms: 2030.0648
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"027:update-field-3","serverSpanMs":172.773,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 028:update-field-4
+ok 8 - 028:update-field-4
+  ---
+  duration_ms: 2029.493
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"028:update-field-4","serverSpanMs":173.418,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 029:update-field-5
+ok 9 - 029:update-field-5
+  ---
+  duration_ms: 2347.5245
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"029:update-field-5","serverSpanMs":187.272,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 030:update-field-6
+ok 10 - 030:update-field-6
+  ---
+  duration_ms: 1986.3168
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"030:update-field-6","serverSpanMs":181.482,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: stress scenario inventory and bounded latency summary
+ok 11 - stress scenario inventory and bounded latency summary
+  ---
+  duration_ms: 0.5224
+  type: 'test'
+  ...
+# {"synthetic":true,"scenarios":10,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":187.272,"p95":599.26,"p99":599.26,"max":599.2599999999993,"statuses":{"completed":10},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25655.7699

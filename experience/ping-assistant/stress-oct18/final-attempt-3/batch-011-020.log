@@ -1,0 +1,87 @@
+TAP version 13
+# Subtest: 011:create-11-50
+ok 1 - 011:create-11-50
+  ---
+  duration_ms: 2179.3988
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"011:create-11-50","serverSpanMs":169.9,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 012:create-12-100
+ok 2 - 012:create-12-100
+  ---
+  duration_ms: 1870.3982
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"012:create-12-100","serverSpanMs":164.027,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 013:archive-and-exact-undo-1
+ok 3 - 013:archive-and-exact-undo-1
+  ---
+  duration_ms: 2483.4143
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"013:archive-and-exact-undo-1","serverSpanMs":365.792,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 014:archive-and-exact-undo-2
+ok 4 - 014:archive-and-exact-undo-2
+  ---
+  duration_ms: 2514.8791
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"014:archive-and-exact-undo-2","serverSpanMs":326.582,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 015:archive-and-exact-undo-3
+ok 5 - 015:archive-and-exact-undo-3
+  ---
+  duration_ms: 2427.5752
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"015:archive-and-exact-undo-3","serverSpanMs":356.205,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 016:archive-and-exact-undo-5
+ok 6 - 016:archive-and-exact-undo-5
+  ---
+  duration_ms: 2646.4283
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"016:archive-and-exact-undo-5","serverSpanMs":304.251,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 017:archive-and-exact-undo-10
+ok 7 - 017:archive-and-exact-undo-10
+  ---
+  duration_ms: 2224.0927
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"017:archive-and-exact-undo-10","serverSpanMs":280.875,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 018:archive-and-exact-undo-20
+ok 8 - 018:archive-and-exact-undo-20
+  ---
+  duration_ms: 2546.9305
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"018:archive-and-exact-undo-20","serverSpanMs":276.317,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 019:archive-and-exact-undo-30
+ok 9 - 019:archive-and-exact-undo-30
+  ---
+  duration_ms: 2146.0819
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"019:archive-and-exact-undo-30","serverSpanMs":263.693,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: 020:archive-and-exact-undo-40
+ok 10 - 020:archive-and-exact-undo-40
+  ---
+  duration_ms: 2257.33
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"020:archive-and-exact-undo-40","serverSpanMs":290.632,"status":"completed","plans":1,"executions":3,"deliveries":0,"provisions":0}
+# Subtest: stress scenario inventory and bounded latency summary
+ok 11 - stress scenario inventory and bounded latency summary
+  ---
+  duration_ms: 0.5912
+  type: 'test'
+  ...
+# {"synthetic":true,"scenarios":10,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":280.875,"p95":365.792,"p99":365.792,"max":365.79229999999916,"statuses":{"completed":10},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25626.3688

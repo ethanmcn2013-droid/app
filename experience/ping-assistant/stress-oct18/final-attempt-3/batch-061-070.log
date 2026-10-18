@@ -1,0 +1,87 @@
+TAP version 13
+# Subtest: 061:refusal-archive_tasks-2
+ok 1 - 061:refusal-archive_tasks-2
+  ---
+  duration_ms: 3112.5882
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"061:refusal-archive_tasks-2","serverSpanMs":258.732,"status":"partial","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 062:refusal-update_tasks-2
+ok 2 - 062:refusal-update_tasks-2
+  ---
+  duration_ms: 2331.0508
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"062:refusal-update_tasks-2","serverSpanMs":222.852,"status":"partial","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 063:refusal-archive_tasks-3
+ok 3 - 063:refusal-archive_tasks-3
+  ---
+  duration_ms: 2588.3777
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"063:refusal-archive_tasks-3","serverSpanMs":216.294,"status":"partial","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 064:refusal-update_tasks-3
+ok 4 - 064:refusal-update_tasks-3
+  ---
+  duration_ms: 2206.4909
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"064:refusal-update_tasks-3","serverSpanMs":168.943,"status":"partial","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 065:refusal-archive_tasks-4
+ok 5 - 065:refusal-archive_tasks-4
+  ---
+  duration_ms: 3230.8288
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"065:refusal-archive_tasks-4","serverSpanMs":306.978,"status":"partial","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 066:refusal-update_tasks-4
+ok 6 - 066:refusal-update_tasks-4
+  ---
+  duration_ms: 2823.979
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"066:refusal-update_tasks-4","serverSpanMs":280.996,"status":"partial","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 067:clarification-1
+ok 7 - 067:clarification-1
+  ---
+  duration_ms: 2962.5242
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"067:clarification-1","serverSpanMs":113.85,"status":"clarification","plans":1,"executions":0,"deliveries":0,"provisions":0}
+# Subtest: 068:clarification-2
+ok 8 - 068:clarification-2
+  ---
+  duration_ms: 2506.62
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"068:clarification-2","serverSpanMs":110.495,"status":"clarification","plans":1,"executions":0,"deliveries":0,"provisions":0}
+# Subtest: 069:clarification-3
+ok 9 - 069:clarification-3
+  ---
+  duration_ms: 3274.8977
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"069:clarification-3","serverSpanMs":99.407,"status":"clarification","plans":1,"executions":0,"deliveries":0,"provisions":0}
+# Subtest: 070:clarification-4
+ok 10 - 070:clarification-4
+  ---
+  duration_ms: 4392.0687
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"070:clarification-4","serverSpanMs":195.434,"status":"clarification","plans":1,"executions":0,"deliveries":0,"provisions":0}
+# Subtest: stress scenario inventory and bounded latency summary
+ok 11 - stress scenario inventory and bounded latency summary
+  ---
+  duration_ms: 0.8869
+  type: 'test'
+  ...
+# {"synthetic":true,"scenarios":10,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":195.434,"p95":306.978,"p99":306.978,"max":306.97810000000027,"statuses":{"partial":6,"clarification":4},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 34734.9419

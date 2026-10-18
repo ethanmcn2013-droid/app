@@ -1,0 +1,87 @@
+TAP version 13
+# Subtest: 031:update-field-7
+ok 1 - 031:update-field-7
+  ---
+  duration_ms: 2138.6418
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"031:update-field-7","serverSpanMs":222.867,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 032:update-field-8
+ok 2 - 032:update-field-8
+  ---
+  duration_ms: 2325.3166
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"032:update-field-8","serverSpanMs":207.271,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 033:update-field-9
+ok 3 - 033:update-field-9
+  ---
+  duration_ms: 1998.8725
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"033:update-field-9","serverSpanMs":178.489,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 034:update-field-10
+ok 4 - 034:update-field-10
+  ---
+  duration_ms: 2330.8341
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"034:update-field-10","serverSpanMs":185.448,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 035:update-field-11
+ok 5 - 035:update-field-11
+  ---
+  duration_ms: 2218.9499
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"035:update-field-11","serverSpanMs":179.458,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 036:update-field-12
+ok 6 - 036:update-field-12
+  ---
+  duration_ms: 1974.5259
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"036:update-field-12","serverSpanMs":169.99,"status":"completed","plans":1,"executions":2,"deliveries":0,"provisions":0}
+# Subtest: 037:draft-apply-1
+ok 7 - 037:draft-apply-1
+  ---
+  duration_ms: 2708.8078
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"037:draft-apply-1","serverSpanMs":368.579,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 038:draft-apply-3
+ok 8 - 038:draft-apply-3
+  ---
+  duration_ms: 2078.4236
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"038:draft-apply-3","serverSpanMs":210.558,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 039:draft-apply-13
+ok 9 - 039:draft-apply-13
+  ---
+  duration_ms: 2061.3342
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"039:draft-apply-13","serverSpanMs":247.688,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: 040:draft-apply-55
+ok 10 - 040:draft-apply-55
+  ---
+  duration_ms: 2363.8641
+  type: 'test'
+  ...
+# {"synthetic":true,"id":"040:draft-apply-55","serverSpanMs":229.836,"status":"completed","plans":1,"executions":1,"deliveries":0,"provisions":0}
+# Subtest: stress scenario inventory and bounded latency summary
+ok 11 - stress scenario inventory and bounded latency summary
+  ---
+  duration_ms: 0.5768
+  type: 'test'
+  ...
+# {"synthetic":true,"scenarios":10,"unit":"milliseconds","includes":"service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup","p50":207.271,"p95":368.579,"p99":368.579,"max":368.57940000000235,"statuses":{"completed":10},"limitation":"fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim"}
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24634.5294
