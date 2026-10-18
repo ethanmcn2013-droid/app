@@ -207,17 +207,17 @@ if (childBatch) test("stress scenario inventory and bounded latency summary", t 
   const percentile = (p: number) => Number(sorted[Math.ceil(sorted.length * p) - 1].toFixed(3));
   t.diagnostic(JSON.stringify({ synthetic: true, scenarios: samples.length, unit: "milliseconds", includes: "service submit/apply/recovery plus scenario SQL assertions; excludes fixture migration/setup", p50: percentile(.5), p95: percentile(.95), p99: percentile(.99), max: sorted.at(-1), statuses: samples.reduce<Record<string, number>>((a, s) => ({ ...a, [s.status]: (a[s.status] ?? 0) + 1 }), {}), limitation: "fake one-shot planner and dispatcher; no model quality, network latency, real delivery, publication, or production claim" }));
 });
-else test("100 actual SQLite service/action scenarios in ten isolated native-client batches", { timeout: 600_000 }, async t => {
+else test("100 actual SQLite service/action scenarios in isolated native-client processes", { timeout: 900_000 }, async t => {
   assert.equal(serial, 100);
   const directory = process.env.PING_ASSISTANT_STRESS_OUTPUT ? path.resolve(process.env.PING_ASSISTANT_STRESS_OUTPUT) : await mkdtemp(path.join(tmpdir(), "ping-assistant-stress-"));
   await mkdir(directory, { recursive: true });
   const all: { id: string; serverSpanMs: number; status: string }[] = [];
-  for (let first = 1; first <= 100; first += 10) {
-    const label = `${String(first).padStart(3, "0")}-${String(first + 9).padStart(3, "0")}`;
+  for (let first = 1; first <= 100; first++) {
+    const label = `${String(first).padStart(3, "0")}-${String(first).padStart(3, "0")}`;
     const result = await new Promise<{ code: number | null; signal: NodeJS.Signals | null; raw: string }>((resolve, reject) => {
       // Node's inherited worker marker prevents a child --test invocation from
       // starting. This is a fresh test runner, not an in-process nested run().
-      const childEnvironment: NodeJS.ProcessEnv = { ...process.env, PING_ASSISTANT_STRESS_RANGE: `${first}:${first + 9}` };
+      const childEnvironment: NodeJS.ProcessEnv = { ...process.env, PING_ASSISTANT_STRESS_RANGE: `${first}:${first}` };
       delete childEnvironment.NODE_TEST_CONTEXT;
       const child = spawn(process.execPath, ["--import", "tsx", "--import", "./src/test/register-server-only.mjs", "--test", "--test-concurrency=1", "src/server/ping/assistant/stress.test.ts"],
         { cwd: process.cwd(), env: childEnvironment, windowsHide: true });
@@ -228,7 +228,7 @@ else test("100 actual SQLite service/action scenarios in ten isolated native-cli
     assert.equal(result.code, 0, `Batch ${label} exited ${result.code}/${result.signal}; preserved ${directory}\n${result.raw}`);
     assert.match(result.raw, /# fail 0\b/); assert.match(result.raw, /# skipped 0\b/);
     const rows = result.raw.split(/\r?\n/).filter(line => line.startsWith('# {"synthetic":true,"id":')).map(line => JSON.parse(line.slice(2)) as { id: string; serverSpanMs: number; status: string });
-    assert.equal(rows.length, 10); assert.deepEqual(rows.map(row => Number(row.id.slice(0, 3))), Array.from({ length: 10 }, (_, index) => first + index));
+    assert.equal(rows.length, 1); assert.deepEqual(rows.map(row => Number(row.id.slice(0, 3))), [first]);
     all.push(...rows);
     t.diagnostic(JSON.stringify({ batch: label, completed: rows.length, rawSha256: createHash("sha256").update(result.raw).digest("hex") }));
   }
