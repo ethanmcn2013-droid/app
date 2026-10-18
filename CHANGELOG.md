@@ -6,6 +6,8 @@ Ping can turn one text request into a bounded sequence of Project and task actio
 
 The initial production planner uses Sonnet for every text request, retaining the existing bounded output caps and single-call deadline. Haiku remains an evaluation path pending separate qualification.
 
+Private attempt records retain model configuration, timing, token estimates and incomplete outcomes beside the spending guard. Optional browser diagnostics connect request receipt to the displayed result. Bulk updates use fewer database statements while preserving per-task activity and saved receipts; local speed measurements remain separate from production performance.
+
 The assistant and external email remain off by default, with an explicit database target and actor allowlist. This is an internal candidate: production receiving, live provider quality, end-to-end latency and delivery remain separate. Speech is deferred. Operator setup and evidence limits: `docs/PING_TEXT_ASSISTANT.md`.
 
 ## 2026-10-15 · Internal candidate · Measure Ping from activation to confirmed changes
