@@ -2084,7 +2084,7 @@
     "src/components/app/messages/demo-messages-model.ts": "ea4c9238a87ef2128ca905d5496c16fa13e0a484e4954849960a42969dd685a0",
     "src/components/app/messages/direct-message-directory.tsx": "b296426ef3db4064f80220a7340a7587fa00000b0c580813e6de3685dcb6b266",
     "src/components/app/messages/floating-chat-root.tsx": "fa8f9128227e88b9730f7706ee4cd27fe5ce1066e7701818d6096501b11d9e8f",
-    "src/components/app/messages/floating-chat.module.css": "40caa4a63ea52d89f2928789a33e976462e118eb6d349abfbca35ea570d3d4bd",
+    "src/components/app/messages/floating-chat.module.css": "b0b7fe9a5cb71731dcb5a9f88102de03d86f526d311ddb83c6d1b81353c61666",
     "src/components/app/messages/hidden-conversations.test.ts": "7f9a4846046cd07f85e9e45e5fde26616cbb958e5dbf104a236e776f0803639c",
     "src/components/app/messages/hidden-conversations.ts": "e3aff212cf4d957f76e300ed44feb4c0f5fb785911f81910713e4fcc696e157c",
     "src/components/app/messages/member-mention-picker.tsx": "28fc43967a414d1e974a499a6ebe5e7fcccb192ad51e2b5e1c679179452009d5",
