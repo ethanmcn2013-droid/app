@@ -54,7 +54,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
       setRuns(previous => [run, ...previous.filter(value => value.id !== run.id)].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
       if (pendingRef.current?.requestId === run.requestId) {
         keepPending(assistantNeedsRecovery(run) ? { version: 1, requestId: run.requestId, runId: run.id } : null);
-        setAbsent(false);
+        setAbsent(false); setReentering(false);
         if (original.current?.requestId === run.requestId) { original.current = null; setHasOriginal(false); setDraft(""); if (historyRef.current) historyRef.current.scrollTop = 0; }
       }
     }
@@ -73,6 +73,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
   }, [receive]);
   useEffect(() => {
     mounted.current = true;
+    setReentering(false);
     const epoch = ++generation.current;
     const controller = new AbortController();
     void (async () => {
