@@ -462,5 +462,24 @@
   [
     "pnpm",
     "test:redis"
+  ],
+  [
+    "node",
+    "--import",
+    "tsx",
+    "--import",
+    "./src/test/register-server-only.mjs",
+    "--test",
+    "src/modules/timeline/components/artifact/master3-model.test.ts",
+    "src/modules/timeline/lib/master3-presentation.test.ts",
+    "src/modules/timeline/lib/master3-calendar.test.ts",
+    "src/modules/timeline/lib/master3-social.test.ts",
+    "src/modules/timeline/server/master3-settings.test.ts",
+    "src/modules/timeline/server/guest-services.test.ts",
+    "src/modules/timeline/server/guest-http.test.ts",
+    "src/modules/timeline/server/guest-notifications.test.ts",
+    "src/modules/timeline/app/audience/master3-composition.test.mjs",
+    "scripts/db/timeline-production-backup-custody.test.mjs",
+    "experience/timeline-master3/harness.test.mjs"
   ]
 ]

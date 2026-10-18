@@ -4,6 +4,7 @@ import { SharedTimelineArtifact } from "@/modules/timeline/app/audience/shared-t
 import type { AudienceKind } from "@/modules/timeline/lib/audience-timeline";
 import { resolveAudienceTimeline } from "@/modules/timeline/server/audience-timeline";
 import { master3SocialDetails } from "@/modules/timeline/lib/master3-social";
+import { getTimelineGuestServices } from "@/modules/timeline/server/guest-http";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -34,6 +35,7 @@ export async function generateMetadata({
   if (result.kind !== "ok") notFound();
 
   const details = master3SocialDetails(result.dto);
+  const title = details?.title ?? result.dto.label;
   const description = details?.description ?? KIND_DESCRIPTIONS[result.dto.audienceKind];
   // Twitter-style consumers read their own tags or fall back to the layout's
   // generic containment card — which drops the timeline's name. Mirror the
@@ -41,20 +43,20 @@ export async function generateMetadata({
   // image comes from the segment's file convention (`../opengraph-image`),
   // which remains data-free unless the owner explicitly includes public details.
   return {
-    title: `${result.dto.label} · timeline`,
+    title: `${title} · timeline`,
     description,
     alternates: { canonical: null },
     manifest: null,
     robots: { index: false, follow: false, noarchive: true, nosnippet: true },
     openGraph: {
-      title: result.dto.label,
+      title,
       description,
       type: "website",
       siteName: "timeline",
     },
     twitter: {
       card: "summary_large_image",
-      title: result.dto.label,
+      title,
       description,
     },
   };
@@ -71,7 +73,8 @@ export default async function SharedTimelinePage({
 
   return (
     <main className="contents">
-      <SharedTimelineArtifact timeline={result.dto} />
+      <SharedTimelineArtifact timeline={result.dto} shareToken={token}
+        services={await getTimelineGuestServices(token)} />
     </main>
   );
 }

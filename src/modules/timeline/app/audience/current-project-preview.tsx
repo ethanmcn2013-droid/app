@@ -43,5 +43,6 @@ export default async function CurrentProjectPreview({ params, searchParams }: {
     settingsUpdatedAt:await master3Settings.projectUpdatedAt(workspace.slug,project.slug),
   });
   const backHref = buildTimelineProjectHref(project.slug, { workspaceId, planningPeriodId });
-  return <><CurrentProjectPreviewView timeline={timeline} backHref={backHref} />{workspace.ownerUserId===userId&&await master3Settings.available()?<Master3SettingsForm workspaceSlug={workspace.slug} projectSlug={project.slug} settings={presentationSettings} items={nodes.filter(node=>!node.hidden).map(node=>({id:node.id,title:node.title}))}/>:null}</>;
+  const canEdit = workspace.ownerUserId === userId && await master3Settings.available();
+  return <><CurrentProjectPreviewView timeline={timeline} backHref={backHref} canEdit={canEdit} />{canEdit?<Master3SettingsForm workspaceSlug={workspace.slug} projectSlug={project.slug} settings={presentationSettings} items={nodes.filter(node=>!node.hidden).map(node=>({id:node.id,title:node.title}))}/>:null}</>;
 }
