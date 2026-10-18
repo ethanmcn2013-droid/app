@@ -1,74 +1,222 @@
-.panel { position: fixed; right: 24px; bottom: 24px; width: min(760px, calc(100vw - 48px)); height: min(680px, calc(100dvh - 128px)); z-index: 65; display: flex; flex-direction: column; overflow: hidden; border-radius: 14px; background: var(--v3-canvas); color: var(--v3-text); box-shadow: 0 16px 64px color-mix(in srgb, var(--v3-text) 18%, transparent); font-family: var(--font-geist-sans), sans-serif; }
-.panel[hidden], .body[hidden] { display: none; }
-.scrim { position: fixed; inset: 0; border: 0; background: color-mix(in srgb, var(--v3-text) 20%, transparent); z-index: 64; }
-.panel[data-full] { right: auto; bottom: auto; border-radius: 0; box-shadow: none; z-index: 20; }
-.panel[data-assistant]:not([data-full]) { width: min(500px, calc(100vw - 48px)); height: min(650px, calc(100dvh - 96px)); box-shadow: var(--v3-shadow-pop); }
-.panel[data-assistant] .head { padding: 8px 10px; gap: 6px; }
-.panel[data-assistant] .tabs button { padding: 7px 8px; font-size: 12px; }
-.pageAnchor { flex: 1; min-width: 0; min-height: 0; height: 100%; }
-.head { display: flex; gap: 12px; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--v3-border); background: var(--v3-surface); flex: none; }
-.tabs { display: flex; gap: 4px; min-width: 0; overflow: auto; }
-.tabs button { white-space: nowrap; border-radius: 7px; padding: 8px 10px; font-size: 13px; color: var(--v3-text-2); }
-.tabs button[aria-pressed="true"] { background: var(--v3-accent-soft); color: var(--v3-text); }
-.tabs span, .personalHead h2 span { font-weight: 400; color: var(--v3-text-2); }
-.headActions { display: flex; gap: 4px; }
-.headActions :is(button,a) { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 6px; flex: none; }
-.panel button { cursor: pointer; }
-.head :is(button,a), .launcher, .dictation button, .personalHead button, .options :is(summary,button), .sendStatus button, .error button { border: 0; color: inherit; background: transparent; text-decoration: none; }
-.head :is(button,a):hover, .dictation button:hover, .options summary:hover { background: var(--v3-hover); }
-.body { min-height: 0; min-width: 0; display: flex; flex: 1; overflow: hidden; }
-.body > * { width: 100%; min-width: 0; }
-.launcher { position: fixed; right: 24px; bottom: 24px; z-index: 60; display: grid; place-items: center; width: 52px; height: 52px; padding: 0; border-radius: 50%; color: var(--v3-on-accent); background: var(--v3-accent); box-shadow: var(--v3-shadow-pop); }
-.launcher:hover { background: var(--v3-accent-hover); }
-.panel :is(button,a,summary,textarea):focus-visible, .launcher:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 3px; }
-.panel button:disabled { opacity: .45; cursor: default; }
-.counter { margin-left: auto; white-space: nowrap; color: var(--v3-text-2); font-size: 11px; font-variant-numeric: tabular-nums; }
-.counter[data-invalid] { color: var(--v3-danger); }
-.dictation { position: relative; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--v3-text-2); }
-.dictation > button { display: flex; align-items: center; gap: 5px; border-radius: 6px; min-height: 32px; padding: 4px 7px; }
-.dictation > button[aria-pressed="true"] { color: var(--v3-danger); background: var(--v3-hover); }
-.speechNote { position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 5; width: min(340px, calc(100vw - 64px)); padding: 14px; border-radius: 10px; background: var(--v3-surface); color: var(--v3-text); box-shadow: var(--v3-shadow-pop); font-size: 12.5px; line-height: 1.5; }
-.speechNote p { margin: 0 0 10px; }
-.speechNote button { padding: 6px 10px; margin-right: 6px; background: var(--v3-accent-soft); color: var(--v3-text); border-radius: 5px; }
-.speechNote textarea { width: 100%; min-height: 90px; margin-bottom: 8px; background: var(--v3-canvas); color: var(--v3-text); }
-.personal { display: flex; flex-direction: column; min-height: 0; flex: 1; }
-.personalHead { padding: 18px 22px; border-bottom: 1px solid var(--v3-border); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex: none; }
-.personalHead h2 { font-size: 15px; font-weight: 600; margin: 0; }
-.personalHead p { font-size: 12px; color: var(--v3-text-2); margin: 4px 0 0; }
-.personalHead button, .sendStatus button, .error button { font-size: 12px; color: var(--v3-accent); }
-.personalScroll { overflow-y: auto; min-height: 0; flex: 1; padding: 22px; overscroll-behavior: contain; }
-.personalScroll > button { background: var(--v3-surface); color: var(--v3-text); border: 1px solid var(--v3-border); padding: 7px 12px; border-radius: 6px; font-size: 12px; }
-.personalIntro { max-width: 44ch; margin: 40px auto; }
-.personalIntro h3 { font-size: 22px; letter-spacing: -.02em; font-weight: 500; margin: 0 0 12px; }
-.personalIntro p { color: var(--v3-text-2); font-size: 13.5px; line-height: 1.65; margin: 0 0 12px; }
-.personalMessages { padding: 0; list-style: none; display: flex; flex-direction: column; gap: 24px; }
-.personalMessages li > div { display: flex; align-items: baseline; gap: 10px; }
-.personalMessages strong { font-size: 13px; font-weight: 600; }
-.personalMessages :is(time,span) { font-size: 11px; color: var(--v3-text-2); }
-.personalMessages p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13.5px; line-height: 1.65; margin: 6px 0 0; }
-.sendStatus, .error { padding: 10px 22px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; line-height: 1.5; background: var(--v3-surface); }
-.error { color: var(--v3-danger); }
-.channelRow { position: relative; display: flex; align-items: center; min-width: 0; }
-.channelRow > button { flex: 1; min-width: 0; }
-.options { position: relative; flex: none; }
-.options summary { list-style: none; display: grid; place-items: center; width: 30px; height: 32px; border-radius: 6px; cursor: pointer; }
-.options summary::-webkit-details-marker { display: none; }
-.optionsMenu { position: absolute; right: 0; top: 100%; width: 240px; padding: 6px; border-radius: 10px; background: var(--v3-surface); color: var(--v3-text); box-shadow: var(--v3-shadow-pop); z-index: 10; }
-.optionsMenu button { width: 100%; text-align: left; padding: 9px 10px; font-size: 12.5px; border-radius: 5px; }
-.optionsMenu button:hover { background: var(--v3-hover); }
-.optionsMenu p { font-size: 11.5px; line-height: 1.5; color: var(--v3-text-2); padding: 0 10px 5px; margin: 3px 0 0; }
-.hiddenList { padding: 12px 8px; font-size: 12px; color: var(--v3-text-2); }
-.hiddenList button { background: transparent; border: 0; color: var(--v3-accent); padding: 8px; cursor: pointer; }
-.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-@media (max-width: 679px) {
-  .panel[data-assistant]:not([data-full]) { width: calc(100vw - 16px); height: calc(100dvh - 32px); }
-  .panel { inset: auto 8px 8px; width: calc(100vw - 16px); height: calc(100dvh - 32px); max-height: calc(100dvh - 32px); border-radius: 12px; }
-  .head { padding: 8px; gap: 4px; }
-  .tabs button { font-size: 12px; padding: 8px; }
-  .headActions { gap: 0; }
-  .launcher { bottom: calc(16px + env(safe-area-inset-bottom)); right: 16px; }
-  .personalHead { padding: 14px; align-items: flex-start; }
-  .personalScroll { padding: 18px 14px; }
-  .personalHead button { max-width: 100px; }
+.panel {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 65;
+  display: flex;
+  width: min(500px, calc(100vw - 48px));
+  height: min(620px, 72dvh, max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 48px)));
+  max-height: max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 48px));
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--v3-border);
+  border-radius: 14px;
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+  box-shadow: 0 16px 48px color-mix(in srgb, var(--v3-text) 18%, transparent);
+  font-family: var(--font-geist-sans), sans-serif;
 }
 
+.panel[hidden],
+.body[hidden] { display: none; }
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 64;
+  border: 0;
+  background: color-mix(in srgb, var(--v3-text) 10%, transparent);
+}
+
+.panel[data-full] {
+  right: auto;
+  bottom: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  max-height: none;
+  z-index: 20;
+}
+
+.pageAnchor { flex: 1; min-width: 0; min-height: 0; height: 100%; }
+
+.head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px 8px 14px;
+  border-bottom: 1px solid var(--v3-border);
+  background: var(--v3-surface);
+}
+
+.tabs { display: flex; min-width: 0; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs button {
+  min-height: 38px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: var(--v3-text-2);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.tabs button[aria-pressed="true"] { background: var(--v3-accent-soft); color: var(--v3-text); }
+.tabs span, .personalHead h2 span { color: var(--v3-text-2); font-weight: 400; }
+.headActions { display: flex; flex: none; gap: 2px; }
+.headActions :is(button, a) {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  place-items: center;
+  border-radius: 8px;
+}
+.panel button { cursor: pointer; }
+.head :is(button, a), .launcher, .dictation button, .personalHead button, .options :is(summary, button), .sendStatus button, .error button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+}
+.head :is(button, a):hover, .dictation button:hover, .options summary:hover { background: var(--v3-hover); }
+
+.body { display: flex; min-width: 0; min-height: 0; flex: 1; overflow: hidden; }
+.body > * { width: 100%; min-width: 0; }
+
+.launcher {
+  position: fixed;
+  right: 24px;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 60;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  box-shadow: var(--v3-shadow-pop);
+}
+.launcher:hover { background: var(--v3-accent-hover); }
+
+.panel :is(button, a, summary, textarea):focus-visible,
+.launcher:focus-visible { outline: 2px solid var(--v3-accent); outline-offset: 3px; }
+.panel button:disabled { cursor: default; opacity: .45; }
+.counter { margin-left: auto; color: var(--v3-text-2); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.counter[data-invalid] { color: var(--v3-danger); }
+
+.dictation { position: relative; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--v3-text-2); font-size: 12px; }
+.dictation > button { display: flex; min-height: 40px; align-items: center; gap: 5px; padding: 4px 7px; border-radius: 8px; }
+.dictation > button[aria-pressed="true"] { background: var(--v3-hover); color: var(--v3-danger); }
+.speechNote { position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 5; width: min(340px, calc(100vw - 64px)); padding: 14px; border-radius: 10px; background: var(--v3-surface); color: var(--v3-text); box-shadow: var(--v3-shadow-pop); font-size: 12.5px; line-height: 1.5; }
+.speechNote p { margin: 0 0 10px; }
+.speechNote button { min-height: 40px; margin-right: 6px; padding: 6px 10px; border-radius: 7px; background: var(--v3-accent-soft); color: var(--v3-text); }
+.speechNote textarea { width: 100%; min-height: 90px; margin-bottom: 8px; background: var(--v3-canvas); color: var(--v3-text); }
+
+.personal { display: flex; min-height: 0; flex: 1; flex-direction: column; }
+.personalHead {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--v3-border);
+  background: var(--v3-surface);
+}
+.personalHead > div { min-width: 0; }
+.personalHead h2 { margin: 0; overflow-wrap: anywhere; font-size: 14px; font-weight: 600; }
+.personalHead p { margin: 3px 0 0; color: var(--v3-text-2); font-size: 11.5px; line-height: 1.4; }
+.personalHead button, .sendStatus button, .error button { min-height: 40px; color: var(--v3-accent-text, var(--v3-accent)); font-size: 12px; }
+.personalHead button { flex: none; padding: 4px 8px; border-radius: 7px; }
+.personalHead button:hover, .sendStatus button:hover, .error button:hover { background: var(--v3-accent-soft); }
+.personalScroll {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--v3-border-strong) transparent;
+  scrollbar-width: thin;
+}
+.personalScroll > button { min-height: 40px; padding: 7px 12px; border: 1px solid var(--v3-border); border-radius: 7px; background: var(--v3-surface); color: var(--v3-text); font-size: 12px; }
+.personalIntro { max-width: 44ch; margin: 24px auto; }
+.personalIntro h3 { margin: 0 0 8px; font-size: 19px; font-weight: 600; letter-spacing: -.02em; }
+.personalIntro p { margin: 0 0 10px; color: var(--v3-text-2); font-size: 13px; line-height: 1.55; }
+.personalMessages { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.personalMessages > li { min-width: 0; padding: 11px 12px; border: 1px solid var(--v3-border); border-radius: 10px; background: var(--v3-surface); }
+.personalMessages > li > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
+.personalMessages strong { font-size: 12.5px; font-weight: 600; }
+.personalMessages > li > div :is(time, span) { color: var(--v3-text-2); font-size: 11px; }
+.personalMessages p { margin: 6px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; font-size: 13px; line-height: 1.55; }
+.personalMessages p a { color: var(--v3-accent-text, var(--v3-accent)); text-decoration-color: color-mix(in srgb, var(--v3-accent) 45%, transparent); text-underline-offset: 2px; }
+.sendStatus, .error { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 14px; background: var(--v3-surface); font-size: 11.5px; line-height: 1.45; }
+.error { color: var(--v3-danger-text, var(--v3-danger)); }
+.channelRow { position: relative; display: flex; min-width: 0; align-items: center; }
+.channelRow > button { min-width: 0; flex: 1; }
+.options { position: relative; flex: none; }
+.options summary { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 8px; cursor: pointer; list-style: none; }
+.options summary::-webkit-details-marker { display: none; }
+.optionsMenu { position: absolute; top: 100%; right: 0; z-index: 10; width: 240px; padding: 6px; border: 1px solid var(--v3-border); border-radius: 10px; background: var(--v3-surface); color: var(--v3-text); box-shadow: var(--v3-shadow-pop); }
+.optionsMenu button { width: 100%; min-height: 40px; padding: 9px 10px; border-radius: 6px; font-size: 12px; text-align: left; }
+.optionsMenu button:hover { background: var(--v3-hover); }
+.optionsMenu p { margin: 3px 0 0; padding: 0 10px 5px; color: var(--v3-text-2); font-size: 11.5px; line-height: 1.5; }
+.hiddenList { padding: 12px 8px; color: var(--v3-text-2); font-size: 12px; }
+.hiddenList button { padding: 8px; border: 0; background: transparent; color: var(--v3-accent-text, var(--v3-accent)); cursor: pointer; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Compact, tactile composer spacing inside the floating surface. */
+.panel .body [data-signal-bottom-nav="composer"] {
+  padding: 4px 14px max(10px, env(safe-area-inset-bottom)) !important;
+}
+.panel .body [data-signal-bottom-nav="composer"] textarea { max-height: min(160px, 18dvh); }
+.panel .body [data-signal-bottom-nav="composer"] button { min-width: 40px; min-height: 40px; }
+.panel .body [data-signal-bottom-nav="composer"] button[aria-label="Send message"] { min-width: 44px; min-height: 44px; }
+
+/* Result and task cards stay distinct from message text, with quiet v3 edges. */
+.panel .body a[target="_blank"]:has(svg) {
+  border-color: var(--v3-border-strong);
+  border-radius: 10px;
+  background: var(--v3-surface);
+  box-shadow: none;
+}
+.panel .body a[target="_blank"]:has(svg):hover { border-color: var(--v3-accent); }
+
+@media (max-width: 679px) {
+  .panel {
+    right: 14px;
+    bottom: calc(12px + env(safe-area-inset-bottom) + var(--signal-chat-keyboard-offset, 0px));
+    width: calc(100vw - 28px);
+    height: min(560px, 72dvh, max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 24px)));
+    max-height: max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 24px));
+    border-radius: 14px;
+  }
+  .head { gap: 4px; padding: 6px 8px 6px 10px; }
+  .tabs button { min-height: 40px; padding: 7px 8px; font-size: 12px; }
+  .headActions :is(button, a) { width: 40px; height: 40px; }
+  .launcher { right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); }
+  .personalHead { align-items: center; gap: 8px; padding: 9px 12px; }
+  .personalHead button { max-width: 120px; min-height: 40px; white-space: normal; text-align: right; }
+  .personalScroll { padding: 12px; }
+  .personalMessages { gap: 8px; }
+  .personalMessages > li { padding: 10px; }
+  .panel .body [data-signal-bottom-nav="composer"] { padding-inline: 10px !important; }
+}
+
+@media (max-height: 560px) {
+  .panel {
+    height: min(72dvh, max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 24px)));
+    max-height: max(0px, calc(var(--signal-chat-viewport-height, 100dvh) - 24px));
+  }
+  .personalHead { padding-block: 7px; }
+  .personalIntro { margin-block: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .launcher, .panel * { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}

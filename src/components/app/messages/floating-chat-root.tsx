@@ -16,6 +16,7 @@ import { ChatIcon } from "./chat-ui";
 import styles from "./floating-chat.module.css";
 import { parseFloatingChatTarget, type ChatNavigationTarget } from "./chat-navigation";
 import { ChatCatalogUnavailable } from "./chat-catalog-unavailable";
+import { useFloatingChatViewport } from "./use-floating-chat-viewport";
 
 type RequestedConversation = ChatNavigationTarget;
 type ChatContext = { registerPage: (node: HTMLDivElement | null, requested?: RequestedConversation, unavailable?: boolean) => void };
@@ -63,6 +64,7 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
   const mobile = useSyncExternalStore(subscribeMobile, () => window.matchMedia(mobileQuery).matches, () => false);
   const bare = isBareChromePath(pathname ?? "");
   const visible = !bare && (open || !!page);
+  const viewportBounds = useFloatingChatViewport(visible && !page);
   const availableProjects = requested.projectId && requested.projectName && !projects.some((project) => project.id === requested.projectId)
     ? [...projects, { id: requested.projectId, name: requested.projectName }] : projects;
   const registerPage = useCallback((node: HTMLDivElement | null, next?: RequestedConversation, unavailable?: boolean) => {
@@ -126,8 +128,8 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
         if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) { event.preventDefault(); last?.focus(); }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
-    }} ref={panel} role={page ? "main" : mobile ? "dialog" : "region"} style={page ? bounds : undefined} tabIndex={-1}>
-      <header className={styles.head}><div className={styles.tabs} aria-label="Chat type"><button aria-pressed={activeTab === "project"} onClick={() => setTab("project")} type="button">Conversations</button><button aria-pressed={activeTab === "self"} onClick={() => setTab("self")} type="button">{actorName} <span>(you)</span></button>{assistantEnabled ? <button aria-pressed={activeTab === "ping"} onClick={() => { setAssistantStarted(true); setTab("ping"); }} type="button">Ping</button> : null}</div><div className={styles.headActions}>{!page ? <Link aria-label="Open chat in full view" data-chat-full-page href="/app/messages" title="Full view"><ChatIcon.panel /></Link> : null}{!page ? <button aria-label="Close chat" onClick={close} title="Close chat · your draft stays here" type="button"><ChatIcon.close /></button> : null}</div></header>
+    }} ref={panel} role={page ? "main" : mobile ? "dialog" : "region"} style={page ? bounds : viewportBounds} tabIndex={-1}>
+      <div className={styles.head}><div className={styles.tabs} aria-label="Chat type"><button aria-pressed={activeTab === "project"} onClick={() => setTab("project")} type="button">Conversations</button><button aria-pressed={activeTab === "self"} onClick={() => setTab("self")} type="button">{actorName} <span>(you)</span></button>{assistantEnabled ? <button aria-pressed={activeTab === "ping"} onClick={() => { setAssistantStarted(true); setTab("ping"); }} type="button">Ping</button> : null}</div><div className={styles.headActions}>{!page ? <Link aria-label="Open chat in full view" data-chat-full-page href="/app/messages" title="Full view"><ChatIcon.panel /></Link> : null}{!page ? <button aria-label="Close chat" onClick={close} title="Close chat · your draft stays here" type="button"><ChatIcon.close /></button> : null}</div></div>
       <div className={styles.body} hidden={activeTab !== "project"} inert={activeTab !== "project"}>{demoSnapshot
         ? <DemoMessagesApp embedded requestedConversationId={requested.demoId} snapshot={demoSnapshot} visible={visible && activeTab === "project"} />
         : catalogUnavailable || pageCatalogUnavailable ? <ChatCatalogUnavailable className={styles.personalIntro} retrying={catalogRetrying} onRetry={() => startCatalogRetry(() => router.refresh())} />
