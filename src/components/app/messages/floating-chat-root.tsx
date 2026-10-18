@@ -118,7 +118,7 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
   return <Context.Provider value={context}>{children}
     {!bare && !visible ? <button aria-label="Open chat" title="Open chat" className={styles.launcher} onClick={() => show()} ref={launcher} type="button"><ChatIcon.thread size={22} /></button> : null}
     {mobile && visible && !page ? <button aria-label="Close chat" className={styles.scrim} onClick={close} tabIndex={-1} type="button" /> : null}
-    {started ? <div aria-label="Chat" aria-modal={mobile && !page ? true : undefined} id={page ? "app-main-content" : undefined} className={styles.panel} data-full={page ? "" : undefined} hidden={!visible} inert={!visible} onKeyDown={(event) => {
+    {started ? <div aria-label="Chat" aria-modal={mobile && !page ? true : undefined} id={page ? "app-main-content" : undefined} className={styles.panel} data-full={page ? "" : undefined} data-assistant={activeTab === "ping" ? "" : undefined} hidden={!visible} inert={!visible} onKeyDown={(event) => {
       if (event.key === "Escape" && !event.defaultPrevented && !page) close();
       if (event.key === "Tab" && mobile && !page && !(event.target as Element).closest("dialog[open]")) {
         const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],textarea:not(:disabled),summary,[tabindex="0"]')].filter((node) => node.getClientRects().length > 0);

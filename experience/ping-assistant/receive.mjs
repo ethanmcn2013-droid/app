@@ -27,7 +27,7 @@ try{
   const previousIds=new Set(before.tasks.map(t=>t.id));
   assert.equal(after.tasks.filter(t=>!previousIds.has(t.id)&&t.milestone===1).length,10);
   await shot(page,id+'-success-populated');
-  await page.getByRole('link',{name:'Open result',exact:true}).first().click();await page.getByRole('heading',{name:'Private preview',exact:true}).waitFor();
+  await page.getByRole('link',{name:'Open private preview',exact:true}).first().click();await page.getByRole('heading',{name:'Private preview',exact:true}).waitFor();
   assert.equal(await page.locator('button,input,textarea,select').count(),0);await shot(page,id+'-preview-populated-readonly');
   await page.goto(ready.url+'/assistant');await page.getByRole('button',{name:'Ping',exact:true}).click();await page.getByLabel('Ping scope').selectOption('synthetic-ping-project');
   await send(page,'Archive 90 of those tasks');await settled(page);after=await snapshot();assert.equal(after.tasks.filter(t=>t.archived_at!==null).length-before.tasks.filter(t=>t.archived_at!==null).length,90);await shot(page,id+'-archive90');
@@ -61,8 +61,18 @@ try{
    await extra.route('**/api/ping/assistant',async route=>{if(state==='loading'){await hold;await route.continue();}else await route.fulfill({status:state==='restricted'?401:state==='error'?503:200,contentType:'application/json',body:JSON.stringify(state==='disabled'?{version:'ping.assistant.v1',ok:true,available:false}:{version:'ping.assistant.v1',ok:false,code:state,message:state==='restricted'?'Synthetic session unavailable.':'Synthetic transport unavailable.'})});});
    await open(extra);if(state!=='loading')await extra.waitForTimeout(150);await shot(extra,id+'-'+state);release();await extra.close();
   }
+  await page.goto(ready.url+'/?floating=1');await page.getByRole('button',{name:'Open chat',exact:true}).click();
+  const chatWidth=await page.getByLabel('Chat',{exact:true}).evaluate(e=>e.getBoundingClientRect().width);
+  await page.getByRole('button',{name:'Ping',exact:true}).click();await page.getByLabel('Ping scope').selectOption('synthetic-ping-project');
+  await send(page,'Open private preview');await settled(page);
+  const pingWidth=await page.getByLabel('Chat',{exact:true}).evaluate(e=>e.getBoundingClientRect().width);
+  assert.equal(Math.round(pingWidth),width<680?width-16:500);if(width>=680)assert.equal(Math.round(chatWidth),Math.min(760,width-48));
+  await shot(page,id+'-floating-assistant');await page.getByRole('button',{name:'Conversations',exact:true}).click();
+  assert.equal(Math.round(await page.getByLabel('Chat',{exact:true}).evaluate(e=>e.getBoundingClientRect().width)),Math.round(chatWidth));
+  await shot(page,id+'-ordinary-chat-width-preserved');
   results.push({viewport:id,status:'passed',lostRequestId:lostRequest.requestId,reentryRequestId:absentRequest.requestId,counts:{created100:100,archived90:90,draftApplied:2,recoverySavedOnce:2,reentrySavedOnce:2},reducedMotion:true,keyboardFocus:true});await context.close();
  }
  await fs.writeFile(path.join(output,'receiving.json'),JSON.stringify({source:ready.head,scope:ready.scope,results,screenshots,errors,network,consoleMessages,finishedAt:new Date().toISOString()},null,2));
  assert.equal(errors.length,0,'Browser page errors');console.log(JSON.stringify({passed:results.length,screenshots:screenshots.length,errors:errors.length,expectedInjectedNetworkFailures:network.length}));
 }catch(error){await fs.writeFile(path.join(output,'receiving-failed.json'),JSON.stringify({results,screenshots,errors,network,consoleMessages,error:String(error)},null,2));throw error;}finally{await browser.close();}
+
