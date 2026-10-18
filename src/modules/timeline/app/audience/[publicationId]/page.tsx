@@ -1,7 +1,7 @@
 import { isDemoMode } from '@/lib/access-mode';
 import { db } from '../../../server/db/timeline-client';
 import { createOwnerGuestSummaryStore, saveOwnerReferralPreference } from '../../../server/owner-guest-summary';
-import { saveMaster3SettingsAction } from '../../../server/actions/audience-timeline';
+import { saveMaster3ReferralAction } from '../../../server/actions/audience-timeline';
 import { master3Settings } from '../../../server/master3-settings';
 import { Master3SettingsForm } from '../master3-settings-form';
 import type { Metadata } from "next";
@@ -74,8 +74,7 @@ export default async function TimelineArtifactStudioPage({
     const store = createOwnerGuestSummaryStore(db);
     await saveOwnerReferralPreference({
       authorize: () => store.authorized(actorId, ownerWorkspaceSlug, ownerPublicationId),
-      load: () => master3Settings.publication(ownerPublicationId),
-      save: form => saveMaster3SettingsAction({}, form),
+      save: form => saveMaster3ReferralAction({}, form),
     }, { workspaceSlug: ownerWorkspaceSlug, publicationId: ownerPublicationId }, enabled);
   }
 

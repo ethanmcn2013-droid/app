@@ -481,3 +481,18 @@ export async function saveMaster3SettingsAction(_previous: {saved?: boolean; err
   return {saved:true};
  }catch(error){return {error:error instanceof TypeError?error.message:'Those settings could not be saved. Try again.'};}
 }
+
+/** Purpose-specific owner patch; the latest public settings are read inside its write transaction. */
+export async function saveMaster3ReferralAction(_previous:{saved?:boolean;error?:string},formData:FormData):Promise<{saved?:boolean;error?:string}>{
+ try{
+  if(isDemoMode())return {error:'Demo mode is read-only.'};
+  const {userId,workspace}=await ownerWorkspace(formData);
+  await allowWrite('timeline-presentation');
+  const publicationId=requiredText(formData,'publicationId',80),raw=formData.get('referral');
+  if(raw!=='true'&&raw!=='false')throw new TypeError('Invalid referral preference');
+  const {master3Settings}=await import('../master3-settings');
+  await withFreshAudienceMutationAuthority(userId,workspace,()=>master3Settings.setPublicationReferral(userId,workspace.slug,publicationId,raw==='true'));
+  revalidatePath('/app/timeline','layout');
+  return {saved:true};
+ }catch(error){return {error:error instanceof TypeError?error.message:'Those settings could not be saved. Try again.'};}
+}

@@ -2,7 +2,6 @@ import 'server-only';
 import {and,eq,gt,isNotNull,isNull,or,sql} from 'drizzle-orm';
 import type {LibSQLDatabase} from 'drizzle-orm/libsql';
 import * as schema from './db/timeline-schema';
-import {validateMaster3ProjectSettings,type Master3ProjectSettings} from '../lib/master3-presentation';
 
 /** Owner-only aggregate; no subscriber identity leaves this server boundary. */
 export function createOwnerGuestSummaryStore(database:LibSQLDatabase<typeof schema>){
@@ -22,12 +21,9 @@ export function createOwnerGuestSummaryStore(database:LibSQLDatabase<typeof sche
  }};
 }
 
-/** Freshly load current settings, then delegate to the existing authorized save action. */
-export async function saveOwnerReferralPreference(ports:{authorize:()=>Promise<boolean>;load:()=>Promise<Master3ProjectSettings|undefined>;save:(form:FormData)=>Promise<{saved?:boolean;error?:string}>},scope:{workspaceSlug:string;publicationId:string},enabled:boolean):Promise<void>{
+/** Pass only the requested field to the fresh-authorized atomic settings action. */
+export async function saveOwnerReferralPreference(ports:{authorize:()=>Promise<boolean>;save:(form:FormData)=>Promise<{saved?:boolean;error?:string}>},scope:{workspaceSlug:string;publicationId:string},enabled:boolean):Promise<void>{
  if(typeof enabled!=='boolean'||!await ports.authorize())throw new TypeError('Timeline not found');
- const current=validateMaster3ProjectSettings(await ports.load()??{}),form=new FormData();
- form.set('workspaceSlug',scope.workspaceSlug);form.set('publicationId',scope.publicationId);
- function append(prefix:string,value:unknown){if(value===true)form.set(prefix,'on');else if(typeof value==='string'||typeof value==='number')form.set(prefix,String(value));else if(value&&typeof value==='object')for(const [key,child] of Object.entries(value))append(prefix+'.'+key,child);}
- append('presentation',{...current.presentation,referral:enabled});for(const [id,item] of Object.entries(current.items??{}))append('item.'+id,item);
+ const form=new FormData();form.set('workspaceSlug',scope.workspaceSlug);form.set('publicationId',scope.publicationId);form.set('referral',String(enabled));
  const result=await ports.save(form);if(!result.saved)throw new TypeError(result.error??'Those settings could not be saved. Try again.');
 }

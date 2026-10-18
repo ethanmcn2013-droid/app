@@ -60,3 +60,27 @@ test('actual SQLite owner-scoped settings and publication snapshot stay independ
 
  }finally{client.close();try{fs.rmSync(dir,{recursive:true,force:true});}catch{/* libSQL may retain the handle after close on Windows, matching test-temp-database.mjs. */}}
 });
+
+
+test('atomic referral patch preserves a concurrent details save; authority, dedupe and notification rollback stay transactional',async()=>{
+ const {createMaster3SettingsStore}=await import('./master3-settings');const dir=fs.mkdtempSync(path.join(os.tmpdir(),'timeline-atomic-referral-')),client=createClient({url:pathToFileURL(path.join(dir,'fixture.db')).href});try{
+  for(const file of ['0000_timeline_baseline.sql','0002_master3_presentation.sql'])await client.executeMultiple(fs.readFileSync('drizzle-timeline/'+file,'utf8'));
+  await client.execute("INSERT INTO workspaces(slug,name,owner_user_id) VALUES('owned','Synthetic','owner'),('foreign','Foreign','other')");
+  await client.execute("INSERT INTO timeline_publications(id,workspace_slug,source_workspace_id,source_digest,label,audience_kind,timezone,state) VALUES('public','owned','tasks','digest','Synthetic','class','Europe/Dublin','published'),('draft','owned','tasks','draft-digest','Private','class','Europe/Dublin','draft'),('foreign','foreign','other','other-digest','Foreign','class','Europe/Dublin','published')");
+  await client.execute("INSERT INTO timeline_publication_items(public_id,publication_id,title,state,source_relation,source_digest) VALUES('item','public','Public milestone','next','private-source','digest')");
+  const database=drizzle(client,{schema}),store=createMaster3SettingsStore(database);
+  await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Old note',photosUrl:'https://example.invalid/old',referral:true},items:{item:{note:'Old milestone note',final:false}}});
+  const stale=await store.publication('public');const latest={presentation:{onDayNote:'Concurrent note',photosUrl:'https://example.invalid/new',referral:true,calAll:true},items:{item:{note:'Concurrent milestone note',final:false}}};
+  await client.execute("INSERT INTO audience_shares(id,publication_id,token_hash,state) VALUES('share','public','share-hash','active')");await client.execute("INSERT INTO timeline_guest_subscriptions(id,publication_id,share_token_hash,email,email_hash,state,delivery_state,confirmed_at) VALUES('sub','public','share-hash','synthetic@example.invalid','email-hash','confirmed','sent',1)");
+  const transaction=database.transaction.bind(database);let interleaved=false;
+  database.transaction=((...args:Parameters<typeof database.transaction>)=>(async()=>{if(!interleaved){interleaved=true;await client.execute({sql:'UPDATE timeline_publication_presentation SET settings_json=? WHERE publication_id=?',args:[JSON.stringify(latest),'public']});}return transaction(...args);})()) as typeof database.transaction;
+  await store.setPublicationReferral('owner','owned','public',false);assert.equal(interleaved,true);assert.notDeepEqual(stale,latest);assert.deepEqual(await store.publication('public'),{...latest,presentation:{...latest.presentation,referral:false}});
+  assert.equal(Number((await client.execute('SELECT count(*) n FROM timeline_guest_deliveries')).rows[0].n),1);
+  await store.setPublicationReferral('owner','owned','public',false);assert.equal(Number((await client.execute('SELECT count(*) n FROM timeline_guest_deliveries')).rows[0].n),1);
+  await assert.rejects(store.setPublicationReferral('other','owned','public',true),/not found/);await assert.rejects(store.setPublicationReferral('owner','owned','foreign',true),/not found/);
+  const beforeSettings=await store.publication('public'),beforePublication=(await client.execute("SELECT * FROM timeline_publications WHERE id='public'")).rows;
+  await client.execute("CREATE TRIGGER reject_referral_queue BEFORE INSERT ON timeline_guest_deliveries BEGIN SELECT RAISE(ABORT,'synthetic notification error'); END");await assert.rejects(store.setPublicationReferral('owner','owned','public',true));
+  assert.deepEqual(await store.publication('public'),beforeSettings);assert.deepEqual((await client.execute("SELECT * FROM timeline_publications WHERE id='public'")).rows,beforePublication);assert.equal(Number((await client.execute('SELECT count(*) n FROM timeline_guest_deliveries')).rows[0].n),1);
+  await client.execute('DROP TRIGGER reject_referral_queue');await store.setPublicationReferral('owner','owned','draft',false);assert.equal((await store.publication('draft'))?.presentation?.referral,false);assert.equal(Number((await client.execute('SELECT count(*) n FROM timeline_guest_deliveries')).rows[0].n),1);
+ }finally{client.close();try{fs.rmSync(dir,{recursive:true,force:true});}catch{/* Native Windows SQLite can retain handles until process exit. */}}
+});

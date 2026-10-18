@@ -177,6 +177,27 @@ export function createMaster3SettingsStore(database: typeof db) {
         }, {behavior:'immediate'});
 
     }
+    /** Atomic field patch: never replay a settings snapshot read by the caller. */
+    async function setPublicationReferral(actorId:string,workspaceSlug:string,publicationId:string,enabled:boolean){
+        if(typeof enabled!=='boolean')throw new TypeError('Invalid referral preference');
+        await owner(actorId,workspaceSlug);
+        if(!await available())throw new TypeError('Timeline settings are not available yet');
+        await database.transaction(async tx=>{
+            const [owned]=await tx.select({id:timelinePublications.id}).from(timelinePublications)
+                .innerJoin(workspaces,eq(workspaces.slug,timelinePublications.workspaceSlug))
+                .where(and(eq(timelinePublications.id,publicationId),eq(timelinePublications.workspaceSlug,workspaceSlug),eq(workspaces.ownerUserId,actorId))).limit(1);
+            if(!owned)throw new TypeError('Timeline not found');
+            const [snapshot]=await tx.select({settings:timelinePublicationPresentation.settingsJson}).from(timelinePublicationPresentation).where(eq(timelinePublicationPresentation.publicationId,publicationId)).limit(1);
+            const current=snapshot?validateMaster3ProjectSettings(snapshot.settings):{};
+            if((current.presentation?.referral??true)===enabled)return;
+            const settings=validateMaster3ProjectSettings({...current,presentation:{...current.presentation,referral:enabled}}),now=new Date();
+            await tx.insert(timelinePublicationPresentation).values({publicationId,settingsJson:settings,updatedAt:now})
+                .onConflictDoUpdate({target:timelinePublicationPresentation.publicationId,set:{settingsJson:settings,updatedAt:now}});
+            await tx.update(timelinePublications).set({updatedAt:now,lastUpdatedAt:now}).where(eq(timelinePublications.id,publicationId));
+            const eventKey=createHash('sha256').update(JSON.stringify(['referral',settings,Math.floor(now.getTime()/1000)])).digest('hex');
+            await queueMaster3PublishedUpdate(tx,{publicationId,kind:'update',eventKey,now});
+        },{behavior:'immediate'});
+    }
     async function projectUpdatedAt(workspaceSlug: string, projectSlug: string) {
         if (!await available())
             return undefined;
@@ -190,7 +211,7 @@ export function createMaster3SettingsStore(database: typeof db) {
         return row?.updatedAt;
     }
     return {
-        available, project, projectUpdatedAt, publication, saveProject, savePublication
+        available, project, projectUpdatedAt, publication, saveProject, savePublication, setPublicationReferral
     };
 }
 export const master3Settings = createMaster3SettingsStore(db);
