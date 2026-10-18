@@ -331,7 +331,7 @@ test("a failed postcondition rolls back the schema and the ledger row together",
   );
   assert.equal(
     Number((await client.execute("SELECT COUNT(*) AS value FROM signal_timeline_schema_migrations")).rows[0].value),
-    2,
+    context.entries.length,
   );
 }));
 
