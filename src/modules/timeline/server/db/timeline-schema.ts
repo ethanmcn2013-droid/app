@@ -797,3 +797,35 @@ export type AudienceViewReceipt = typeof audienceViewReceipts.$inferSelect;
 export type SuiteProjectBinding = typeof suiteProjectBindings.$inferSelect;
 export type TimelineSourceSyncState =
   typeof timelineSourceSyncState.$inferSelect;
+
+/** Explicit current-plan settings. Source node keys remain private; projections copy only presentation values. */
+export const timelineProjectPresentation = sqliteTable('timeline_project_presentation', {
+ workspaceSlug: text('workspace_slug').notNull(), projectSlug: text('project_slug').notNull(),
+ settingsJson: text('settings_json',{mode:'json'}).$type<import('../../lib/master3-presentation').Master3ProjectSettings>().notNull(),
+ updatedAt: integer('updated_at',{mode:'timestamp'}).notNull().default(sql`(unixepoch())`),
+}, t=>[primaryKey({columns:[t.workspaceSlug,t.projectSlug]}),foreignKey({columns:[t.workspaceSlug,t.projectSlug],foreignColumns:[projects.workspaceSlug,projects.slug]}).onDelete('cascade')]);
+/** Immutable-on-source-change public settings snapshot, keyed only by publication public item ids. */
+export const timelinePublicationPresentation = sqliteTable('timeline_publication_presentation', {
+ publicationId:text('publication_id').primaryKey().references(()=>timelinePublications.id,{onDelete:'cascade'}),
+ settingsJson:text('settings_json',{mode:'json'}).$type<import('../../lib/master3-presentation').Master3ProjectSettings>().notNull(),
+ updatedAt:integer('updated_at',{mode:'timestamp'}).notNull().default(sql`(unixepoch())`),
+});
+export const timelineGuestSubscriptions = sqliteTable('timeline_guest_subscriptions', {
+ id:text('id').primaryKey(),publicationId:text('publication_id').notNull().references(()=>timelinePublications.id,{onDelete:'cascade'}),
+ shareTokenHash:text('share_token_hash').notNull(),email:text('email').notNull(),emailHash:text('email_hash').notNull(),
+ state:text('state').$type<'pending'|'confirmed'|'unsubscribed'>().notNull().default('pending'),
+ confirmationTokenHash:text('confirmation_token_hash'),confirmationExpiresAt:integer('confirmation_expires_at',{mode:'timestamp'}),
+ unsubscribeTokenHash:text('unsubscribe_token_hash'),undoTokenHash:text('undo_token_hash'),undoUntil:integer('undo_until',{mode:'timestamp'}),
+ confirmedAt:integer('confirmed_at',{mode:'timestamp'}),lastConfirmationSentAt:integer('last_confirmation_sent_at',{mode:'timestamp'}),
+ deliveryState:text('delivery_state').$type<'pending'|'sending'|'sent'|'failed'|'unknown'>().notNull().default('pending'),
+ deliveryAttemptId:text('delivery_attempt_id'),providerMessageId:text('provider_message_id'),
+ createdAt:integer('created_at',{mode:'timestamp'}).notNull().default(sql`(unixepoch())`),updatedAt:integer('updated_at',{mode:'timestamp'}).notNull().default(sql`(unixepoch())`),
+},t=>[uniqueIndex('timeline_guest_share_email').on(t.shareTokenHash,t.emailHash),uniqueIndex('timeline_guest_confirmation').on(t.confirmationTokenHash),uniqueIndex('timeline_guest_unsubscribe').on(t.unsubscribeTokenHash),uniqueIndex('timeline_guest_undo').on(t.undoTokenHash),index('timeline_guest_publication').on(t.publicationId),check('timeline_guest_state',sql`${t.state} IN ('pending','confirmed','unsubscribed')`),check('timeline_guest_delivery_state',sql`${t.deliveryState} IN ('pending','sending','sent','failed','unknown')`)]);
+export const timelineGuestDeliveries = sqliteTable('timeline_guest_deliveries', {
+ id:text('id').primaryKey(),subscriptionId:text('subscription_id').notNull().references(()=>timelineGuestSubscriptions.id,{onDelete:'cascade'}),
+ publicationId:text('publication_id').notNull().references(()=>timelinePublications.id,{onDelete:'cascade'}),
+ kind:text('kind').$type<'update'|'date_change'|'photos'|'final30'|'final7'|'final1'|'foryou7'>().notNull(),dedupeKey:text('dedupe_key').notNull(),
+ dueAt:integer('due_at',{mode:'timestamp'}).notNull(),status:text('status').$type<'pending'|'sending'|'sent'|'failed'|'unknown'|'suppressed'>().notNull().default('pending'),
+ createdAt:integer('created_at',{mode:'timestamp'}).notNull().default(sql`(unixepoch())`),claimedAt:integer('claimed_at',{mode:'timestamp'}),sentAt:integer('sent_at',{mode:'timestamp'}),failedAt:integer('failed_at',{mode:'timestamp'}),
+ attemptId:text('attempt_id'),lastErrorCode:text('last_error_code'),providerMessageId:text('provider_message_id'),
+},t=>[uniqueIndex('timeline_guest_delivery_dedupe').on(t.dedupeKey),uniqueIndex('timeline_guest_delivery_attempt').on(t.attemptId),index('timeline_guest_delivery_due').on(t.status,t.dueAt),check('timeline_guest_delivery_kind',sql`${t.kind} IN ('update','date_change','photos','final30','final7','final1','foryou7')`),check('timeline_guest_delivery_status',sql`${t.status} IN ('pending','sending','sent','failed','unknown','suppressed')`)]);

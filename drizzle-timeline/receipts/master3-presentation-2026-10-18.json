@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "timeline-migration-receipt/1",
+  "id": "master3-presentation-2026-10-18",
+  "authorizedBy": "Local and CI fixture proposal only. No remote apply authorized by this metadata. Root coordinates independent review and release custody separately.",
+  "reviewedBy": "Implementation author /root/ai_typed_51_75; independent package review pending",
+  "authorizationSource": "Root bounded Master3 data/settings/guest-table implementation assignment",
+  "migrations": [
+    {
+      "id": "0002_master3_presentation",
+      "sha256": "2e9649fade92471918c00ddee2c031b0b96e1fb76782f155079862b6b26da241",
+      "reviewedAt": "2026-10-18T06:25:21.672772+00:00",
+      "risk": "Additive empty tables only. Settings are explicit owner-entered; guest email is private and publication-cascaded. Existing rows untouched.",
+      "rollback": "Before population drop the three new tables; after population preserve settings/consent and delivery custody before rollback. Never drop a live sending/unknown delivery record to retry.",
+      "postconditions": [
+        "Four additive tables and guest indexes exist; integrity and foreign keys hold"
+      ],
+      "proofs": [
+        {
+          "id": "master3-tables",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='table' AND name IN ('timeline_project_presentation','timeline_publication_presentation','timeline_guest_subscriptions','timeline_guest_deliveries')",
+          "expected": 4
+        },
+        {
+          "id": "master3-guest-indexes",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='index' AND name IN ('timeline_guest_share_email','timeline_guest_confirmation','timeline_guest_unsubscribe','timeline_guest_undo','timeline_guest_publication')",
+          "expected": 5
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}
