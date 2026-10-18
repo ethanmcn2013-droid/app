@@ -90,6 +90,7 @@
 .gift strong, .footerCredit strong { color: var(--x-m3-ink); }
 .sidePanel { margin-top: 30px; border-top: 1px solid var(--x-m3-line); padding-top: 28px; }
 .sidePanel:empty { display: none; }
+.artifact[data-layout="stack"] .sidePanel[data-near-day] { display: none; }
 .sidePanel > p { margin-top: 12px; font-size: 13px; line-height: 19px; }
 .sidePanel > .outlineButton { margin-top: 14px; }
 .followerCount { display: flex; align-items: baseline; gap: 10px; }
@@ -190,7 +191,10 @@
 .emptyRail { position: absolute; right: 0; top: 30px; display: flex; flex-direction: column; align-items: center; font-size: 13px; font-weight: 600; gap: 16px; }
 .emptyRail > span { display: grid; place-items: center; width: 29px; height: 29px; border: 1px solid var(--x-m3-edge); border-radius: 50%; background: var(--x-m3-bg); }
 .rail:has(.emptyRail) .railLine { background: none; border-top: 1px dashed var(--x-m3-edge-soft); }
-.artifact[data-layout="stage"] .comingUp { display: block; position: absolute; left: 64px; top: 552px; width: 860px; }
+.artifact[data-layout="stage"] .comingUp { display: block; position: absolute; left: 64px; top: 552px; width: 860px; margin: 0; }
+.artifact[data-layout="stage"] .comingUp .sectionHeading { position: relative; height: 18px; }
+.artifact[data-layout="stage"] .comingUp .sectionHeading > div { align-items: center; }
+.artifact[data-layout="stage"] .comingUp .sectionHeading .textButton { margin-block: -13px; }
 .artifact[data-layout="stage"] .sidePanel { position: absolute; left: 996px; top: 552px; width: 380px; margin: 0; padding: 0; border: 0; }
 .artifact[data-layout="stage"] .sidePanel > p { font-size: 12.5px; line-height: 18px; }
 .upcomingRows { list-style: none; padding: 0; margin-top: 14px !important; }
