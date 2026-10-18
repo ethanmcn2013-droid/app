@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit } from "./ping-personal-assistant-client";
+import { assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit } from "./ping-personal-assistant-client";
 import type { AssistantRunView } from "@/lib/ping/assistant/contract";
 const run: AssistantRunView = { id:"run_synthetic_123",requestId:"request_synthetic_123",text:"Create 100 tasks",scope:{kind:"project",projectId:"synthetic-project"},mode:"execute",status:"partial",createdAt:"2026-10-18T09:00:00.000Z",updatedAt:"2026-10-18T09:01:00.000Z",steps:[
   {id:"step1",actionId:"tasks",kind:"create_tasks",status:"completed",result:{stepId:"tasks",kind:"create_tasks",status:"completed",summary:"Created 100 tasks",affectedCount:100}},
@@ -27,6 +27,18 @@ test("visible step state follows the original outcome rather than existence of i
   assert.equal(assistantVisibleStepStatus({...saved,result:{...saved.result!,code:"timeline_pending"}}),"queued");
   assert.equal(assistantVisibleStepStatus({...saved,result:{...saved.result!,delivery:{queued:0,accepted:0,unknown:1,suppressed:0}}}),"unknown");
   assert.equal(assistantVisibleStepStatus({...saved,result:{...saved.result!,delivery:{queued:1,accepted:0,unknown:0,suppressed:0}}}),"queued");
+});
+test("only a successful direct command opens its explicit result; reads and uncertain work never navigate",()=>{
+  const href="/app/timeline/synthetic/current-preview?workspaceId=synthetic-project";
+  const completed:AssistantRunView={...run,status:"completed",steps:[run.steps[0],{...run.steps[1],status:"completed",result:{stepId:"preview",kind:"preview_timeline",status:"completed",summary:"Private preview ready",affectedCount:0,href}}]};
+  for(const operation of ["submit","apply","resume"] as const)assert.equal(assistantNavigationTarget(operation,completed),href);
+  for(const operation of ["read","cancel"] as const)assert.equal(assistantNavigationTarget(operation,completed),null);
+  for(const status of ["partial","unknown","ready","cancelled","failed"] as const)assert.equal(assistantNavigationTarget("submit",{...completed,status}),null);
+  assert.equal(assistantNavigationTarget("submit",{...completed,steps:[run.steps[0]]}),null);
+  for(const evil of ["https://outside.example/","//outside.example/","javascript:alert(1)","/app/../outside","/app/%2e%2e/outside"])
+    assert.equal(assistantNavigationTarget("submit",{...completed,steps:[{...completed.steps[1],result:{...completed.steps[1].result!,href:evil}}]}),null);
+  for(const status of ["blocked","unknown"] as const)assert.equal(assistantNavigationTarget("submit",{...completed,steps:[{...completed.steps[1],result:{...completed.steps[1].result!,status}}]}),null);
+  assert.equal(assistantNavigationTarget("submit",{...completed,steps:[{...completed.steps[1],result:{...completed.steps[1].result!,code:"timeline_pending"}}]}),null);
 });
 
 test("cancelling remaining work releases the composer while keeping unknown receipts visible", () => {

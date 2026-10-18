@@ -24,12 +24,14 @@ try{
   const before=await snapshot();
   await send(page,'Create 100 tasks and open private preview');await settled(page);
   let after=await snapshot();assert.equal(after.tasks.length-before.tasks.length,100);assert.equal(after.plans-before.plans,1);
+  assert.deepEqual(await page.evaluate(()=>window.__ASSISTANT_NAVIGATIONS__??[]),['/app/timeline/synthetic/current-preview?workspaceId=synthetic-ping-project']);
   const previousIds=new Set(before.tasks.map(t=>t.id));
   assert.equal(after.tasks.filter(t=>!previousIds.has(t.id)&&t.milestone===1).length,10);
   await shot(page,id+'-success-populated');
   await page.getByRole('link',{name:'Open private preview',exact:true}).first().click();await page.getByRole('heading',{name:'Private preview',exact:true}).waitFor();
   assert.equal(await page.locator('button,input,textarea,select').count(),0);await shot(page,id+'-preview-populated-readonly');
   await page.goto(ready.url+'/assistant');await page.getByRole('button',{name:'Ping',exact:true}).click();await page.getByLabel('Ping scope').selectOption('synthetic-ping-project');
+  assert.deepEqual(await page.evaluate(()=>window.__ASSISTANT_NAVIGATIONS__??[]),[],'History reads must not navigate');
   await send(page,'Archive 90 of those tasks');await settled(page);after=await snapshot();assert.equal(after.tasks.filter(t=>t.archived_at!==null).length-before.tasks.filter(t=>t.archived_at!==null).length,90);await shot(page,id+'-archive90');
   await page.getByLabel('Draft only',{exact:true}).check();const draftBefore=await snapshot();await send(page,'Draft two tasks');await settled(page);assert.equal((await snapshot()).tasks.length,draftBefore.tasks.length);await shot(page,id+'-draft-unsaved');
   await page.getByRole('button',{name:'Apply this draft',exact:true}).click();await settled(page);assert.equal((await snapshot()).tasks.length,draftBefore.tasks.length+2);await shot(page,id+'-draft-applied');
@@ -40,6 +42,7 @@ try{
   await page.route('**/api/ping/assistant',async route=>{if(route.request().method()==='POST'){lostRequest=route.request().postDataJSON().request;await route.fetch();await route.abort('failed');}else await route.continue();},{times:1});
   await send(page,'Create two recovery tasks');await page.getByRole('button',{name:'Check status',exact:true}).waitFor();await shot(page,id+'-recovery-error');
   await page.reload();await page.getByRole('button',{name:'Ping',exact:true}).click();await settled(page);const recovered=await snapshot();assert.equal(recovered.tasks.length,lostBefore.tasks.length+2);assert.equal(recovered.plans,lostBefore.plans+1);await shot(page,id+'-recovery-reloaded-saved');
+  assert.deepEqual(await page.evaluate(()=>window.__ASSISTANT_NAVIGATIONS__??[]),[],'Lost reply recovery reads must not navigate');
   // Zero-dispatch loss leaves only the identifiers in the real client recovery note.
   let absentRequest;await page.getByLabel('Ping scope').selectOption('synthetic-ping-project');
   await page.route('**/api/ping/assistant',async route=>{absentRequest=route.request().postDataJSON().request;await route.abort('failed');},{times:1});
@@ -51,6 +54,7 @@ try{
   await send(page,'Make an unknown result');await page.getByRole('button',{name:'Check status',exact:true}).waitFor();await shot(page,id+'-unknown');
   const unknownBefore=await snapshot();await page.getByRole('button',{name:'Cancel remaining work',exact:true}).first().click();await settled(page);
   assert.equal((await snapshot()).tasks.length,unknownBefore.tasks.length);assert.equal(await page.getByRole('button',{name:'Check status',exact:true}).count(),0);await shot(page,id+'-cancelled-unknown-unlocked');
+  assert.deepEqual(await page.evaluate(()=>window.__ASSISTANT_NAVIGATIONS__??[]),[],'Cancellation must not navigate');
   // Long user text is rendered by the real unsupported-plan path; no generated result is substituted.
   await send(page,'Long synthetic request '.repeat(70));await settled(page);await shot(page,id+'-long-content');
   await page.getByRole('textbox',{name:'Request for Ping'}).focus();await page.keyboard.press('Tab');assert.ok(await page.evaluate(()=>document.activeElement instanceof HTMLButtonElement));await shot(page,id+'-keyboard-reduced-motion');
@@ -65,6 +69,7 @@ try{
   const chatWidth=await page.getByLabel('Chat',{exact:true}).evaluate(e=>e.getBoundingClientRect().width);
   await page.getByRole('button',{name:'Ping',exact:true}).click();await page.getByLabel('Ping scope').selectOption('synthetic-ping-project');
   await send(page,'Open private preview');await settled(page);
+  assert.deepEqual(await page.evaluate(()=>window.__ASSISTANT_NAVIGATIONS__??[]),['/app/timeline/synthetic/current-preview?workspaceId=synthetic-ping-project']);
   const pingWidth=await page.getByLabel('Chat',{exact:true}).evaluate(e=>e.getBoundingClientRect().width);
   assert.equal(Math.round(pingWidth),width<680?width-16:500);if(width>=680)assert.equal(Math.round(chatWidth),Math.min(760,width-48));
   await shot(page,id+'-floating-assistant');await page.getByRole('button',{name:'Conversations',exact:true}).click();

@@ -1,11 +1,12 @@
 "use client";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { ASSISTANT_LIMITS, type AssistantApiCommand, type AssistantApiResponse, type AssistantRequest, type AssistantRunView, isAssistantInternalHref } from "@/lib/ping/assistant/contract";
 import { createBrowserPingTelemetry, pingTelemetryBegin, pingTelemetryRecord } from "@/lib/ping/telemetry-client";
 import { Composer } from "./chat-ui";
-import { assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
+import { assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
 import styles from "./ping-personal-assistant.module.css";
 async function assistantRequest(query = "", command?: AssistantApiCommand, signal?: AbortSignal): Promise<AssistantApiResponse> {
   const response = await fetch(`/api/ping/assistant${query}`, { method: command ? "POST" : "GET", credentials: "same-origin", cache: "no-store", signal,
@@ -18,6 +19,7 @@ function readEventTime() { return performance.now(); }
 const queryFor = (pending: PendingAssistantRequest) => pending.runId ? `?runId=${encodeURIComponent(pending.runId)}` : `?clientRequestId=${encodeURIComponent(pending.requestId)}`;
 /** Actor-keyed by the chat shell. A recovery note stores identifiers, never request text or results. */
 export function PingPersonalAssistant({ actorId, projects, visible }: { actorId: string; projects: readonly { id: string; name: string }[]; visible: boolean }) {
+  const router = useRouter();
   const [runs, setRuns] = useState<readonly AssistantRunView[]>([]);
   const [draft, setDraft] = useState("");
   const [scope, setScope] = useState("");
@@ -120,6 +122,14 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
       visibleTiming.current = { requestId, startedAt, recorder, endAttempt: pingTelemetryBegin(recorder, "attempt"), done: false };
     } catch { visibleTiming.current = null; }
   }
+  function openCommandResult(operation: "submit" | "apply" | "resume" | "cancel", response: AssistantApiResponse) {
+    if (!response.ok) return;
+    const href = assistantNavigationTarget(operation, response.run);
+    if (href) {
+      try { router.push(href); }
+      catch { setError("Your work is saved. Open the result below."); }
+    }
+  }
   async function submit(retry = false) {
     if (latch.current || !ready || !available || (!retry && pendingRef.current && !reentering)) return;
     const request = retry ? original.current : { requestId: reentering ? assistantReentryId(pendingRef.current, absent)! : `ping_${crypto.randomUUID().replaceAll("-", "")}`, text: draft.trim(),
@@ -132,7 +142,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
       keepPending({ version: 1, requestId: request.requestId });
       original.current = request; setHasOriginal(true);
       const response = await assistantRequest("", { operation: "submit", request });
-      if (mounted.current) receive(response);
+      if (mounted.current) { receive(response); openCommandResult("submit", response); }
     } catch (failure) {
       pingTelemetryRecord(visibleTiming.current?.recorder, { stage: "request", outcome: "unknown" });
       if (mounted.current) setError(pendingRef.current ? "The result is not confirmed. Check status before trying again. Your original request will not be sent again automatically." : failure instanceof Error ? failure.message : "This browser could not keep a recovery note. No request was sent.");
@@ -145,7 +155,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
     try {
       keepPending({ version: 1, requestId: run.requestId, runId: run.id });
       const response = await assistantRequest("", { operation, runId: run.id });
-      if (mounted.current) receive(response);
+      if (mounted.current) { receive(response); openCommandResult(operation, response); }
     } catch { if (mounted.current) setError("The latest result is not confirmed. Check status; work already saved stays saved."); }
     finally { latch.current = false; if (mounted.current) setBusy(false); }
   }

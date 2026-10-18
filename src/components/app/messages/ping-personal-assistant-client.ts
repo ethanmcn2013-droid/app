@@ -1,6 +1,6 @@
 import { pingTelemetryRecord } from "@/lib/ping/telemetry-client";
 import type { PingTelemetryRecorder, PingTelemetryEnd, PingTelemetryOutcome } from "@/lib/ping/telemetry";
-import { ASSISTANT_VERSION, type AssistantApiResponse, type AssistantRunView, type AssistantScope, type AssistantStepView, type AssistantStepStatus } from "@/lib/ping/assistant/contract";
+import { ASSISTANT_VERSION, isAssistantInternalHref, type AssistantApiResponse, type AssistantRunView, type AssistantScope, type AssistantStepView, type AssistantStepStatus } from "@/lib/ping/assistant/contract";
 export type PendingAssistantRequest = Readonly<{ version: 1; requestId: string; runId?: string }>;
 const requestId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$/.test(value);
 const runId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9_-]{8,160}$/.test(value);
@@ -52,6 +52,15 @@ export function assistantVisibleStepStatus(step: AssistantStepView): AssistantSt
   if (step.result?.delivery?.unknown) return "unknown";
   if (step.result?.code === "timeline_pending" || step.result?.delivery?.queued) return "queued";
   return step.status;
+}
+/** Navigation belongs to the direct command reply, never history or recovery reads. */
+export function assistantNavigationTarget(operation: "submit" | "apply" | "resume" | "cancel" | "read", run?: AssistantRunView): string | null {
+  if (!["submit", "apply", "resume"].includes(operation) || run?.status !== "completed" ||
+    run.steps.some(step => assistantVisibleStepStatus(step) !== "completed")) return null;
+  const step = [...run.steps].reverse().find(value => ["open_project", "open_chat", "preview_timeline"].includes(value.kind));
+  if (step?.result?.status !== "completed" || !isAssistantInternalHref(step.result.href)) return null;
+  const destination = new URL(step.result.href, "https://app.signalstudio.ie");
+  return destination.pathname.startsWith("/app/") ? `${destination.pathname}${destination.search}${destination.hash}` : null;
 }
 
 
