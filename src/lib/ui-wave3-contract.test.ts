@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { buildMaster3Model } from "@/modules/timeline/components/artifact/master3-model";
 
 function source(...parts: string[]) {
   return readFileSync(path.join(process.cwd(), ...parts), "utf8");
@@ -47,21 +46,8 @@ describe("Wave 3 interface contracts", () => {
     assert.match(taskCss, /\.toggle\[aria-pressed="true"\] \.glyphTick \{\s*animation: draw 180ms/);
     assert.match(taskCss, /prefers-reduced-motion: reduce\)[\s\S]*?\.glyphTick[\s\S]*?animation: none/);
     assert.doesNotMatch(taskCss, /:has\([^)]*:checked\)[^{]*\{[^}]*animation:/);
-    // Master 3's date passage is not a Tasks completion event. Only an
-    // actual covered source state may produce the completed presentation.
-    const model = buildMaster3Model({
-      version: 1, audienceKind: "module", publicationId: "motion-fixture", label: "Project",
-      today: "2026-10-19", lastUpdatedAt: "2026-10-18T00:00:00Z",
-      sections: [{ state: "later", label: "Milestones", items: [
-        { publicId: "ordinary", title: "Ordinary task", state: "later", date: "2026-10-17" },
-        { publicId: "completed", title: "Completed task", state: "covered", date: "2026-10-18" },
-        { publicId: "future", title: "Next date", state: "next", date: "2026-11-01" },
-      ] }],
-    });
-    assert.equal(model.milestones[0].displayState, "passed");
-    assert.equal(model.milestones[0].sourceState, "later");
-    assert.equal(model.milestones[1].displayState, "done");
-
+    // Date passage versus actual Tasks completion is exercised by the
+    // Timeline-owned master3-model.test.ts, inside that module's boundary.
     // The finite Next accent is decorative, not a completion receipt or
     // user feedback. Reduced motion removes it and all transitions.
     const nextMark = timelineCss.match(/\.mark\[data-state="next"\][^{]*\{([^}]+)\}/);
