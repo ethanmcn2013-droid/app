@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-tools-loading",
+  "source": "tasks/src/app/app/tools/loading.tsx",
+  "materialityHash": "45e0fc19aaf3ca48",
+  "reviewedAt": "2026-10-18",
+  "reviewer": "Codex ai_typed_76_100: actual all-18 four-target image review; root independently accepted six representative sheets",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-c1f83874b9394ee3d42ad37f-3752b4cdf836b711.json",
+    "attestationSha256": "6f7382374ca3df74849eddd1eaa34125c9adfcb7d95af9fad37378af500e8e52",
+    "runId": "tasks-playwright-c1f83874b9394ee3d42ad37f",
+    "canonicalEvidenceSha256": "c1f83874b9394ee3d42ad37f232b37e14e9d2e10bf25c14696d16e36f215f5c4",
+    "rawArtifactSha256": "3752b4cdf836b711616dbfe13ab9c19e5bc26bb6e5bf0535e2a32eaba3beb173",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-tools-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Fresh canonical materiality evidence built at 02cddc3572a03af5d11a755c877387baa9ab0f6b. Actual tools loading skeleton visible across responsive grid layouts. No rebuilt116 render or new design rating.",
+  "decision": "accepted"
+}
