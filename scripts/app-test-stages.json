@@ -481,6 +481,7 @@
     "src/modules/timeline/app/audience/master3-composition.test.mjs",
     "src/modules/timeline/components/artifact/master3-ui-regression.test.mjs",
     "scripts/db/timeline-production-backup-custody.test.mjs",
-    "experience/timeline-master3/harness.test.mjs"
+    "experience/timeline-master3/harness.test.mjs",
+    "experience/timeline-master3/guest-fixture.test.mjs"
   ]
 ]

@@ -40,3 +40,9 @@ Motion verdict: restrained. One finite Next marker pulse and functional focus/re
 ## Verification
 
 Source intake preserved223 file hashes and sixteen synthetic wrapper fixtures outside the customer application. Native component captures and actual Next route receiving are separate proofs. Historical round6 scores and earlier204-case product captures do not certify this new source. Release requires fresh checks, reviewed desktop/phone behavior, isolated migration rehearsal and the owning release path.
+
+## Required release order
+
+Migration `0002_master3_presentation` must be backed up, rehearsed and applied to the verified Timeline database **before this application revision is deployed**. The approved `timeline-db-migrate-encrypted` workflow requires dedicated Timeline credentials and an independently received target hash; Tasks credentials are never substituted. Verify the four tables and receipt-backed no-op readback before deploying. Published changes deliberately fail if durable notification intent cannot commit with the primary save. A missing migration is a deployment blocker, not permission to ignore the queue error.
+
+Provision the independent follow signing secret and verify email, rate-limit storage and cron configuration before admitting followers. Keep the current private Timeline unpublished. Optional guest-service failure must leave the readable public artifact available; it does not establish that follow is configured.
