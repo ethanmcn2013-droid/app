@@ -1,0 +1,2511 @@
+{
+  "schemaVersion": "timeline-master3.synthetic-audience-fixtures.v1",
+  "synthetic": true,
+  "devOnly": true,
+  "dtoSourceCommit": "e9ba3c176632bb8989aa5fa013ef2ab72eba481d",
+  "validatorSourceHashes": {
+    "audienceTimeline": "493d67736f3438ffe84c4eb0ef67212b48c76271abd09aa9c37433b6f7312f77",
+    "presentation": "d66cb0b4bfd78643252ab18dd8f58ed2a7673ea13212282bb259ce162fc5d28f"
+  },
+  "dataOwnerFreezeReceived": true,
+  "publicationCreated": false,
+  "followStateIncluded": false,
+  "fixtures": [
+    {
+      "fixtureId": "synthetic-final-01",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-01-Guest.dc.html",
+      "sourceSha256": "4a461d6f224a5c90ea8baaf00e4c0a8fc17c55643eefd53ae02862d2b7a49efa",
+      "sourcePreset": "wedding",
+      "sourceLayoutHint": "auto",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-07-16",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-01",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-07-16",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-wedding-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-09",
+                "title": "The wedding day",
+                "date": "2026-10-03",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-10-03"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-02",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-01b-Returning-guest.dc.html",
+      "sourceSha256": "37aa6292c9b0e877d4aa8d1137033c87a0b69b5f3365bbe94c24684ca598b464",
+      "sourcePreset": "wedding",
+      "sourceLayoutHint": "auto",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": "2026-07-16",
+      "dateOnlyClock": "2026-08-29",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-02",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-08-29",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-wedding-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-09",
+                "title": "The wedding day",
+                "date": "2026-10-03",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-10-03"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-03",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-02-Guest-dark-following.dc.html",
+      "sourceSha256": "76843ac205bf1c0b99f244e265fa7f463049219d300a06c011155d8095f7bd28",
+      "sourcePreset": "wedding",
+      "sourceLayoutHint": "auto",
+      "sourceTheme": "dark",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-07-16",
+      "followScenario": {
+        "requestedDesignState": "following",
+        "status": "blocked-until-real-synthetic-service-state",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-03",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-07-16",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-wedding-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-09",
+                "title": "The wedding day",
+                "date": "2026-10-03",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-10-03"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-04",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-03-Couple.dc.html",
+      "sourceSha256": "044c67f9a813de5cf9877fcb4d8bdd7bdc0bf1bf3091cf5f88840dcbcf625919",
+      "sourcePreset": "wedding",
+      "sourceLayoutHint": "auto",
+      "sourceTheme": "light",
+      "viewerScenario": "owner",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-07-16",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-04",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-07-16",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-wedding-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-09",
+                "title": "The wedding day",
+                "date": "2026-10-03",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-10-03"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-05",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-04-Day-before.dc.html",
+      "sourceSha256": "ae3f2bcfe07f5e68efd6e5913da091d7a4507ed313e23f88cc60178af6e14735",
+      "sourcePreset": "wedding",
+      "sourceLayoutHint": "auto",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-10-02",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-05",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-10-02",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-wedding-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-09",
+                "title": "The wedding day",
+                "date": "2026-10-03",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-10-03"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-06",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-05-On-the-day.dc.html",
+      "sourceSha256": "74c008d6618a48d3602419abc6b1b8ef9fb0188bd40606f4e7ab27fd1bc2b1f4",
+      "sourcePreset": "wedding",
+      "sourceLayoutHint": "auto",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-10-03",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-06",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-10-03",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-wedding-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-09",
+                "title": "The wedding day",
+                "date": "2026-10-03",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-10-03"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-07",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-06-Afterwards.dc.html",
+      "sourceSha256": "96c18c5c30893bda3f752c8aebcd86e57289974b73ffdc4b532db54252684c83",
+      "sourcePreset": "wedding",
+      "sourceLayoutHint": "auto",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-10-20",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-07",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-10-20",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-wedding-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-09",
+                "title": "The wedding day",
+                "date": "2026-10-03",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-10-03"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-08",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-07-Shop-launch.dc.html",
+      "sourceSha256": "07656d5433210aa4e4a929028c50d45e5d8cafe2ebe432b0bebd7d8bb8c792d2",
+      "sourcePreset": "launch",
+      "sourceLayoutHint": "auto",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-07-16",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "module",
+        "publicationId": "synthetic-master3-board-08",
+        "label": "Hart & Co.",
+        "ownerDisplayLabel": "Hart & Co.",
+        "lastUpdatedAt": "2026-07-10T12:00:00Z",
+        "today": "2026-07-16",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared opening timeline",
+          "panelLabel": "Opening day",
+          "unitNoun": "opening day",
+          "progressNoun": "milestones done",
+          "place": "[Shop address]",
+          "address": "[Shop address]",
+          "eventTitle": "Hart & Co. opening day",
+          "after": {
+            "word": "Open",
+            "l1": "since Saturday",
+            "l2": "12 September"
+          },
+          "onDayNote": "Doors open at 9am. The first fifty through the door get coffee on us.",
+          "ref": "hart-and-co",
+          "subject": "Confirm your updates from Hart & Co.",
+          "pitch": "Be first to hear when the doors open.",
+          "newsVerb": "post an update",
+          "market": "launch",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-launch-01",
+                "title": "Lease signed",
+                "date": "2026-06-20",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-launch-02",
+                "title": "Fit-out complete",
+                "date": "2026-08-14",
+                "state": "later",
+                "presentation": {
+                  "note": "The shop stays closed until opening day."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-launch-03",
+                "title": "Opening day",
+                "date": "2026-09-12",
+                "state": "later",
+                "presentation": {
+                  "time": "09:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "Opening day",
+          "date": "2026-09-12"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterMode"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-09",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-08-School-year.dc.html",
+      "sourceSha256": "8f7e6ecce631f2ced1017bf47284917c050988cd1bcab6446df4c52305aad8d1",
+      "sourcePreset": "school",
+      "sourceLayoutHint": "auto",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-10-12",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "class",
+        "publicationId": "synthetic-master3-board-09",
+        "label": "Sixth Year · Class of 2027",
+        "ownerDisplayLabel": "[School name]",
+        "lastUpdatedAt": "2026-10-09T12:00:00Z",
+        "today": "2026-10-12",
+        "presentation": {
+          "countTo": "next",
+          "eyebrow": "[School name] · A shared timeline",
+          "panelLabel": "The Leaving Cert",
+          "unitNoun": "the Leaving Cert",
+          "progressNoun": "dates passed",
+          "place": "[School name]",
+          "address": "[School name]",
+          "eventTitle": "Sixth Year dates",
+          "calAll": true,
+          "after": {
+            "word": "Done",
+            "l1": "The Leaving Cert began",
+            "l2": "on 9 June 2027"
+          },
+          "during": {
+            "days": 21,
+            "word": "Good luck",
+            "l1": "The Leaving Cert",
+            "l2": "is under way"
+          },
+          "ref": "school",
+          "next": {
+            "label": "Sixth Year · Class of 2028",
+            "url": "https://timeline-fixture.example.invalid/next-year"
+          },
+          "subject": "Confirm your updates from [School name]",
+          "pitch": "Get a reminder before anything you need to do, and news if a date changes.",
+          "newsVerb": "changes a date",
+          "ownerVerb": "change a date",
+          "market": "school",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-school-01",
+                "title": "Back to school",
+                "date": "2026-08-27",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-02",
+                "title": "College open day",
+                "date": "2026-09-24",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-03",
+                "title": "Parent–teacher meeting",
+                "date": "2026-10-08",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-04",
+                "title": "Midterm break",
+                "date": "2026-10-26",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-05",
+                "title": "Information evening",
+                "date": "2026-11-12",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-06",
+                "title": "Christmas exams",
+                "date": "2026-12-07",
+                "state": "later",
+                "presentation": {
+                  "key": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-07",
+                "title": "Christmas holidays",
+                "date": "2026-12-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-08",
+                "title": "Back after Christmas",
+                "date": "2027-01-07",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-09",
+                "title": "CAO closing date",
+                "date": "2027-02-01",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Apply on cao.ie by 5:15pm."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-10",
+                "title": "Mock exams begin",
+                "date": "2027-02-09",
+                "state": "later",
+                "presentation": {
+                  "key": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-11",
+                "title": "February midterm",
+                "date": "2027-02-15",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-12",
+                "title": "Oral exams",
+                "date": "2027-03-15",
+                "state": "later",
+                "presentation": {
+                  "key": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-13",
+                "title": "Easter holidays",
+                "date": "2027-03-26",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-14",
+                "title": "Practical exams",
+                "date": "2027-04-29",
+                "state": "later",
+                "presentation": {
+                  "key": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-15",
+                "title": "Graduation",
+                "date": "2027-05-28",
+                "state": "later",
+                "presentation": {
+                  "key": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-16",
+                "title": "Leaving Cert begins",
+                "date": "2027-06-09",
+                "state": "later",
+                "presentation": {
+                  "short": "Leaving Cert",
+                  "final": true
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The Leaving Cert",
+          "date": "2027-06-09"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterMode"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-10",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-09-Long-names.dc.html",
+      "sourceSha256": "ed41522f9ef3774f172fc159dd9de7bf9ff1b9237af7c9c094de03c69d606738",
+      "sourcePreset": "longnames",
+      "sourceLayoutHint": "auto",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-07-16",
+      "followScenario": {
+        "requestedDesignState": "pending",
+        "status": "blocked-until-real-synthetic-service-state",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-10",
+        "label": "Aoife Ní Bhriain & Seán Ó Conchobhair",
+        "ownerDisplayLabel": "Aoife & Seán",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-07-16",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Aoife & Seán’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Aoife & Seán",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-longnames-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-longnames-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-longnames-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-longnames-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-longnames-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-longnames-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-longnames-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-longnames-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-longnames-09",
+                "title": "The wedding day",
+                "date": "2026-09-30",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-longnames-10",
+                "title": "Day-two barbecue",
+                "date": "2026-10-01",
+                "state": "later",
+                "presentation": {
+                  "note": "Everyone welcome, at the farmhouse.",
+                  "time": "13:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-09-30"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-11",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-09b-No-dates-yet.dc.html",
+      "sourceSha256": "614833aa0daa1f294d74392d01886ea6d852e4adbb3188e7d2027d085d4137d1",
+      "sourcePreset": "empty",
+      "sourceLayoutHint": "auto",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": "",
+      "dateOnlyClock": "2026-07-16",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-11",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-07-16",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": []
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-12",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-10-Phone.dc.html",
+      "sourceSha256": "087cb52df607c87c67afb36cfcb81f1dee5374044e67babe73a7aad372d1bc6e",
+      "sourcePreset": "wedding",
+      "sourceLayoutHint": "stack",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-07-16",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-12",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-07-16",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-wedding-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-09",
+                "title": "The wedding day",
+                "date": "2026-10-03",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-10-03"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-13",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-11-Phone-dark.dc.html",
+      "sourceSha256": "8213c0d8af8a6195cfcc8536352f5f54a5e41b537bdf61fb7d2dda0761fb62cb",
+      "sourcePreset": "wedding",
+      "sourceLayoutHint": "stack",
+      "sourceTheme": "dark",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-07-16",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-13",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-07-16",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-wedding-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-09",
+                "title": "The wedding day",
+                "date": "2026-10-03",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-10-03"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-14",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-12-Phone-on-the-day.dc.html",
+      "sourceSha256": "58a4e6cf5074cfeb4d262a50e10071a5a0d0788a667e3d279eaf3e36fd1bda17",
+      "sourcePreset": "wedding",
+      "sourceLayoutHint": "stack",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-10-03",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-14",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-10-03",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-wedding-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-09",
+                "title": "The wedding day",
+                "date": "2026-10-03",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-10-03"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-15",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-13-Phone-school.dc.html",
+      "sourceSha256": "238c9703eef2598b2efc0b0252bf3348aa940e613ee959c782db98e2ef0494b1",
+      "sourcePreset": "school",
+      "sourceLayoutHint": "stack",
+      "sourceTheme": "light",
+      "viewerScenario": "guest",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-10-12",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "class",
+        "publicationId": "synthetic-master3-board-15",
+        "label": "Sixth Year · Class of 2027",
+        "ownerDisplayLabel": "[School name]",
+        "lastUpdatedAt": "2026-10-09T12:00:00Z",
+        "today": "2026-10-12",
+        "presentation": {
+          "countTo": "next",
+          "eyebrow": "[School name] · A shared timeline",
+          "panelLabel": "The Leaving Cert",
+          "unitNoun": "the Leaving Cert",
+          "progressNoun": "dates passed",
+          "place": "[School name]",
+          "address": "[School name]",
+          "eventTitle": "Sixth Year dates",
+          "calAll": true,
+          "after": {
+            "word": "Done",
+            "l1": "The Leaving Cert began",
+            "l2": "on 9 June 2027"
+          },
+          "during": {
+            "days": 21,
+            "word": "Good luck",
+            "l1": "The Leaving Cert",
+            "l2": "is under way"
+          },
+          "ref": "school",
+          "next": {
+            "label": "Sixth Year · Class of 2028",
+            "url": "https://timeline-fixture.example.invalid/next-year"
+          },
+          "subject": "Confirm your updates from [School name]",
+          "pitch": "Get a reminder before anything you need to do, and news if a date changes.",
+          "newsVerb": "changes a date",
+          "ownerVerb": "change a date",
+          "market": "school",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-school-01",
+                "title": "Back to school",
+                "date": "2026-08-27",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-02",
+                "title": "College open day",
+                "date": "2026-09-24",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-03",
+                "title": "Parent–teacher meeting",
+                "date": "2026-10-08",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-04",
+                "title": "Midterm break",
+                "date": "2026-10-26",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-05",
+                "title": "Information evening",
+                "date": "2026-11-12",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-06",
+                "title": "Christmas exams",
+                "date": "2026-12-07",
+                "state": "later",
+                "presentation": {
+                  "key": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-07",
+                "title": "Christmas holidays",
+                "date": "2026-12-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-08",
+                "title": "Back after Christmas",
+                "date": "2027-01-07",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-09",
+                "title": "CAO closing date",
+                "date": "2027-02-01",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Apply on cao.ie by 5:15pm."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-10",
+                "title": "Mock exams begin",
+                "date": "2027-02-09",
+                "state": "later",
+                "presentation": {
+                  "key": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-11",
+                "title": "February midterm",
+                "date": "2027-02-15",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-12",
+                "title": "Oral exams",
+                "date": "2027-03-15",
+                "state": "later",
+                "presentation": {
+                  "key": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-13",
+                "title": "Easter holidays",
+                "date": "2027-03-26",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-school-14",
+                "title": "Practical exams",
+                "date": "2027-04-29",
+                "state": "later",
+                "presentation": {
+                  "key": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-15",
+                "title": "Graduation",
+                "date": "2027-05-28",
+                "state": "later",
+                "presentation": {
+                  "key": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-school-16",
+                "title": "Leaving Cert begins",
+                "date": "2027-06-09",
+                "state": "later",
+                "presentation": {
+                  "short": "Leaving Cert",
+                  "final": true
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The Leaving Cert",
+          "date": "2027-06-09"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterMode"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    },
+    {
+      "fixtureId": "synthetic-final-16",
+      "synthetic": true,
+      "devOnly": true,
+      "sourceWrapper": "Final-14-Phone-couple.dc.html",
+      "sourceSha256": "9e102e07c55e9634f5e09561704db054aaa06c0c4cdca17b7e4bc6b9a1602db0",
+      "sourcePreset": "wedding",
+      "sourceLayoutHint": "stack",
+      "sourceTheme": "light",
+      "viewerScenario": "owner",
+      "returningVisitorHint": null,
+      "dateOnlyClock": "2026-07-16",
+      "followScenario": {
+        "requestedDesignState": "live",
+        "status": "not-requested",
+        "simulationAllowed": false
+      },
+      "dto": {
+        "version": 1,
+        "audienceKind": "couple",
+        "publicationId": "synthetic-master3-board-16",
+        "label": "Mara & Finn",
+        "ownerDisplayLabel": "Mara & Finn",
+        "lastUpdatedAt": "2026-07-15T12:00:00Z",
+        "today": "2026-07-16",
+        "presentation": {
+          "countTo": "final",
+          "eyebrow": "A shared wedding timeline",
+          "panelLabel": "The wedding day",
+          "unitNoun": "the wedding day",
+          "progressNoun": "milestones done",
+          "place": "The Orchard · [Venue town]",
+          "address": "The Orchard, [Venue town]",
+          "eventTitle": "Mara & Finn’s wedding",
+          "after": {
+            "word": "Married",
+            "l1": "at The Orchard",
+            "l2": "[Venue town]"
+          },
+          "afterNote": "Thank you for coming, for the cards and for the dancing. We’ll share the photos here once we have them.",
+          "onDayNote": "We’ll be in the walled garden for the ceremony, then the barn for dinner. Please be seated by 1.45pm.",
+          "venueNote": "Parking is behind the main house. Taxis collect from the front gate until midnight.",
+          "afterFollow": true,
+          "giftLead": "Gifted by",
+          "giftName": "The Orchard",
+          "giftUrl": "https://timeline-fixture.example.invalid/giftUrl",
+          "ref": "the-orchard",
+          "referral": true,
+          "subject": "Confirm your updates from Mara & Finn",
+          "newsVerb": "tick off a milestone",
+          "market": "wedding",
+          "timezone": "Europe/Dublin",
+          "locationConsent": true
+        },
+        "sections": [
+          {
+            "state": "later",
+            "label": "Synthetic milestone dates",
+            "items": [
+              {
+                "publicId": "synthetic-m3-wedding-01",
+                "title": "We said yes",
+                "date": "2026-01-02",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-02",
+                "title": "The Orchard booked",
+                "date": "2026-04-18",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-03",
+                "title": "Menu tasting at The Orchard",
+                "date": "2026-08-01",
+                "state": "later",
+                "presentation": {
+                  "short": "Menu tasting"
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-04",
+                "title": "Invitations go out",
+                "date": "2026-08-08",
+                "state": "later",
+                "presentation": {
+                  "note": "Keep an eye on your post.",
+                  "shareCue": true
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-05",
+                "title": "Final dress fitting",
+                "date": "2026-08-22",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-06",
+                "title": "Evening music chosen",
+                "date": "2026-08-29",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-07",
+                "title": "RSVP deadline",
+                "date": "2026-09-05",
+                "state": "later",
+                "presentation": {
+                  "forYou": true,
+                  "note": "Reply using the card in your invitation."
+                }
+              },
+              {
+                "publicId": "synthetic-m3-wedding-08",
+                "title": "Venue walk-through",
+                "date": "2026-09-19",
+                "state": "later",
+                "presentation": {}
+              },
+              {
+                "publicId": "synthetic-m3-wedding-09",
+                "title": "The wedding day",
+                "date": "2026-10-03",
+                "state": "later",
+                "presentation": {
+                  "short": "Wedding day",
+                  "final": true,
+                  "time": "14:00"
+                }
+              }
+            ]
+          }
+        ],
+        "primaryDate": {
+          "label": "The wedding day",
+          "date": "2026-10-03"
+        }
+      },
+      "omittedPrototypeFields": [
+        "initial",
+        "dayNoun",
+        "slug",
+        "followerNoun",
+        "followers",
+        "afterReferral"
+      ],
+      "transformations": [
+        "Opaque IDs are fixture-only, not realpublication authority.",
+        "SourceTasksstate is uniformlylater; datepasseddisplay must derive independently.",
+        "All nonempty external links targetreserved.invalid; browsercapture deniesremoteaction.",
+        "No followercount/confirmation/email/sent/consent state fabricated."
+      ]
+    }
+  ]
+}
