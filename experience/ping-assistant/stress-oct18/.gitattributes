@@ -1,0 +1,3 @@
+# Raw attempt bytes are hash-bound evidence; do not normalize on checkout.
+*.log -text
+*.json -text
