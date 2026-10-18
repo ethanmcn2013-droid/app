@@ -140,3 +140,43 @@ test('admission retries only SQLITE_BUSY before callback entry, never callback o
  const callbackError={transaction:async(callback:(tx:Tx)=>Promise<unknown>)=>callback({} as Tx)} as unknown as Database;
  await assert.rejects(assistantDatabaseTransaction(callbackError,async()=>{callbackCalls++;throw busy();}),/locked/);assert.equal(callbackCalls,1);
 });
+
+test('real planner metadata shares reservation custody, survives cancel/result merges, stays private and erases with run',async()=>{
+ const f=await assistantFixture();try{
+  const {createClaudeAssistantPlanner}=await import('./claude-planner');
+  const {createAssistantService}=await import('./service');
+  const {run}=await f.store.createRun({...runInput(),request:{requestId:'request0001',text:'Synthetic',scope:{kind:'account'},mode:'execute'}});
+  let calls=0;
+  const planner=createClaudeAssistantPlanner({apiKey:'SYNTHETIC-NOT-A-CREDENTIAL',budget:f.store.budget,schema:{type:'object'},instructions:'Synthetic',validate:v=>v,
+   fetch:(async()=>{calls++;return Response.json({type:'message',role:'assistant',model:'claude-sonnet-5-5',stop_reason:'end_turn',usage:{input_tokens:10,output_tokens:2,cache_read_input_tokens:3,cache_creation_input_tokens:5,cache_creation:{ephemeral_5m_input_tokens:2,ephemeral_1h_input_tokens:3}},content:[{type:'text',text:'{}'}]});}) as typeof fetch});
+  await planner.plan({runId:run.id,requestId:'request0001',text:'Synthetic',context:{},tier:'compound'},new AbortController().signal);
+  // Queued optional observer and normal service writes use the same serialized transaction admission.
+  await Promise.all([f.store.finishRun('alice',run.id,'ready',{message:'Saved',timing:{planningMs:1}}),f.store.cancelRun('alice',run.id)]);
+  let attempt=await f.store.getPlannerAttempt('alice',run.id);
+  for(let i=0;i<20&&attempt?.physical!=='settled';i++){await new Promise(r=>setTimeout(r,10));attempt=await f.store.getPlannerAttempt('alice',run.id);}
+  assert.equal(attempt?.logical,'completed');assert.equal(attempt?.physical,'settled');assert.equal(attempt?.cacheReadTokens,3);assert.equal(attempt?.cacheWrite5mTokens,2);assert.equal(attempt?.cacheWrite1hTokens,3);
+  const saved=await f.store.getRun('alice',run.id);assert.equal(saved.status,'cancelled');assert.equal(JSON.parse(saved.resultJson!).message,'Saved');assert.equal(saved.usageState,'usage_observed');assert.equal(saved.inputTokens,18);
+  const service=createAssistantService({store:f.store,planner:{plan:async()=>{throw Error('unused');}},context:async()=>{throw Error('unused');},execute:async()=>{throw Error('unused');}});
+  const visible=JSON.stringify(await service.view('alice',run.id));assert.ok(!visible.includes('plannerAttempt'));assert.ok(!visible.includes('cacheReadTokens'));
+  await assert.rejects(f.store.getPlannerAttempt('bob',run.id),/unavailable/);
+  await assert.rejects(f.store.budget.recordAttempt({runId:run.id,requestId:'foreign',attempt:attempt!}),/unavailable/);
+  await f.store.budget.recordAttempt({runId:run.id,requestId:'request0001',attempt:attempt!});
+  await assert.rejects(f.store.budget.recordAttempt({runId:run.id,requestId:'request0001',attempt:{...attempt!,httpStatus:400}}),/request_conflict/);
+  await assert.rejects(f.store.budget.recordAttempt({runId:run.id,requestId:'request0001',attempt:{...attempt!,revision:attempt!.revision+1,physical:'pending'}}),/request_conflict/);
+  assert.equal(calls,1);assert.equal(await f.store.budget.reserve({runId:run.id,requestId:'request0001',model:'claude-sonnet-5-5',reservedMicroUsd:100,developmentCapMicroUsd:5000000,totalCapMicroUsd:100000000,rateCardId:'fixed'}),false);
+  const lostRun=(await f.store.createRun(runInput('lost-metadata'))).run;
+  const lostPlanner=createClaudeAssistantPlanner({apiKey:'SYNTHETIC-NOT-A-CREDENTIAL',budget:{...f.store.budget,recordAttempt:async()=>{throw Error('observer unavailable');}},schema:{type:'object'},instructions:'Synthetic',validate:v=>v,
+   fetch:(async()=>Response.json({type:'message',role:'assistant',model:'claude-sonnet-5-5',stop_reason:'end_turn',usage:{input_tokens:10,output_tokens:2},content:[{type:'text',text:'{}'}]})) as typeof fetch});
+  await lostPlanner.plan({runId:lostRun.id,requestId:'lost-metadata',text:'Synthetic',context:{},tier:'compound'},new AbortController().signal);
+  await new Promise(resolve=>setTimeout(resolve,20));assert.equal((await f.store.getRun('alice',lostRun.id)).usageState,'usage_observed');
+  assert.equal((await f.store.getPlannerAttempt('alice',lostRun.id))?.physical,'pending');assert.equal((await f.store.getPlannerAttempt('alice',lostRun.id))?.stages.physical,null);
+  const pending=(await f.store.getPlannerAttempt('alice',lostRun.id))!;
+  const orphan=(await f.store.createRun(runInput('orphan-attempt'))).run;
+  await f.store.budget.reserve({runId:orphan.id,requestId:'orphan-attempt',model:pending.model,reservedMicroUsd:100,developmentCapMicroUsd:5000000,totalCapMicroUsd:100000000,rateCardId:'fixed',attempt:pending});
+  const futureStore=createAssistantStore(f.database,{now:()=>orphan.createdAt+120001});await futureStore.expirePlanning('alice',orphan.id);
+  assert.deepEqual(await futureStore.getPlannerAttempt('alice',orphan.id),pending);assert.equal((await futureStore.getRun('alice',orphan.id)).usageState,'reserved');
+  for(const regression of [{dispatched:false},{httpStatus:null},{stages:{...attempt!.stages,headers:null}}])await assert.rejects(f.store.budget.recordAttempt({runId:run.id,requestId:'request0001',attempt:{...attempt!,revision:attempt!.revision+1,...regression}}),/request_conflict/);
+
+  await f.database.delete(schema.assistantRuns).where(eq(schema.assistantRuns.id,run.id));await assert.rejects(f.store.getPlannerAttempt('alice',run.id),/unavailable/);
+ }finally{await f.close();}
+});

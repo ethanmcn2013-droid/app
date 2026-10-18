@@ -1,4 +1,5 @@
 import "server-only";
+import type { PlannerAttemptMetadata } from "./planner-attempt-metadata";
 
 export const PLANNER_RATE_CARD = "anthropic-standard-global-2026-10-18";
 export const PLANNER_DEVELOPMENT_CAP_MICRO_USD = 5_000_000;
@@ -6,7 +7,7 @@ export const PLANNER_TOTAL_CAP_MICRO_USD = 100_000_000;
 export type PlannerModel = "claude-haiku-5-5" | "claude-sonnet-5-5" | "claude-opus-5-5";
 export type PlannerBudgetReservation = Readonly<{
   runId: string; requestId: string; model: PlannerModel; reservedMicroUsd: number;
-  developmentCapMicroUsd: number; totalCapMicroUsd: number; rateCardId: string;
+  developmentCapMicroUsd: number; totalCapMicroUsd: number; rateCardId: string; attempt?: PlannerAttemptMetadata;
 }>;
 export type PlannerUsageRecord = Readonly<{
   runId: string; requestId: string; inputTokens: number | null; outputTokens: number | null;
@@ -18,6 +19,7 @@ export type PlannerUsageRecord = Readonly<{
 export interface PlannerBudgetPort {
   reserve(value: PlannerBudgetReservation): Promise<boolean>;
   recordUsage(value: PlannerUsageRecord): Promise<void>;
+  recordAttempt?(value: {runId:string; requestId:string; attempt:PlannerAttemptMetadata}): Promise<void>;
 }
 const natural = (value: number) => Number.isSafeInteger(value) && value >= 0;
 export function estimatePlannerMicroUsd(model: PlannerModel, inputTokens: number, outputTokens: number): number {

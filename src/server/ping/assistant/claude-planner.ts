@@ -1,5 +1,6 @@
 import "server-only";
-import { estimatePlannerUsageMicroUsd, plannerReservation, type PlannerBudgetPort, type PlannerModel } from "./planner-budget";
+import {ATTEMPT_STAGES,PLANNER_ATTEMPT_VERSION,type PlannerAttemptMetadata} from "./planner-attempt-metadata";
+import { estimatePlannerUsageMicroUsd, plannerReservation, type PlannerBudgetPort, type PlannerUsageRecord, type PlannerModel } from "./planner-budget";
 import {ASSISTANT_PLAN_SCHEMA, ASSISTANT_LIMITS, parseAssistantPlan, type AssistantPlan, type AssistantPlannerContext} from "@/lib/ping/assistant/contract";
 
 export type PlannerTier = "simple" | "compound" | "bulk" | "evaluation";
@@ -73,25 +74,45 @@ export function createClaudeAssistantPlanner<Plan>(options: {
       output_config:{format:{type:"json_schema", schema:wireSchema},...(model === "claude-sonnet-5-5" ? {effort:"medium"} : {})},
       ...(model === "claude-haiku-5-5" ? {thinking:{type:"disabled"}} : {thinking:{type:"adaptive"}})});
     if (Buffer.byteLength(body,"utf8") > REQUEST_BYTES || body.includes(apiKey)) throw new Error("planner_input_invalid");
+    const started=performance.now(), elapsed=()=>Math.min(300_000,Math.max(0,performance.now()-started));
+    const attempt:PlannerAttemptMetadata={version:PLANNER_ATTEMPT_VERSION,revision:0,model,maxOutputTokens,
+      effort:model==='claude-sonnet-5-5'?'medium':null,deadlineMs,logical:'pending',physical:'pending',dispatched:false,
+      httpStatus:null,providerRequestId:null,stopReason:null,failureCode:null,cacheReadTokens:null,cacheWriteTokens:null,cacheWrite5mTokens:null,cacheWrite1hTokens:null,
+      ttftMs:null,hiddenReasoning:null,stages:Object.fromEntries(ATTEMPT_STAGES.map(stage=>[stage,null])) as PlannerAttemptMetadata['stages']};
+    // Optional observations never block planning, alter accounting or authorize redispatch.
+    let observations=Promise.resolve();
+    const observe=()=>{const snapshot=structuredClone({...attempt,revision:++attempt.revision});
+      observations=observations.then(async()=>{try{await budget.recordAttempt?.({runId:request.runId,requestId:request.requestId,attempt:snapshot});}catch{/* Initial pending metadata remains explicit incomplete coverage. */}});};
+    const accountUsage=async(value:PlannerUsageRecord)=>{const at=performance.now();
+      try{await budget.recordUsage(value);}finally{attempt.stages.accounting=(attempt.stages.accounting??0)+performance.now()-at;}};
     physicalBusy = true;
     const controller = new AbortController(); let stopped = false, reserved = false, usageRecorded = false;
     let stop: (reason: string) => void = () => {};
     const deadline = new Promise<never>((_,reject) => { stop = reason => {
-      if (stopped) return; stopped = true; controller.abort(); reject(new Error(reason));
+      if (stopped) return; stopped = true; attempt.logical=reason==="planner_deadline"?"deadline":"cancelled";attempt.stages.logical=elapsed();
+      if(reserved)observe();controller.abort(); reject(new Error(reason));
     }; });
     const onAbort = () => stop("planner_cancelled"); signal.addEventListener("abort",onAbort,{once:true});
     const timer = setTimeout(()=>stop("planner_deadline"),deadlineMs);
+    let phase:PlannerAttemptMetadata["failureCode"]="budget";
     const physical = (async () => {
       try {
-        reserved = await budget.reserve(reservation);
+        reserved = await budget.reserve({...reservation,attempt:structuredClone(attempt)});
+        attempt.stages.reservation=elapsed();
         if (!reserved) throw new Error("planner_budget_unavailable");
         if (stopped || signal.aborted) throw new Error("planner_cancelled");
+        phase="provider";attempt.dispatched=true;const fetchStarted=performance.now();
         const response = await fetchResponse(ENDPOINT,{method:"POST",redirect:"error",cache:"no-store",credentials:"omit",
           headers:{"content-type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01"},
           body,signal:controller.signal});
-        const value = await boundedBody(response,controller.signal);
+        attempt.stages.headers=performance.now()-fetchStarted;attempt.httpStatus=response.status;
+        const providerId=response.headers.get('request-id');
+        attempt.providerRequestId=providerId&&/^req_[A-Za-z0-9_-]{1,120}$/.test(providerId)&&!providerId.includes(apiKey)?providerId:null;
+        phase="response";const bodyStarted=performance.now();
+        let value:unknown;try{value=await boundedBody(response,controller.signal);}finally{attempt.stages.body=performance.now()-bodyStarted;}
         if (stopped || signal.aborted) throw new Error("planner_cancelled");
-        let usage: PlannerResult<Plan>["usage"] = null;
+        if(object(value))attempt.stopReason=["end_turn","max_tokens","refusal"].includes(String(value.stop_reason))?value.stop_reason as PlannerAttemptMetadata["stopReason"]:"other";
+        phase="accounting";let usage: PlannerResult<Plan>["usage"] = null;
         if (object(value) && value.model===model && object(value.usage) && natural(value.usage.input_tokens) && natural(value.usage.output_tokens) &&
           value.usage.input_tokens <= INPUT_CONTEXT_CEILING && value.usage.output_tokens <= maxOutputTokens &&
           (value.usage.cache_creation_input_tokens === undefined || natural(value.usage.cache_creation_input_tokens)) &&
@@ -101,33 +122,40 @@ export function createClaudeAssistantPlanner<Plan>(options: {
           const hasBreakdown=cache&&natural(cache.ephemeral_5m_input_tokens)&&natural(cache.ephemeral_1h_input_tokens)&&
             cache.ephemeral_5m_input_tokens+cache.ephemeral_1h_input_tokens===cacheWrite;
           const write5m=hasBreakdown?cache.ephemeral_5m_input_tokens as number:0, write1h=hasBreakdown?cache.ephemeral_1h_input_tokens as number:cacheWrite;
+          attempt.cacheReadTokens=cacheRead;attempt.cacheWriteTokens=cacheWrite;attempt.cacheWrite5mTokens=hasBreakdown?write5m:null;attempt.cacheWrite1hTokens=hasBreakdown?write1h:null;
           usage = {inputTokens:value.usage.input_tokens+cacheRead+cacheWrite,outputTokens:value.usage.output_tokens,
             estimatedMicroUsd:estimatePlannerUsageMicroUsd(model,{inputTokens:value.usage.input_tokens,outputTokens:value.usage.output_tokens,
               cacheReadTokens:cacheRead,cacheWrite5mTokens:write5m,cacheWrite1hTokens:write1h})};
           if(usage.estimatedMicroUsd>reservation.reservedMicroUsd)throw new Error("planner_usage_exceeds_reservation");
-          await budget.recordUsage({runId:request.runId,requestId:request.requestId,...usage,state:"usage_observed"}); usageRecorded = true;
-        } else { await budget.recordUsage({runId:request.runId,requestId:request.requestId,inputTokens:null,outputTokens:null,estimatedMicroUsd:null,state:"unknown"}); usageRecorded = true; }
-        if (!object(value) || value.type !== "message" || value.role !== "assistant" || value.model !== model ||
+          await accountUsage({runId:request.runId,requestId:request.requestId,...usage,state:"usage_observed"}); usageRecorded = true;
+        } else { await accountUsage({runId:request.runId,requestId:request.requestId,inputTokens:null,outputTokens:null,estimatedMicroUsd:null,state:"unknown"}); usageRecorded = true; }
+        phase="response";if (!object(value) || value.type !== "message" || value.role !== "assistant" || value.model !== model ||
           value.stop_reason !== "end_turn" || !Array.isArray(value.content)) throw new Error("planner_response_invalid");
         const textBlocks = value.content.filter(block=>object(block)&&block.type === "text");
         if (textBlocks.length !== 1 || !object(textBlocks[0]) || typeof textBlocks[0].text !== "string" ||
           value.content.some(block=>!object(block)||!["text","thinking","redacted_thinking"].includes(String(block.type))) ||
           textBlocks[0].text.includes(apiKey)) throw new Error("planner_response_invalid");
+        phase="plan";const validationStarted=performance.now();
+        let plan:Plan|null;try{
         let decoded = JSON.parse(textBlocks[0].text);
         if(options.planJsonEnvelope){
           if(!object(decoded)||Object.keys(decoded).length!==1||typeof decoded.plan_json!=="string")throw new Error("planner_plan_invalid");
           decoded=JSON.parse(decoded.plan_json);
         }
-        const plan = validate(decoded,request);
+        plan = validate(decoded,request);
+        }finally{attempt.stages.validation=performance.now()-validationStarted;}
         if (plan === null) throw new Error("planner_plan_invalid");
         if (stopped || signal.aborted) throw new Error("planner_cancelled");
+        attempt.logical="completed";attempt.stages.logical=elapsed();
         return {plan,model,requestId:request.requestId,usage};
       } catch (error) {
-        if (reserved && !usageRecorded) try { await budget.recordUsage({runId:request.runId,requestId:request.requestId,inputTokens:null,outputTokens:null,estimatedMicroUsd:null,state:"unknown"}); } catch { /* Reservation remains charged. */ }
+        if (reserved && !usageRecorded) try { await accountUsage({runId:request.runId,requestId:request.requestId,inputTokens:null,outputTokens:null,estimatedMicroUsd:null,state:"unknown"}); } catch { /* Reservation remains charged. */ }
+        if(attempt.logical==='pending'){attempt.logical='failed';attempt.stages.logical=elapsed();}
+        attempt.failureCode=phase;
         // No provider body, credential, generated text, or reasoning in errors.
         const code = error instanceof Error && SAFE_ERRORS.has(error.message) ? error.message : "planner_request_failed";
         throw new Error(code);
-      } finally { physicalBusy = false; }
+      } finally { attempt.physical="settled";attempt.stages.physical=elapsed();if(reserved)observe();physicalBusy = false; }
     })();
     try { return await Promise.race([physical,deadline]); }
     finally { clearTimeout(timer); signal.removeEventListener("abort",onAbort); }

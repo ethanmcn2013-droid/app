@@ -2,18 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {createClaudeAssistantPlanner, createPingAssistantPlanner, compileClaudePlannerSchema, type PlannerRequest} from "./claude-planner";
 import {ASSISTANT_PLAN_SCHEMA, parseAssistantPlan, type AssistantPlannerContext} from "@/lib/ping/assistant/contract";
+import type {PlannerAttemptMetadata} from "./planner-attempt-metadata";
 import type {PlannerBudgetPort, PlannerBudgetReservation, PlannerUsageRecord} from "./planner-budget";
 const schema={type:"object",properties:{kind:{type:"string",enum:["plan"]}},required:["kind"],additionalProperties:false};
 const key="FAKE-NON-CREDENTIAL-ONLY";
 const request=(tier:PlannerRequest["tier"]="simple",requestId="request-1"):PlannerRequest=>({runId:"run-1",requestId,text:"Make a synthetic task",context:{projects:[{ref:"p1",name:"Invented"}]},tier});
 const signal=()=>new AbortController().signal;
 function fixture(fetcher:(init:RequestInit)=>Promise<Response>,extra:Record<string,unknown>={}) {
-  const reservations:PlannerBudgetReservation[]=[],usage:PlannerUsageRecord[]=[],calls:RequestInit[]=[];const seen=new Set<string>(),charged=new Map<string,number>();
-  const budget:PlannerBudgetPort={reserve:async value=>{if(seen.has(value.requestId)||[...charged.values()].reduce((n,r)=>n+r,0)+value.reservedMicroUsd>value.developmentCapMicroUsd)return false;seen.add(value.requestId);reservations.push(value);charged.set(value.requestId,value.reservedMicroUsd);return true;},recordUsage:async value=>{usage.push(value);if(value.state==="usage_observed"&&value.estimatedMicroUsd!==null)charged.set(value.requestId,value.estimatedMicroUsd);}};
+  const attempts:PlannerAttemptMetadata[]=[];const reservations:PlannerBudgetReservation[]=[],usage:PlannerUsageRecord[]=[],calls:RequestInit[]=[];const seen=new Set<string>(),charged=new Map<string,number>();
+  const budget:PlannerBudgetPort={recordAttempt:async value=>{attempts.push(value.attempt);},reserve:async value=>{if(seen.has(value.requestId)||[...charged.values()].reduce((n,r)=>n+r,0)+value.reservedMicroUsd>value.developmentCapMicroUsd)return false;seen.add(value.requestId);reservations.push(value);charged.set(value.requestId,value.reservedMicroUsd);return true;},recordUsage:async value=>{usage.push(value);if(value.state==="usage_observed"&&value.estimatedMicroUsd!==null)charged.set(value.requestId,value.estimatedMicroUsd);}};
   const planner=createClaudeAssistantPlanner({apiKey:key,budget,schema,instructions:"Return one checked proposal only.",
     validate:value=>JSON.stringify(value)==='{"kind":"plan"}'?value:null,
     fetch:(async(_url,init)=>{calls.push(init!);return fetcher(init!);}) as typeof fetch,...extra});
-  return{planner,reservations,usage,calls};
+  return{planner,reservations,usage,calls,attempts};
 }
 function response(model="claude-haiku-5-5",overrides:Record<string,unknown>={}) {return Response.json({type:"message",role:"assistant",model,stop_reason:"end_turn",usage:{input_tokens:100,output_tokens:20,cache_read_input_tokens:0,cache_creation_input_tokens:0},content:[{type:"text",text:'{"kind":"plan"}'}],...overrides});}
 
@@ -144,4 +145,51 @@ test("production uses Sonnet for simple, literal-title, nudge and bulk requests 
       return response(model,{content:[{type:"text",text:JSON.stringify({plan_json:JSON.stringify({plan})})}]});}) as typeof fetch});
     await planner.plan({runId:"synthetic",requestId:"synthetic-request",text,context},signal());assert.equal(calls,1);
   }
+});
+
+const settleObservations=()=>new Promise(resolve=>setTimeout(resolve,20));
+test("durable attempt config and final stage metadata cover success and every admitted failure without raw content",async()=>{
+  for(const variant of ['success','invalid','http','refusal','max_tokens','network'] as const){
+    const f=fixture(async()=>{
+      if(variant==='network')throw Error('PRIVATE ERROR');
+      if(variant==='http')return new Response('PRIVATE BODY',{status:400});
+      const result=response(undefined,variant==='invalid'?{content:[{type:'text',text:'PRIVATE INVALID JSON'}]}:
+        variant==='refusal'||variant==='max_tokens'?{stop_reason:variant}:{});
+      result.headers.set('request-id','req_synthetic123');return result;
+    });
+    if(variant==='success')await f.planner.plan(request(),signal());else await assert.rejects(f.planner.plan(request(),signal()));
+    await settleObservations();const first=f.reservations[0].attempt!,last=f.attempts.at(-1)!;
+    assert.equal(first.physical,'pending');assert.equal(first.logical,'pending');assert.equal(first.stages.physical,null);
+    assert.equal(last.physical,'settled');assert.equal(last.logical,variant==='success'?'completed':'failed');assert.equal(last.dispatched,true);
+    assert.ok(last.stages.physical!>=0);assert.equal(last.ttftMs,null);assert.equal(last.hiddenReasoning,null);
+    assert.equal(f.calls.length,1);assert.ok(!JSON.stringify(last).includes('PRIVATE'));
+    if(variant==='http'){assert.equal(last.httpStatus,400);assert.equal(last.failureCode,'response');assert.equal(f.usage[0].state,'unknown');}
+    if(variant==='invalid'){assert.ok(last.stages.validation!>=0);assert.equal(f.usage[0].state,'usage_observed');}
+    if(variant==='success'){assert.equal(last.providerRequestId,'req_synthetic123');assert.equal(last.cacheReadTokens,0);}
+  }
+});
+test('logical deadline is separate from physical settlement; observer failure never changes a valid plan',async()=>{
+  let finish!:(value:Response)=>void;const f=fixture(()=>new Promise(resolve=>{finish=resolve;}),{deadlineMs:10});
+  await assert.rejects(f.planner.plan(request(),signal()),/deadline/);await settleObservations();
+  assert.equal(f.attempts.at(-1)!.logical,'deadline');assert.equal(f.attempts.at(-1)!.physical,'pending');
+  await assert.rejects(f.planner.plan(request('simple','another'),signal()),/physically_busy/);
+  finish(response());await settleObservations();assert.equal(f.attempts.at(-1)!.physical,'settled');assert.equal(f.attempts.at(-1)!.logical,'deadline');assert.equal(f.calls.length,1);
+  let calls=0,usage=0;
+  const planner=createClaudeAssistantPlanner({apiKey:key,schema,instructions:'Synthetic',validate:v=>v,budget:{reserve:async()=>true,recordUsage:async()=>{usage++;},recordAttempt:async()=>{throw Error('observer');}},fetch:(async()=>{calls++;return response();}) as typeof fetch});
+  await planner.plan(request(),signal());await settleObservations();assert.equal(calls,1);assert.equal(usage,1);
+});
+test('preflight and pre-aborted requests create no dispatch entitlement or telemetry call',async()=>{
+ const f=fixture(async()=>response());const controller=new AbortController();controller.abort();
+ await assert.rejects(f.planner.plan(request(),controller.signal),/cancelled/);await assert.rejects(f.planner.plan({...request(),text:''},signal()),/input_invalid/);
+ assert.equal(f.calls.length,0);assert.equal(f.reservations.length,0);assert.equal(f.attempts.length,0);
+});
+
+test('post-dispatch cancellation retains unknown usage and accounting failure remains fail closed',async()=>{
+ let finish!:(value:Response)=>void;const f=fixture(()=>new Promise(resolve=>{finish=resolve;}));const controller=new AbortController();
+ const result=f.planner.plan(request(),controller.signal);await new Promise(resolve=>setTimeout(resolve,5));controller.abort();
+ await assert.rejects(result,/cancelled/);await settleObservations();assert.equal(f.attempts.at(-1)?.logical,'cancelled');assert.equal(f.attempts.at(-1)?.physical,'pending');
+ finish(response());await settleObservations();assert.equal(f.attempts.at(-1)?.physical,'settled');assert.equal(f.usage[0].state,'unknown');assert.equal(f.calls.length,1);
+ const attempts:PlannerAttemptMetadata[]=[];let calls=0;
+ const planner=createClaudeAssistantPlanner({apiKey:key,schema,instructions:'Synthetic',validate:v=>v,budget:{reserve:async()=>true,recordUsage:async()=>{throw Error('storage');},recordAttempt:async v=>{attempts.push(v.attempt);}},fetch:(async()=>{calls++;return response();}) as typeof fetch});
+ await assert.rejects(planner.plan(request(),signal()));await settleObservations();assert.equal(calls,1);assert.equal(attempts.at(-1)?.failureCode,'accounting');assert.equal(attempts.at(-1)?.logical,'failed');
 });

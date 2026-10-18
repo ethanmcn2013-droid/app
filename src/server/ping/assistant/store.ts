@@ -1,3 +1,4 @@
+import { parsePlannerAttemptMetadata, type PlannerAttemptMetadata } from "./planner-attempt-metadata";
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import type { db } from "@/server/db";
@@ -80,7 +81,7 @@ export function createAssistantStore(database: AssistantDatabase, options: { now
       return transaction(async tx=>{
         const run=await ownRun(tx,actorId,runId);
         if(run.status==='planning'&&!run.planJson&&run.createdAt+120000<=now()){
-          const [expired]=await tx.update(assistantRuns).set({status:'unknown',resultJson:json({message:'Planning stopped before a durable result was received. The original request has not been repeated.'}),updatedAt:now()}).where(eq(assistantRuns.id,runId)).returning();return expired;
+          const [expired]=await tx.update(assistantRuns).set({status:'unknown',resultJson:json({...JSON.parse(run.resultJson??'{}'),message:'Planning stopped before a durable result was received. The original request has not been repeated.'}),updatedAt:now()}).where(eq(assistantRuns.id,runId)).returning();return expired;
         }return run;
       });
     },
@@ -248,16 +249,38 @@ export function createAssistantStore(database: AssistantDatabase, options: { now
         await tx.update(assistantSteps).set({resultJson:json(result),updatedAt:now()}).where(eq(assistantSteps.id,stepId));return result;
       });
     },
+    async getPlannerAttempt(actorId:string,runId:string) {
+      const run=await ownRun(database,actorId,runId);
+      return parsePlannerAttemptMetadata(run.resultJson?JSON.parse(run.resultJson).plannerAttempt:null);
+    },
     budget: {
-      async reserve(input: { runId: string; requestId: string; model: string; reservedMicroUsd: number; developmentCapMicroUsd: number; totalCapMicroUsd: number; rateCardId: string }) {
+      async reserve(input: { runId: string; requestId: string; model: string; reservedMicroUsd: number; developmentCapMicroUsd: number; totalCapMicroUsd: number; rateCardId: string; attempt?:PlannerAttemptMetadata }) {
         if (![input.reservedMicroUsd,input.developmentCapMicroUsd,input.totalCapMicroUsd].every(n => Number.isSafeInteger(n) && n > 0)) throw new AssistantStoreError("invalid_input");
+        const attempt=input.attempt===undefined?undefined:parsePlannerAttemptMetadata(input.attempt);
+        if(input.attempt!==undefined&&(!attempt||attempt.model!==input.model||attempt.revision!==0||attempt.logical!=="pending"||attempt.physical!=="pending"||attempt.dispatched||Object.values(attempt.stages).some(value=>value!==null)))throw new AssistantStoreError("invalid_input");
         return transaction(async tx => {
           const [run] = await tx.select().from(assistantRuns).where(eq(assistantRuns.id, input.runId)).limit(1);
           if (!run || run.cancelledAt !== null || run.budgetRequestId || run.planJson) return false;
           const [total] = await tx.select({ value: sql<number>`COALESCE(SUM(${assistantRuns.reservedMicroUsd}),0)` }).from(assistantRuns);
           if (Number(total.value) + input.reservedMicroUsd > Math.min(input.developmentCapMicroUsd,input.totalCapMicroUsd)) return false;
-          await tx.update(assistantRuns).set({ budgetRequestId: assistantPayloadHash({runId:input.runId,requestId:input.requestId}), budgetModel: input.model, budgetRateCardId: input.rateCardId, reservedMicroUsd: input.reservedMicroUsd, usageState: "reserved", updatedAt: now() }).where(eq(assistantRuns.id, input.runId));
+          await tx.update(assistantRuns).set({ budgetRequestId: assistantPayloadHash({runId:input.runId,requestId:input.requestId}), budgetModel: input.model, budgetRateCardId: input.rateCardId, reservedMicroUsd: input.reservedMicroUsd, usageState: "reserved", ...(attempt?{resultJson:json({...JSON.parse(run.resultJson??"{}"),plannerAttempt:attempt})}:{}), updatedAt: now() }).where(eq(assistantRuns.id, input.runId));
           return true;
+        });
+      },
+      async recordAttempt(input:{runId:string;requestId:string;attempt:PlannerAttemptMetadata}) {
+        const attempt=parsePlannerAttemptMetadata(input.attempt);if(!attempt)throw new AssistantStoreError("invalid_input");
+        await transaction(async tx=>{
+          const [run]=await tx.select().from(assistantRuns).where(and(eq(assistantRuns.id,input.runId),eq(assistantRuns.budgetRequestId,assistantPayloadHash({runId:input.runId,requestId:input.requestId})))).limit(1);
+          if(!run)throw new AssistantStoreError("unavailable");
+          const result=JSON.parse(run.resultJson??"{}"),prior=parsePlannerAttemptMetadata(result.plannerAttempt);
+          if(!prior||attempt.model!==prior.model||attempt.maxOutputTokens!==prior.maxOutputTokens||attempt.deadlineMs!==prior.deadlineMs||attempt.effort!==prior.effort)throw new AssistantStoreError("request_conflict");
+          if(attempt.revision<prior.revision)return;
+          if(attempt.revision===prior.revision){if(assistantPayloadHash(attempt)!==assistantPayloadHash(prior))throw new AssistantStoreError("request_conflict");return;}
+          if(prior.physical==='settled'&&attempt.physical!=='settled'||prior.logical!=='pending'&&attempt.logical!==prior.logical)throw new AssistantStoreError("request_conflict");
+          const known=["httpStatus","providerRequestId","stopReason","failureCode","cacheReadTokens","cacheWriteTokens","cacheWrite5mTokens","cacheWrite1hTokens"] as const;
+          if(prior.dispatched&&!attempt.dispatched||known.some(key=>prior[key]!==null&&attempt[key]!==prior[key])||
+            Object.keys(prior.stages).some(key=>{const k=key as keyof typeof prior.stages;return prior.stages[k]!==null&&(attempt.stages[k]===null||(k==='accounting'?attempt.stages[k]!<prior.stages[k]!:attempt.stages[k]!==prior.stages[k]));}))throw new AssistantStoreError("request_conflict");
+          await tx.update(assistantRuns).set({resultJson:json({...result,plannerAttempt:attempt}),updatedAt:now()}).where(eq(assistantRuns.id,run.id));
         });
       },
       async recordUsage(input: { runId:string; requestId: string; inputTokens: number | null; outputTokens: number | null; estimatedMicroUsd: number | null; state: "usage_observed" | "unknown" }) {
