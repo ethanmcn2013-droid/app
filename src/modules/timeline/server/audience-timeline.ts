@@ -262,7 +262,7 @@ export async function createAudiencePublication(input: {
       primaryDateLabel: input.primaryDateLabel,
       primaryDate: input.primaryDate,
       audienceKind: input.audienceKind,
-      timezone: validateIanaTimezone(input.timezone),
+      timezone: validateIanaTimezone(presentationSettings?.presentation?.timezone ?? input.timezone),
       ownerDisplayLabel: input.ownerDisplayLabel,
       state: "draft",
       lastUpdatedAt: now,

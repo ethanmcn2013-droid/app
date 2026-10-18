@@ -1,3 +1,5 @@
+import { master3Settings } from '../../../server/master3-settings';
+import { Master3SettingsForm } from '../master3-settings-form';
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
@@ -53,10 +55,13 @@ export default async function TimelineArtifactStudioPage({
   const managerSearch = managerQuery.toString();
 
   return (
+    <>
     <TimelineArtifactStudio
       publication={publication}
       timeline={ownerPublicationToTimelineDto(publication)}
       managerHref={`/app/timeline/audience${managerSearch ? `?${managerSearch}` : ""}`}
     />
+    {await master3Settings.available()?<Master3SettingsForm workspaceSlug={workspace.slug} publicationId={publication.id} settings={await master3Settings.publication(publication.id)} items={publication.items.map(item=>({id:item.publicId,title:item.title}))}/>:null}
+    </>
   );
 }

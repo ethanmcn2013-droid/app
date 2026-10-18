@@ -92,6 +92,7 @@ export function ownerProjectToTimelineDto(input: {
   settings?: OwnerPreviewSettings;
   now?: Date;
   presentationSettings?: Master3ProjectSettings;
+  settingsUpdatedAt?: Date;
 }): AudienceTimelineDto {
   const now = input.now ?? new Date();
   const timezone = input.presentationSettings?.presentation?.timezone ?? input.settings?.timezone ?? "Europe/Dublin";
@@ -146,7 +147,7 @@ export function ownerProjectToTimelineDto(input: {
           },
         }
       : {}),
-    lastUpdatedAt: latestUpdate.toISOString(),
+    lastUpdatedAt: (input.settingsUpdatedAt && input.settingsUpdatedAt > latestUpdate ? input.settingsUpdatedAt : latestUpdate).toISOString(),
     today: calendarDateInTimeZone(now, timezone),
     sections: AUDIENCE_ITEM_STATES.map((state) => ({
       state,

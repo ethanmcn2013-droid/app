@@ -18,7 +18,10 @@ test('actual SQLite owner-scoped settings and publication snapshot stay independ
   await client.execute("INSERT INTO workspaces(slug,name,owner_user_id) VALUES('owned','Synthetic','owner'),('foreign','Other','other')");
   await client.execute("INSERT INTO projects(workspace_slug,slug,name,one_liner,accent) VALUES('owned','plan','Plan','','blue'),('foreign','plan','Other','','blue')");
   await client.executeMultiple(fs.readFileSync('drizzle-timeline/0002_master3_presentation.sql','utf8').replace(/^\uFEFF/,''));
-  await store.saveProject('owner','owned','plan',{presentation:{onDayNote:'First'},items:{private_node:{note:'Public note'}}});
+  await client.execute("INSERT INTO node_overlays(workspace_slug,node_id,source,manual_title) VALUES('owned','manual:plan:first','manual','First'),('owned','manual:elsewhere:foreign','manual','Foreign')");
+  await store.saveProject('owner','owned','plan',{presentation:{onDayNote:'First'},items:{'manual:plan:first':{note:'Public note'}}});
+  await assert.rejects(store.saveProject('owner','owned','plan',{items:{unknown:{note:'Wrong'}}}),/outside/);
+  await assert.rejects(store.saveProject('owner','owned','plan',{items:{'manual:elsewhere:foreign':{note:'Wrong'}}}),/outside/);
   await assert.rejects(store.saveProject('other','owned','plan',{presentation:{onDayNote:'Forbidden'}}),/not found/);
   await client.execute("INSERT INTO timeline_publications(id,workspace_slug,source_workspace_id,source_digest,label,audience_kind,timezone) VALUES('public','owned','tasks','digest','Synthetic','module','Europe/Dublin')");
   await client.execute("INSERT INTO timeline_publication_items(public_id,publication_id,title,state,source_relation,source_digest) VALUES('public_item','public','Open','next','private_node','digest')");

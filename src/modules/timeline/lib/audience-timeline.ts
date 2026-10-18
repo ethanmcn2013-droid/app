@@ -231,6 +231,7 @@ export function validateAudienceTimelineDto(value: unknown): AudienceTimelineDto
     };
   });
 
+  if(dto.sections.flatMap(section=>section.items).filter(item=>item.presentation?.final).length>1)throw new TypeError('Choose one final milestone');
   return dto;
 }
 

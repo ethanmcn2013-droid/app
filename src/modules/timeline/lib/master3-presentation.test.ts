@@ -22,3 +22,8 @@ test('owner form only accepts actual allowed milestone keys and detailed card co
  const form=new FormData();form.set('presentation.market','wedding');form.set('presentation.place','Hall');form.set('presentation.locationConsent','on');form.set('item.allowed.short','Short');
  const result=master3SettingsFromForm(form,['allowed']);assert.equal(result.presentation?.socialDetails,false);assert.equal(result.items?.allowed.short,'Short');form.set('item.foreign.note','private');assert.throws(()=>master3SettingsFromForm(form,['allowed']));
 });
+
+test('the public DTO also rejects multiple final flags across sections',()=>{
+ const input={...dto,sections:[{...dto.sections[0],items:[{...dto.sections[0].items[0],presentation:{final:true}},{...dto.sections[0].items[0],publicId:'two',presentation:{final:true}}]}]};
+ assert.throws(()=>validateAudienceTimelineDto(input),/one final/);
+});
