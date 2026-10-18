@@ -184,7 +184,13 @@ for (const kind of ["read_timeline", "preview_timeline"] as const) scenario(`tim
 }, plan([{ id: "read", kind, project }]), { timelineFails: true });
 
 for (const concurrency of [2, 3, 4, 5, 6]) scenario(`concurrent-duplicate-${concurrency}`, async f => {
-  const request = f.request(); const results = await Promise.all(Array.from({ length: concurrency }, () => f.service.submit("alice", request)));
+  const request = f.request();
+  // Settle every submitted operation before fixture cleanup even when one fails.
+  // Rejected submits still fail this scenario; no busy error is ignored/retried.
+  const submitted = await Promise.allSettled(Array.from({ length: concurrency }, () => f.service.submit("alice", request)));
+  const rejected = submitted.filter(result => result.status === "rejected");
+  assert.equal(rejected.length, 0, `Concurrent submit rejection: ${rejected.map(result => String(result.reason)).join("; ")}`);
+  const results = submitted.filter(result => result.status === "fulfilled").map(result => result.value);
   assert.equal(new Set(results.map(r => r.id)).size, 1); const r = await f.service.resume("alice", results[0].id);
   assert.equal(r.status, "completed"); assert.equal(await f.count(), 100); assert.equal(f.stats().plans, 1); return r.status;
 }, plan([create(100)]));
