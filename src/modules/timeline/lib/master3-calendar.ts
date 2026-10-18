@@ -15,16 +15,22 @@ export function master3WallTime(date:string,time:string,zone:string):Date {
  if(matches.length!==1)throw new TypeError('Calendar time is ambiguous or does not exist in this timezone');return matches[0];
 }
 export function buildMaster3CalendarEvents(dto:Master3CalendarTimeline):Master3CalendarEvent[]{
- const p=dto.presentation,items=dto.sections.flatMap(s=>s.items),final=items.find(i=>i.presentation?.final&&i.date),finalDate=final?.date;
- return items.filter(i=>i.date&&validDate(i.date)&&i.date>=dto.today).map(item=>{
-  const date=item.date!,time=item.presentation?.time,zone=p?.timezone;
+ const p=dto.presentation,items=dto.sections.flatMap(s=>s.items),final=items.find(i=>i.presentation?.final&&i.date&&validDate(i.date));
+ const primary=!final&&dto.primaryDate&&validDate(dto.primaryDate.date)?dto.primaryDate:undefined;
+ const anchor=final??(primary?{publicId:'__calendar_primary__',title:primary.label,date:primary.date,state:'next' as const,presentation:{final:true}}:undefined);
+ const finalDate=anchor?.date,zone=p?.timezone;
+ if(final?.presentation?.time&&!zone)throw new TypeError('A timezone is required for timed calendar events');
+ const finalStart=final?.presentation?.time&&zone?master3WallTime(final.date!,final.presentation.time,zone):undefined;
+ const candidates=p?.calAll?items:anchor?[anchor,...items.filter(item=>item!==anchor)].filter(item=>item===anchor||(item.date&&finalDate&&(item.date>finalDate||(item.date===finalDate&&item.presentation?.time&&finalStart&&zone&&master3WallTime(item.date,item.presentation.time,zone)>finalStart)))):[];
+ return candidates.filter(i=>i.date&&validDate(i.date)&&i.date>=dto.today).map(item=>{
+  const date=item.date!,time=item.presentation?.time,isFinal=item===anchor;
   if(time&&!zone)throw new TypeError('A timezone is required for timed calendar events');
   const start=time&&zone?master3WallTime(date,time,zone):undefined;
-  const finalStart=final?.presentation?.time&&zone?master3WallTime(final.date!,final.presentation.time,zone):undefined;
   const afterFinal=finalDate&&(date>finalDate||(start&&finalStart&&start>finalStart));
-  const hours=item.presentation?.final?6:afterFinal?3:undefined;
-  const location=p?.locationConsent&&(dto.audienceKind!=='couple'||item.presentation?.final)?[p.place,p.address].filter(Boolean).join(', '):undefined;
-  return {uid:`${encodeURIComponent(dto.publicationId)}.${encodeURIComponent(item.publicId)}@timeline.signalstudio.ie`,publicId:item.publicId,title:item.presentation?.final&&p?.eventTitle?p.eventTitle:item.title,date,...(start?{start,...(hours?{end:new Date(start.getTime()+hours*3600000)}:{})}:{}),...(location?{location}:{}),...(item.presentation?.note?{description:item.presentation.note}:{}),cancelled:item.state==='cancelled'};
+  const hours=isFinal?6:afterFinal?3:undefined;
+  const end=start&&hours?new Date(Math.min(start.getTime()+hours*3600000,master3WallTime(date,'23:59',zone!).getTime())):undefined;
+  const location=p?.locationConsent&&(dto.audienceKind!=='couple'||isFinal)?[p.place,p.address].filter(Boolean).join(', '):undefined;
+  return {uid:`${encodeURIComponent(dto.publicationId)}.${encodeURIComponent(item.publicId)}@timeline.signalstudio.ie`,publicId:item.publicId,title:isFinal&&!primary&&p?.eventTitle?p.eventTitle:item.title,date,...(start?{start,...(end?{end}:{})}:{}),...(location?{location}:{}),...(item.presentation?.note?{description:item.presentation.note}:{}),cancelled:item.state==='cancelled'};
  });
 }
 export const escapeIcsText=(s:string)=>s.replace(/\\/g,'\\\\').replace(/\r\n|\r|\n/g,'\\n').replace(/;/g,'\\;').replace(/,/g,'\\,');
