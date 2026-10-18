@@ -287,13 +287,20 @@ async function auditTimelineContract(
   evidence: TimelineRuntimeEvidence,
 ) {
   if (experienceId === "tasks.page.app-timeline") {
-    await expect(page.locator("[data-timeline-artifact]")).toHaveCount(1);
+    const artifact = page.locator("[data-master3-artifact]");
+    await expect(artifact).toHaveCount(1);
+    // The embedded owner preview must never share the signed-in address or
+    // register a public view. Publishing remains an explicit owner action.
+    await expect(artifact.getByRole("button", { name: "Share this timeline" })).toHaveCount(0);
     expect(evidence.viewRequests).toEqual([]);
     return;
   }
   if (experienceId === "tasks.page.app-timeline-audience-by-publication-id") {
     await expect(page.locator("[data-timeline-phone-preview]")).toBeVisible();
-    await expect(page.locator("[data-timeline-artifact]")).toHaveCount(2);
+    await expect(page.locator("[data-master3-artifact]")).toHaveCount(2);
+    await expect(page.locator("[data-timeline-phone-preview] [data-master3-artifact]")).toHaveAttribute("data-layout", "stack");
+    await expect(page.locator("[data-master3-artifact]").getByRole("button", { name: "Share this timeline" })).toHaveCount(0);
+    await expect(page.locator("[data-master3-follow]")).toHaveCount(0);
     await page.waitForTimeout(2_100);
     expect(evidence.viewRequests).toEqual([]);
     return;
@@ -317,29 +324,58 @@ async function auditTimelineContract(
     return;
   }
 
-  await expect(page.locator("[data-timeline-wordmark]")).toHaveText("timeline");
-  // The Countdown (founder pick, 28 Sep 2026; ported 6 Oct): the page opens
-  // on how long is left. One review clock: 16 July to 3 October is 79 days.
-  // The next milestone is named in the list at every size; from 1280 a
-  // to-scale strip carries the progress bar and a link per milestone that
-  // jumps to its row. The countdown/progress toggle and the rail's arrow
-  // keys belonged to the earlier rail and are gone with it.
-  await expect(page.locator("[data-timeline-metric-value]")).toHaveText("79");
-  await expect(page.getByRole("group", { name: "79 days until the wedding day" })).toBeVisible();
-  await expect(page.locator("span[data-today-marker]")).toHaveAttribute("aria-label", "Today, 16 July 2026");
+  const artifact = page.locator("[data-master3-artifact]");
+  await expect(artifact).toHaveCount(1);
+  await expect(page.locator("[data-timeline-wordmark]")).toHaveText("timeline.");
+  // Master3 retains one review clock: 16 July to 3 October is 79 days.
+  // The desktop rail orders dates evenly; it is not the retired to-scale
+  // interactive strip. The narrow layout presents the same dates first.
+  await expect(artifact.getByRole("region", { name: "Timeline countdown" })).toContainText("79 days until Wedding day.");
+  const target = artifact.getByRole("region", { name: "Wedding day", exact: true });
+  await expect(target.locator("time").first()).toHaveAttribute("datetime", "2026-10-03");
   await expect(page.locator("[data-studio-rail], nav[aria-label='Products']")).toHaveCount(0);
 
-  const wide = (page.viewportSize()?.width ?? 0) >= 1280;
-  const strip = page.getByRole("progressbar", { name: "Milestone completion" });
-  if (wide) {
-    await expect(strip).toHaveAttribute("aria-valuetext", "2 of 9 milestones complete");
-    const next = page.getByRole("link", { name: "Menu tasting at The Orchard, 1 August 2026" });
-    await next.focus();
-    await next.press("Enter");
-    await expect(page).toHaveURL(/#m-demo-audience-item-menu$/);
+  const stage = (page.viewportSize()?.width ?? 0) >= 1280;
+  await expect(artifact).toHaveAttribute("data-layout", stage ? "stage" : "stack");
+  const rail = artifact.locator('section[aria-label="Timeline"]');
+  const phoneRows = artifact.locator('li[id^="m-"]');
+  const dates = ["2026-01-02", "2026-04-18", "2026-08-01", "2026-08-08", "2026-08-22", "2026-08-29", "2026-09-05", "2026-09-19", "2026-10-03"];
+  expect(await rail.locator("ol > li time").evaluateAll(nodes => nodes.map(node => node.getAttribute("datetime")))).toEqual(dates);
+  expect(await phoneRows.locator(":scope > time").evaluateAll(nodes => nodes.map(node => node.getAttribute("datetime")))).toEqual(dates);
+  await expect(rail.locator("li[data-next]")).toContainText("Menu tasting at The Orchard");
+  await expect(artifact.locator('li[id="m-demo-audience-item-menu"]')).toHaveAttribute("data-next", "true");
+  await expect(artifact.locator('li[id="m-demo-audience-item-menu"]')).toContainText("Next · In 16 days");
+  const progress = artifact.getByRole("progressbar", { name: "Timeline progress" });
+  if (stage) {
+    await expect(rail).toBeVisible();
+    await expect(phoneRows.first()).toBeHidden();
+    await expect(progress).toHaveAttribute("aria-valuetext", "2 of 9 milestones done");
+    await expect(artifact.getByRole("heading", { name: "Coming up" })).toBeVisible();
+    await expect(artifact.locator("ul > li[data-next]")).toContainText("Menu tasting at The Orchard");
   } else {
-    await expect(strip).toHaveCount(0);
+    await expect(rail).toBeHidden();
+    await expect(phoneRows.first()).toBeVisible();
+    await expect(progress).toHaveCount(0);
+    const order = await artifact.evaluate(node => {
+      const row = node.querySelector('li[id^="m-"]');
+      const action = [...node.querySelectorAll("button")].find(button => button.textContent?.includes("Add to my calendar") && button.getBoundingClientRect().height > 0);
+      return !!row && !!action && row.getBoundingClientRect().top < action.getBoundingClientRect().top;
+    });
+    expect(order).toBe(true);
   }
+
+  // Keyboard opens the real calendar menu and Escape returns focus without
+  // downloading, navigating off-origin or exercising a delivery mutation.
+  const calendar = artifact.getByRole("button", { name: "Add to my calendar", exact: true });
+  await calendar.focus();
+  await calendar.press("Enter");
+  await expect(artifact.getByRole("menu", { name: "Add to my calendar" })).toBeVisible();
+  await expect(artifact.getByRole("menuitem", { name: "Copy the date and place" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(calendar).toBeFocused();
+  await expect(artifact.getByRole("menu")).toHaveCount(0);
+  await expect(artifact.getByRole("textbox", { name: "Email address" })).toHaveCount(0);
+  await expect(artifact.getByRole("button", { name: "Following", exact: true })).toHaveCount(0);
 
   if (testInfo.project.name === "mobile") {
     const minimumTarget = await page.locator("[data-timeline-artifact] button").evaluateAll(

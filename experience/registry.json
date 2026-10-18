@@ -2792,7 +2792,7 @@
       "parentJourney": "shared-output-viewed",
       "archetype": "public-information-and-proof",
       "primaryJob": "Understand the project journey and its progress at a glance.",
-      "primaryAction": "Explore milestone points or switch the time lens.",
+      "primaryAction": "Read the countdown and ordered dates, add authorized dates to a calendar, or share the public link.",
       "roles": [
         "link-holder"
       ],
@@ -2830,7 +2830,7 @@
       "lastReviewedAt": "2026-10-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d0d44a5e281625a9"
+      "materialityHash": "dd3e0cb928295ac9"
     },
     {
       "id": "tasks.state.s-by-token-loading",
@@ -5300,6 +5300,219 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "58dddd6b8e51573d"
+    },
+    {
+      "id": "tasks.page.s-by-token-follow-confirm",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/s/[token]/follow/confirm",
+      "source": "tasks/src/app/s/[token]/follow/confirm/page.tsx",
+      "parentJourney": "shared-output-viewed",
+      "archetype": "review-and-approval-workspace",
+      "primaryJob": "Decide whether to confirm a requested Timeline follow.",
+      "primaryAction": "Confirm follow explicitly; opening the link does not subscribe.",
+      "roles": [
+        "link-holder"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "timeline-follow"
+      ],
+      "patternDependencies": [
+        "link-only-publication",
+        "explicit-confirmation",
+        "no-store-private"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-18",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "bbfd18d081a9eea2"
+    },
+    {
+      "id": "tasks.page.s-by-token-follow-unsubscribe",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/s/[token]/follow/unsubscribe",
+      "source": "tasks/src/app/s/[token]/follow/unsubscribe/page.tsx",
+      "parentJourney": "shared-output-viewed",
+      "archetype": "review-and-approval-workspace",
+      "primaryJob": "Decide whether to stop following an available shared Timeline.",
+      "primaryAction": "Stop following explicitly, with bounded Undo after the actual operation.",
+      "roles": [
+        "link-holder"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "timeline-follow"
+      ],
+      "patternDependencies": [
+        "link-only-publication",
+        "explicit-confirmation",
+        "no-store-private"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-18",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "c4e9a6b65099960b"
+    },
+    {
+      "id": "tasks.page.s-follow-unsubscribe",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/s/follow/unsubscribe",
+      "source": "tasks/src/app/s/follow/unsubscribe/page.tsx",
+      "parentJourney": "shared-output-viewed",
+      "archetype": "review-and-approval-workspace",
+      "primaryJob": "Decide whether to unsubscribe using a personal signed management link.",
+      "primaryAction": "Stop following explicitly; a GET only presents the confirmation.",
+      "roles": [
+        "subscriber"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "timeline-follow"
+      ],
+      "patternDependencies": [
+        "signed-subscriber-capability",
+        "explicit-confirmation",
+        "no-store-private"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-18",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "9e1e72221c79cd1e"
+    },
+    {
+      "id": "tasks.page.s-follow-view",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/s/follow/view",
+      "source": "tasks/src/app/s/follow/view/page.tsx",
+      "parentJourney": "shared-output-viewed",
+      "archetype": "public-information-and-proof",
+      "primaryJob": "Read a currently authorized Timeline through a personal subscriber link.",
+      "primaryAction": "Read the Timeline or explicitly unfollow without sharing the personal capability.",
+      "roles": [
+        "subscriber"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "timeline-artifact",
+        "timeline-follow"
+      ],
+      "patternDependencies": [
+        "signed-subscriber-capability",
+        "explicit-confirmation",
+        "no-store-private"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-18",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "df252c0a99dbccd7"
     }
   ]
 }

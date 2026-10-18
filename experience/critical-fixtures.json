@@ -1205,8 +1205,9 @@
               ]
             },
             {
-              "kind": "text",
-              "text": "Our next milestone",
+              "kind": "role",
+              "role": "button",
+              "name": "Add to my calendar",
               "proves": [
                 "populated"
               ]
@@ -1508,6 +1509,158 @@
         "saved",
         "unsaved",
         "dense",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ]
+    },
+    {
+      "id": "tasks.page.s-by-token-follow-confirm",
+      "evidence": "source-contract",
+      "sourceReviewedAt": "2026-10-18",
+      "sourceAssertions": [
+        {
+          "label": "valid share resolution",
+          "contains": "resolveAudienceTimeline(token)"
+        },
+        {
+          "label": "unavailable share fence",
+          "contains": "if(r.kind!=='ok')notFound()"
+        },
+        {
+          "label": "explicit confirmation UI",
+          "contains": "actionLabel='Confirm follow'"
+        },
+        {
+          "label": "management key shape",
+          "contains": "[A-Za-z0-9_-]{43}"
+        },
+        {
+          "label": "private referrer metadata",
+          "contains": "referrer:'no-referrer'"
+        }
+      ],
+      "remainingStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ]
+    },
+    {
+      "id": "tasks.page.s-by-token-follow-unsubscribe",
+      "evidence": "source-contract",
+      "sourceReviewedAt": "2026-10-18",
+      "sourceAssertions": [
+        {
+          "label": "valid share resolution",
+          "contains": "resolveAudienceTimeline(token)"
+        },
+        {
+          "label": "unavailable share fence",
+          "contains": "if(r.kind!=='ok')notFound()"
+        },
+        {
+          "label": "explicit unsubscribe UI",
+          "contains": "actionLabel='Stop following'"
+        },
+        {
+          "label": "management key shape",
+          "contains": "[A-Za-z0-9_-]{43}"
+        },
+        {
+          "label": "private referrer metadata",
+          "contains": "referrer:'no-referrer'"
+        }
+      ],
+      "remainingStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ]
+    },
+    {
+      "id": "tasks.page.s-follow-unsubscribe",
+      "evidence": "source-contract",
+      "sourceReviewedAt": "2026-10-18",
+      "sourceAssertions": [
+        {
+          "label": "purpose-bound authorization",
+          "contains": "resolveGuestSubscriber(proof,'unsubscribe')"
+        },
+        {
+          "label": "unavailable proof fence",
+          "contains": "notFound()"
+        },
+        {
+          "label": "explicit mutation component",
+          "contains": "TimelineFollowAction"
+        },
+        {
+          "label": "explicit unsubscribe UI",
+          "contains": "actionLabel='Stop following'"
+        },
+        {
+          "label": "private referrer metadata",
+          "contains": "referrer:'no-referrer'"
+        }
+      ],
+      "remainingStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ]
+    },
+    {
+      "id": "tasks.page.s-follow-view",
+      "evidence": "source-contract",
+      "sourceReviewedAt": "2026-10-18",
+      "sourceAssertions": [
+        {
+          "label": "current subscriber authorization",
+          "contains": "resolveGuestSubscriber(proof, \"view\")"
+        },
+        {
+          "label": "purpose-bound signed proof",
+          "contains": "verifyGuestSubscriberProof(proof, process.env.TIMELINE_FOLLOW_SIGNING_SECRET, \"view\")"
+        },
+        {
+          "label": "unavailable proof fence",
+          "contains": "if (!current || !verified) notFound()"
+        },
+        {
+          "label": "authorized actual artifact",
+          "contains": "<SharedTimelineArtifact timeline={current.dto} subscriber={{"
+        },
+        {
+          "label": "masked subscriber label",
+          "contains": "emailHint: guestEmailHint(current.subscription.email)"
+        },
+        {
+          "label": "private referrer metadata",
+          "contains": "referrer: \"no-referrer\""
+        }
+      ],
+      "remainingStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
         "long-content",
         "reduced-motion",
         "keyboard-only"
@@ -1948,8 +2101,8 @@
     "src/app/robots.ts": "6c05ac9d7c401a718c7fa41273a32cfd3c71e96608f1e622f8693dff4e7143c3",
     "src/app/s/[token]/loading.tsx": "24b4c8d44e92c5040c6d891bf67771fe0e785938b30e9db5898fbfbda6208a6f",
     "src/app/s/[token]/not-found.tsx": "ef156f3db12fed31d14067543fb568ae3586ef33a51d005a96ed76243a63f715",
-    "src/app/s/[token]/opengraph-image.tsx": "9f45e45e82a545d7d4ea1931a1a0b0bbaf1d047c18ab0422ffb086268119adc5",
-    "src/app/s/[token]/page.tsx": "d0d44a5e281625a95dc0c0d9b5a72b084351fdc5fc9af639719a5eec5ad1ca48",
+    "src/app/s/[token]/opengraph-image.tsx": "a41947af717dfce94a0227069f3bf89f26456e161df6899e25a4709f185fcc7f",
+    "src/app/s/[token]/page.tsx": "dd3e0cb928295ac97a205d5f378cc7d0063f23ee722539a27205c291be628624",
     "src/app/s/[token]/view/route.ts": "93552add426076844eb7a6e7292149da137ba8e9604b83a52fc976778b1beb9f",
     "src/app/s/layout.tsx": "cf021f8aa063689e79cafbb57d9de9f7e2addf95c561813bd22da9357dbfab01",
     "src/app/settings/layout.tsx": "6e03af06540f27113a22927c2a1de76a46efbf158bc219f9f3dccf7fe707d73e",
@@ -3298,7 +3451,7 @@
     "src/modules/timeline/app/_components/create-project-form.tsx": "46b597451aa333fefff40ba1ad9abf798d5760adb95597e18d99ff9c37ccb32f",
     "src/modules/timeline/app/_components/timeline-index.module.css": "95d345cca83f105547c131f0cacff0066a3088e00821102c7afe07a7f3a4fd80",
     "src/modules/timeline/app/_components/timeline-loading.module.css": "5b160d3447a07ed0cf25a216516543136f8725ab54ffc319df7cb07e621492bb",
-    "src/modules/timeline/app/audience/[publicationId]/page.tsx": "a4b0395fc324d80a47b22bf897e06c99e64475842cf06fc9e7ae86207487f7a5",
+    "src/modules/timeline/app/audience/[publicationId]/page.tsx": "a21281f33346029d09d9e23a61968fbfb998b354450a691893cf250f709b1c29",
     "src/modules/timeline/app/audience/artifact-studio.module.css": "e0ab2e81a6a7c17ba5e8aa0f695979c6ff1bdf5657d940caaf4d099d5275f399",
     "src/modules/timeline/app/audience/artifact-studio.tsx": "c2f989c584e17e570c91a7b1cfa3b2d710803325d3347f3b4c72293e0a0289c1",
     "src/modules/timeline/app/audience/audience-manager.tsx": "cf27dc1bf978ecdd904a147bbf4aa2a358a1acf62dddd2d01f17b8ea2c58b44e",
@@ -3310,7 +3463,7 @@
     "src/modules/timeline/app/audience/qualified-view-tracker.tsx": "b1e073c0672b21753878d3d28f0c5441cf0855e436fd013f711bf02ae0fec62d",
     "src/modules/timeline/app/audience/share-controls.module.css": "883fef49348a94e358d05075ed5f210e82202b6738fa6e39da07e5cfd7cd35e8",
     "src/modules/timeline/app/audience/share-controls.tsx": "382fb941c96479c44139c9c555f73104602c7e8913732afd6d15166b9ef5de78",
-    "src/modules/timeline/app/audience/shared-timeline-artifact.tsx": "ad0f170fb82f39d95030ff8beee57b6988f8630b763b441c0ca1b04b3a8cfad6",
+    "src/modules/timeline/app/audience/shared-timeline-artifact.tsx": "7403bfc005e08cdfefff84347eff4885850fbf36f3a8e9d4c41d456f57aec16a",
     "src/modules/timeline/app/error.tsx": "243b792019e1549ffac0ecf123981075c8b81af673d4be7d43330c2516c6507f",
     "src/modules/timeline/app/loading.tsx": "5ed1165397a385d819e3a3fdf1bf6b6c56f3770707f67e35c585061472da2a9b",
     "src/modules/timeline/app/page.tsx": "baa5ff7cb096bbcfc0ffd8345b548ebcd913c2a3f4ffcc453b9e8c16d8a041c5",
@@ -3331,27 +3484,27 @@
     "src/modules/timeline/app/plan/[projectSlug]/loading.tsx": "75f4857a500fd528fca70e9bcb2c472f5322d715d6e37d67185d633523a132b1",
     "src/modules/timeline/app/plan/[projectSlug]/page.tsx": "29d5eafd94e00f1458075945d383062561d9f22ff7314b1c09036d63685527ed",
     "src/modules/timeline/components/artifact/index.ts": "7f2d179782ad5da583741624d24f3194cc9e1b12ddfc0aee638e332ef83fe4b5",
-    "src/modules/timeline/components/artifact/timeline-artifact-contract.test.mjs": "c17244faf1eab7c3c6d0b567bd3a66512a210765430fbb1184290a2045b73338",
-    "src/modules/timeline/components/artifact/timeline-artifact-layout.test.mjs": "32febdf4ebfff7ccf06d06261b1d8c5b946d8146a05176a455520133f9c1a55b",
+    "src/modules/timeline/components/artifact/timeline-artifact-contract.test.mjs": "62a8bc076353d21ad9128e39e160819d90e24a1cc8a3a182cbc5678faf94e541",
+    "src/modules/timeline/components/artifact/timeline-artifact-layout.test.mjs": "cf07616bb9223cd9d07f865253e571190c81ee1a9e1cde47389b4f4a073c4339",
     "src/modules/timeline/components/artifact/timeline-artifact-model.test.ts": "3f7ddff985f8116776012d2099cbf80c1b8d2eb71ec1d9b2a1c7085578e87e2f",
     "src/modules/timeline/components/artifact/timeline-artifact-model.ts": "e5a1ac0daccb678780308f0f17420a2657173d6efcaf810bc5034952021a6b21",
-    "src/modules/timeline/components/artifact/timeline-artifact.module.css": "ea439b9c08344755beb79b05074871bfa8c3beb8b078733a374d0df9004dcb66",
-    "src/modules/timeline/components/artifact/timeline-artifact.tsx": "2c2eb844d5d1067d3323a1da723039048b876aae6157a3faa944c2af9c959025",
+    "src/modules/timeline/components/artifact/timeline-artifact.module.css": "89c0e4a7f1e033f5a5be404845822a2900afc62f3d2a9ad226ca9050c2f9b91b",
+    "src/modules/timeline/components/artifact/timeline-artifact.tsx": "2c8db27a28a5c44b94d20019316d6fbaa36fdd68fb3fa23316003972448a77af",
     "src/modules/timeline/components/artifact/timeline-phone-preview.module.css": "56f1599743846875f627a5413042d58fb6e0df106d34ec4a2f247e4f1666cc45",
     "src/modules/timeline/components/artifact/timeline-phone-preview.tsx": "b2fa48f0a1cb5e6bc3606a9b8086c555c815000ea2c1045baf0769eeed6418a9",
     "src/modules/timeline/index.ts": "55a2053972a74743f607f0ac5b00adccb38022c087a66932d1e0af4e3e51b2c4",
     "src/modules/timeline/lib/adopt-timeline.test.ts": "1e8262e980ff2c153c65bad3ef8b51233d6182a303c41bd840e43d61481638a1",
     "src/modules/timeline/lib/adopt-timeline.ts": "f4c22aa2c0b0934c786ce4a50bf3eba262ef4ed49dd1fcbb2f0e1526244209e9",
     "src/modules/timeline/lib/audience-timeline.test.ts": "a8c5e5adb1e792760fab7afab82966e13d9722324c6488d2d2305005964d2be3",
-    "src/modules/timeline/lib/audience-timeline.ts": "6dd2e64965f090b5b043d5e4aa72ff87ef0100a2fb9a0b2ff6827b0321258266",
+    "src/modules/timeline/lib/audience-timeline.ts": "d91460fb372252b3ff37cb7f356d8d891779286719f8b13702e4044f1ff4dc1d",
     "src/modules/timeline/lib/domains.ts": "cfa9de6313011bf2cb43832c6e6fb8125826fdd825b353babdb5f61889c1d7e9",
     "src/modules/timeline/lib/format.ts": "4d10b47cc09598f786e56d7398315c7418a2e56227c3ca70bae93a25c64f3270",
     "src/modules/timeline/lib/freshness.test.ts": "8d6928eab68062994dcea8cfc2f03beb09eb27db1c3dd006b8d77666f5b20589",
     "src/modules/timeline/lib/freshness.ts": "f6ae619440c3bd015d9a1571c74dcaeac62e95de77c6a886bcd735c424a70e11",
     "src/modules/timeline/lib/milestone-reconciliation.ts": "4813058da605068e623bdfd23e264d917e74dd80f21f91c45732d190ec06e8e4",
     "src/modules/timeline/lib/onboarding/personalization.ts": "ae187e75e4e941134fe6fab3ffe2e1f383915c95243cbab5255bdc6b8d7ed5e8",
-    "src/modules/timeline/lib/owner-artifact.test.ts": "300dd8d81310d0170828e1266fee9ce8f8a8320a8b07fe27729c9509441bb18f",
-    "src/modules/timeline/lib/owner-artifact.ts": "b97b3ad440bbe24d9bfe3cd0dd12e2b994148a8c03f2f49c8e57493976a8fcfc",
+    "src/modules/timeline/lib/owner-artifact.test.ts": "5203f33218e7d1f287bb19407c57858f860fd35e2d7ef79138c42e7caf3fa0d6",
+    "src/modules/timeline/lib/owner-artifact.ts": "17eed2782f62baabd86cd8b5fe532aa3ea34ddf2c065305efea68dc9f18fcdf8",
     "src/modules/timeline/lib/owner-reorder.test.ts": "5827c7d16bac74d25c114a1f60d35786a51ee91f5411bb84fefe7f3a3064c0fa",
     "src/modules/timeline/lib/owner-reorder.ts": "0d86bacea0fc0b9efccb63412ef8a2ab5d28857ffddb1d74496a5832b192a4b3",
     "src/modules/timeline/lib/plan-view.test.ts": "031f71bb79e5bb00de282fd6b50f585854a4bea44ae741dca3fbd4ea27ddc5a1",
@@ -3384,7 +3537,7 @@
     "src/modules/timeline/lib/viewer-count.test.ts": "648126546de48aa2f3965ba2097b764361b168926d1cd8b8cfd14ef198ef1fed",
     "src/modules/timeline/lib/viewer-count.ts": "215825324da9b10c704c9405b06e54b28e3c577beff9417aac37662717277405",
     "src/modules/timeline/lib/vocabulary.ts": "73c85c71a0a1001b4ee18e612e57d0baf27e56c8c70fa5713bffc54ceb3e1e59",
-    "src/modules/timeline/server/actions/audience-timeline.ts": "6bb062b06ae1d3845b670f99c3bc17b9dfff4e8369a477d16bd663230e02aff1",
+    "src/modules/timeline/server/actions/audience-timeline.ts": "8a1ae76c9fe41816e6c8f68dc1c286bc365cca504364d2ee26dd45b94a92ec56",
     "src/modules/timeline/server/actions/connect-suite-workspace-security.test.ts": "d644e87aab5a63952ab9d8bbb883da425ec2afe01736af6b852e7eae1be6982b",
     "src/modules/timeline/server/actions/timeline-revalidation-contracts.ts": "a658c5747596410760a3f44acb26c44dce500d59548c6554f4349ffcef1aaa7e",
     "src/modules/timeline/server/actions/workspaces.ts": "be22886a73b44d36a30744e2ce2ac484e12cbabbb7153d017223c39abb4b7f9f",
@@ -3392,7 +3545,7 @@
     "src/modules/timeline/server/archived-project-readonly.test.ts": "f14c1739dc32378991db82a8f5f7a27e9304454998e996e0f880f0d9a9eaa05b",
     "src/modules/timeline/server/audience-authority.ts": "d887b506b193741668d4a5228366fec13cb3a275b1c0defad271c71ba3fd5d44",
     "src/modules/timeline/server/audience-revocation.ts": "158e7fb3875e3b7e99fc648aa4c38dd1abe9fdbc7752d045897e76ebe5bb2dab",
-    "src/modules/timeline/server/audience-timeline.ts": "577969e335b40c50ed8db1e99251405f895232d92ff04e314db669472309ec7c",
+    "src/modules/timeline/server/audience-timeline.ts": "6d5dfc528e3e28e7d7c130f2dc15f124b9a2d271075bb863d0a33bd548e188d0",
     "src/modules/timeline/server/auth.ts": "0f0cc792661f406f8c59884f54e669eb9d8d70510f0576e55df56b4fdfcf539f",
     "src/modules/timeline/server/couple-artifact-boundary.test.ts": "4838928785eef31c604d99c50e23f755727b746ee22b4e4fd43b84efdaa4bd53",
     "src/modules/timeline/server/db/binding-write-gates.test.ts": "a8583e2f6d95c4f9f5431450644b3880b7024cada980947a43315728644858ed",
@@ -3401,7 +3554,7 @@
     "src/modules/timeline/server/db/timeline-client.ts": "e58349b223a2e064c8c6e277f44812f3793199243c35cb3668ebae6bd5c7337b",
     "src/modules/timeline/server/db/timeline-overrides.persistence.test.ts": "e8e61c84d9f5bf1ee7897b5b73f7d607b258ec70543b7bc15e4ff7338578bd48",
     "src/modules/timeline/server/db/timeline-queries.ts": "dbd77562fef849aab390b249682581000055445bbc85187a5aa0c4818381b2cc",
-    "src/modules/timeline/server/db/timeline-schema.ts": "6d31a6f86ba6628512d7afbe4690d7b732f40f5932578f0aa0335a24840dca27",
+    "src/modules/timeline/server/db/timeline-schema.ts": "7a827c12799ca7c3657472a146caa2acc212948d68061e597cc18a7f61bdc846",
     "src/modules/timeline/server/project-recovery.test.ts": "cce25fc8cb708221c5360b5f68f9ccf7b10d79a2b4f462cdcddd54899c8d0032",
     "src/modules/timeline/server/project-recovery.ts": "59da20c592b1c6a25b2936c88288edfae855aa0c8f45da35fe04618f48958f0f",
     "src/modules/timeline/server/provision-workspace.resolver.test.ts": "c27d8ff82c79b8d4c1ea88183580bb7d9297667d5157f52fdfb65bab61304519",
@@ -3424,8 +3577,8 @@
     "src/modules/timeline/server/sync/tasks-workspace-prefs.ts": "6301bf6910a9daeeb270b9d06e7d20ac60ead94079ee6ed9d5b9630d6b12a35b",
     "src/modules/timeline/server/timeline-auth-policy.test.ts": "7a63e5731cfc6e279e04db096b0d40452fe76a8284d364ed4b60a86180e76715",
     "src/modules/timeline/server/timeline-auth-policy.ts": "7882130caabfaf0974a167b02aa2c5b178401291de4132eca03b287df8f19ea5",
-    "src/modules/timeline/server/timeline-gdpr.test.ts": "f84a44649e4cf357761e7e7348148c13e53e06c7e639cd07773ee69ea5b83399",
-    "src/modules/timeline/server/timeline-gdpr.ts": "88aee6592d9e4ae80e4f4f15efd4a5966f99e3d9b4bdca012f70afa17cc0a8cb",
+    "src/modules/timeline/server/timeline-gdpr.test.ts": "b115b0bf1407f93814d12e305a5111d6b56a14286df95057964efeb2cb61befe",
+    "src/modules/timeline/server/timeline-gdpr.ts": "d8255087dc9c52245b0bee2e14a1839c8e030873b5ff141f4d3a3f4fc7a0c02f",
     "src/modules/timeline/server/timeline-provisioning-contract.test.mjs": "d2499e8d55717c6ab4fe31f501e33aaadfbd0aeaeee51be148ebead668ba9486",
     "src/modules/timeline/server/unpublished-timeline-boundary.test.ts": "0c16edd3ecc10325a64391e56ef29593e7089c5af84e1f1a6676f0ca0a63ccb9",
     "src/modules/timeline/timeline-owner-accessibility-contract.test.mjs": "ebd952940b3372188c17c220f6394f97acdb90e5b88dc68d4acfee1e34da11bb",
@@ -3433,7 +3586,7 @@
     "src/modules/timeline/timeline-shared-metadata-contract.test.ts": "41bb547e0a5d3ce42a940a026853f1921c24e68118e4716926bcc41da45245d5",
     "src/modules/timeline/timeline.css": "482ebf117eb657ecd0ecd124f9478c130f5c9fc2a06f7ccac1a4c47a734540ea",
     "src/preview/hero-ticker-director-pass.html": "a4e1a4fe2221844744f5c133b16a9ac388f64aeb3d362acb81f4910a7002eff9",
-    "src/proxy.ts": "142163edd582d3168a69d74f6cc3798afdf25697661f363861d5c84ff2ba8975",
+    "src/proxy.ts": "3ec1b9226c533038cbc75199c87f4b72182528ca3908781e22fd72feeda79c36",
     "src/server/account-deletion-key.ts": "c1f261ce07f736e8d16b8179da259a0771b55bf0441b72b61ee99443136fc180",
     "src/server/account-deletion-lifecycle-contract.test.mjs": "fc1c1bed3f062707eb4eee2e229d73673ca3af1025005e511c8cdc97a5e97a10",
     "src/server/account-deletion-lifecycle.test.ts": "e9977741923745dca849b3c2328a6a44c0fe524cc7e4d9f80a42c79ef950c965",
@@ -3903,8 +4056,8 @@
     "src/components/app/messages/ping-personal-assistant.tsx": "58dddd6b8e51573d8f1a6627754bb0e5e1e058ac493dfb20413ce25a29c037b9",
     "src/components/app/messages/ping-personal-assistant.module.css": "3f80c8431ff2ffc47bb562f9aae70b0874132ab401f6126a8930ef19028d5c4b",
     "src/components/app/messages/ping-personal-assistant-client.ts": "65d6bfba069c64631ce04956f06beb23dd9067d5a8aa8e096503589bd34c473d",
-    "src/modules/timeline/app/audience/current-project-preview.tsx": "3586839ba5cd0ba010bcd8a7be7a01ef63922655afab1410302542734889d34b",
-    "src/modules/timeline/app/audience/current-project-preview-view.tsx": "128b9df98d63bfc20cb80e23933d7b943a6f3abca71b3a43f075188bc21dacde",
+    "src/modules/timeline/app/audience/current-project-preview.tsx": "79c86f5175dc1812b183cac4790737483e3208d1abc82473e9f0134d618f589d",
+    "src/modules/timeline/app/audience/current-project-preview-view.tsx": "46f18431862d4d76c48fc201c2a64d2407635e9ddb1484abecfddd6ed7c84a4c",
     "src/modules/timeline/app/audience/current-project-preview-model.ts": "c5eb5ce68347b468a6784de0b5da4f7557ef4c39d2ca4f140410ad3484f446a3",
     "src/modules/timeline/app/audience/current-project-preview.module.css": "4ba1fa1a3ccae304659014e437a4f9a177bb5bf6aad4cd6c82f0666193c5e3e1",
     "src/components/app/messages/ping-personal-assistant-client.test.ts": "f50c0a2909e1f143713170a3dea15424ceac82328246035fd347cc429b6f3d15",
@@ -3924,6 +4077,43 @@
     "src/server/conversations/personal-chat-attachment-storage.test.ts": "a94ce6c4dc8b65c1addfc0d6669ee3ff761aa002549e88b12afa8a47253f5b36",
     "src/server/conversations/personal-chat-attachment-storage.ts": "2e8bd63271272309a7f5e497ba2c3ad9cb477fc49551ffbc983873fa6c837f33",
     "src/server/conversations/personal-chat-attachments.persistence.test.ts": "19a0aa41c0260b316f64bdfed2e5535f0163f220997cb5fa8120503271c0dc3f",
-    "src/server/conversations/personal-chat-attachments.ts": "0a6b79fd0e0966c97f5755b4bd0df2b782c76258d3e1a2f4eac00731e878d3cb"
+    "src/server/conversations/personal-chat-attachments.ts": "0a6b79fd0e0966c97f5755b4bd0df2b782c76258d3e1a2f4eac00731e878d3cb",
+    "src/app/api/timeline/reminders/route.ts": "283bc928c436ee52d69aa494f6e1637054f3fd4bfb84ea6997b7434dc568032e",
+    "src/app/api/timeline/share/[token]/calendar.ics/route.ts": "927f5d53135cb1de2bf6a8fcdedc0186f6104f2dabee3c7c3132ba0071d55824",
+    "src/app/api/timeline/share/[token]/confirm/route.ts": "ab458f1f279959c6ef421b039fe0cd4e7df1757875ac0ba115a66bdaa5d4ab64",
+    "src/app/api/timeline/share/[token]/feed.ics/route.ts": "927f5d53135cb1de2bf6a8fcdedc0186f6104f2dabee3c7c3132ba0071d55824",
+    "src/app/api/timeline/share/[token]/follow/route.ts": "cfb168f6fffb77be6ba109498ff52be1c8df4ee15a2d9a5f18aeb80d2a21b5cc",
+    "src/app/api/timeline/share/[token]/services/route.ts": "29fe93693e71defa7c8fcbefdae73538fa46a6680c5226a7ba82b722016527e9",
+    "src/app/api/timeline/share/[token]/undo/route.ts": "4b9703fec0ffb3da3cb33d054a7ddad4e72bfd5e01802e4bb1155323b8c3927c",
+    "src/app/api/timeline/share/[token]/unsubscribe/route.ts": "0e61cf3d411f0ff9e36033256ccfdd936a767c2c85c68874536ea18e8ea34b47",
+    "src/app/api/timeline/share/subscriber/undo/route.ts": "4bc5d5f31974449174839db8e32c70d8caadd2ac19b8a44caf84d0bbb5672c4d",
+    "src/app/api/timeline/share/subscriber/unsubscribe/route.ts": "f21aba98dd104fa4012849174fcf21a57d2d015f5bc241567c0899017097a979",
+    "src/app/s/[token]/follow/confirm/page.tsx": "bbfd18d081a9eea211098802daf56094a836a7c0e74e6f6e60450a621b0bb619",
+    "src/app/s/[token]/follow/unsubscribe/page.tsx": "c4e9a6b65099960b837e2799c06d54a1b0fe0c46f82b0de2e0ab5b210c1fc656",
+    "src/app/s/follow/unsubscribe/page.tsx": "9e1e72221c79cd1e48fcb1d875a7b4ecbc97d3a65244a63378e72cfd2c723aed",
+    "src/app/s/follow/view/page.tsx": "df252c0a99dbccd7f4bf4061db93248176ce1752b61814e650d2df6f202f8ca0",
+    "src/modules/timeline/app/audience/master3-composition.test.mjs": "81937c1eb8c16740b62591a499e5d9cea2d29c580ba0a779a1ad5d95ff6df847",
+    "src/modules/timeline/app/audience/master3-settings-form.tsx": "c95edbaf2596ed123746b0c1f7c25354f70613906f08bafd2e3eb4fe4b01d721",
+    "src/modules/timeline/components/artifact/master3-actions.tsx": "221f1f46e879beb35290fabc6fb26376531e82fb101ad7c7304d9433255874bb",
+    "src/modules/timeline/components/artifact/master3-model.test.ts": "c03dc6d159bbe4694b8a955c201c1d85e52687cc335b2480b957878702976cb3",
+    "src/modules/timeline/components/artifact/master3-model.ts": "c6e71e083e8f9b9f4cafc7b665409eb1b6983f305beb8a012407a9817733c57a",
+    "src/modules/timeline/components/artifact/master3-ui-regression.test.mjs": "2cc56fd402ec2a7ff94d896faf5f772a0959ab06e23affec96a85f5fc03ea5a1",
+    "src/modules/timeline/components/artifact/timeline-follow.module.css": "72757b14ec698dcd17d02844ae5e50c0bb243c50c3c9c9a029ef99287c257214",
+    "src/modules/timeline/components/artifact/timeline-follow.tsx": "0deca74af777abbb84a286f34f8491dd4cf8a48f5046b213343d469c05c82db4",
+    "src/modules/timeline/lib/master3-calendar.test.ts": "ba15d73df34d79408fe1f2e68a3ffbd224e2a5b8ed7769b4c6cb5b6dfc7a8763",
+    "src/modules/timeline/lib/master3-calendar.ts": "cd8d42b88d552148a6be8a7bec10bff4eab4a117afb393448e021a722803b0f7",
+    "src/modules/timeline/lib/master3-presentation.test.ts": "ee52b9aea95b185828ec27cbd35f1394ffe11bdb6b8cebb831fa7061177341ff",
+    "src/modules/timeline/lib/master3-presentation.ts": "21ff3df20997b52986ca0438e6de95c218e201165cfc09710e271aa88cbc838f",
+    "src/modules/timeline/lib/master3-settings-form.ts": "d5b493cd4d3da59eacadb9a511a59f29d36309a41baafc15d9a335c29f8ac9a1",
+    "src/modules/timeline/lib/master3-social.test.ts": "19f0072e65ace05f239f332f48b7c38982876c4497c9e78f3bb12eea5a8c688e",
+    "src/modules/timeline/lib/master3-social.ts": "2a81bf177d3dacf7ead3acfa85658121d6278860f69291cdb14cc48600826669",
+    "src/modules/timeline/server/guest-http.test.ts": "78e7deaa7119073e0de93e1e29a0d3a9bef3bc11548a2c043e19666a7973a79c",
+    "src/modules/timeline/server/guest-http.ts": "315492c12517ab90f3ddbeea5f56251d8d5c4213c03f4c93da97e4d57d92ec66",
+    "src/modules/timeline/server/guest-notifications.test.ts": "f101d39aba9b1af8583577dc87d9cd6f9f0ea6cb011e7590a8f525616bc87425",
+    "src/modules/timeline/server/guest-notifications.ts": "ba250a354071db4d60229a4c7d6fa924fb7b1179486a0ba02724b1a020557b47",
+    "src/modules/timeline/server/guest-services.test.ts": "b2d8a9e8f13c1a5284a15983fa36e81e89e23db0e6595dbe7c3c52f8b3889f67",
+    "src/modules/timeline/server/guest-services.ts": "5aaa6482f2ecb477b7222bedbd45ad3a46d414b967887a16d33304a91fc2f81b",
+    "src/modules/timeline/server/master3-settings.test.ts": "d5674e8d0ce52b7ca476c9b678ec184142a6346c2156a637504aabb82c977e80",
+    "src/modules/timeline/server/master3-settings.ts": "2e4f3f293ce2f935f60fecd157db70f863e0122f607262289235afd760c9177b"
   }
 }
