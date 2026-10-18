@@ -40,7 +40,7 @@ async function recipients(executor: Executor, now: Date, publicationId: string, 
 // SQL fan-out keeps a large confirmed audience complete without loading emails
 // or silently truncating followers. The unique key makes every rerun inert.
 async function insertForPublication(executor: Executor, input: { publicationId: string; kind: Kind; event: string;
-  dueAt: Date; now: Date; reminder?: boolean }) {
+  dueAt: Date; now: Date; reminder?: boolean; weddingPhotos?: boolean }) {
   const prefix = `${digest(["timeline.guest.delivery.v1", input.publicationId, input.kind, input.event])}:`;
   const nowSeconds = Math.floor(input.now.getTime() / 1000), dueSeconds = Math.floor(input.dueAt.getTime() / 1000);
   const result = await executor.run(sql`INSERT INTO timeline_guest_deliveries
@@ -50,7 +50,10 @@ async function insertForPublication(executor: Executor, input: { publicationId: 
     JOIN audience_shares a ON a.publication_id=p.id AND a.token_hash=s.share_token_hash
     WHERE p.id=${input.publicationId} AND p.state='published' AND s.state='confirmed' AND s.confirmed_at IS NOT NULL
       AND s.delivery_state='sent' AND a.state='active' AND (a.expires_at IS NULL OR a.expires_at>${nowSeconds})
-      AND (${!input.reminder} OR s.confirmed_at<=${dueSeconds}) ON CONFLICT(dedupe_key) DO NOTHING`);
+      AND (${!input.reminder} OR s.confirmed_at<=${dueSeconds})
+      AND (${!input.weddingPhotos} OR NOT EXISTS (SELECT 1 FROM timeline_guest_deliveries old
+        WHERE old.subscription_id=s.id AND old.publication_id=p.id AND old.kind='photos'
+          AND old.status IN ('sending','sent','unknown'))) ON CONFLICT(dedupe_key) DO NOTHING`);
   return result.rowsAffected;
 }
 
@@ -63,10 +66,13 @@ export async function enqueuePublishedGuestUpdate(executor: Executor, input: {
   const now = input.now ?? new Date();
   const [publication] = await executor.select().from(publications).where(eq(publications.id, input.publicationId));
   if (!publication) return 0;
+  if (input.kind !== "photos" && !await hasPublicDate(executor, publication)) return 0;
   const policy = await weddingAfterFinal(executor, publication, now);
-  if (policy.after && (input.kind !== "photos" || !policy.photos)) return 0;
+  if (policy.wedding && input.kind === "photos" && (!policy.after || !policy.photos)) return 0;
+  if (policy.after && input.kind !== "photos") return 0;
   return insertForPublication(executor, { ...input,
-    event: policy.wedding && input.kind === "photos" ? "wedding-photos-once" : input.eventKey, dueAt: now, now });
+    event: policy.wedding && input.kind === "photos" ? "wedding-post-final-photos-once-v2" : input.eventKey,
+    weddingPhotos: policy.wedding && input.kind === "photos", dueAt: now, now });
 }
 
 function dayOffset(day: string, offset: number) {
@@ -75,6 +81,16 @@ function dayOffset(day: string, offset: number) {
   const result = new Date(`${day}T12:00:00Z`); result.setUTCDate(result.getUTCDate() + offset);
   return result.toISOString().slice(0, 10);
 }
+async function hasPublicDate(executor: Executor, publication: Recipient["publication"]) {
+  const valid = (date: string | null) => {
+    if (!date) return false;
+    try { dayOffset(date, 0); return true; } catch { return false; }
+  };
+  if (valid(publication.primaryDate)) return true;
+  const publicItems = await executor.select().from(items).where(eq(items.publicationId, publication.id));
+  return publicItems.some(item => item.state !== "cancelled" && item.unpublishedAt === null && valid(item.calendarDate));
+}
+
 async function weddingAfterFinal(executor: Executor, publication: Recipient["publication"], now: Date) {
   const [snapshot] = await executor.select().from(presentations).where(eq(presentations.publicationId, publication.id));
   const settings = validateMaster3ProjectSettings(snapshot?.settingsJson ?? {});
@@ -215,8 +231,15 @@ export async function dispatchDueGuestNotifications(input: { database: Database;
           await tx.update(deliveries).set({ status: "suppressed", lastErrorCode: "recipient_unavailable" }).where(eq(deliveries.id, row.id));
           return "suppressed" as const;
         }
+        if ((delivery.kind === "update" || delivery.kind === "date_change") && !await hasPublicDate(tx, recipient.publication)) {
+          await tx.update(deliveries).set({ status: "suppressed", lastErrorCode: "public_dates_unavailable" }).where(eq(deliveries.id, row.id));
+          return "suppressed" as const;
+        }
         const weddingPolicy = await weddingAfterFinal(tx, recipient.publication, dispatchNow);
-        if (weddingPolicy.after && (delivery.kind !== "photos" || !weddingPolicy.photos)) {
+        const eligibleWeddingPhotos = delivery.kind === "photos" && weddingPolicy.after && weddingPolicy.photos &&
+          delivery.dedupeKey === keyFor(recipient.subscription.id, recipient.publication.id, "photos", "wedding-post-final-photos-once-v2");
+        if ((weddingPolicy.wedding && delivery.kind === "photos" && !eligibleWeddingPhotos) ||
+            (weddingPolicy.after && delivery.kind !== "photos")) {
           await tx.update(deliveries).set({ status: "suppressed", lastErrorCode: "wedding_updates_finished" }).where(eq(deliveries.id, row.id));
           return "suppressed" as const;
         }

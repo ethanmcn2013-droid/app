@@ -110,6 +110,8 @@ test("unsubscribe, original share rotation/expiry, unpublication and source auth
 
 test("unconfigured transport is inert; lost replies, dev shim and absent provider IDs stay unknown without replay", async () => {
   const f = await fixture(); try {
+    // Exercise generic delivery outcomes independently of wedding photo phase gates.
+    await f.db.update(schema.timelinePublications).set({ audienceKind: "module" });
     await f.enqueue("one"); await f.enqueue("two", "date_change"); await f.enqueue("three", "photos");
     const unavailable = await f.dispatch({ configured: false, send: async () => { throw Error("not configured"); } });
     assert.equal(unavailable.configured, false); assert.ok((await f.rows()).every(row => row.status === "pending"));
@@ -385,4 +387,104 @@ test("post-final future window waits, share revocation blocks, and unknown accep
       assert.equal(calls, revoked ? 0 : 1);
     } finally { f.client.close(); }
   }
+});
+
+
+test("wedding photos wait until after the real final day without consuming the one-time slot", async () => {
+  const f = await fixture(); try {
+    await f.db.insert(schema.timelinePublicationPresentation).values({ publicationId: "publication",
+      settingsJson: { presentation: { photosUrl: "https://example.invalid/early-album" } } });
+    assert.equal(await f.enqueue("early-album", "photos"), 0);
+    await f.db.update(schema.timelinePublications).set({ primaryDate: "2026-11-01" });
+    assert.equal(await f.enqueue("on-day-album", "photos"), 0);
+    assert.equal((await f.rows()).length, 0);
+    await f.db.update(schema.timelinePublications).set({ primaryDate: "2026-10-31" });
+    assert.equal(await f.enqueue("real-after-day", "photos"), 1);
+    await f.db.update(schema.timelinePublicationPresentation).set({ settingsJson: { presentation: { photosUrl: "https://example.invalid/final-album" } } });
+    assert.equal(await f.enqueue("changed-url", "photos"), 0);
+    let calls = 0;
+    assert.equal((await f.dispatch(transport(async () => { calls++; return { state: "sent", providerMessageId: "actual-after-day" }; }))).sent, 1);
+    assert.equal(calls, 1);
+  } finally { f.client.close(); }
+});
+
+test("wedding photos never invent a final day for missing or explicitly undated final", async () => {
+  const f = await fixture(); try {
+    await f.db.update(schema.timelinePublications).set({ primaryDate: null });
+    await f.db.insert(schema.timelinePublicationPresentation).values({ publicationId: "publication",
+      settingsJson: { presentation: { photosUrl: "https://example.invalid/photos" } } });
+    assert.equal(await f.enqueue("no-final", "photos"), 0);
+    await f.db.update(schema.timelinePublications).set({ primaryDate: "2026-10-01" });
+    await f.db.insert(schema.timelinePublicationItems).values({ publicId: "undated-final", publicationId: "publication",
+      title: "Undated final", state: "later", sourceRelation: "undated-final", sourceDigest: "f".repeat(64) });
+    await f.db.update(schema.timelinePublicationPresentation).set({ settingsJson: {
+      presentation: { photosUrl: "https://example.invalid/photos" }, items: { "undated-final": { final: true } } } });
+    assert.equal(await f.enqueue("explicit-undated", "photos"), 0);
+  } finally { f.client.close(); }
+});
+
+test("legacy early wedding photo rows cannot dispatch or occupy the new post-event slot", async () => {
+  const f = await fixture(); try {
+    await f.db.insert(schema.timelinePublicationPresentation).values({ publicationId: "publication",
+      settingsJson: { presentation: { photosUrl: "https://example.invalid/photos" } } });
+    await f.db.insert(schema.timelineGuestDeliveries).values({ id: "legacy-early", publicationId: "publication", subscriptionId: "subscriber",
+      kind: "photos", dedupeKey: "legacy-wedding-photos-once:subscriber", dueAt: now, createdAt: now });
+    let calls = 0;
+    const send = transport(async () => { calls++; return { state: "sent", providerMessageId: "post-event-only" }; });
+    assert.equal((await f.dispatch(send)).suppressed, 1); assert.equal(calls, 0);
+    await f.db.update(schema.timelinePublications).set({ primaryDate: "2026-10-31" });
+    assert.equal(await f.enqueue("after-day", "photos"), 1);
+    assert.equal((await f.dispatch(send)).sent, 1); assert.equal(calls, 1);
+    assert.equal((await f.rows()).find(row => row.id === "legacy-early")?.status, "suppressed");
+  } finally { f.client.close(); }
+});
+
+test("legacy unknown wedding photo acceptance permanently prevents a replacement send", async () => {
+  const f = await fixture(); try {
+    await f.db.update(schema.timelinePublications).set({ primaryDate: "2026-10-31" });
+    await f.db.insert(schema.timelinePublicationPresentation).values({ publicationId: "publication",
+      settingsJson: { presentation: { photosUrl: "https://example.invalid/photos" } } });
+    await f.db.insert(schema.timelineGuestDeliveries).values({ id: "legacy-unknown", publicationId: "publication", subscriptionId: "subscriber",
+      kind: "photos", dedupeKey: "legacy-key", dueAt: now, createdAt: now, status: "unknown" });
+    assert.equal(await f.enqueue("replacement-must-not-send", "photos"), 0);
+    let calls = 0;
+    await f.dispatch(transport(async () => { calls++; return { state: "sent", providerMessageId: "no" }; }));
+    assert.equal(calls, 0);
+    assert.equal((await f.rows())[0].status, "unknown");
+  } finally { f.client.close(); }
+});
+
+
+test("no-date publications wait for a real public date before ordinary update intents", async () => {
+  const f = await fixture(); try {
+    await f.db.update(schema.timelinePublications).set({ primaryDate: null });
+    assert.equal(await f.enqueue("undated-edit-1"), 0);
+    assert.equal(await f.enqueue("undated-edit-2", "date_change"), 0);
+    await f.db.insert(schema.timelinePublicationItems).values([
+      { publicId: "cancelled-date", calendarDate: "2026-12-10", state: "cancelled" as const },
+      { publicId: "hidden-date", calendarDate: "2026-12-11", state: "later" as const, unpublishedAt: now },
+      { publicId: "undated-final", calendarDate: null, state: "later" as const },
+    ].map(item => ({ ...item, publicationId: "publication", title: item.publicId, sourceRelation: item.publicId, sourceDigest: "f".repeat(64) })));
+    await f.db.insert(schema.timelinePublicationPresentation).values({ publicationId: "publication", settingsJson: { items: { "undated-final": { final: true } } } });
+    assert.equal(await f.enqueue("not-a-public-date"), 0);
+    await f.db.insert(schema.timelinePublicationItems).values({ publicId: "real-date", calendarDate: "2026-12-12", state: "later",
+      publicationId: "publication", title: "Actual dated preparation", sourceRelation: "real-date", sourceDigest: "f".repeat(64) });
+    // An explicitly undated final must not hide a genuinely dated public preparation item.
+    assert.equal(await f.enqueue("first-real-date", "date_change"), 1);
+    assert.equal(await f.enqueue("first-real-date", "date_change"), 0);
+    let calls = 0;
+    assert.equal((await f.dispatch(transport(async () => { calls++; return { state: "sent", providerMessageId: "first-date" }; }))).sent, 1);
+    assert.equal(calls, 1);
+  } finally { f.client.close(); }
+});
+
+test("no-date dispatch rechecks date removal and suppresses stale ordinary update rows", async () => {
+  const f = await fixture(); try {
+    assert.equal(await f.enqueue("previously-dated"), 1);
+    await f.db.update(schema.timelinePublications).set({ primaryDate: null });
+    let calls = 0;
+    assert.equal((await f.dispatch(transport(async () => { calls++; return { state: "sent", providerMessageId: "must-not" }; }))).suppressed, 1);
+    assert.equal(calls, 0);
+    assert.equal((await f.rows())[0].lastErrorCode, "public_dates_unavailable");
+  } finally { f.client.close(); }
 });
