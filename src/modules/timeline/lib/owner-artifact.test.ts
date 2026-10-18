@@ -151,7 +151,9 @@ test("live owner project preview preserves the public allowlist and wedding fram
   });
 
   assert.equal(dto.audienceKind, "couple");
-  assert.equal(dto.ownerDisplayLabel, "Shared by Luna Events");
+  assert.equal(dto.ownerDisplayLabel, undefined);
+  assert.equal(dto.label, "Mara & Finn");
+  assert.equal(JSON.stringify(dto).includes("Luna Events"), false);
   assert.equal(dto.primaryDate?.date, "2026-04-18");
   assert.equal(dto.sections[0]?.items[0]?.title, "The Orchard reserved");
   assert.equal(dto.sections.flatMap((section) => section.items).length, 1);
@@ -292,4 +294,51 @@ test('timed owner items inherit the resolved project timezone without sample fie
  const projected=ownerProjectToTimelineDto({project:{slug:'test',name:'Test'},workspace:{ownerName:null,templateId:null},nodes,settings:{timezone:'America/New_York'},presentationSettings:{items:{[nodes[0].id]:{time:'14:00'}}},now:new Date('2026-10-18T00:30:00Z')});
  assert.equal(projected.presentation?.timezone,'America/New_York');
  assert.equal(projected.today,'2026-10-17');
+});
+
+
+test("explicit null omits owner credit for both couple and non-couple previews", () => {
+  for (const audienceKind of ["couple", "module"] as const) {
+    const dto = ownerProjectToTimelineDto({
+      project: { slug: "actual-project", name: "Actual project title" },
+      workspace: { ownerName: "Orla", templateId: null },
+      nodes: effectiveNodes,
+      settings: { audienceKind, ownerDisplayLabel: null },
+      now: new Date("2026-07-22T12:00:00.000Z"),
+    });
+    assert.equal(dto.label, "Actual project title");
+    assert.equal(Object.hasOwn(dto, "ownerDisplayLabel"), false);
+    assert.equal(JSON.stringify(dto).includes("Orla"), false);
+  }
+});
+
+test("couple previews retain explicit shared names without inferring actor identity", () => {
+  const dto = ownerProjectToTimelineDto({
+    project: { slug: "wedding", name: "Wedding plan" },
+    workspace: { ownerName: "Orla", templateId: "wedding" },
+    nodes: effectiveNodes,
+    settings: { ownerDisplayLabel: "Aoife & Cian" },
+    now: new Date("2026-07-22T12:00:00.000Z"),
+  });
+  assert.equal(dto.label, "Wedding plan");
+  assert.equal(dto.ownerDisplayLabel, "Aoife & Cian");
+  assert.equal(JSON.stringify(dto).includes("Orla"), false);
+});
+
+test("non-couple previews preserve the legacy credit only when not explicitly suppressed", () => {
+  const input = {
+    project: { slug: "course", name: "Course milestones" },
+    workspace: { ownerName: "Orla", templateId: null },
+    nodes: effectiveNodes,
+    now: new Date("2026-07-22T12:00:00.000Z"),
+  };
+  assert.equal(ownerProjectToTimelineDto(input).ownerDisplayLabel, "Shared by Orla");
+  assert.equal(
+    ownerProjectToTimelineDto({ ...input, settings: { ownerDisplayLabel: "Course team" } }).ownerDisplayLabel,
+    "Course team",
+  );
+  assert.equal(
+    Object.hasOwn(ownerProjectToTimelineDto({ ...input, workspace: { ...input.workspace, ownerName: null } }), "ownerDisplayLabel"),
+    false,
+  );
 });

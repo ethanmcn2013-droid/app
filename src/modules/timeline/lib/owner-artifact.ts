@@ -105,6 +105,14 @@ export function ownerProjectToTimelineDto(input: {
   const audienceKind =
     input.settings?.audienceKind ??
     defaultAudienceKind(input.workspace.templateId);
+  // An explicit null suppresses the credit. A wedding project must never infer
+  // the couple's shared name from a single workspace actor's name.
+  const ownerDisplayLabel =
+    input.settings?.ownerDisplayLabel !== undefined
+      ? input.settings.ownerDisplayLabel
+      : audienceKind !== "couple" && input.workspace.ownerName
+        ? `Shared by ${input.workspace.ownerName}`
+        : null;
   const dated = visible
     .map((node) => node.targetDate)
     .filter((date): date is string => Boolean(date))
@@ -132,16 +140,7 @@ export function ownerProjectToTimelineDto(input: {
       input.settings?.publicationId ?? `owner-preview-${input.project.slug}`,
     label: input.settings?.label ?? input.project.name,
     ...((input.presentationSettings?.presentation || Object.values(input.presentationSettings?.items??{}).some(item=>Boolean(item.time))) ? {presentation:{...input.presentationSettings?.presentation,timezone}} : {}),
-    ...((input.settings?.ownerDisplayLabel ??
-    (input.workspace.ownerName
-      ? `Shared by ${input.workspace.ownerName}`
-      : null))
-      ? {
-          ownerDisplayLabel:
-            input.settings?.ownerDisplayLabel ??
-            `Shared by ${input.workspace.ownerName}`,
-        }
-      : {}),
+    ...(ownerDisplayLabel ? { ownerDisplayLabel } : {}),
     ...(primaryDate && primaryDateLabel
       ? {
           primaryDate: {
