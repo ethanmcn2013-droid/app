@@ -12,7 +12,7 @@ async function boundedGuestText(request:Request,limit:number):Promise<string|nul
 export function createGuestHttpHandler(ports:GuestHttpPorts){return async(request:Request,token:string,operation:'services'|'calendar'|'follow'|'confirm'|'unsubscribe'|'undo')=>{
  try{
   const resolved=await ports.resolve(token);if(resolved.kind!=='ok'||!resolved.dto)return error('share_unavailable','This shared timeline is unavailable.',404);
-  if(operation==='services'){if(request.method!=='GET')return error('method_not_allowed','Use GET.',405);const body:GuestTimelineServices={available:true,followAvailable:await ports.followAvailable(),calendar:master3CalendarLinks(resolved.dto,token)};return Response.json(body,{headers});}
+  if(operation==='services'){if(request.method!=='GET')return error('method_not_allowed','Use GET.',405);const calendar=master3CalendarLinks(resolved.dto,token),origin=new URL(request.url).origin;const body:GuestTimelineServices={available:true,followAvailable:await ports.followAvailable(),calendar:calendar?{...calendar,icsHref:new URL(calendar.icsHref,origin).href,feedHref:new URL(calendar.feedHref,origin).href.replace(/^https?:/,'webcal:')}:null};return Response.json(body,{headers});}
   if(operation==='calendar'){if(request.method!=='GET')return error('method_not_allowed','Use GET.',405);return new Response(renderMaster3Ics(resolved.dto),{headers:{...headers,'Content-Type':'text/calendar; charset=utf-8','Content-Disposition':'attachment; filename="timeline.ics"'}});}
   if(request.method!=='POST')return error('method_not_allowed','Use POST.',405);
   const origin=request.headers.get('origin');if(origin&&origin!==new URL(request.url).origin)return error('origin_invalid','This request could not be verified.',403);
@@ -66,4 +66,8 @@ export async function handleGuestReminders(request:Request):Promise<Response>{
   const now=new Date(),scheduled=await scheduleGuestReminders(db,now),delivery=await dispatchDueGuestNotifications({database:db,transport,links:createGuestSubscriberLinks({secret:process.env.TIMELINE_FOLLOW_SIGNING_SECRET,origin:TIMELINE_PUBLIC_ORIGIN}),authorize:async({shareTokenHash,publicationId}:{shareTokenHash:string;publicationId:string})=>(await resolveAudienceTimelineDigest(shareTokenHash,publicationId)).kind==='ok',limit:20});
   return Response.json({ok:true,cleanup,scheduled,delivery},{headers});
  }catch{return error('service_unavailable','Reminder delivery is unavailable right now.',503);}
+}
+/** Server composition helper: no network request and no private-preview fallback. */
+export async function getTimelineGuestServices(shareToken:string):Promise<GuestTimelineServices|null>{
+ const {TIMELINE_PUBLIC_ORIGIN}=await import('@/lib/product-urls');const response=await handleTimelineGuestRequest(new Request(TIMELINE_PUBLIC_ORIGIN+'/api/timeline/share/'+encodeURIComponent(shareToken)+'/services'),shareToken,'services');return response.ok?response.json():null;
 }
