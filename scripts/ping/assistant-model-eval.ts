@@ -164,7 +164,20 @@ async function main() {
       const tier: PlannerTier = model === "haiku" ? "simple" : model === "sonnet" ? "bulk" : "evaluation";
       await append({ event: "attempt_started", runId, requestId, caseId: item.id, model, at: new Date().toISOString() });
       const started = performance.now();
-      const transport: typeof fetch = options.live ? async (url, init) => { dispatched++; return fetch(url, init); }
+      const transport: typeof fetch = options.live ? async (url, init) => {
+        dispatched++;
+        let response: Response;
+        try { response = await fetch(url, init); }
+        catch { await append({ event: "provider_transport", runId, caseId: item.id, outcome: "transport_failed" });
+          throw new Error("planner_request_failed"); }
+        // Only bounded protocol metadata crosses this diagnostic boundary. Never
+        // persist response bodies, arbitrary headers, credentials or error text.
+        const rawId = response.headers.get("request-id");
+        const providerRequestId = rawId && /^req_[A-Za-z0-9_-]{1,100}$/.test(rawId) ? rawId : null;
+        await append({ event: "provider_transport", runId, caseId: item.id, outcome: "response_received",
+          status: response.status, providerRequestId });
+        return response;
+      }
         : async (_url, init) => {
           dispatched++;
           const request = JSON.parse(String(init?.body));
