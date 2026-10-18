@@ -2101,7 +2101,7 @@
     "src/app/robots.ts": "6c05ac9d7c401a718c7fa41273a32cfd3c71e96608f1e622f8693dff4e7143c3",
     "src/app/s/[token]/loading.tsx": "24b4c8d44e92c5040c6d891bf67771fe0e785938b30e9db5898fbfbda6208a6f",
     "src/app/s/[token]/not-found.tsx": "ef156f3db12fed31d14067543fb568ae3586ef33a51d005a96ed76243a63f715",
-    "src/app/s/[token]/opengraph-image.tsx": "a41947af717dfce94a0227069f3bf89f26456e161df6899e25a4709f185fcc7f",
+    "src/app/s/[token]/opengraph-image.tsx": "6ec9ac3113d583b6bfc514e583f6244171f596bab61f319ab26afbe2985603eb",
     "src/app/s/[token]/page.tsx": "dd3e0cb928295ac97a205d5f378cc7d0063f23ee722539a27205c291be628624",
     "src/app/s/[token]/view/route.ts": "93552add426076844eb7a6e7292149da137ba8e9604b83a52fc976778b1beb9f",
     "src/app/s/layout.tsx": "cf021f8aa063689e79cafbb57d9de9f7e2addf95c561813bd22da9357dbfab01",
@@ -3583,7 +3583,7 @@
     "src/modules/timeline/server/unpublished-timeline-boundary.test.ts": "0c16edd3ecc10325a64391e56ef29593e7089c5af84e1f1a6676f0ca0a63ccb9",
     "src/modules/timeline/timeline-owner-accessibility-contract.test.mjs": "ebd952940b3372188c17c220f6394f97acdb90e5b88dc68d4acfee1e34da11bb",
     "src/modules/timeline/timeline-public-url-contract.test.ts": "81cfda2e5980a36b6ae9a5ff951c96fd8206bcc6270243bbf2fa21d340003100",
-    "src/modules/timeline/timeline-shared-metadata-contract.test.ts": "41bb547e0a5d3ce42a940a026853f1921c24e68118e4716926bcc41da45245d5",
+    "src/modules/timeline/timeline-shared-metadata-contract.test.ts": "493c0297d7ba3c7703e4babf08b2b28726f1928e8ffaff135828bb482bf14539",
     "src/modules/timeline/timeline.css": "482ebf117eb657ecd0ecd124f9478c130f5c9fc2a06f7ccac1a4c47a734540ea",
     "src/preview/hero-ticker-director-pass.html": "a4e1a4fe2221844744f5c133b16a9ac388f64aeb3d362acb81f4910a7002eff9",
     "src/proxy.ts": "3ec1b9226c533038cbc75199c87f4b72182528ca3908781e22fd72feeda79c36",
@@ -4120,6 +4120,7 @@
     "src/modules/timeline/lib/master3-labels.ts": "60c1a980d9e092ddbde764883b4329bde5274db8d01d6248acd9a59811611691",
     "src/modules/timeline/server/owner-guest-summary.test.ts": "71e3c670192decccadbe4c1ee9f02440a3641fc46822dbfdf1948732b9a5c98a",
     "src/modules/timeline/server/owner-guest-summary.ts": "e23535678c109bdb07ed5145841531b711e6750b8433534e518d4ae959513bd6",
-    "src/modules/timeline/components/artifact/timeline-follow-focus.browser.test.mjs": "971631d747e29f8374be8fa74b1748245bc383a25ab3ff18667daa4a798df142"
+    "src/modules/timeline/components/artifact/timeline-follow-focus.browser.test.mjs": "971631d747e29f8374be8fa74b1748245bc383a25ab3ff18667daa4a798df142",
+    "src/modules/timeline/timeline-shared-social-image.test.mjs": "68772d6127f2dacc44c55cffa0ccb91e95d22bdba36bc17125752581ead5f825"
   }
 }
