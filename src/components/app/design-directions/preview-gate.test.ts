@@ -3,7 +3,7 @@ import test from "node:test";
 import { homeProjectsPreview } from "./preview-gate";
 
 test("design previews require an explicit review environment and never enable production", () => {
-  const keys = ["SIGNAL_ACCESS_MODE", "NEXT_PUBLIC_SIGNAL_ACCESS_MODE", "SIGNAL_HOME_PROJECTS_REVIEW", "NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV", "NODE_ENV"] as const;
+  const keys = ["SIGNAL_ACCESS_MODE", "NEXT_PUBLIC_SIGNAL_ACCESS_MODE", "SIGNAL_HOME_PROJECTS_REVIEW", "NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV"] as const;
   const before = keys.map(key => [key, process.env[key]] as const);
   try {
     process.env.SIGNAL_ACCESS_MODE = "review";

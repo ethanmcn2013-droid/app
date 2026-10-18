@@ -76,7 +76,7 @@ export function ReviewExperience({ surface, initialDirection, initialState }: {
   const task = detail?.kind === "task" ? fixture.tasks.find(t => t.id === detail.id) : null;
   const project = fixture.projects.find(p => p.id === (task?.projectId ?? (detail?.kind === "project" ? detail.id : null)));
 
-  return <div className={`${styles.root} thin-scroll`} data-home-projects-review="" data-direction={initialDirection}>
+  return <div className={`${styles.root} thin-scroll`} data-home-projects-review="" data-direction={initialDirection} data-review-ready={restored ? "true" : "false"}>
     <section className={styles.reviewBar} aria-label="Design comparison controls">
       <div className={styles.reviewLine}><span className={styles.reviewLabel}>Design review · fictional example account</span><Link href={`/app/${surface === "home" ? "home" : "project"}`} className={styles.textLink}>Current app</Link></div>
       <div className={styles.reviewRow}>
@@ -95,6 +95,7 @@ export function ReviewExperience({ surface, initialDirection, initialState }: {
     <div className={styles.presentation}>
       {state === "loading" ? <section className={styles.state} aria-busy="true"><h1>{surface === "home" ? "Getting your day ready" : "Reading your projects"}</h1><p>This example pauses in a loading state so you can inspect it.</p><div className={styles.skeleton}/><div className={styles.skeleton}/><button onClick={()=>setState("busy")} type="button">Show the loaded view</button></section>
       : state === "error" ? <section className={styles.state} role="alert"><h1>Your work could not be read</h1><p>Nothing has changed. This is an example of a recoverable read error.</p><button onClick={()=>setState("busy")} type="button">Try again</button></section>
+      : surface === "projects" && fixture.projects.length > 0 && filtered.projects.length === 0 ? <section className={styles.state}><h1>No projects match your search</h1><p>Try a different project, purpose or person.</p><button type="button" onClick={()=>setQuery("")}>Clear search</button></section>
       : <Renderer surface={surface} data={filtered} onOpenTask={id=>setDetail({kind:"task",id})} onOpenProject={id=>setDetail({kind:"project",id})} onNavigate={target=>router.push(href(initialDirection,target))} />}
     </div>
 

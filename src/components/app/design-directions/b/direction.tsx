@@ -48,7 +48,7 @@ export default function DirectionWorkbench({
           <section className={styles.listPane} aria-labelledby="queue-heading">
             <div className={styles.paneHeading}>
               <div>
-                <h2 id="queue-heading">Your queue</h2>
+                <h2 id="queue-heading">Work queue</h2>
                 <p>{data.tasks.length ? `${data.tasks.length} tasks to review` : 'A clear place to start'}</p>
               </div>
               <span className={styles.dayStamp}>{data.dateLabel}</span>
@@ -178,7 +178,7 @@ export default function DirectionWorkbench({
                 <div className={styles.nextMilestone}>
                   <span>Next up</span>
                   <strong>{selectedProject.next}</strong>
-                  <time dateTime={selectedProject.nextDate}>{selectedProject.nextDateLabel}</time>
+                  <time dateTime={selectedProject.nextDate ?? undefined}>{selectedProject.nextDateLabel}</time>
                 </div>
                 <dl className={styles.facts}>
                   <div><dt>Lead</dt><dd>{selectedProject.lead}</dd></div>
