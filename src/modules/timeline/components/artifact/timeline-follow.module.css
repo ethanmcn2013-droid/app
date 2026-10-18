@@ -22,21 +22,26 @@
 }
 .root button:hover:not(:disabled), .confirmation button:hover:not(:disabled) { background: var(--x-m3-hover, #f4f4f7); }
 .root button:disabled, .confirmation button:disabled { cursor: wait; opacity: .55; }
-.root :is(input, button, a):focus-visible, .confirmation button:focus-visible { outline: 2px solid var(--x-m3-accent, #4b3df2); outline-offset: 3px; }
+.root :is(input, button, a, [tabindex="-1"]):focus-visible, .confirmation :is(button, [tabindex="-1"]):focus-visible { outline: 2px solid var(--x-m3-accent, #4b3df2); outline-offset: 3px; }
 .form:focus-within { border-color: var(--x-m3-accent, #4b3df2); box-shadow: 0 0 0 1px var(--x-m3-accent, #4b3df2), 0 0 0 5px var(--x-m3-accent-soft, #eceafe); }
 .root .form input:focus-visible { outline: 2px solid transparent; }
 .status { margin: 8px 0 0; color: var(--x-m3-ink-2, #55555e); font-size: 13px; line-height: 19px; overflow-wrap: anywhere; }
 .status:empty { display: none; }
+.invitation, .pending { margin: 0 0 12px; color: var(--x-m3-ink, #0e0e12); font-size: 15px; line-height: 22px; overflow-wrap: anywhere; }
+.pending { margin-bottom: 0; }
+.help { margin: 8px 0 0; color: var(--x-m3-ink-3, #6b6b75); font-size: 12px; line-height: 18px; overflow-wrap: anywhere; }
+.help a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.error { margin: 8px 0 0; color: var(--x-m3-error, #c0341d); font-size: 13px; line-height: 19px; }
+.root .form:has(input[aria-invalid="true"]) { border-color: var(--x-m3-error, #c0341d); }
 .root [role="alert"], .root [aria-invalid="true"] { color: var(--x-m3-error, #c0341d); }
 .root input[aria-invalid="true"] { border-color: var(--x-m3-error, #c0341d); }
-.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
-.actions button { border-color: var(--x-m3-edge-soft, #d6d6dc); padding-inline: 12px; font-size: 12px; }
-.root[data-follow-state="confirmed"] { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; }
-.root[data-follow-state="confirmed"] > .status:not([role]) { position: relative; display: inline-flex; align-items: center; gap: 8px; flex: 1; margin: 0; min-height: 44px; padding: 8px 12px; border-radius: 999px; background: var(--x-m3-chip, #f1f1f4); color: var(--x-m3-ink, #0e0e12); font-size: 12px; }
-.root[data-follow-state="confirmed"] > .status:not([role])::before { content: ""; width: 13px; height: 13px; flex: none; border: 1px solid currentColor; border-radius: 50%; background: currentColor; }
-.root[data-follow-state="confirmed"] > .status:not([role])::after { content: ""; position: absolute; left: 15.5px; top: calc(50% - 3px); width: 6px; height: 4px; border-left: 1.5px solid var(--x-m3-bg, #fff); border-bottom: 1.5px solid var(--x-m3-bg, #fff); transform: rotate(-45deg); }
-.root[data-follow-state="confirmed"] > button { border-color: transparent; padding-inline: 9px; color: var(--x-m3-ink-2, #55555e); font-size: 12px; font-weight: 400; }
-.root[data-follow-state="confirmed"] > [role="status"] { flex-basis: 100%; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.actions button { border-color: var(--x-m3-edge-soft, #d6d6dc); padding-inline: 8px; font-size: 12px; }
+.following, .undo { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 2px 4px 2px 12px; border-radius: 999px; background: var(--x-m3-chip, #f1f1f4); color: var(--x-m3-ink, #0e0e12); }
+.following svg { flex: none; }
+.following p, .undo span { flex: 1; min-width: 0; margin: 0; font-size: 13px; line-height: 19px; overflow-wrap: anywhere; }
+.root .following button, .root .undo button { flex: none; border-color: transparent; padding-inline: 10px; background: transparent; color: var(--x-m3-ink-2, #55555e); font-size: 12px; font-weight: 400; }
+.caption { margin: 12px 0 0; color: var(--x-m3-ink, #0e0e12); font-size: 14px; line-height: 20px; overflow-wrap: anywhere; }
 .confirmation { max-width: 480px; margin: 10vh auto; padding: 24px; color: var(--x-m3-ink, #0e0e12); font-family: var(--font-geist-sans), Geist, sans-serif; }
 .confirmation h1 { font-size: 24px; line-height: 1.25; letter-spacing: -.02em; font-weight: 600; }
 .confirmation p { font-size: 15px; line-height: 1.6; }
@@ -54,12 +59,16 @@
   .root .form { grid-template-columns: 1fr; gap: 10px; border: 0; padding: 0; border-radius: 0; background: transparent; box-shadow: none; }
   .label { position: static; width: auto; height: auto; margin: 0; clip-path: none; overflow: visible; white-space: normal; font-size: 13px; line-height: 18px; font-weight: 600; }
   .root input { border: 1px solid var(--x-m3-edge, #8f8f98); font-size: 16px; background: var(--x-m3-bg, #fff); }
+  .invitation, .pending { font-size: 16px; line-height: 24px; }
+  .help { font-size: 13px; line-height: 19px; }
   .root .form button { width: 100%; }
   .root input:focus-visible { outline: 2px solid var(--x-m3-accent, #4b3df2); outline-offset: 2px; box-shadow: 0 0 0 5px var(--x-m3-accent-soft, #eceafe); }
 }
 @media (prefers-reduced-motion: reduce) { .root *, .confirmation * { transition: none !important; animation: none !important; } }
 @media (forced-colors: active) {
   .root .form, .root input, .root button, .confirmation button { border: 1px solid ButtonText; }
-  .root :is(input, button):focus-visible, .confirmation button:focus-visible { outline: 2px solid Highlight; }
-  .root[data-follow-state="confirmed"] > .status:not([role]) { border: 1px solid CanvasText; }
+  .root :is(input, button, a, [tabindex="-1"]):focus-visible, .confirmation :is(button, [tabindex="-1"]):focus-visible { outline: 2px solid Highlight; }
+  .following, .undo { border: 1px solid CanvasText; }
+  .following svg circle { fill: CanvasText; }
+  .following svg path { stroke: Canvas; }
 }

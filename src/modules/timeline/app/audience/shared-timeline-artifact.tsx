@@ -66,8 +66,8 @@ export function SharedTimelineArtifact({ timeline, shareToken, services, subscri
         guestServices={{
           ...(shareUrl ? { shareUrl } : {}),
           ...(services?.calendar ? { calendar: services.calendar } : {}),
-          ...(shareToken ? { follow: <TimelineFollow shareToken={shareToken} /> } : subscriber ? {
-            follow: <TimelineFollowAction inline
+          ...(shareToken ? { follow: <TimelineFollow shareToken={shareToken} timeline={timeline} /> } : subscriber ? {
+            follow: <TimelineFollowAction inline timeline={timeline}
               endpoint="/api/timeline/share/subscriber/unsubscribe"
               undoEndpoint="/api/timeline/share/subscriber/undo"
               proof={subscriber.unsubscribeProof}
