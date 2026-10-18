@@ -108,10 +108,27 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
     const element = document.documentElement;
     if (!visible || page) return;
     element.dataset.floatingChatOpen = "true";
-    const measure = () => element.style.setProperty("--signal-floating-chat-width", `${panel.current?.getBoundingClientRect().width ?? 760}px`);
+    const measure = () => {
+      const rect = panel.current?.getBoundingClientRect();
+      element.style.setProperty("--signal-floating-chat-width", `${rect?.width ?? 500}px`);
+      // Notifications on narrow screens fit above the actual panel, including
+      // when the visual keyboard moves it without changing its width.
+      element.style.setProperty("--signal-floating-chat-top", `${Math.max(0, rect?.top ?? 0)}px`);
+    };
     measure(); const observer = new ResizeObserver(measure); if (panel.current) observer.observe(panel.current);
-    return () => { observer.disconnect(); delete element.dataset.floatingChatOpen; element.style.removeProperty("--signal-floating-chat-width"); };
-  }, [visible, page]);
+    window.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("scroll", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("scroll", measure);
+      delete element.dataset.floatingChatOpen;
+      element.style.removeProperty("--signal-floating-chat-width");
+      element.style.removeProperty("--signal-floating-chat-top");
+    };
+  }, [visible, page, viewportBounds]);
 
   return <Context.Provider value={context}>{children}
     {!bare && !visible ? <button aria-label="Open chat" title="Open chat" className={styles.launcher} onClick={() => show()} ref={launcher} type="button"><ChatIcon.thread size={22} /></button> : null}
