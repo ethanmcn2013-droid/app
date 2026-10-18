@@ -3900,7 +3900,7 @@
     "src/server/ping/telemetry.ts": "ad1904456fe027bf22d481d14d91b79db8f52ba3617c55d6f905592a7256315c",
     "src/server/ping/typed-session-selected-read.test.ts": "dc509dede1ed9611763985844e9835c7d5333d5f6246bd8408046aa872b23374",
     "src/app/app/timeline/[projectSlug]/current-preview/page.tsx": "67c1b139c140c3837ad63c45e1b22c7e40cffef706ceec110fd1af98073e5a83",
-    "src/components/app/messages/ping-personal-assistant.tsx": "b6cb64b0dececb5e5169dd8732541226c4cf0a683ead5da09928eaa870436a43",
+    "src/components/app/messages/ping-personal-assistant.tsx": "62fa4ff1b1d5469a07b396d76a7a5e5685f715c3be510ac7f3c4ad0b365280be",
     "src/components/app/messages/ping-personal-assistant.module.css": "a125e5dc32e3b7d9c43a335899245c791386abf4bc2f8fac75b0a7b433e69d01",
     "src/components/app/messages/ping-personal-assistant-client.ts": "65851da4f348665ca015a559e9b2e06af4d86db3e7a4caa09210643abc5e229e",
     "src/modules/timeline/app/audience/current-project-preview.tsx": "3586839ba5cd0ba010bcd8a7be7a01ef63922655afab1410302542734889d34b",
