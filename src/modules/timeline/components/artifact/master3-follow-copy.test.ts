@@ -35,6 +35,18 @@ test("the next email uses chronological remaining reminders rather than an expir
   assert.doesNotMatch(copy.nextEmail, /expired-reminder/);
 });
 
+test("a new follower is never promised a reminder whose consent cutoff was today", () => {
+  const copy = master3FollowCopy(dto({ today: "2026-11-01", sections: [{ state: "later", label: "Dates", items: [
+    item("final", "2026-12-01", { final: true }),
+  ] }] }));
+  assert.equal(copy.nextEmail, "Next email: One week to go, Tue 24 Nov.");
+  assert.doesNotMatch(copy.nextEmail, /today|One month/);
+  const lastReminder = master3FollowCopy(dto({ today: "2026-11-30", sections: [{ state: "later", label: "Dates", items: [
+    item("final", "2026-12-01", { final: true }),
+  ] }] }));
+  assert.equal(lastReminder.nextEmail, "No more emails are scheduled.");
+});
+
 test("a remaining For you reminder is named and a covered one is not promised", () => {
   const pending = master3FollowCopy(dto({ sections: [{ state: "later", label: "Dates", items: [
     item("reply", "2026-10-22", { forYou: true }), item("final", "2026-11-20", { final: true }),

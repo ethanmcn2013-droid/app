@@ -20,7 +20,9 @@ export function master3FollowCopy(timeline?: AudienceTimelineDto, suppliedModel?
   const weddingAfter = model.after && (timeline.audienceKind === "couple" || p.market === "wedding");
   // The wedding closes ordinary updates after its real final date, even if
   // the public projection contains a later For you date. Photos are separate.
-  const reminders = weddingAfter ? [] : model.reminders;
+  // Today's reminder may predate this visitor's confirmation cutoff. Without
+  // subscriber-specific delivery evidence, promise only future reminders.
+  const reminders = weddingAfter ? [] : model.reminders.filter(reminder => reminder.date > model.today);
   const photoOffer = weddingAfter && p.afterFollow === true && !p.photosUrl;
   const remainingPost = reminders.find(reminder => reminder.kind === "post-final");
   const postDatesLeft = !weddingAfter && (p.market === "launch" || p.market === "school") &&
