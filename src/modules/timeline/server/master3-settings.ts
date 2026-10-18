@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { opLog } from '@/server/operational-log';
 import 'server-only';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { db } from './db/timeline-client';
@@ -131,6 +133,7 @@ export function createMaster3SettingsStore(database: typeof db) {
         if (!p)
             throw new TypeError('Timeline not found');
         const settings = validateMaster3ProjectSettings(value);
+        const previous=await publication(publicationId);
         const ids = new Set((await database
             .select({
             id: timelinePublicationItems.publicId
@@ -167,6 +170,11 @@ export function createMaster3SettingsStore(database: typeof db) {
             })
             .where(eq(timelinePublications.id, publicationId));
         });
+        if(JSON.stringify(previous??{})!==JSON.stringify(settings)){
+            const kind=settings.presentation?.photosUrl && previous?.presentation?.photosUrl!==settings.presentation.photosUrl?'photos':'update';
+            const eventKey=createHash('sha256').update(JSON.stringify([settings,Math.floor(now.getTime()/1000)])).digest('hex');
+            await queueMaster3PublishedUpdate(database,{publicationId,kind,eventKey,now});
+        }
     }
     async function projectUpdatedAt(workspaceSlug: string, projectSlug: string) {
         if (!await available())
@@ -189,4 +197,18 @@ export const master3Settings = createMaster3SettingsStore(db);
 export async function master3SchemaAvailable(): Promise<boolean> {
     const result = await db.run(sql `SELECT name FROM sqlite_master WHERE type='table' AND name IN ('timeline_project_presentation','timeline_publication_presentation','timeline_guest_subscriptions','timeline_guest_deliveries')`);
     return result.rows.length === 4;
+}
+
+/** Enqueue only after the primary write committed. Failure cannot erase a saved change or claim mail was sent. */
+export async function queueMaster3PublishedUpdate(database:typeof db,input:{publicationId:string;kind:'update'|'date_change'|'photos';eventKey:string;now?:Date}):Promise<boolean>{
+    try{
+        const tables=await database.run(sql`SELECT name FROM sqlite_master WHERE type='table' AND name IN ('timeline_guest_subscriptions','timeline_guest_deliveries')`);
+        if(tables.rows.length!==2)return false;
+        const {enqueuePublishedGuestUpdate}=await import('./guest-notifications');
+        await database.transaction(tx=>enqueuePublishedGuestUpdate(tx,input),{behavior:'immediate'});
+        return true;
+    }catch{
+        try{opLog('warn','timeline-guest-update','notification_queue_unavailable');}catch{/* Diagnostics cannot alter a successful save. */}
+        return false;
+    }
 }

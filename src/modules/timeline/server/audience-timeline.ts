@@ -1,4 +1,4 @@
-import { master3Settings } from './master3-settings';
+import { master3Settings, queueMaster3PublishedUpdate } from './master3-settings';
 import { validateMaster3ProjectSettings, type Master3Presentation, type Master3ItemPresentation } from '../lib/master3-presentation';
 import "server-only";
 
@@ -561,6 +561,7 @@ export async function publishAudiencePublication(
       createdAt: now,
     });
   });
+  await queueMaster3PublishedUpdate(db,{publicationId,kind:'update',eventKey:`published:${Math.floor(now.getTime()/1000)}`,now});
   return rawToken;
 }
 
@@ -631,6 +632,8 @@ export async function updateAudiencePublicationItem(input: {
   if (!(await ownsPublication(input.publicationId, input.workspaceSlug))) {
     throw new TypeError("Publication not found");
   }
+  const [previous]=await db.select({title:timelinePublicationItems.title,date:timelinePublicationItems.calendarDate,state:timelinePublicationItems.state}).from(timelinePublicationItems).where(and(eq(timelinePublicationItems.publicId,input.publicId),eq(timelinePublicationItems.publicationId,input.publicationId))).limit(1);
+  if(!previous)throw new TypeError('Milestone not found');
   const now = new Date();
   await db.transaction(async (tx) => {
     await tx
@@ -657,6 +660,9 @@ export async function updateAudiencePublicationItem(input: {
         ),
       );
   });
+  if(previous.title!==input.title||previous.date!==input.calendarDate||previous.state!==input.state){
+    await queueMaster3PublishedUpdate(db,{publicationId:input.publicationId,kind:previous.date!==input.calendarDate?'date_change':'update',eventKey:digestSourceFields({title:input.title,date:input.calendarDate,completionState:`${input.publicId}:${input.state}:${Math.floor(now.getTime()/1000)}`}),now});
+  }
 }
 
 /**
@@ -680,6 +686,7 @@ export async function setAudiencePrimaryDate(input: {
   if (!(await ownsPublication(input.publicationId, input.workspaceSlug))) {
     throw new TypeError("Publication not found");
   }
+  const [previous]=await db.select({label:timelinePublications.primaryDateLabel,date:timelinePublications.primaryDate}).from(timelinePublications).where(and(eq(timelinePublications.id,input.publicationId),eq(timelinePublications.workspaceSlug,input.workspaceSlug))).limit(1);
   const conceal = !input.primaryDate || !input.primaryDateLabel;
   const now = new Date();
   await db
@@ -696,6 +703,7 @@ export async function setAudiencePrimaryDate(input: {
         eq(timelinePublications.workspaceSlug, input.workspaceSlug),
       ),
     );
+  if(previous?.label!==(conceal?null:input.primaryDateLabel)||previous?.date!==(conceal?null:input.primaryDate))await queueMaster3PublishedUpdate(db,{publicationId:input.publicationId,kind:'date_change',eventKey:digestSourceFields({title:conceal?'':input.primaryDateLabel!,date:conceal?null:input.primaryDate,completionState:`primary:${Math.floor(now.getTime()/1000)}`}),now});
   return conceal ? "concealed" : "set";
 }
 

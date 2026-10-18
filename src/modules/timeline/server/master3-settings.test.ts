@@ -33,5 +33,22 @@ test('actual SQLite owner-scoped settings and publication snapshot stay independ
   await assert.rejects(store.savePublication('owner','owned','public',{items:{private_node:{note:'Wrong id'}}}),/outside/);
   assert.deepEqual(Object.keys((await store.publication('public'))?.items??{}),['public_item']);
   assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_subscriptions')).rows[0].n),0);
+  await client.execute("UPDATE timeline_publications SET state='published' WHERE id='public'");
+  const tokenHash='a'.repeat(64);
+  await client.execute({sql:"INSERT INTO audience_shares(id,publication_id,token_hash,state) VALUES('share','public',?,'active')",args:[tokenHash]});
+  await client.execute({sql:"INSERT INTO timeline_guest_subscriptions(id,publication_id,share_token_hash,email,email_hash,state,delivery_state,confirmed_at) VALUES('sub','public',?,'synthetic@example.test',?,'confirmed','sent',unixepoch())",args:[tokenHash,'b'.repeat(64)]});
+  await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Published update'}});
+  assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_deliveries')).rows[0].n),1);
+  await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Published update'}});
+  assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_deliveries')).rows[0].n),1);
+  await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Published update',photosUrl:'https://example.test/album'}});
+  assert.equal(Number((await client.execute("SELECT COUNT(*) AS n FROM timeline_guest_deliveries WHERE kind='photos'")).rows[0].n),1);
+  await client.execute("CREATE TRIGGER reject_queue BEFORE INSERT ON timeline_guest_deliveries BEGIN SELECT RAISE(ABORT,'synthetic queue failure'); END");
+  await store.savePublication('owner','owned','public',{presentation:{onDayNote:'Primary save survives',photosUrl:'https://example.test/album'}});
+  assert.equal((await store.publication('public'))?.presentation?.onDayNote,'Primary save survives');
+  assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_deliveries')).rows[0].n),2);
+  await store.saveProject('owner','owned','plan',{presentation:{onDayNote:'Private only'}});
+  assert.equal(Number((await client.execute('SELECT COUNT(*) AS n FROM timeline_guest_deliveries')).rows[0].n),2);
+
  }finally{client.close();try{fs.rmSync(dir,{recursive:true,force:true});}catch{/* libSQL may retain the handle after close on Windows, matching test-temp-database.mjs. */}}
 });
