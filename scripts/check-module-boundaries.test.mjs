@@ -37,3 +37,12 @@ for (const [name, host, imported] of [
   const result = check(host, imported);
   assert.equal(result.status, 1); assert.match(result.stderr, /\[rule-[12]\]/);
 });
+
+test("public Timeline HTTP routes may compose only their narrow guest port", () => {
+  for (const host of ["src/app/api/timeline/share/[token]/calendar/route.ts", "src/app/api/timeline/reminders/route.ts"]) {
+    assert.equal(check(host, "@/modules/timeline/server/guest-http").status, 0, host);
+    assert.equal(check(host, "@/modules/timeline/server/audience-timeline").status, 1, host);
+  }
+  assert.equal(check("src/app/api/timeline/private/route.ts", "@/modules/timeline/server/guest-http").status, 1);
+  assert.equal(check("src/app/api/timeline/reminders-neighbor/route.ts", "@/modules/timeline/server/guest-http").status, 1);
+});

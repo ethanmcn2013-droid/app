@@ -416,7 +416,7 @@
       "materialityReview": {
         "materialityHash": "3fcba4d3b2bb4dcf",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-settings.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-settings.json"
       }
     },
     {
@@ -1422,7 +1422,7 @@
       "materialityReview": {
         "materialityHash": "56f4c16d02cbcebb",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.welcome.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.welcome.json"
       }
     },
     {
@@ -2136,7 +2136,7 @@
       "materialityReview": {
         "materialityHash": "795236cc4236a32a",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-project.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-project.json"
       }
     },
     {
@@ -2184,7 +2184,7 @@
       "materialityReview": {
         "materialityHash": "50734606e8cded67",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-project-loading.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-project-loading.json"
       }
     },
     {
@@ -2744,7 +2744,7 @@
       "parentJourney": "shared-output-viewed",
       "archetype": "public-information-and-proof",
       "primaryJob": "Understand the project journey and its progress at a glance.",
-      "primaryAction": "Explore milestone points or switch the time lens.",
+      "primaryAction": "Read the countdown and ordered dates, add authorized dates to a calendar, or share the public link.",
       "roles": [
         "link-holder"
       ],
@@ -2782,7 +2782,7 @@
       "lastReviewedAt": "2026-10-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d0d44a5e281625a9"
+      "materialityHash": "dd3e0cb928295ac9"
     },
     {
       "id": "tasks.state.s-by-token-loading",
@@ -3006,11 +3006,11 @@
       "lastReviewedAt": "2026-10-20",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "e0e6df7d2e7508c5",
+      "materialityHash": "9dcb7b09c5c2c254",
       "materialityReview": {
-        "materialityHash": "e0e6df7d2e7508c5",
+        "materialityHash": "9dcb7b09c5c2c254",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-home-loading.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-home-loading.json"
       }
     },
     {
@@ -3053,11 +3053,11 @@
       "lastReviewedAt": "2026-10-20",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f0e4960b366e6091",
+      "materialityHash": "94e95fe898bce26d",
       "materialityReview": {
-        "materialityHash": "f0e4960b366e6091",
+        "materialityHash": "94e95fe898bce26d",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-home-error.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-home-error.json"
       }
     },
     {
@@ -3237,7 +3237,7 @@
       "materialityReview": {
         "materialityHash": "12140b4bae611a58",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-tasks-loading.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-tasks-loading.json"
       }
     },
     {
@@ -3478,7 +3478,7 @@
       "materialityReview": {
         "materialityHash": "19f85eac6f784ffa",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.resources.drive-upload.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.resources.drive-upload.json"
       }
     },
     {
@@ -3741,7 +3741,7 @@
       "materialityReview": {
         "materialityHash": "dacfebb578dd8234",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-messages.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-messages.json"
       }
     },
     {
@@ -3927,7 +3927,7 @@
       "materialityReview": {
         "materialityHash": "d89f2a4abd38ee57",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-analytics.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-analytics.json"
       }
     },
     {
@@ -3974,7 +3974,7 @@
       "materialityReview": {
         "materialityHash": "9a83f9e97a750b1b",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-analytics-loading.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-analytics-loading.json"
       }
     },
     {
@@ -4021,7 +4021,7 @@
       "materialityReview": {
         "materialityHash": "16a0888ed7b367ab",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-analytics-error.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-analytics-error.json"
       }
     },
     {
@@ -4251,7 +4251,7 @@
       "materialityReview": {
         "materialityHash": "4a1b05486b44306f",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-tools-by-slug.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-tools-by-slug.json"
       }
     },
     {
@@ -4299,7 +4299,7 @@
       "materialityReview": {
         "materialityHash": "45e0fc19aaf3ca48",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-tools-loading.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-tools-loading.json"
       }
     },
     {
@@ -4355,7 +4355,7 @@
       "materialityReview": {
         "materialityHash": "63e7924b683e8c06",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-concepts.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-concepts.json"
       }
     },
     {
@@ -4462,7 +4462,7 @@
       "materialityReview": {
         "materialityHash": "08771bc864af3e7b",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-files.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-files.json"
       }
     },
     {
@@ -4509,7 +4509,7 @@
       "materialityReview": {
         "materialityHash": "9beac142f8f04cb2",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-files-loading.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-files-loading.json"
       }
     },
     {
@@ -4556,7 +4556,7 @@
       "materialityReview": {
         "materialityHash": "83d088f7615c6a6b",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-files-error.json"
+        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-files-error.json"
       }
     },
     {
@@ -5034,6 +5034,219 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "58dddd6b8e51573d"
+    },
+    {
+      "id": "tasks.page.s-by-token-follow-confirm",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/s/[token]/follow/confirm",
+      "source": "tasks/src/app/s/[token]/follow/confirm/page.tsx",
+      "parentJourney": "shared-output-viewed",
+      "archetype": "review-and-approval-workspace",
+      "primaryJob": "Decide whether to confirm a requested Timeline follow.",
+      "primaryAction": "Confirm follow explicitly; opening the link does not subscribe.",
+      "roles": [
+        "link-holder"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "timeline-follow"
+      ],
+      "patternDependencies": [
+        "link-only-publication",
+        "explicit-confirmation",
+        "no-store-private"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-18",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "bbfd18d081a9eea2"
+    },
+    {
+      "id": "tasks.page.s-by-token-follow-unsubscribe",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/s/[token]/follow/unsubscribe",
+      "source": "tasks/src/app/s/[token]/follow/unsubscribe/page.tsx",
+      "parentJourney": "shared-output-viewed",
+      "archetype": "review-and-approval-workspace",
+      "primaryJob": "Decide whether to stop following an available shared Timeline.",
+      "primaryAction": "Stop following explicitly, with bounded Undo after the actual operation.",
+      "roles": [
+        "link-holder"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "timeline-follow"
+      ],
+      "patternDependencies": [
+        "link-only-publication",
+        "explicit-confirmation",
+        "no-store-private"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-18",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "c4e9a6b65099960b"
+    },
+    {
+      "id": "tasks.page.s-follow-unsubscribe",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/s/follow/unsubscribe",
+      "source": "tasks/src/app/s/follow/unsubscribe/page.tsx",
+      "parentJourney": "shared-output-viewed",
+      "archetype": "review-and-approval-workspace",
+      "primaryJob": "Decide whether to unsubscribe using a personal signed management link.",
+      "primaryAction": "Stop following explicitly; a GET only presents the confirmation.",
+      "roles": [
+        "subscriber"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "timeline-follow"
+      ],
+      "patternDependencies": [
+        "signed-subscriber-capability",
+        "explicit-confirmation",
+        "no-store-private"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-18",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "9e1e72221c79cd1e"
+    },
+    {
+      "id": "tasks.page.s-follow-view",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/s/follow/view",
+      "source": "tasks/src/app/s/follow/view/page.tsx",
+      "parentJourney": "shared-output-viewed",
+      "archetype": "public-information-and-proof",
+      "primaryJob": "Read a currently authorized Timeline through a personal subscriber link.",
+      "primaryAction": "Read the Timeline or explicitly unfollow without sharing the personal capability.",
+      "roles": [
+        "subscriber"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "error",
+        "success",
+        "restricted",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "timeline-artifact",
+        "timeline-follow"
+      ],
+      "patternDependencies": [
+        "signed-subscriber-capability",
+        "explicit-confirmation",
+        "no-store-private"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-10-18",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "df252c0a99dbccd7"
     }
   ]
 }

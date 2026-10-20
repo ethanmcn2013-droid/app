@@ -46,8 +46,24 @@ describe("Wave 3 interface contracts", () => {
     assert.match(taskCss, /\.toggle\[aria-pressed="true"\] \.glyphTick \{\s*animation: draw 180ms/);
     assert.match(taskCss, /prefers-reduced-motion: reduce\)[\s\S]*?\.glyphTick[\s\S]*?animation: none/);
     assert.doesNotMatch(taskCss, /:has\([^)]*:checked\)[^{]*\{[^}]*animation:/);
-    assert.match(timelineCss, /timeline-target-ring 220ms/);
-    assert.doesNotMatch(timelineCss, /timeline-target-ring 700ms/);
+    // Date passage versus actual Tasks completion is exercised by the
+    // Timeline-owned master3-model.test.ts, inside that module's boundary.
+    // The finite Next accent is decorative, not a completion receipt or
+    // user feedback. Reduced motion removes it and all transitions.
+    const nextMark = timelineCss.match(/\.mark\[data-state="next"\][^{]*\{([^}]+)\}/);
+    assert.ok(nextMark);
+    assert.match(nextMark[1], /animation: nextPulse 2\.4s ease-in-out 3;/);
+    assert.match(timelineCss, /prefers-reduced-motion: reduce\)[\s\S]*?animation: none !important;[\s\S]*?transition: none !important/);
+    const feedbackTransitions = [...timelineCss.matchAll(/transition:\s*([^;}]+)/g)]
+      .filter(([, declaration]) => !/^none\b/.test(declaration));
+    assert.ok(feedbackTransitions.length > 0, "Master 3 feedback transitions must be inspected");
+    for (const [, declaration] of feedbackTransitions) {
+      const durations = [...declaration.matchAll(/(\d*\.?\d+)(ms|s)\b/g)];
+      assert.ok(durations.length > 0, "feedback transition has a bounded duration");
+      for (const [, amount, unit] of durations) {
+        assert.ok(Number(amount) * (unit === "s" ? 1000 : 1) < 300, "Timeline feedback stays under 300ms");
+      }
+    }
   });
 
   it("presents one plain-language Timeline link lifecycle", () => {

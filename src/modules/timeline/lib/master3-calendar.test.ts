@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';import test from 'node:test';
+import {buildMaster3CalendarEvents,master3WallTime,renderMaster3Ics,foldIcsLine,master3CalendarLinks} from './master3-calendar';
+import type {AudienceTimelineDto} from './audience-timeline';
+const dto=(items:AudienceTimelineDto['sections'][number]['items'],extra:Partial<AudienceTimelineDto>={}):AudienceTimelineDto=>({version:1,audienceKind:'class',publicationId:'public-p',label:'Shared class',lastUpdatedAt:'2026-01-01T00:00:00Z',today:'2026-01-01',presentation:{calAll:true},sections:[{state:'next',label:'Next',items}],...extra});
+test('calendar action names the action while event metadata retains the public name',()=>{
+ const source=dto([{publicId:'main',title:'Public ceremony',date:'2026-11-01',state:'next'}],{presentation:{},label:'Mara & Finn'});
+ const links=master3CalendarLinks(source,'A'.repeat(43));assert.equal(links?.label,'Add to my calendar');assert.match(links?.googleHref??'',/Public\+ceremony/);assert.match(renderMaster3Ics(source),/X-WR-CALNAME:Mara & Finn/);
+ assert.equal(master3CalendarLinks({...source,presentation:{calAll:true}},'A'.repeat(43))?.label,'Add the date to come');
+});
+test('all future public school dates, stable UID and all-day exclusive end',()=>{const d=dto([{publicId:'one',title:'Lesson one',date:'2026-11-01',state:'next'},{publicId:'two',title:'Lesson two',date:'2026-11-02',state:'later'},{publicId:'old',title:'Old',date:'2025-12-31',state:'covered'}]);assert.equal(buildMaster3CalendarEvents(d).length,2);const text=renderMaster3Ics(d,new Date('2026-01-01Z'));assert.match(text,/DTSTART;VALUE=DATE:20261101\r\nDTEND;VALUE=DATE:20261102/);assert.equal(text.match(/BEGIN:VEVENT/g)?.length,2);assert.equal(buildMaster3CalendarEvents(d)[0].uid,buildMaster3CalendarEvents({...d,sections:[{state:'next',label:'Next',items:[{...d.sections[0].items[0],date:'2026-11-10'}]}]})[0].uid);});
+test('Dublin summer/winter convert correctly; gaps and ambiguous times rejected',()=>{assert.equal(master3WallTime('2026-07-01','12:00','Europe/Dublin').toISOString(),'2026-07-01T11:00:00.000Z');assert.equal(master3WallTime('2026-12-01','12:00','Europe/Dublin').toISOString(),'2026-12-01T12:00:00.000Z');assert.throws(()=>master3WallTime('2026-03-29','01:30','Europe/Dublin'),/does not exist/);assert.throws(()=>master3WallTime('2026-10-25','01:30','Europe/Dublin'),/ambiguous/);assert.throws(()=>master3WallTime('2026-02-30','12:00','Europe/Dublin'));});
+test('explicit final is six hours, postfinal extra three and no venue address leaks into extra',()=>{const d=dto([{publicId:'final',title:'Wedding',date:'2026-07-01',state:'next',presentation:{final:true,time:'12:00'}},{publicId:'extra',title:'Brunch',date:'2026-07-02',state:'later',presentation:{time:'11:00'}}],{audienceKind:'couple',presentation:{timezone:'Europe/Dublin',place:'Public venue',address:'Approved place',locationConsent:true}});const [f,e]=buildMaster3CalendarEvents(d);assert.equal(f.end!.getTime()-f.start!.getTime(),21600000);assert.equal(e.end!.getTime()-e.start!.getTime(),10800000);assert.equal(e.location,undefined);assert.equal(f.location,'Public venue, Approved place');});
+test('ICS escapes injection and folds Unicode at75 UTF8 octets',()=>{const d=dto([{publicId:'a',title:'É'.repeat(80)+';x,y\\z\nBEGIN:BAD',date:'2026-07-01',state:'next'}]);const ics=renderMaster3Ics(d);assert.match(ics,/\\;x\\,y\\\\z\\nBEGIN:BAD/);for(const line of ics.split('\r\n'))assert.ok(Buffer.byteLength(line)<=75);assert.equal(foldIcsLine('é'.repeat(60)).replace(/\r\n /g,''),'é'.repeat(60));});
+test('calendar URLs require genuine dated public events and exact token',()=>{assert.equal(master3CalendarLinks(dto([]),'A'.repeat(43)),null);const links=master3CalendarLinks(dto([{publicId:'a',title:'Lesson',date:'2026-07-01',state:'next'}]),'A'.repeat(43));assert.match(links!.icsHref,/calendar\.ics$/);assert.equal(new URL(links!.googleHref!).searchParams.get('dates'),'20260701/20260702');assert.equal(master3CalendarLinks(dto([]),'not-a-token'),null);});
+
+
+test('wedding calendar excludes eight preparatory dates and includes only final plus postfinal extras',()=>{
+ const preparations=Array.from({length:8},(_,n)=>({publicId:'prep'+n,title:'Preparation '+n,date:'2026-06-'+String(n+1).padStart(2,'0'),state:'next' as const}));
+ const final={publicId:'final',title:'Wedding',date:'2026-07-01',state:'next' as const,presentation:{final:true}};
+ const wedding=dto([...preparations,final],{audienceKind:'couple',presentation:{calAll:false}});
+ assert.equal(renderMaster3Ics(wedding).match(/BEGIN:VEVENT/g)?.length,1);assert.doesNotMatch(renderMaster3Ics(wedding),/Preparation/);
+ const extra={publicId:'after',title:'Brunch',date:'2026-07-02',state:'later' as const};const withExtra={...wedding,sections:[{state:'next' as const,label:'Next',items:[...preparations,final,extra]}]};assert.equal(renderMaster3Ics(withExtra).match(/BEGIN:VEVENT/g)?.length,2);
+ assert.equal(buildMaster3CalendarEvents({...withExtra,presentation:{calAll:true}}).length,10);
+});
+
+test('missing final dates fail closed; public primary fallback uses only its actual label and date',()=>{
+ const item={publicId:'undated',title:'Unscheduled final',state:'next' as const,presentation:{final:true}};
+ const noDate=dto([item],{audienceKind:'couple',presentation:{eventTitle:'Must not invent'}});assert.equal(buildMaster3CalendarEvents(noDate).length,0);
+ const primary={...noDate,sections:[],primaryDate:{label:'Published ceremony',date:'2026-07-01'}};const events=buildMaster3CalendarEvents(primary);assert.equal(events.length,1);assert.equal(events[0].title,'Published ceremony');assert.equal(events[0].date,'2026-07-01');assert.equal(events[0].start,undefined);assert.match(renderMaster3Ics(primary),/SUMMARY:Published ceremony/);const extra={...primary,sections:[{state:'later' as const,label:'Later',items:[{publicId:'extra',title:'Later brunch',date:'2026-07-02',state:'later' as const}]}]};assert.equal(new URL(master3CalendarLinks(extra,'A'.repeat(43))!.googleHref!).searchParams.get('text'),'Published ceremony');
+ assert.equal(buildMaster3CalendarEvents({...noDate,primaryDate:{label:'Invalid',date:'2026-02-30'}}).length,0);
+ assert.equal(buildMaster3CalendarEvents({...primary,today:'2026-07-02'}).length,0);
+});
+
+test('timed final and extras cap at local 23:59 without crossing Dublin daylight offsets',()=>{
+ for(const date of ['2026-07-01','2026-12-01']){const next=date==='2026-07-01'?'2026-07-02':'2026-12-02';const d=dto([{publicId:'final',title:'Final',date,state:'next',presentation:{final:true,time:'22:00'}},{publicId:'extra',title:'Extra',date:next,state:'later',presentation:{time:'23:00'}}],{audienceKind:'couple',presentation:{timezone:'Europe/Dublin'}});const [f,e]=buildMaster3CalendarEvents(d);assert.equal(f.end!.toISOString(),master3WallTime(date,'23:59','Europe/Dublin').toISOString());assert.equal(e.end!.toISOString(),master3WallTime(next,'23:59','Europe/Dublin').toISOString());assert.match(renderMaster3Ics(d),new RegExp('DTEND:'+f.end!.toISOString().replace(/[-:]/g,'').replace('.000Z','Z')));}
+});
+
+
+test('legacy unflagged timeline infers the last real dated milestone, with stable same-day source order',()=>{
+ const legacy=dto([{publicId:'last',title:'Published closing ceremony',date:'2026-09-20',state:'later'},{publicId:'first',title:'Preparation',date:'2026-07-01',state:'next'},{publicId:'undated',title:'No invented schedule',state:'later'},{publicId:'cancelled',title:'Cancelled later event',date:'2026-12-01',state:'cancelled'}],{audienceKind:'couple',presentation:{}});
+ const events=buildMaster3CalendarEvents(legacy);assert.equal(events.length,1);assert.equal(events[0].publicId,'last');assert.equal(events[0].date,'2026-09-20');assert.equal(events[0].title,'Published closing ceremony');const ics=renderMaster3Ics(legacy);assert.match(ics,/SUMMARY:Published closing ceremony/);assert.doesNotMatch(ics,/SUMMARY:Preparation|SUMMARY:Cancelled/);
+ const tied={...legacy,sections:[{state:'later' as const,label:'Later',items:[...legacy.sections[0].items,{publicId:'same-day-last',title:'Same day final',date:'2026-09-20',state:'later' as const}]}]};assert.equal(buildMaster3CalendarEvents(tied)[0].publicId,'same-day-last');
+});
+
+test('primary date binds its real public milestone before last-date inference; explicit undated final stays unscheduled',()=>{
+ const d=dto([{publicId:'main',title:'Real main milestone',date:'2026-07-01',state:'next'},{publicId:'extra',title:'Published brunch',date:'2026-07-02',state:'later'}],{presentation:{},primaryDate:{label:'Primary label',date:'2026-07-01'}});assert.deepEqual(buildMaster3CalendarEvents(d).map(e=>e.publicId),['main','extra']);assert.equal(buildMaster3CalendarEvents(d)[0].title,'Real main milestone');
+ const blocked={...d,sections:[{state:'next' as const,label:'Next',items:[...d.sections[0].items,{publicId:'undated-final',title:'Final date to follow',state:'later' as const,presentation:{final:true}}]}]};assert.equal(buildMaster3CalendarEvents(blocked).length,0);
+});

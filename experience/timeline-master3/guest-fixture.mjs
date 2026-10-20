@@ -1,0 +1,38 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+import {createHash,randomUUID} from 'node:crypto';
+/** Only this disposable host's SQLite and injected test-mail transport are used. */
+export async function createGuestFixture(source,output,fixtures){
+ const require=createRequire(path.join(source,'package.json'));
+ const {createClient}=require('@libsql/client'),{drizzle}=require('drizzle-orm/libsql');
+ const schema=require(path.join(source,'src/modules/timeline/server/db/timeline-schema.ts'));
+ const {createGuestFollowService,createGuestFollowStore}=require(path.join(source,'src/modules/timeline/server/guest-services.ts'));
+ const {createGuestHttpHandler}=require(path.join(source,'src/modules/timeline/server/guest-http.ts'));
+ const serverInputs=[];for(const relative of ['src/modules/timeline/server/guest-services.ts','src/modules/timeline/server/guest-http.ts','src/modules/timeline/server/db/timeline-schema.ts','src/modules/timeline/lib/master3-calendar.ts','src/modules/timeline/lib/audience-timeline.ts','src/modules/timeline/lib/master3-presentation.ts','drizzle-timeline/0002_master3_presentation.sql']){const bytes=await fs.readFile(path.join(source,relative));serverInputs.push({path:relative,sha256:createHash('sha256').update(bytes).digest('hex')});}await fs.writeFile(path.join(output,'guest-server-inputs.json'),JSON.stringify(serverInputs,null,2));
+ const databasePath=path.join(output,'synthetic-guest.sqlite');
+ const client=createClient({url:'file:'+databasePath.replaceAll('\\','/')});
+ await client.executeMultiple('PRAGMA foreign_keys=ON;CREATE TABLE projects(workspace_slug TEXT,slug TEXT,PRIMARY KEY(workspace_slug,slug));CREATE TABLE timeline_publications(id TEXT PRIMARY KEY);CREATE TABLE fixture_test_mail(id TEXT PRIMARY KEY,share_token TEXT NOT NULL,confirmation_url TEXT NOT NULL,manage_url TEXT NOT NULL);CREATE TABLE fixture_owner(fixture_id TEXT PRIMARY KEY,publication_id TEXT NOT NULL,session_id TEXT NOT NULL,referral INTEGER NOT NULL);');
+ await client.executeMultiple((await fs.readFile(path.join(source,'drizzle-timeline/0002_master3_presentation.sql'),'utf8')).replaceAll('--> statement-breakpoint',''));
+ const tokens=new Map(),owners=new Map();
+ for(const f of fixtures){const token=createHash('sha256').update('master3-synthetic-only:'+f.fixtureId).digest('base64url');tokens.set(token,f);await client.execute({sql:'INSERT INTO timeline_publications(id) VALUES(?)',args:[f.dto.publicationId]});if(f.viewerScenario==='owner'){const session=randomUUID();owners.set(f.fixtureId,session);await client.execute({sql:'INSERT INTO fixture_owner VALUES(?,?,?,1)',args:[f.fixtureId,f.dto.publicationId,session]});}}
+ const database=drizzle(client,{schema});let handler,origin='',mailCount=0;
+ const tokenFor=f=>[...tokens].find(([,v])=>v.fixtureId===f.fixtureId)?.[0];
+ function bindOrigin(value){if(handler)throw Error('Fixture origin already bound');origin=value;const resolve=async token=>tokens.has(token)?{kind:'ok',dto:tokens.get(token).dto}:{kind:'revoked'};
+  const follow=createGuestFollowService({store:createGuestFollowStore(database),resolve,origin,deliveryAvailable:()=>true,limit:async()=>true,send:async input=>{const token=new URL(input.confirmationUrl).pathname.split('/')[2];if(!tokens.has(token)||!input.to.endsWith('@example.invalid'))throw Error('Nonfixture transport target rejected');const id='synthetic-test-mail-'+(++mailCount);await client.execute({sql:'INSERT INTO fixture_test_mail VALUES(?,?,?,?)',args:[id,token,input.confirmationUrl,input.manageUrl]});return {kind:'sent',providerMessageId:id};}});
+  handler=createGuestHttpHandler({resolve,follow,followAvailable:async()=>true,managementExpiry:async()=>new Date(Date.now()+86400000)});
+ }
+ async function response(nodeResponse,response){nodeResponse.writeHead(response.status,Object.fromEntries(response.headers));nodeResponse.end(Buffer.from(await response.arrayBuffer()));}
+ async function handle(req,res,url){
+  const match=url.pathname.match(/^\/api\/timeline\/share\/([A-Za-z0-9_-]{43})\/(services|calendar|calendar\.ics|feed\.ics|follow|confirm|unsubscribe|undo)$/);
+  if(match){if(!handler)throw Error('Origin not bound');const chunks=[];let length=0;for await(const c of req){length+=c.length;if(length>8192){res.writeHead(413);res.end();return true;}chunks.push(c);}const body=Buffer.concat(chunks);if(match[2]==='follow'&&body.length){let input;try{input=JSON.parse(body.toString());}catch{}if(typeof input?.email==='string'&&!input.email.toLowerCase().endsWith('@example.invalid')){res.writeHead(403);res.end(JSON.stringify({ok:false,code:'fixture_scope',message:'Only invented example.invalid addresses are admitted.'}));return true;}}const headers=Object.fromEntries(Object.entries(req.headers).filter(([,v])=>typeof v==='string'));const request=new Request(new URL(req.url,origin),{method:req.method,headers,...(body.length?{body}:{} )});await response(res,await handler(request,match[1],match[2].endsWith('.ics')?'calendar':match[2]));return true;}
+  if(url.pathname==='/__fixture/mail'&&req.method==='GET'){const token=url.searchParams.get('token');if(!tokens.has(token)){res.writeHead(404);res.end();return true;}const mail=await client.execute({sql:'SELECT id,confirmation_url AS confirmationUrl FROM fixture_test_mail WHERE share_token=? ORDER BY rowid DESC LIMIT 1',args:[token]});res.setHeader('content-type','application/json');res.end(JSON.stringify({syntheticTestTransport:true,mail:mail.rows[0]??null}));return true;}
+  if(url.pathname==='/__fixture/snapshot'&&req.method==='GET'){res.setHeader('content-type','application/json');res.end(JSON.stringify(await snapshot()));return true;}
+  if(url.pathname.startsWith('/__fixture/owner/')&&req.method==='GET'){const id=decodeURIComponent(url.pathname.slice('/__fixture/owner/'.length)),session=(req.headers.cookie??'').split(';').map(v=>v.trim()).find(v=>v.startsWith('master3_fixture_owner='))?.slice('master3_fixture_owner='.length);const rows=(await client.execute({sql:'SELECT publication_id,referral FROM fixture_owner WHERE fixture_id=? AND session_id=?',args:[id,session??'']})).rows;if(!rows.length){res.writeHead(403);res.end('Injected fixture owner session required');return true;}const count=await client.execute({sql:"SELECT COUNT(*) AS count FROM timeline_guest_subscriptions WHERE publication_id=? AND state='confirmed'",args:[rows[0].publication_id]});res.setHeader('content-type','application/json');res.end(JSON.stringify({syntheticOwnerAuth:true,followerCount:Number(count.rows[0].count),referral:!!rows[0].referral}));return true;}
+  return false;
+ }
+ function decorate(f,res,{guestOnly=false}={}){const token=tokenFor(f),ownerSession=guestOnly?null:owners.get(f.fixtureId);if(ownerSession)res.setHeader('set-cookie',`master3_fixture_owner=${ownerSession}; HttpOnly; SameSite=Lax; Path=/`);return {...f,guestShareToken:token,guestShareUrl:'/s/'+token,viewerScenario:guestOnly?'guest':f.viewerScenario,ownerEndpoint:ownerSession?'/__fixture/owner/'+f.fixtureId:null};}
+ async function snapshot(){return {synthetic:true,realEmailCalls:0,injectedMailReceipts:mailCount,subscriptions:(await client.execute('SELECT publication_id,state,delivery_state,confirmed_at,undo_until FROM timeline_guest_subscriptions ORDER BY publication_id,id')).rows,ownerRecords:(await client.execute('SELECT fixture_id,referral FROM fixture_owner ORDER BY fixture_id')).rows};}
+ const close=async()=>{await fs.writeFile(path.join(output,'guest-final-snapshot.json'),JSON.stringify(await snapshot(),null,2));client.close();};
+ return {bindOrigin,handle,decorate,tokenFor,fixtureForToken:token=>tokens.get(token),databasePath,snapshot,close};
+}

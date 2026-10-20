@@ -1,0 +1,630 @@
+{
+  "source": "bd8863aa937a49305eb0f2991337a33a139c3594",
+  "rawArtifactSha256": "e18c22d95219b002b3b9e4b0a2f2422b40b0733b8bc87836d586159ff6f49cc1",
+  "attestationPath": "D:\\Codex-scratch\\project-ping\\timeline-master3-candidate-39111105723-received-oct18\\artifacts\\tasks-selected-candidate-bd8863aa937a49305eb0f2991337a33a139c3594\\evidence-runs\\tasks-playwright-36f5a77cc37891a506360306-e18c22d95219b002.json",
+  "reviewer": "/root/timeline_final_receiving",
+  "reviews": [
+    {
+      "id": "tasks.page.app-settings",
+      "decision": "accept",
+      "rationale": "Read-only demo Settings shows actual General/name/currency/context controls and responsive navigation; no settings persistence claimed.",
+      "limitations": "Demo/local inputs only; no production/provider, persistence or full accessibility qualification. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "3fcba4d3b2bb4dcfa6bf95630a7838fb81078185ff7228c6f44a6822fd1f6372",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "c42571edccdadd8b352c93260e9332aed5fa034a8d918b942bc30887b2445584"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "d9e165c7202c7b972a5f50563f45cd61abd8f508fd8ab962cb2d11961211b27b"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "51ce3fc28e4e7e9285020ae5aa5453e187f8297d19a1f10f90e42c5e43c6d8e0"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "7ff98d38f2938b087fbfa85228da95b889737666473f96b9fa85e344ccd23365"
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.welcome",
+      "decision": "accept",
+      "rationale": "Explicit unavailable-project state gives clear explanation and Open Home recovery link; no onboarding or auth mutation claimed.",
+      "limitations": "Demo/local inputs only; no production/provider, persistence or full accessibility qualification. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "56f4c16d02cbcebbefdc3a8ff5a31211d3206bbdaa6ca4319df0f64b7b6f435f",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "46e268b66f6442abe7de4ed673fafe4d95232f53273ee4e65eff15d873e4a09b"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "41b4bfc12fef40254b4acbc98d0d2aba623cb865c09972bca199044f0e404678"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "3e964893ac2d953857f9644f77da5d815e94e8147549d63a78a27d9189541a8f"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "f3cc0ef71514cf97b4a5b6432d26a03a5e5f46a84dfbc0febe711310f55548ca"
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-project",
+      "decision": "accept",
+      "rationale": "Demo project overview shows coherent progress5/13,38%,milestones/activity/team and responsive card layout; no real project data or action mutation claimed.",
+      "limitations": "Demo/local inputs only; no production/provider, persistence or full accessibility qualification. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "795236cc4236a32a140df49e0c7e45fadc18c0a0579c1b4647a53ef4b8503f7e",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "59e88e8ba87b5fcf3f3e7635fd3682bd66a36ddbf16df3709572d40a398bf475"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "05b9c731c088852bbb73f6e008c4bb119f952de0874b0243fedf17055ed82b44"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "ffb25b00889d7f69cf973cc8266d18245a80698dd4d5b35f5172a91cd70fc5c2"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "bf09c8af975d2af9a22fca33c47cbf82c0f3f36460db9c92a419c9b621def05a"
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-project-loading",
+      "decision": "accept",
+      "rationale": "Actual loading component skeleton matches project header/body hierarchy; deterministic local fixture only.",
+      "limitations": "Demo/local inputs only; no production/provider, persistence or full accessibility qualification. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "50734606e8cded67f088da92b96daefa4dd17482308c09997f2458489a5cce6b",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "7f479ea83e16ba5a40b618ef17613b6dd576de540cfdcfbe0b9f13830aa551b3"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "d43c3f522ef093610b10dcbc31dadcd1e1215e3442c92494c28d1ca88880be2e"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "44b1ad4652f3559d78b7ca94449e8b3bb392f6a322efbf14d51dc0861ccb7967"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "350def90d77ea237360d4f8d453614903204a756cdb2fe9a9c3f17e9d7aa9414"
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-loading",
+      "decision": "accept",
+      "rationale": "Actual Home skeleton hierarchy and responsive columns visible; deterministic local fixture only.",
+      "limitations": "Demo/local inputs only; no production/provider, persistence or full accessibility qualification. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "9dcb7b09c5c2c25423bb4f142bf9badb973dd5750fe47272fe5997c1dbf1bf24",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "1af17249d3ce84ebd89c78d961b8b8627cec8b9c27c491970ce625ab23d4347e"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "bdf1104bc99b4ab578bae8403530391c30d9f38a614edba9f176557f9b4a9ac1"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "1e3dcbfae88abb3a927511c10249f014ecdba24076bd8c73d74483198f62c78f"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "f3c63418c762b12e79433f7f617e35035354295d8155cb9a8b5af8e88e2f0c30"
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-error",
+      "decision": "accept",
+      "rationale": "Actual error component displays Home did not load, synthetic reference, Try again/Open Tasks; synthetic Error/local reset/anchor seam only, not Next server recovery.",
+      "limitations": "Demo/local inputs only; no production/provider, persistence or full accessibility qualification. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "94e95fe898bce26d939bd04f323717688e109bea6c8468c15493830a138f4e09",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "15eaaf979badc4baaea9821f774a67147aaa9b298ea1a9f66a35ec2dd946f429"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "802506d9a6a36903b8862039c63e8e92b90961f69caf67fa17643c91e4749181"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "3e41bdee2cdeb60969466e77b363fac3f04f089282af4251f04a6775537650a1"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "9722c55831f0aa32f4103c8937af646d476b02d889375f92a3614377ede35db6"
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-tasks-loading",
+      "decision": "accept",
+      "rationale": "Actual loading component presents header/board skeleton without fabricated tasks. All four attachments inspected; raw accessibility/runtime/overflow assertions passed.",
+      "limitations": "The mobile-labelled PNG is664x844, with the content visibly clipped at390px and a white remainder; this retains the known fixture limitation and does not establish a complete390px mobile loading layout. Static component fixture is not real asynchronous route timing. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "12140b4bae611a58cafe42f1022e63817a031a47807a798df4286c721a6264d3",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "0dc35487606b6f227ddeb4577f1c8a20e11986311cccd34a44a3a2d7005413ce"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "7f216114eebcb0fc0d47b35bc43ce9c5894c897c220329510931ebd26c856516"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "97e5ff930760d98d68398d4c4ea870eb11cad3ed98f735a7274f84bcc13151c9"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "1b2aba01bf5a22992a6acdaa49c372595f54843c9ea6ddb3b37da0d8e7b5ed44"
+        }
+      ]
+    },
+    {
+      "id": "tasks.resources.drive-upload",
+      "decision": "accept",
+      "rationale": "The real demo task detail opens, with task identity and Files and links/Attach a file surface visible. Tablet/desktop/wide expose the drop/link field; the390px image shows the Files heading and Attach control near the fold.",
+      "limitations": "Surface-only first-use evidence. No file selection, Google authorization, provider transfer, retention, cleanup or successful upload was exercised. Mobile drop area below the image fold is not visually certified. Existing unavailable Activity message retained. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "19f85eac6f784ffaec512a8b8c4ab9b3ea0e14ddf1d5a9db81af63d811344826",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "164f99cbf99a3d9e0623fae90f9f6513a4d75cc36532b4df0078559b3fa10421"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "f32309b118e2c60fc59b7ec66f2e6c952ec9598322388a5d7f9632b755bd4d6d"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "a5ed850edb616bf82603a7acb1b5fc3fe0718ebf273560ead7261f5ca6d676fa"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "10d38b92161fb245c62a0588a77e47c6c6d46596aa9ceefad58dbc83b273db10"
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-messages",
+      "decision": "accept",
+      "rationale": "The real selected demo Project conversation renders navigation, seeded messages and the empty composer at all four sizes. No new blocking layout or control defect observed in this bounded rereview.",
+      "limitations": "This is existing Chat, not Ping. No actual message delivery, microphone/provider/notification/authenticated production proof. Existing development toast overlaps part of the empty composer at mobile/tablet; retained known condition, not a new accepted design rating. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "dacfebb578dd8234d0f141ec2485fa2e93b2a5a4158a27732f47c7d19d78e765",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "b1a3a5ecb7c2c26d1c2d255f7f11c3b04cbc2c4e6bc785a6198418d0c9ef545d"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "e18aeaa838f90f3fc3a0108ed3980ae3e2879c925768498a16f45180fc744964"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "a04ae0bcb239294a20269a6098665046a99b5ef14c3556f94600b09d1d71717d"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "23a775fbc729927cfd9cc8bb251876270c2d2d60a2a17f8a02d8877a5b309708"
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-analytics",
+      "decision": "accept",
+      "rationale": "The real demo Analytics landing view presents project identity, summary and question links responsively; Where we stand and its Are we on track link passed the owning harness assertions.",
+      "limitations": "Demo question landing surface only, not real account data, numerical accuracy, downstream answer quality or provider behavior. Long mobile/tablet content is vertically scrollable; screenshot is viewport/full-document evidence as recorded. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "d89f2a4abd38ee576f23508c2b37d05aec8b6637f1f49755a58cad1bac54d485",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "b312aaf05cd01f6ed97086bc27afdb1d4d5bcb85fec74addc0dd9d863dd86db2"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "07d1a32441af7a2146f7b553a0278460ce05769cbd737485c21ed01856e4a2e5"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "75477a98ca7184f0811eb0b4fe996bef7a38dce6d116dfda683e65185afeb483"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "4d0ae74b1bd9bb98eb24e4657ed3496e4d09d7b65ee3e06fb515a450bad84a8a"
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-loading",
+      "decision": "accept",
+      "rationale": "Actual Analytics loading component shows static header/ask/grid skeleton at each viewport. Its column layout changes from one to two to four columns and preserves the declared status surface.",
+      "limitations": "Synthetic isolated component fixture, not a real query wait or latency proof; mobile full-page image height1694px and tablet1028px are retained, not called physical device viewports. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "9a83f9e97a750b1b6861c3b116ea38badf31d8077dd7fa609c275b930a72cf58",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "e278396b61a2815b1795bd8ecd4a82727a1bc23e835c47733f0e00b540a6a450"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "faffcc090b20608175a00b53e145ecd4bfc6722e5285ceddffadcad24286c128"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "d80a78b8647bdaa49d59f7f27fac456ccb23ef4433a7816c7f8dc1a84168daf5"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "da059a79707ff697709caf4261292573d2b8f8ce5aa2a5dbbc7f3ea4e0877fdf"
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-error",
+      "decision": "accept",
+      "rationale": "Actual error component shows the Analytics heading, alert explanation, visible Try again and Open Tasks actions at all sizes. Harness invokes the local retry callback once and verifies the Tasks href.",
+      "limitations": "Synthetic Error/digest/local callback/anchor seam only. Expected declared console error is removed by the harness before final runtime assertion. No Next segment recovery, backend outage recovery or production task-safety proof is inferred. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "16a0888ed7b367ab79c3b596bc8597b01271a53e259ae50a20cae1889e9e4d4d",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "561715fbc926fb9d40521c8a57faa7f652e24503ab203082d50e96e5d7d2af66"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "75d6ea47666994f033bf08593a38f0730e9cbc9ca95ccda44c98c79b2b55cb15"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "9c10aea7cfa3ca189b5465b9dbc94ce0a8c518d4ec50ece6669c49dcab31dd46"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "3793ec4ea61e65e985073e9ffef2358b7209dcd68652e4733a81de035ec44643"
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-tools-by-slug",
+      "decision": "accept",
+      "rationale": "Wedding hub heading, Your wedding Projects region, real guest-list href with workspaceId and More planning tools assertions passed. All four images show readable directory and Coming soon status; narrow stacking and wide columns fit the captured viewport.",
+      "limitations": "Demo directory only; no guest-list navigation, project creation or authenticated authorization claim. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "4a1b05486b44306f44c958e68e47b9716614682975f7b626f5644133e6557bad",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "f4eb6f8b0d8a19d46f329ef252788d790bbac4505af1a124f38e34fa8b9c137f"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "cd590844a780824f98266da5c0d0c02ce93c95256d24957972be89d132192941"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "304bfe7efb09cc5a610ad50f43cccd3310075012189913d29dd59851590287c7"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "8800d1889eaaff9a75cb48b95c44721f9a6089298802fd9e6a0116924fef609f"
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-tools-loading",
+      "decision": "accept",
+      "rationale": "All four actual component images show static header/search/card skeletons without invented loaded content or visible overlap. Primary source exposes a status message Loading apps and tools.",
+      "limitations": "Isolated white component fixture, not application-shell integration or loading latency. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "45e0fc19aaf3ca483239677276d30f0e08005791ab479d650786a962a7dc12dc",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "d3c1b89e8007deb384fa21d5e881da8ead5538be7727e871464aab8e8998ac77"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "22b4c30abb67722384faa9aa28e5c05259ecd7a1414bb25ddb4334ed28878a52"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "75ebfa491aeec3c99a0a6c58110eac4ef30b1323398a66ff6cd1440ba9c0eb74"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "887c3c4af88d6898b0200f7d7439b65d27c508a597579e78413177ca4fcd86a3"
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-concepts",
+      "decision": "accept",
+      "rationale": "All four images show Concepts and explicit sample-data/unpicked-prototype disclosure. The sealed test requires Overview region and its first /app/concepts/overview/1 href. Responsive card columns remain readable.",
+      "limitations": "Below-fold content inside the app scroll region was not all visible; no destination navigation or prototype design approval. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "63e7924b683e8c066b772fda67a7a3c3d347062d1686b785716c6b5d82ba18a2",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "43bd7e294776f1366c459f44c60216e69f7dc2be55677c01c46e30b3321abadd"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "2fc62418c01abc152d0bc2e5cee751b0e3d06cd242a0fe241e50fdd2b7a02d7d"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "d4a8dc090fe7ba0b152c12e3709d42454c27ac3b9a9040325afcd68eb8d834c6"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "8640d58b72e97d7ec1cb79d5a1eb08beed7253b54ca160913d45eec2ce4312be"
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-files",
+      "decision": "accept",
+      "rationale": "The sealed test opens the named task folder, opens the selected sample PDF preview, checks owning-task link /app/task/demo-t-05 and truthful sample-file copy. Where a dialog opens, closing it returns focus to the file control. Four images show task custody and readable search/chips/list, with desktop side preview and compact narrow layout.",
+      "limitations": "No actual file bytes/download/upload, external storage/provider, authenticated production access or tenant-isolation claim. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "08771bc864af3e7bf4181619a7856a8354842ce86bd8a04095ae0816b0853bc3",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "17b163b85b6284bad29852d4f491df9383cb60df3c585ea4b903d8a906d5cf3a"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "62d8a4ffb3c22be4fd9a7e10d7983e4bd5520e07b850694ce80385e2106ebaee"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "8eef4269c2b229eca36e0ae0667ec38278cc4daf5587037c627664c1d9864759"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "678cc8c951239930fd2957bc06542eadaf277186bf92d8296b2783dd1d150a9c"
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-loading",
+      "decision": "accept",
+      "rationale": "All four actual component images show static Files search/chips/list skeletons; desktop/wide add a side-preview outline. No invented filenames, loaded content or visible overlap.",
+      "limitations": "Isolated component, not application-shell integration, real server read or loading latency. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "9beac142f8f04cb2c85eb1ac1d95adaee7104ced1039aea19a2b3d27ffbd96f4",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "3789a0a6f8e5d6592524c50aad4e8dffe6e68b237efbb8e388a80bd93c8192f1"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "95028344ea5077d1a982d16b1e82cb99d1e76cff506e3cbb161c864a5786ff2e"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "4f4f73a7eaf098ee7367c7a2a8ea94a9ae292d8c72f17d70981658614ff95394"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "0937026623d4e35ebc1a6c74ff7a84bd3e2b17dc33a8045eb512cca904a230ff"
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-error",
+      "decision": "accept",
+      "rationale": "All four images show the actual alert with synthetic-materiality reference, non-destructive reassurance and Try again/Open Tasks controls. The sealed test clicks retry, proves exactly one local callback invocation, and checks /app/tasks href.",
+      "limitations": "Synthetic Error, local retry callback and anchor seam only; no Next segment recovery, server retry or provider claim. Existing source button height is 36px; this review does not claim universal 44px targets or comprehensive accessibility qualification. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim.",
+      "sourceHash": "83d088f7615c6a6b017300c3e3e29922a47ec030f44434435e46dd3049bf5121",
+      "images": [
+        {
+          "viewport": "mobile",
+          "sha256": "a248472e3d74296e3829c084fdcde572c26d16466ba2562d63590f3038dfd283"
+        },
+        {
+          "viewport": "tablet",
+          "sha256": "62b7c93355ad890b8d53a789d7dddc6bb51fa36e33dce0cc6cc448a665dc5977"
+        },
+        {
+          "viewport": "desktop",
+          "sha256": "64910ff4f60b0b922a048c5aa44e7cbc83491fd9692b56fca67021f32758bb6a"
+        },
+        {
+          "viewport": "wide",
+          "sha256": "070cd8c3783f39d68c16a12022c00fece08bfd75807c47cc3737705588f22b35"
+        }
+      ]
+    }
+  ],
+  "contractHashes": {
+    "browserContractSha256": "838e98594ed9b15cfa6386e15abea30ac0553727a42e77ade1badc31740870e1",
+    "fixtureManifestSha256": "52ba620c010cd9a0852757130987428052024a09bd18a7df2a05840df12f0881",
+    "playwrightConfigSha256": "2be57e878ddb600689a2c4f29b6e6529d56cdff7a5663492c77d4b9fbe459534",
+    "playwrightSpecSha256": "3fd479c6f663668c65e4f8a840ef6c4bf2a94d3787a82a4893d9d084d34b66a1"
+  },
+  "proofPath": "D:\\Codex-scratch\\project-ping\\timeline-final-receiving-oct20\\bd8863-image-outcome-proof.json",
+  "changedImageInspection": {
+    "id": "tasks.resources.drive-upload",
+    "viewport": "desktop",
+    "dimensions": [
+      1280,
+      1090
+    ],
+    "differentPixelCount": 5,
+    "bounds": [
+      1074,
+      280,
+      1078,
+      283
+    ],
+    "decision": "accept",
+    "rationale": "Both originals inspected. Five repeat-control edge pixels changed; task/resource content and Attach file/drop region equivalent. Demo only; no provider/upload result."
+  },
+  "sourceDeltaFrom36d8": [
+    "experience/critical-fixtures.json",
+    "src/modules/timeline/server/couple-artifact-boundary.test.ts",
+    "src/modules/timeline/server/master3-settings.test.ts"
+  ],
+  "futureSourceEligibility": false,
+  "status": "eligible_for_root_maintained_writer_exact_bd8863_artifact_only",
+  "reviewedAtUtc": "2026-10-20T18:12:22.522594+00:00",
+  "closureVerification": {
+    "comparedToSource": "36d8cae2881329b95ca3cf18631889329c18af54",
+    "buildReceiptComparisons": {
+      "componentSources": true,
+      "inputHashes": true,
+      "virtualInputs": true,
+      "defines": true,
+      "definesSha256": true,
+      "bundler": true,
+      "outputHashes": true
+    },
+    "buildAssetComparison": {
+      "samePathChanged": {},
+      "newPaths": {
+        "-WUX4GCLHy6NV6sVUMf29/_buildManifest.js": "545a04ca9e945a80d71dd763ed8aca02bd980c30222504bd6792284da8a9018f",
+        "-WUX4GCLHy6NV6sVUMf29/_clientMiddlewareManifest.js": "83ed68a18e4badc63cd7938f609780e9b0d4873faae87fafc3f6fa35c119edf3",
+        "-WUX4GCLHy6NV6sVUMf29/_ssgManifest.js": "678f6ce2cb80b1fe72fc67e7412be6e2ab6ada083111b64f7c40d35e3cba5e00",
+        "chunks/00wwfvwvksspo.js": "e5982d7db1a6d6cf0ac056b6aeb2466ae41e97996ea6f782d6085762883f0713",
+        "chunks/06qc4zy-j04p1.js": "dd484ebdd1a9814b6ce739214494fc605a83de7290537414ec3b8a0a8c1e563d",
+        "chunks/07-0rbh2vxxk0.js": "f650c4d222910708e061ec703971cff03fe1b62ea0220b412f67506b7691b53f",
+        "chunks/07qpndtw71m4u.js": "60c0165e96b2af711ad9dee08c043802074689d06eaec957550e3ea08ad73be1",
+        "chunks/0amtpidnb9xku.js": "de67c373d566265c28d82a0ff1fa4a2d372cb17e6deec1c7b93e9850e70768dc",
+        "chunks/0b3ixec7mtjzn.js": "7b6edb988d603bbaf7db426e9aad3ec52b4e975b6afc0b51e1893dd6aff6cf4e",
+        "chunks/0dybdvcl0uoj-.js": "e00c1c86edbc2f5a90632aff6873bef0e05651426498eab1951ce9f36c298304",
+        "chunks/0k81ys2lpnuk_.js": "2990eb5ec70aa59c247e54eb04e384a41f510621f45cdb810eeda5ecde84aa55",
+        "chunks/0s9vtpd10wops.js": "7bad3d490ae62f8ac4c4d61c61b3332fc1495e3e920d2f049144dff95c4ceada",
+        "chunks/0w5wbft4qg0py.js": "5aed36499e4bc42e281c6fb64b2720fdb1dd7e6a8e8b1e5e851c2487ad27152f",
+        "chunks/0zdda0tpu6k8q.js": "5e5e16ac8f1dd49c144e088be8f36c2a4aa7e43ddd0ba5915dd38900f0934749",
+        "chunks/100768qgqmcnh.js": "7b94ab4526280ca36bb071e828fe4712b33355fa45e4ecdc418ee12c34db5c05",
+        "chunks/10wzipu713jl7.js": "9fdc7a0a948e49eb1285206767a4f7cb31626635e5670345369000c90f504b38",
+        "chunks/13vkij-ffk49k.js": "32d6c88406600c3c5b6508bd5e555f01d8f1ad6df886a530d6ea0ace1fbfb0d0",
+        "chunks/17tjv012uujjx.js": "93073d03e753fa254b24d46df23c04b79d3c66e62941f294dd4195c0620e115b",
+        "chunks/19z79u3kd9bs6.js": "bbb7cfc02bd88c6392f8bc53556a686dbd33d828db23d683f010f6b00967db8b",
+        "chunks/1_5bsru9lot9e.js": "d01a0a080e9255c835eab385ee81ae0328d7378427c3f28c655e6c6492f60dde",
+        "chunks/1akyrlwqozdih.js": "a191d5fd30c54aa6f6f1ac383d1e83b3a4fe0ba76ee930e605f8a80a02a2ac74",
+        "chunks/1b8hj5pbjuva7.js": "094129bc490a4836ef21762853e6a63e12d30ba84e698fa47c85a9054f7b9cb6",
+        "chunks/1ca34-mpl93g-.js": "c6a9c9cdbfacb4386d104d74a75ccf74861a72c351f13460e7697faec0f4c8d7",
+        "chunks/1ei4mlj5-himt.js": "62d04457ecd48304443a3473d4359c7b59b5dbd6cb64b6ae54722606ef2f892d",
+        "chunks/1onl28xjaja8w.js": "c05cd6ec78c1972ff98f9e90a91e2866f3d5d40683ff6ac0d8d50de316eedb30",
+        "chunks/1p80qddi2l4oh.js": "b61602aa1c59a32645234fa65fb433a0e1927159625996d8283395228af2845d",
+        "chunks/1q0iqppze7365.js": "8a1c3064c4af317db971e28bbccfe61fc6471f362a6e2b9dc212071b5cfb9d77",
+        "chunks/1q91mt172k3k0.js": "4c5bae3e9834bfea6c367efcb4bde9abcafe0461d7583f4042875ea1c6491915",
+        "chunks/1qisind_q2v0p.js": "d2b07865389f9583d3d6090e336f652db5f9bbae2c4d867b758b1f3de58a7501",
+        "chunks/1s1j7y_02rt7r.js": "9928e6c211b86da7d298a631d607aa9e4ec8ce3341922a471d1e58ee586021ca",
+        "chunks/24ld6kg57y0wu.js": "e1d7a28ecca7a4938016a04ff6113ff2959ee2fca9f88d9184d1ce323fed1bb4",
+        "chunks/27fcsy9-4z5_s.js": "259044694cf37bc00a99dec1d15cb43361e45d408f95208fdf12b2a05785d20d",
+        "chunks/29cx4n2dw3wj-.js": "72feb685f13be40f410aa06df473a5ef02b688719101761c9ec65c825a472120",
+        "chunks/2_3pljepk_tb4.js": "dd755eb9e0b9e945c01a56a86c32de8c6854ff60a91b3f9bbfd2059fe1f89dab",
+        "chunks/2cjkxiev_17z6.js": "36c9370f76c7e93fe218e077134ef3e11160f57ba828e3cce9b583e7c02919ec",
+        "chunks/2ckj9wakrqmt_.js": "a161a0b191f2287e2fc37b5b2fe81c9657d25b2ce48de878eced0451b7a907e2",
+        "chunks/2jp304_x4jao3.js": "040b39971c603d54421ab3967ae6f191defaa028278740b6e7c08076ba23f78e",
+        "chunks/2r5a82p9tm92s.js": "3164e3f7c58a0497dfad954b8b9cfaf0011d204e1bcc46c6915d6bfdc9b4e2b6",
+        "chunks/2vnoh3lhil6-z.js": "24ee2c628186fdfbb289f6293218dcae49f45de8514eee94b4c0819a9a870e0a",
+        "chunks/2xdy9dqmmxctf.js": "c77691edcb41b0f652747e32a223b1dc0f000b6e03546ec53feb487ce448c6ca",
+        "chunks/30xy-jyf-hp4z.js": "314fe17d37dae140f5576c57786cbaf674c4364782f7cbf4c2e53329a4a4a125",
+        "chunks/316wmit78-gsw.js": "eadf001492d935265189fb67fd8fdfb6b034f7bf1217223ddeb45ba664afb543",
+        "chunks/32pszrx1emr4r.js": "9561f7b95c6d701a395ce0eac38c672fa98cf8eab8dd9c75fafb4d10f7f0f27f",
+        "chunks/3617v9aamatw5.js": "517dd9066bf20af39b6102e279efd935ebc09fa151b01a3996267684d3e46468",
+        "chunks/38ilc1x7wx8rt.js": "2bcf02a81fbf7f45b95520c08ce8201c7c08d0cee4c3caa81c633879573576ac",
+        "chunks/3dmsvue_ajue_.js": "df2b5580de2672df99d48ccfb9bb717f1fde88efdb1441ffc04e890462212d6e",
+        "chunks/3qfmv3ax8c7q1.js": "16b0d4cbb23608b9b9165bc0087c03711c902f3458b881e795c74027dfdf6709",
+        "chunks/3qhr2hei6urnn.js": "1a2b5ce4c88a76e1cc2a5d36e404f5bd84c8b32d833a36bed3680c59cd8c4f0e",
+        "chunks/3s5kvlfmin718.js": "fa89315c5e73160cdecc06d4db1a0cf72594589b314a08924570e650850c4445",
+        "chunks/3sn2tfx5vtowi.js": "a894beb7e6791fa5b458da899a434ba2a39bd7e670fcb822fc613a2bc05fa16a",
+        "chunks/44sx2t6_lcvyy.js": "fda88cb089dc1e6d46c67c75535e4870de69de52eb72b976c004bcf6965ce994"
+      },
+      "removedPaths": {
+        "chunks/09riwbglbcnu8.js": "a29939fa2358478ac8b6b9fbc067602c9d7d48a8b4fd8b5f347e8e86db88c266",
+        "chunks/0a3rtd04stnig.js": "51dfc1415bf7bf5854cbf1c01b4d817c27fd00ea027c7f0bdab77f29dc1a75fb",
+        "chunks/0amtw4_hl6q1l.js": "42c67d536577c034b069973ae9ea887fa9594843601558ee89cc4c1e1fe7fc0a",
+        "chunks/0az8atym-ycbp.js": "5fd11165ab76e744fe982d6f27a5e284db7ddc335a50a4e4dfab223a0272a71e",
+        "chunks/0q02ct51ifjmn.js": "aac18aa57e2a558f77575551ad4fe2500b574d6485bcc79f87ef9705898faaa9",
+        "chunks/0qdan2mu6jdcb.js": "dfda8e7f88ec211b4e2f4a8f6c881b823a9486386ba171003857e74a1a577c2e",
+        "chunks/0qdtkn_q6tkb_.js": "a71660932705fc28e50a4ab97307a1cc9104c04f1e8b4f06e57fcd54a4a31458",
+        "chunks/0vd9m3t4gyv3q.js": "216e81f95c20a15b26e1ff275057f314adab5514161c6ee2ec0e92761ae03f28",
+        "chunks/0vx7xerwe807_.js": "5fe63d8cdca524deef00f7f45f6c9765a92a88f06b95c0ad5af1ca254cfd696d",
+        "chunks/0wst0tn3raa8p.js": "1ce77cc8c6502ef97d1513ecf3a4f26aaf4dd5b93da9de8e6c138bd9bebf6a0a",
+        "chunks/10a827_akh_ze.js": "78a589f104d65dde03ece81bbb1faae8143812ded48a178266eb11c1175df2b6",
+        "chunks/17ags3z5zxmie.js": "10930a50e7e3ec90606c744c1b4560d191699b7fabac53ab875c5a8d1e91e826",
+        "chunks/17cdts91zx5sd.js": "b1250d5998ce53b5fb08100e9450ee1a408229cc9bc079b012a92d190e81e8a4",
+        "chunks/17inxlo4pz5gu.js": "cf12b0e4fd4f45374d284fcb437b7be73fddadf6073cfc04ad5c3e38e2f5b1f3",
+        "chunks/18fnmm4btcyu4.js": "66857699001d11074641911c0471c7251b9e0ff0932554195663b0b44fb42a60",
+        "chunks/19ee4ba10vdgi.js": "75cb2aeac7a3e68a1b407b0c2ff5cf925bf6bcded061cdc39b18cfe420b57532",
+        "chunks/1h4i_-imgv731.js": "0986d8055d6f9fe2edc4dc60eab695ba9f5e80419958bd17516941fcec3803aa",
+        "chunks/1jhc5_l78s_q0.js": "268040b426d9e742608165da90b10f1e44f205121df9cfe03b8271fc5db93993",
+        "chunks/1m319qn0w4916.js": "848c5ae752de6a29a02a77f5fd64b7695770a9965e8ec06819f5899f0c89697c",
+        "chunks/1xqmkekxcjiy4.js": "97248b6746f3c28e0900474fbfd441ff947bdcfb00ff21f4747ba5f4b2d9b56c",
+        "chunks/1zzzmf4mszsy9.js": "e539a70e7129e27b06fa773b0b77ec96670c86a23168850d69dbb74c7e031c3b",
+        "chunks/245xxz1cdnu3c.js": "9f5d44dc56c3bc09417a48fb4325dc99534b9a7520b6407f2a9bbec9ead66f69",
+        "chunks/26jnajbci6783.js": "95a51d76d2bc212aaf097222bc11faf5fa0d5629cdabf54146245ce3c720eb69",
+        "chunks/28ade6a82u742.js": "4db6450996a552ef73feb6f70ecc8a0e3bd970affd1eaf718c08b0797ae0950b",
+        "chunks/2_hgluoshajzy.js": "e98a82b1997adeace904936969aa7d56687a0207f50a682e62fd6b297b66cf29",
+        "chunks/2b3712-g9zcc5.js": "a1c6df2faef06d0319c039fbec08c4f46c825e833f10b2150625fde382b05473",
+        "chunks/2cdxic-kzfnrr.js": "26defdd6da93f51240383d2e4955ceff2c97188f6541abdf2016e339e533cd22",
+        "chunks/2d5et16crd9i5.js": "80a36b36579e1d28f50bbbc797c88223fc2c436192d1084eacc1cf9702c31e96",
+        "chunks/2f2w3w2omacpc.js": "d1abfbcb531421ffdf7ad244af86b198eab9f1782b889fbf5fc2f3b545cd6047",
+        "chunks/2lgw9gdydj7f0.js": "35ec35aeea18fb09951341f0b173cc4c1f18a86f22b3bdc5120d5503ac1a09ac",
+        "chunks/2rpb07ibnu0jf.js": "65dc6d58a99d18e2f58c43d614372d24153ad100d21141a82bf8deed9000b282",
+        "chunks/2tacxvp8_sr9f.js": "d6de1e61b99fbf47228fe2d64b21838964b54fef8eae30050804b8da0169b882",
+        "chunks/2tmqzexiwrlxi.js": "b791005cebd6d52cb5470c57949a7fcc608842d87ad6792a7574fd78aeb438b5",
+        "chunks/30p0ep9rswl0j.js": "9909c8942d0a09d095730d034a6357e73e97ad4ab7b5bf7961d4436d3e9c507a",
+        "chunks/31tavyyc-04k1.js": "22ff946bb3af3fa74839bf9cc4cd44b34a971df48e4cf32832accdf128625bc8",
+        "chunks/338-f3r7kdap4.js": "e832d4a06505010a083ec5e96c72f1fd97dc16d65399305ea888f1ea08669ed4",
+        "chunks/34tp5zj_oozzd.js": "0e3024f042fcf553955bf3da0aa710709bb82fd2b22c4f9dc993b5a16b0d6097",
+        "chunks/36zlnjj403h6o.js": "f5e7e07a3d6bbe682703929f8e1e5d2aacbc5ab011cdb7c11453058277104917",
+        "chunks/3_r8cltchmq3k.js": "17a8dc8429951925e774ea74edd1e07b23e5ce6452a6e2ea39ddd1489f8befa5",
+        "chunks/3dyd77hnwy179.js": "0fa43f15f3fdd338d7cf94c8537079a26e4231981209b6ca7945f1003afac1e7",
+        "chunks/3jb7gftcio8s0.js": "7ecb61d45c473ca5fec941430a8000bf05e3c9a7cc375e2bfab83bdff64477ad",
+        "chunks/3jztrloyy0q0-.js": "14fb25ccdee9f7b7a2f6167bf9c010e67f743de28b7efbb63df30172b469ab73",
+        "chunks/3kalh1uhm0042.js": "fa77a7d6a9a3bc65e9bad28a0c3bc555d1d9aad27f24090c5430ccbe94fa06e6",
+        "chunks/3om3x08cikuka.js": "96faa346a944b9be1dabfd789b7bdbd3d65b3cec42ca63cdf17785cc6c2b6841",
+        "chunks/3qc-maiypyxlu.js": "c0f37d346a8065af255caafe55337cb018a27facd903f0d15f66761e6696912a",
+        "chunks/3rfswi2pmvljg.js": "70d2ae909e502a0d697087f1384921bfc1b2d297c4da89304a2a993688ca8a05",
+        "chunks/3y5uqvxw9lqjv.js": "094036ff8d5ed20fb5de0869274ca74e3e1477d5b65a088f7db413404756f14b",
+        "chunks/42yqdf8oc8qcw.js": "e1564f9c577107340e6c6f9736effa454ff57b5bac3a7bd113feba4242e92dbb",
+        "fDIbWgWHxbaO6kit_NtRg/_buildManifest.js": "545a04ca9e945a80d71dd763ed8aca02bd980c30222504bd6792284da8a9018f",
+        "fDIbWgWHxbaO6kit_NtRg/_clientMiddlewareManifest.js": "83ed68a18e4badc63cd7938f609780e9b0d4873faae87fafc3f6fa35c119edf3",
+        "fDIbWgWHxbaO6kit_NtRg/_ssgManifest.js": "678f6ce2cb80b1fe72fc67e7412be6e2ab6ada083111b64f7c40d35e3cba5e00"
+      },
+      "assetHashMultisetIdentical": false
+    },
+    "componentFixtureInputs": 32,
+    "renderedInputCount": 2212,
+    "changedRenderedInputs": [
+      {
+        "path": "src/modules/timeline/server/couple-artifact-boundary.test.ts",
+        "previous": "4838928785eef31c604d99c50e23f755727b746ee22b4e4fd43b84efdaa4bd53",
+        "current": "69acca57b110978c1d211ad3a8df656f5a3fbf5c2b457f572a1ce84e2389cfe1"
+      },
+      {
+        "path": "src/modules/timeline/server/master3-settings.test.ts",
+        "previous": "6262c74e93e878275b470ac815e72e43ff3c7089c672023191a3c0c402bac8ef",
+        "current": "7497ed1eb8323d9609a2a4ae5f28da88c2aa21a70670a484242fcc1772813a1c"
+      }
+    ],
+    "removedRenderedInputs": [],
+    "supplemental18ContractsIdentical": true,
+    "runtimeSourceDelta": "none; only the two enumerated server test sources changed",
+    "futureMetadataAdmission": "Root independently proves later changes limited to declared nonruntime contract/review/registry metadata. This review binds only actual bd artifact."
+  }
+}

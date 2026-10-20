@@ -1,3 +1,5 @@
+import { master3Settings, queueMaster3PublishedUpdate } from './master3-settings';
+import { validateMaster3ProjectSettings, type Master3Presentation, type Master3ItemPresentation } from '../lib/master3-presentation';
 import "server-only";
 
 import { randomUUID } from "node:crypto";
@@ -7,6 +9,7 @@ import {
   audienceShares,
   timelinePublicationItems,
   timelinePublications,
+  timelinePublicationPresentation,
   workspaces,
   type AudienceItemState,
   type AudienceKind,
@@ -64,6 +67,7 @@ export function audienceTimelineEnabled(): boolean {
 
 export type AudienceOwnerItem = Readonly<{
   publicId: string;
+  presentation?: Master3ItemPresentation;
   sourceRelation: string;
   title: string;
   calendarDate: string | null;
@@ -74,6 +78,7 @@ export type AudienceOwnerItem = Readonly<{
 
 export type AudienceOwnerPublication = Readonly<{
   id: string;
+  presentation?: Master3Presentation;
   projectSlug: string | null;
   label: string;
   audienceKind: AudienceKind;
@@ -235,6 +240,9 @@ export async function createAudiencePublication(input: {
   });
 
   const publicationId = randomUUID();
+  const presentationSettings=await master3Settings.project(input.workspaceSlug,projectSlug);
+  const publicIds=frozen.map(()=>randomUUID());
+  const frozenPresentation=validateMaster3ProjectSettings({...(presentationSettings?.presentation?{presentation:presentationSettings.presentation}:{}),items:Object.fromEntries(selectedNodes.flatMap((node,index)=>presentationSettings?.items?.[node.id]?[[publicIds[index],presentationSettings.items[node.id]]]:[]))});
   const now = new Date();
   const publicationDigest = digestSourceFields({
     title: input.label,
@@ -254,7 +262,7 @@ export async function createAudiencePublication(input: {
       primaryDateLabel: input.primaryDateLabel,
       primaryDate: input.primaryDate,
       audienceKind: input.audienceKind,
-      timezone: validateIanaTimezone(input.timezone),
+      timezone: validateIanaTimezone(presentationSettings?.presentation?.timezone ?? input.timezone),
       ownerDisplayLabel: input.ownerDisplayLabel,
       state: "draft",
       lastUpdatedAt: now,
@@ -262,7 +270,7 @@ export async function createAudiencePublication(input: {
     });
     await tx.insert(timelinePublicationItems).values(
       frozen.map((item, index) => ({
-        publicId: randomUUID(),
+        publicId: publicIds[index],
         publicationId,
         title: item.title,
         calendarDate: item.calendarDate,
@@ -274,6 +282,7 @@ export async function createAudiencePublication(input: {
         updatedAt: now,
       })),
     );
+    if(presentationSettings) await tx.insert(timelinePublicationPresentation).values({publicationId,settingsJson:frozenPresentation,updatedAt:now});
   });
 
   return publicationId;
@@ -443,7 +452,9 @@ export async function getOwnerAudiencePublications(
       ),
   ]);
 
+  const settingsByPublication=new Map(await Promise.all(publications.map(async publication=>[publication.id,await master3Settings.publication(publication.id)] as const)));
   return publications.map((publication) => ({
+    ...(settingsByPublication.get(publication.id)?.presentation?{presentation:settingsByPublication.get(publication.id)!.presentation}:{}),
     ...publication,
     projectSlug: null,
     activeShareCount: activeShares.filter(
@@ -453,6 +464,7 @@ export async function getOwnerAudiencePublications(
       .filter((item) => item.publicationId === publication.id)
       .map((item) => ({
         publicId: item.publicId,
+        ...(settingsByPublication.get(publication.id)?.items?.[item.publicId]?{presentation:settingsByPublication.get(publication.id)!.items![item.publicId]}:{}),
         sourceRelation: item.sourceRelation,
         title: item.title,
         calendarDate: item.calendarDate,
@@ -548,6 +560,7 @@ export async function publishAudiencePublication(
       expiresAt,
       createdAt: now,
     });
+    await queueMaster3PublishedUpdate(tx,{publicationId,kind:'update',eventKey:`published:${Math.floor(now.getTime()/1000)}`,now});
   });
   return rawToken;
 }
@@ -621,6 +634,8 @@ export async function updateAudiencePublicationItem(input: {
   }
   const now = new Date();
   await db.transaction(async (tx) => {
+  const [previous]=await tx.select({title:timelinePublicationItems.title,date:timelinePublicationItems.calendarDate,state:timelinePublicationItems.state}).from(timelinePublicationItems).where(and(eq(timelinePublicationItems.publicId,input.publicId),eq(timelinePublicationItems.publicationId,input.publicationId))).limit(1);
+  if(!previous)throw new TypeError('Milestone not found');
     await tx
       .update(timelinePublicationItems)
       .set({
@@ -644,6 +659,9 @@ export async function updateAudiencePublicationItem(input: {
           eq(timelinePublications.workspaceSlug, input.workspaceSlug),
         ),
       );
+    if(previous.title!==input.title||previous.date!==input.calendarDate||previous.state!==input.state){
+      await queueMaster3PublishedUpdate(tx,{publicationId:input.publicationId,kind:previous.date!==input.calendarDate?'date_change':'update',eventKey:digestSourceFields({title:input.title,date:input.calendarDate,completionState:`${input.publicId}:${input.state}:${Math.floor(now.getTime()/1000)}`}),now});
+    }
   });
 }
 
@@ -670,7 +688,10 @@ export async function setAudiencePrimaryDate(input: {
   }
   const conceal = !input.primaryDate || !input.primaryDateLabel;
   const now = new Date();
-  await db
+  await db.transaction(async tx=>{
+  const [previous]=await tx.select({label:timelinePublications.primaryDateLabel,date:timelinePublications.primaryDate}).from(timelinePublications).where(and(eq(timelinePublications.id,input.publicationId),eq(timelinePublications.workspaceSlug,input.workspaceSlug))).limit(1);
+  if(!previous)throw new TypeError('Publication not found');
+  await tx
     .update(timelinePublications)
     .set({
       primaryDateLabel: conceal ? null : input.primaryDateLabel,
@@ -684,6 +705,8 @@ export async function setAudiencePrimaryDate(input: {
         eq(timelinePublications.workspaceSlug, input.workspaceSlug),
       ),
     );
+  if(previous?.label!==(conceal?null:input.primaryDateLabel)||previous?.date!==(conceal?null:input.primaryDate))await queueMaster3PublishedUpdate(tx,{publicationId:input.publicationId,kind:'date_change',eventKey:digestSourceFields({title:conceal?'':input.primaryDateLabel!,date:conceal?null:input.primaryDate,completionState:`primary:${Math.floor(now.getTime()/1000)}`}),now});
+  });
   return conceal ? "concealed" : "set";
 }
 
@@ -770,7 +793,16 @@ export const resolveAudienceTimeline = cache(async (
     if (!rateLimit.allowed) return { kind: "invalid" };
   }
 
-  const tokenHash = hashAudienceToken(rawToken);
+  return resolveAudienceTimelineByDigest(hashAudienceToken(rawToken));
+});
+
+/** Server-only confirmed-subscriber port. Never returns raw tokens or recipient information. */
+export async function resolveAudienceTimelineDigest(tokenHash: string, publicationId: string): Promise<AudienceResolution> {
+  if (!/^[a-f0-9]{64}$/.test(tokenHash) || !publicationId) return {kind:'invalid'};
+  return resolveAudienceTimelineByDigest(tokenHash, publicationId);
+}
+
+async function resolveAudienceTimelineByDigest(tokenHash: string, expectedPublicationId?: string): Promise<AudienceResolution> {
   const [share] = await db
     .select({
       publicationId: audienceShares.publicationId,
@@ -781,7 +813,7 @@ export const resolveAudienceTimeline = cache(async (
     .from(audienceShares)
     .where(eq(audienceShares.tokenHash, tokenHash))
     .limit(1);
-  if (!share || !hashesEqual(share.tokenHash, tokenHash)) return { kind: "invalid" };
+  if (!share || (expectedPublicationId !== undefined && share.publicationId !== expectedPublicationId) || !hashesEqual(share.tokenHash, tokenHash)) return { kind: "invalid" };
 
   const access = resolveShareAccessState(share, new Date());
   if (access !== "valid") return { kind: access };
@@ -817,7 +849,11 @@ export const resolveAudienceTimeline = cache(async (
     .where(eq(timelinePublicationItems.publicationId, publication.id))
     .orderBy(asc(timelinePublicationItems.sortOrder));
 
+  const presentationSettings=await master3Settings.publication(publication.id);
+  const timezone=validateIanaTimezone(presentationSettings?.presentation?.timezone??publication.timezone);
+  const hasPresentation=Boolean(presentationSettings?.presentation)||Object.values(presentationSettings?.items??{}).some(item=>Boolean(item.time));
   const candidate = {
+    ...(hasPresentation?{presentation:{...presentationSettings?.presentation,timezone}}:{}),
     version: AUDIENCE_TIMELINE_DTO_VERSION,
     audienceKind: publication.audienceKind,
     publicationId: publication.id,
@@ -834,7 +870,7 @@ export const resolveAudienceTimeline = cache(async (
         }
       : {}),
     lastUpdatedAt: publication.lastUpdatedAt.toISOString(),
-    today: calendarDateInTimeZone(new Date(), publication.timezone),
+    today: calendarDateInTimeZone(new Date(), timezone),
     sections: AUDIENCE_ITEM_STATES.map((state) => ({
       state,
       label: MILESTONE_STATE_LABELS[state],
@@ -842,6 +878,7 @@ export const resolveAudienceTimeline = cache(async (
         .filter((item) => item.state === state)
         .map((item) => ({
           publicId: item.publicId,
+          ...(presentationSettings?.items?.[item.publicId]?{presentation:presentationSettings.items[item.publicId]}:{}),
           title: item.title,
           ...(item.date ? { date: item.date } : {}),
           state: item.state,
@@ -849,4 +886,4 @@ export const resolveAudienceTimeline = cache(async (
     })).filter((section) => section.items.length > 0),
   };
   return { kind: "ok", dto: validateAudienceTimelineDto(candidate) };
-});
+}

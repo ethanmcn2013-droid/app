@@ -169,6 +169,10 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks/(.*)",
   "/api/cron/(.*)",
   "/api/health/(.*)",
+  // Guest calendar/follow requests prove the active Timeline share themselves.
+  // The reminder worker separately requires its scheduler bearer credential.
+  "/api/timeline/share/(.*)",
+  "/api/timeline/reminders",
   // Public so the browser can POST CSP violation reports without a session.
   "/api/csp-report",
   // Internal cross-product reads (bearer-auth via PARTNER_STATS_SECRET).

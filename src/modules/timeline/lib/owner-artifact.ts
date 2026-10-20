@@ -1,8 +1,10 @@
+import type { Master3ProjectSettings } from './master3-presentation';
 import {
   AUDIENCE_ITEM_STATES,
   AUDIENCE_TIMELINE_DTO_VERSION,
   calendarDateInTimeZone,
   validateAudienceTimelineDto,
+  validateIanaTimezone,
   type AudienceKind,
   type AudienceTimelineDto,
 } from "@/modules/timeline/lib/audience-timeline";
@@ -19,11 +21,14 @@ export function ownerPublicationToTimelineDto(
   publication: AudienceOwnerPublication,
   now = new Date(),
 ): AudienceTimelineDto {
+  const timezone=validateIanaTimezone(publication.presentation?.timezone??publication.timezone);
+  const hasPresentation=Boolean(publication.presentation)||publication.items.some(item=>Boolean(item.presentation?.time));
   return validateAudienceTimelineDto({
     version: AUDIENCE_TIMELINE_DTO_VERSION,
     audienceKind: publication.audienceKind,
     publicationId: publication.id,
     label: publication.label,
+    ...(hasPresentation ? {presentation:{...publication.presentation,timezone}} : {}),
     ...(publication.ownerDisplayLabel
       ? { ownerDisplayLabel: publication.ownerDisplayLabel }
       : {}),
@@ -36,7 +41,7 @@ export function ownerPublicationToTimelineDto(
         }
       : {}),
     lastUpdatedAt: publication.lastUpdatedAt.toISOString(),
-    today: calendarDateInTimeZone(now, publication.timezone),
+    today: calendarDateInTimeZone(now, timezone),
     sections: AUDIENCE_ITEM_STATES.map((state) => ({
       state,
       label: MILESTONE_STATE_LABELS[state],
@@ -45,6 +50,7 @@ export function ownerPublicationToTimelineDto(
         .sort((left, right) => left.sortOrder - right.sortOrder)
         .map((item) => ({
           publicId: item.publicId,
+          ...(item.presentation ? {presentation:item.presentation} : {}),
           title: item.title,
           ...(item.calendarDate ? { date: item.calendarDate } : {}),
           state: item.state,
@@ -88,15 +94,25 @@ export function ownerProjectToTimelineDto(input: {
   nodes: readonly EffectiveNode[];
   settings?: OwnerPreviewSettings;
   now?: Date;
+  presentationSettings?: Master3ProjectSettings;
+  settingsUpdatedAt?: Date;
 }): AudienceTimelineDto {
   const now = input.now ?? new Date();
-  const timezone = input.settings?.timezone ?? "Europe/Dublin";
+  const timezone = validateIanaTimezone(input.presentationSettings?.presentation?.timezone ?? input.settings?.timezone ?? "Europe/Dublin");
   const visible = input.nodes
     .filter((node) => !node.hidden)
     .sort((left, right) => left.sortOrder - right.sortOrder);
   const audienceKind =
     input.settings?.audienceKind ??
     defaultAudienceKind(input.workspace.templateId);
+  // An explicit null suppresses the credit. A wedding project must never infer
+  // the couple's shared name from a single workspace actor's name.
+  const ownerDisplayLabel =
+    input.settings?.ownerDisplayLabel !== undefined
+      ? input.settings.ownerDisplayLabel
+      : audienceKind !== "couple" && input.workspace.ownerName
+        ? `Shared by ${input.workspace.ownerName}`
+        : null;
   const dated = visible
     .map((node) => node.targetDate)
     .filter((date): date is string => Boolean(date))
@@ -123,16 +139,8 @@ export function ownerProjectToTimelineDto(input: {
     publicationId:
       input.settings?.publicationId ?? `owner-preview-${input.project.slug}`,
     label: input.settings?.label ?? input.project.name,
-    ...((input.settings?.ownerDisplayLabel ??
-    (input.workspace.ownerName
-      ? `Shared by ${input.workspace.ownerName}`
-      : null))
-      ? {
-          ownerDisplayLabel:
-            input.settings?.ownerDisplayLabel ??
-            `Shared by ${input.workspace.ownerName}`,
-        }
-      : {}),
+    ...((input.presentationSettings?.presentation || Object.values(input.presentationSettings?.items??{}).some(item=>Boolean(item.time))) ? {presentation:{...input.presentationSettings?.presentation,timezone}} : {}),
+    ...(ownerDisplayLabel ? { ownerDisplayLabel } : {}),
     ...(primaryDate && primaryDateLabel
       ? {
           primaryDate: {
@@ -141,7 +149,7 @@ export function ownerProjectToTimelineDto(input: {
           },
         }
       : {}),
-    lastUpdatedAt: latestUpdate.toISOString(),
+    lastUpdatedAt: (input.settingsUpdatedAt && input.settingsUpdatedAt > latestUpdate ? input.settingsUpdatedAt : latestUpdate).toISOString(),
     today: calendarDateInTimeZone(now, timezone),
     sections: AUDIENCE_ITEM_STATES.map((state) => ({
       state,
@@ -149,6 +157,7 @@ export function ownerProjectToTimelineDto(input: {
       items: visible
         .map((node, index) => ({
           publicId: `owner-preview-${index + 1}`,
+          ...(input.presentationSettings?.items?.[node.id] ? {presentation:input.presentationSettings.items[node.id]} : {}),
           title: node.title,
           ...(node.targetDate ? { date: node.targetDate } : {}),
           state: node.audienceState,

@@ -1,4 +1,7 @@
 "use server";
+import { getOwnerAudiencePublications } from '../audience-timeline';
+import { getEffectiveNodesForWorkspace } from '../db/timeline-queries';
+
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/modules/timeline/server/auth";
@@ -453,4 +456,43 @@ export async function refreshAudienceDivergenceAction(
   } catch (error) {
     return errorState(error);
   }
+}
+
+/** Explicit owner entry; private project settings do not create or publish a shared page. */
+export async function saveMaster3SettingsAction(_previous: {saved?: boolean; error?: string}, formData: FormData): Promise<{saved?: boolean; error?: string}> {
+ try {
+  if(isDemoMode()) return {error:'Demo mode is read-only.'};
+  const {userId,workspace}=await ownerWorkspace(formData);
+  await allowWrite('timeline-presentation');
+  const [{master3Settings},{master3SettingsFromForm}]=await Promise.all([import('../master3-settings'),import('../../lib/master3-settings-form')]);
+  await withFreshAudienceMutationAuthority(userId,workspace,async()=>{
+  const publicationId=optionalText(formData,'publicationId',80);
+  if(publicationId){
+   const publication=(await getOwnerAudiencePublications(workspace.slug)).find(p=>p.id===publicationId);
+   if(!publication)throw new TypeError('Timeline not found');
+   await master3Settings.savePublication(userId,workspace.slug,publicationId,master3SettingsFromForm(formData,publication.items.map(item=>item.publicId)));
+  } else {
+   const projectSlug=requiredText(formData,'projectSlug',120);
+   const nodes=(await getEffectiveNodesForWorkspace(workspace.slug)).filter(node=>node.projectSlug===projectSlug&&!node.hidden);
+   await master3Settings.saveProject(userId,workspace.slug,projectSlug,master3SettingsFromForm(formData,nodes.map(node=>node.id)));
+  }
+  });
+  revalidatePath('/app/timeline','layout');
+  return {saved:true};
+ }catch(error){return {error:error instanceof TypeError?error.message:'Those settings could not be saved. Try again.'};}
+}
+
+/** Purpose-specific owner patch; the latest public settings are read inside its write transaction. */
+export async function saveMaster3ReferralAction(_previous:{saved?:boolean;error?:string},formData:FormData):Promise<{saved?:boolean;error?:string}>{
+ try{
+  if(isDemoMode())return {error:'Demo mode is read-only.'};
+  const {userId,workspace}=await ownerWorkspace(formData);
+  await allowWrite('timeline-presentation');
+  const publicationId=requiredText(formData,'publicationId',80),raw=formData.get('referral');
+  if(raw!=='true'&&raw!=='false')throw new TypeError('Invalid referral preference');
+  const {master3Settings}=await import('../master3-settings');
+  await withFreshAudienceMutationAuthority(userId,workspace,()=>master3Settings.setPublicationReferral(userId,workspace.slug,publicationId,raw==='true'));
+  revalidatePath('/app/timeline','layout');
+  return {saved:true};
+ }catch(error){return {error:error instanceof TypeError?error.message:'Those settings could not be saved. Try again.'};}
 }
