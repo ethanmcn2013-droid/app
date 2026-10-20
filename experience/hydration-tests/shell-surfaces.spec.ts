@@ -172,8 +172,8 @@ for (const theme of ["dark", "light"] as const) {
       const icon = await paint(page, '[data-shell="v3"] > aside nav[aria-label="Workspace"] a:not([aria-current]) svg');
       expect(contrast(icon.color, sidebar.background), "sidebar icon against the rail").toBeGreaterThanOrEqual(4.5);
 
-      // The next big day card: a fill, a border, and a step away from the page.
-      const stat = await paint(page, '[data-home-card="next"]');
+      // The Done this week card: a fill, a border, and a step away from the page.
+      const stat = await paint(page, 'section[aria-labelledby="home-week-title"]');
       expect(opaque(stat.background), "the card has a fill").toBe(true);
       expect(stat.borderWidth, "the card has a border").toBeGreaterThan(0);
       expect(opaque(stat.border), "the card border has a colour").toBe(true);
