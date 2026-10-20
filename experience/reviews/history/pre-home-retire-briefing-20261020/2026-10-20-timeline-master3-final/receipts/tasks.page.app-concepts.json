@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-concepts",
+  "source": "tasks/src/app/app/concepts/page.tsx",
+  "materialityHash": "63e7924b683e8c06",
+  "reviewedAt": "2026-10-20",
+  "reviewer": "/root/timeline_final_receiving",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-36f5a77cc37891a506360306-e18c22d95219b002.json",
+    "attestationSha256": "d595dc81d037966d5aab8fb520b0090ec2147dc4426808c658c6fef5155dc7a4",
+    "runId": "tasks-playwright-36f5a77cc37891a506360306",
+    "canonicalEvidenceSha256": "36f5a77cc37891a50636030678dd3456f920770539b03344d8cd3581e4d1a230",
+    "rawArtifactSha256": "e18c22d95219b002b3b9e4b0a2f2422b40b0733b8bc87836d586159ff6f49cc1",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-concepts",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Final Master 3 receiving at exact bd8863 runtime; later scoped performance-contract admission leaves all rendered inputs and four browser contracts unchanged.",
+  "decision": "All four images show Concepts and explicit sample-data/unpicked-prototype disclosure. The sealed test requires Overview region and its first /app/concepts/overview/1 href. Responsive card columns remain readable. Limits: Below-fold content inside the app scroll region was not all visible; no destination navigation or prototype design approval. Acceptance limited to declared demo route or isolated component case and four captured viewports; no production, universal accessibility, native zoom, real email delivery or Follow lifecycle claim. Independent 18-target receiving: experience/reviews/2026-10-20-timeline-master3-final/independent-review.json."
+}

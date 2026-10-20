@@ -6,11 +6,11 @@
   "reviewedAt": "2026-10-20",
   "reviewer": "Ethan McNamara (founder): reviewed the Home renders, the 188/188 capture summary and these receipt texts in chat on 2026-10-20",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-ad8b4503357cbc482c15cb38-b2555d72272533ce.json",
-    "attestationSha256": "aba4d744cc0c3cde5ee608275855f57923338bf0c36ce7965ae0c06cc3b63861",
-    "runId": "tasks-playwright-ad8b4503357cbc482c15cb38",
-    "canonicalEvidenceSha256": "ad8b4503357cbc482c15cb38c5e88b793db771bc159576ae5a48b7b4282157fc",
-    "rawArtifactSha256": "b2555d72272533cecd0e30ce452402b1a629d9944aa2e7b47f9c90adbb763db5",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-dc500176b3f4868f24d5823a-f78815d5a0dc4b90.json",
+    "attestationSha256": "4b1d55a3ca66babae541a854fe09eb269bbe5f40565f61e6c8f7b7712d5832d6",
+    "runId": "tasks-playwright-dc500176b3f4868f24d5823a",
+    "canonicalEvidenceSha256": "dc500176b3f4868f24d5823a6ec2ff4e408efcc32e40776d00da0661f68e1486",
+    "rawArtifactSha256": "f78815d5a0dc4b902d37d29124a712c25d4c50945f448871b7630dc1f4789bed",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.state.app-home-error",
     "caseName": "actual component with deterministic local inputs",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "Home rebuilt (new countdown, week, activity and start cards) and the Full Briefing retired. This state's source changed with it. Rendered in fresh canonical capture 188/188 one attempt each; Home loading keeps its Opening Home status and Home error offers Try again and Open Tasks. Reviewed against the Home browser check (650 checks, four sizes, light and dark, axe). No production or numerical design rating claim.",
+  "reviewedChange": "Home rebuilt and the Full Briefing retired; this state's source changed with it. Home loading keeps its Opening Home status and Home error offers Try again and Open Tasks. Relinked to fresh canonical capture 188/188 one attempt each on the branch with main (Timeline Master 3) merged; the only changes since Ethan's review are that merge and one access-gate test fix. No production or numerical design rating claim.",
   "decision": "accepted"
 }
