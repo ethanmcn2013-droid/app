@@ -1,3 +1,4 @@
+import { validateMaster3Presentation, validateMaster3ItemPresentation, type Master3Presentation, type Master3ItemPresentation } from './master3-presentation';
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 export const AUDIENCE_TIMELINE_DTO_VERSION = 1 as const;
@@ -15,6 +16,7 @@ export type AudienceItemState = (typeof AUDIENCE_ITEM_STATES)[number];
 
 export type AudienceTimelineItemDto = Readonly<{
   publicId: string;
+  presentation?: Master3ItemPresentation;
   title: string;
   date?: string;
   state: AudienceItemState;
@@ -35,6 +37,7 @@ export type AudienceTimelineDto = Readonly<{
   primaryDate?: Readonly<{ label: string; date: string }>;
   lastUpdatedAt: string;
   today: string;
+  presentation?: Master3Presentation;
   sections: readonly AudienceTimelineSectionDto[];
 }>;
 
@@ -50,10 +53,11 @@ const TOP_LEVEL_KEYS = new Set([
   "lastUpdatedAt",
   "today",
   "sections",
+  "presentation",
 ]);
 const PRIMARY_DATE_KEYS = new Set(["label", "date"]);
 const SECTION_KEYS = new Set(["state", "label", "items"]);
-const ITEM_KEYS = new Set(["publicId", "title", "date", "state"]);
+const ITEM_KEYS = new Set(["publicId", "title", "date", "state", "presentation"]);
 const FORBIDDEN_KEYS = new Set([
   "workspaceId",
   "workspaceSlug",
@@ -92,7 +96,7 @@ const FORBIDDEN_KEYS = new Set([
  * `class` and `module` publications keep the older rule. "Year 3, 2027" is a
  * legitimate label for those and carries no home in it.
  */
-const COUPLE_DISPLAY_LABEL_RE = /^[\p{L}\p{M}][\p{L}\p{M} '’\-&.,]*$/u;
+const COUPLE_DISPLAY_LABEL_RE = /^[\p{L}\p{M}][\p{L}\p{M} '\u2019\-&.,]*$/u;
 
 /** Shown to the couple. Says what is allowed, not what went wrong. */
 export const COUPLE_DISPLAY_LABEL_REFUSAL =
@@ -161,6 +165,7 @@ export function validateAudienceTimelineDto(value: unknown): AudienceTimelineDto
     primaryDate?: { label: string; date: string };
     lastUpdatedAt: string;
     today: string;
+    presentation?: Master3Presentation;
     sections: AudienceTimelineSectionDto[];
   } = {
     version: AUDIENCE_TIMELINE_DTO_VERSION,
@@ -172,6 +177,7 @@ export function validateAudienceTimelineDto(value: unknown): AudienceTimelineDto
     sections: [],
   };
 
+  if(value.presentation !== undefined) dto.presentation=validateMaster3Presentation(value.presentation);
   if (Number.isNaN(Date.parse(dto.lastUpdatedAt))) {
     throw new TypeError("timeline.lastUpdatedAt must be an ISO instant");
   }
@@ -212,18 +218,20 @@ export function validateAudienceTimelineDto(value: unknown): AudienceTimelineDto
         const path = `timeline.sections[${sectionIndex}].items[${itemIndex}]`;
         if (!isRecord(item)) throw new TypeError(`${path} must be an object`);
         exactKeys(item, ITEM_KEYS, path);
-        const mapped: { publicId: string; title: string; date?: string; state: AudienceItemState } = {
+        const mapped: { publicId: string; title: string; date?: string; state: AudienceItemState; presentation?: Master3ItemPresentation } = {
           publicId: requiredString(item.publicId, `${path}.publicId`, 80),
           title: requiredString(item.title, `${path}.title`, 180),
           state: itemState(item.state, `${path}.state`),
         };
         if (mapped.state !== state) throw new TypeError(`${path}.state must match its section`);
         if (item.date !== undefined) mapped.date = calendarDate(item.date, `${path}.date`);
+        if(item.presentation !== undefined) mapped.presentation=validateMaster3ItemPresentation(item.presentation);
         return mapped;
       }),
     };
   });
 
+  if(dto.sections.flatMap(section=>section.items).filter(item=>item.presentation?.final).length>1)throw new TypeError('Choose one final milestone');
   return dto;
 }
 

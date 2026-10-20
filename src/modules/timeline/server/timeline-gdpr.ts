@@ -14,6 +14,10 @@ import {
   audienceViewReceipts,
   suiteProjectBindings,
   timelineSourceSyncState,
+  timelineProjectPresentation,
+  timelinePublicationPresentation,
+  timelineGuestSubscriptions,
+  timelineGuestDeliveries,
 } from "./db/timeline-schema";
 import { db } from "./db/timeline-client";
 
@@ -55,7 +59,7 @@ const audienceShareExportColumns = {
  * approved import path (check-module-boundaries.mjs gdprOrchestrators list).
  */
 export async function exportForUser(clerkId: string): Promise<
-  | { available: true; workspaces: (typeof workspaces.$inferSelect)[]; projects: (typeof projects.$inferSelect)[]; tasks: (typeof tasks.$inferSelect)[]; subtasks: (typeof subtasks.$inferSelect)[]; activity: (typeof activity.$inferSelect)[]; comments: (typeof comments.$inferSelect)[]; projectSources: (typeof projectSources.$inferSelect)[]; nodeOverlays: (typeof nodeOverlays.$inferSelect)[]; publications: (typeof timelinePublications.$inferSelect)[]; publicationItems: (typeof timelinePublicationItems.$inferSelect)[]; audienceShares: AudienceShareExport[] }
+  | { available: true; workspaces: (typeof workspaces.$inferSelect)[]; projects: (typeof projects.$inferSelect)[]; tasks: (typeof tasks.$inferSelect)[]; subtasks: (typeof subtasks.$inferSelect)[]; activity: (typeof activity.$inferSelect)[]; comments: (typeof comments.$inferSelect)[]; projectSources: (typeof projectSources.$inferSelect)[]; nodeOverlays: (typeof nodeOverlays.$inferSelect)[]; publications: (typeof timelinePublications.$inferSelect)[]; publicationItems: (typeof timelinePublicationItems.$inferSelect)[]; audienceShares: AudienceShareExport[]; projectPresentation: (typeof timelineProjectPresentation.$inferSelect)[]; publicationPresentation: (typeof timelinePublicationPresentation.$inferSelect)[] }
   | { available: false; reason: string }
 > {
   try {
@@ -80,6 +84,8 @@ export async function exportForUser(clerkId: string): Promise<
         publications: [],
         publicationItems: [],
         audienceShares: [],
+        projectPresentation: [],
+        publicationPresentation: [],
       };
     }
 
@@ -115,6 +121,25 @@ export async function exportForUser(clerkId: string): Promise<
         ])
       : [[], []];
 
+    const presentationTables = await db.all<{ name: string; type: string }>(sql`
+      SELECT name, type FROM sqlite_schema WHERE name IN (
+        'timeline_project_presentation', 'timeline_publication_presentation',
+        'timeline_guest_subscriptions', 'timeline_guest_deliveries'
+      )
+    `);
+    if (presentationTables.length !== 0 && (
+      presentationTables.length !== 4 || presentationTables.some((object) => object.type !== "table")
+    )) throw new Error("Timeline presentation export schema is incomplete");
+    const [projectPresentation, publicationPresentation] = presentationTables.length === 4
+      ? await Promise.all([
+          db.select().from(timelineProjectPresentation)
+            .where(inArray(timelineProjectPresentation.workspaceSlug, slugs)),
+          pubIds.length ? db.select().from(timelinePublicationPresentation)
+            .where(inArray(timelinePublicationPresentation.publicationId, pubIds)) : [],
+        ])
+      : [[], []];
+    // Another person's subscription address and consent tokens are not the
+    // owner's portable content. Owner erasure still explicitly removes them.
     return {
       available: true,
       workspaces: ownedWorkspaces,
@@ -128,6 +153,8 @@ export async function exportForUser(clerkId: string): Promise<
       publications: publicationRows,
       publicationItems: pubItemRows,
       audienceShares: shareRows,
+      projectPresentation,
+      publicationPresentation,
     };
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
@@ -202,8 +229,31 @@ export async function eraseForUser(
         .select({ id: timelinePublications.id })
         .from(timelinePublications)
         .where(inArray(timelinePublications.workspaceSlug, slugs));
+      // Exact pre-0002 absence is supported. Partial or view-occupied schema
+      // must fail and roll back rather than leave guest contact data behind.
+      const master3Tables = await tx.all<{ name: string; type: string }>(sql`
+        SELECT name, type FROM sqlite_schema WHERE name IN (
+          'timeline_project_presentation', 'timeline_publication_presentation',
+          'timeline_guest_subscriptions', 'timeline_guest_deliveries'
+        )
+      `);
+      if (master3Tables.length !== 0 && (
+        master3Tables.length !== 4 || master3Tables.some((object) => object.type !== "table")
+      )) throw new Error("Timeline guest erasure schema is incomplete");
+      if (master3Tables.length === 4) {
+        await tx.delete(timelineProjectPresentation)
+          .where(inArray(timelineProjectPresentation.workspaceSlug, slugs));
+      }
       if (pubRows.length > 0) {
         const pubIds = pubRows.map((p) => p.id);
+        if (master3Tables.length === 4) {
+          await tx.delete(timelineGuestDeliveries)
+            .where(inArray(timelineGuestDeliveries.publicationId, pubIds));
+          await tx.delete(timelineGuestSubscriptions)
+            .where(inArray(timelineGuestSubscriptions.publicationId, pubIds));
+          await tx.delete(timelinePublicationPresentation)
+            .where(inArray(timelinePublicationPresentation.publicationId, pubIds));
+        }
         await tx.delete(audienceViewReceipts)
           .where(inArray(audienceViewReceipts.publicationId, pubIds));
         await tx.delete(audienceShares)

@@ -2,72 +2,54 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-/**
- * The Countdown's layout contract: the page fills the screen without
- * stranding its footer, nothing is truncated to make it fit, long names are
- * re-sized rather than cut, and the phone arrangement stacks the row rather
- * than squeezing it.
- */
+// These are structural safety contracts, not a claim of rendered geometry.
+// Actual desktop/phone/zoom/spacing receiving remains a browser gate.
+const styles=readFileSync(new URL("./timeline-artifact.module.css",import.meta.url),"utf8");
+const source=readFileSync(new URL("./timeline-artifact.tsx",import.meta.url),"utf8");
 
-const styles = readFileSync(new URL("./timeline-artifact.module.css", import.meta.url), "utf8").replaceAll("\r\n", "\n");
-const artifact = readFileSync(new URL("./timeline-artifact.tsx", import.meta.url), "utf8").replaceAll("\r\n", "\n");
-
-function block(selector) {
-  const pattern = new RegExp(`(?:^|\\n)${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{([^}]*)\\}`);
-  const match = styles.match(pattern);
-  assert.ok(match, `${selector} must exist`);
-  return match[1];
-}
-
-function declaration(body, property) {
-  const match = body.match(new RegExp(`(?:^|;|\\n)\\s*${property}:\\s*([^;]+);`));
-  return match ? match[1].trim() : null;
-}
-
-test("the artifact fills the screen without stranding its footer", () => {
-  const artifactBlock = block(".artifact");
-  assert.match(artifactBlock, /min-height:\s*100dvh;/);
-  assert.match(artifactBlock, /flex-direction:\s*column;/);
-  assert.match(block(".footer"), /margin-block-start:\s*auto;/);
-  assert.match(styles, /\.artifact\[data-embedded="true"\]\s*\{[\s\S]*?min-height:\s*auto;/);
-  assert.match(styles, /\.artifact\[data-compact="true"\]\s*\{[\s\S]*?min-height:\s*auto;/);
+test("Master3 stage is gated by readable container dimensions, zoom and reader spacing",()=>{
+  assert.match(source,/width >= 1024/); assert.match(source,/scale >= \.85/);
+  assert.match(source,/!spaced && !zoom/); assert.match(source,/ResizeObserver/);
+  assert.match(source,/visualViewport/); assert.match(source,/letterSpacing/);
+  assert.match(styles,/\.board\s*\{[^}]*max-width:\s*680px/);
+  assert.match(styles,/data-layout="stage"[^}]*\.board\s*\{[^}]*width:\s*1440px[^}]*height:\s*810px/);
 });
 
-test("nothing shrinks or hides content to make the page fit", () => {
-  assert.doesNotMatch(styles, /text-overflow:\s*ellipsis/);
-  assert.doesNotMatch(styles, /line-clamp/);
-  assert.doesNotMatch(styles, /white-space:\s*nowrap;[\s\S]{0,40}overflow:\s*hidden/);
-  for (const selector of [".hero", ".row", ".rowText", ".finale"]) {
-    assert.equal(declaration(block(selector), "overflow"), null, `${selector} must not clip`);
-  }
-  // Titles wrap; only dates and figures hold to one line.
-  assert.equal(declaration(block(".rowTitle"), "white-space"), null);
+test("phone timeline precedes actions and follow content, with no layout chooser",()=>{
+  const start=source.indexOf('<section className={styles.phoneTimeline}');
+  const actions=source.indexOf('<div className={styles.phoneActions}',start);
+  const follow=source.indexOf('<aside',start);
+  assert.ok(start>=0 && actions>start && follow>start);
+  assert.doesNotMatch(source,/setRequestedMode|data-timeline-metric-toggle/);
+  assert.match(styles,/grid-template-columns:\s*50px 30px minmax\(0, 1fr\)/);
 });
 
-test("a long project title is re-sized, never truncated or forced onto one line", () => {
-  assert.match(artifact, /data-title-length=\{artifactTitleLength\(timeline\.label\)\}/);
-  assert.match(styles, /\.artifact\[data-title-length="long"\] \.hero h1\s*\{/);
-  assert.match(styles, /\.artifact\[data-title-length="epic"\] \.hero h1\s*\{/);
-  assert.match(block(".hero h1"), /text-wrap:\s*balance;/);
+test("primary action placements are mutually exclusive across stage and stack",()=>{
+  assert.match(styles,/\.dayPanel > h2, \.desktopTime, \.progress, \.panelAction\s*\{\s*display:\s*none/);
+  assert.match(styles,/data-layout="stage"[^}]*\.panelAction\s*\{\s*display:\s*block/);
+  assert.match(styles,/data-layout="stage"[^}]*\.phoneActions[^}]*\{\s*display:\s*none/);
+  assert.match(styles,/data-layout="stage"[^}]*\.phoneEdit[^}]*\{\s*display:\s*none/);
 });
 
-test("the count is set as a sentence: the number, then what it counts", () => {
-  assert.match(artifact, /className=\{styles\.countValue\}/);
-  assert.match(artifact, /className=\{styles\.countUnit\}/);
-  assert.match(block(".count"), /flex-wrap:\s*wrap;/);
-  // A four-character value ("Today") steps down instead of overflowing.
-  assert.match(styles, /\.countValue\[data-scale="long"\]\s*\{/);
+test("long names wrap without clipping and number words retain their reading sentence",()=>{
+  assert.match(source,/measureText\(title\)/); assert.match(source,/Math\.max\(40, size\)/);
+  assert.match(styles,/\.title[^}]*text-wrap:\s*balance/);
+  assert.doesNotMatch(styles,/text-overflow:\s*ellipsis|line-clamp/);
+  assert.match(styles,/font-variant-numeric:\s*tabular-nums/);
+  assert.match(source,/screenReaderOnly/);
 });
 
-test("on a phone each row stacks, the figure over the title and its date", () => {
-  const phone = styles.match(/@container timeline-artifact \(max-width: 620px\) \{([\s\S]*?)\n\}\n/);
-  assert.ok(phone, "the phone arrangement must exist");
-  assert.match(phone[1], /\.row\s*\{[^}]*grid-template-columns:\s*1rem minmax\(0, 1fr\);/);
-  assert.match(phone[1], /\.rowFigureCell,\s*\n\s*\.rowText\s*\{\s*grid-column:\s*2;/);
+test("dark mode, reduced motion, forced colours and touch targets survive the new design",()=>{
+  assert.match(styles,/data-theme="dark"/); assert.doesNotMatch(styles,/color-scheme:\s*only light/);
+  assert.match(styles,/prefers-reduced-motion:\s*reduce[^}]*animation:\s*none !important/);
+  assert.match(styles,/forced-colors:\s*active/); assert.match(styles,/border[^;]*CanvasText/);
+  assert.match(styles,/min-height:\s*44px/); assert.match(styles,/nextPulse 2\.4s ease-in-out 3/);
+  assert.match(styles,/focus-visible[^}]*outline:\s*2px solid var\(--x-m3-accent\)/);
 });
 
-test("rows can be reached from the strip and land clear of the top edge", () => {
-  assert.match(artifact, /id=\{`m-\$\{point\.item\.publicId\}`\}/);
-  assert.match(block(".row"), /scroll-margin-block:/);
-  assert.match(styles, /\.row:target\s*\{/);
+test("embedded and compact views keep their containing scroll owner",()=>{
+  assert.match(styles,/data-compact="true"[^}]*data-embedded="true"[^}]*min-height:\s*auto/);
+  const studio=readFileSync(new URL("../../app/audience/artifact-studio.module.css",import.meta.url),"utf8");
+  assert.match(studio,/\.studio\s*\{[^}]*min-height:\s*0/);
+  assert.match(studio,/\.studio\s*\{[^}]*overflow-y:\s*auto/);
 });

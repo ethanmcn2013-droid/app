@@ -80,6 +80,10 @@ async function fixture(foreignKeys: boolean, legacy = false) {
       { sql: "INSERT INTO audience_shares(id,publication_id,token_hash) VALUES (?,?,?)", args: [`share-${slug}`, `pub-${slug}`, sha(["synthetic-share", slug])] },
       { sql: "INSERT INTO audience_view_receipts(publication_id,session_hash,expires_at) VALUES (?,?,2000000000)", args: [`pub-${slug}`, sha(["synthetic-session", slug])] },
       ...(!legacy ? [
+        { sql: "INSERT INTO timeline_project_presentation(workspace_slug,project_slug,settings_json) VALUES (?,'plan','{}')", args: [slug] },
+        { sql: "INSERT INTO timeline_publication_presentation(publication_id,settings_json) VALUES (?,'{}')", args: [`pub-${slug}`] },
+        { sql: "INSERT INTO timeline_guest_subscriptions(id,publication_id,share_token_hash,email,email_hash,state) VALUES (?,?,?,'synthetic@example.invalid',?,'confirmed')", args: [`guest-${slug}`, `pub-${slug}`, sha(["synthetic-share", slug]), sha(["synthetic-email", slug])] },
+        { sql: "INSERT INTO timeline_guest_deliveries(id,subscription_id,publication_id,kind,dedupe_key,due_at) VALUES (?,?,?,'update',?,2000000000)", args: [`delivery-${slug}`, `guest-${slug}`, `pub-${slug}`, `dedupe-${slug}`] },
         { sql: "INSERT INTO suite_project_bindings(tasks_workspace_id,timeline_workspace_slug,primary_timeline_slug,state,provenance) VALUES (?,?,'plan',?,'legacy_exact')", args: [`tasks-${slug}`, slug, state] },
         { sql: "INSERT INTO timeline_source_sync_state(tasks_workspace_id,timeline_workspace_slug,timeline_slug,status) VALUES (?,?,'plan','complete')", args: [`tasks-${slug}`, slug] },
       ] : []),
@@ -108,7 +112,7 @@ async function fixture(foreignKeys: boolean, legacy = false) {
     for (const table of tables) {
       const column = table === "workspaces" ? "slug"
         : ["suite_project_bindings", "timeline_source_sync_state"].includes(table) ? "timeline_workspace_slug"
-        : ["timeline_publication_items", "audience_shares", "audience_view_receipts"].includes(table) ? "publication_id"
+        : ["timeline_publication_items", "audience_shares", "audience_view_receipts", "timeline_publication_presentation", "timeline_guest_subscriptions", "timeline_guest_deliveries"].includes(table) ? "publication_id"
         : "workspace_slug";
       const metadata = table === "signal_timeline_schema_migrations";
       const where = bystanderOnly && !metadata ? ` WHERE ${column}='${column === "publication_id" ? "pub-b" : "b"}'` : "";
@@ -129,7 +133,7 @@ for (const foreignKeys of [true, false]) {
       assert.equal((await f.client.execute("PRAGMA foreign_key_check")).rows.length, 0);
       const before = await f.snapshot();
       const bystander = await f.snapshot(true);
-      assert.equal(Object.keys(before).length, 15, "actual normalized baseline plus owning ledger");
+      assert.equal(Object.keys(before).length, 19, "normalized baseline, Master3 contact custody and owning ledger");
       assert.ok(Object.values(before).every(t => t.count > 0));
       assert.deepEqual(await f.gdpr.eraseForUser("tasks-a-active"), { ok: true });
       assert.deepEqual(await f.snapshot(), before, "a Tasks project id is not Timeline owner identity");
@@ -139,8 +143,13 @@ for (const foreignKeys of [true, false]) {
         await f.client.execute("INSERT INTO subtasks(id,task_id,workspace_slug,title) VALUES ('orphan','missing','a-active','Synthetic orphan')");
       }
       const exportedB = await f.gdpr.exportForUser("clerk-b");
+      assert.equal(exportedB.available, true);
+      if (exportedB.available) {
+        assert.equal(exportedB.projectPresentation.length, 1);
+        assert.equal(exportedB.publicationPresentation.length, 1);
+      }
       const exportHash = sha(exportedB);
-      assert.doesNotMatch(JSON.stringify(exportedB), /tokenHash|sessionHash|leaseToken/);
+      assert.doesNotMatch(JSON.stringify(exportedB), /tokenHash|sessionHash|leaseToken|synthetic@example.invalid/);
       assert.deepEqual(await f.gdpr.eraseForUser("clerk-a"), { ok: true });
       assert.deepEqual(await f.snapshot(), bystander, "every table retains exactly the bystander's rows and migration ledger");
       assert.equal(sha(await f.gdpr.exportForUser("clerk-b")), exportHash);
@@ -213,6 +222,17 @@ test("partial normalized schema is not accepted as the pre-0001 compatibility mo
     assert.equal((await f.gdpr.eraseForUser("clerk-a")).ok, false);
     assert.equal(sha((await f.client.execute("SELECT * FROM workspaces")).rows), before);
     assert.equal(Number((await f.client.execute("SELECT count(*) n FROM subtasks")).rows[0].n), 4);
+  } finally { f.cleanup(); }
+});
+
+test("partial Master3 schema fails closed without deleting any owner data", async () => {
+  const f = await fixture(false);
+  try {
+    await f.client.execute("DROP TABLE timeline_guest_deliveries");
+    const before = sha((await f.client.execute("SELECT * FROM timeline_guest_subscriptions")).rows);
+    assert.equal((await f.gdpr.eraseForUser("clerk-a")).ok, false);
+    assert.equal(sha((await f.client.execute("SELECT * FROM timeline_guest_subscriptions")).rows), before);
+    assert.equal(Number((await f.client.execute("SELECT count(*) n FROM workspaces")).rows[0].n), 4);
   } finally { f.cleanup(); }
 });
 

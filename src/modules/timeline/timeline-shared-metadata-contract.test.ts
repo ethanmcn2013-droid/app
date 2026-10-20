@@ -17,7 +17,7 @@ describe("shared Timeline metadata boundary", () => {
     assert.doesNotMatch(source, /Tasks · execution clarity/);
   });
 
-  it("unfurls with viewer vocabulary, twitter parity, and the data-free card", () => {
+  it("unfurls with viewer vocabulary, twitter parity, and an explicitly gated social card", () => {
     const page = readFileSync(
       path.join(process.cwd(), "src", "app", "s", "[token]", "page.tsx"),
       "utf8",
@@ -40,13 +40,17 @@ describe("shared Timeline metadata boundary", () => {
 
     // The unfurl image is the token segment's file-convention card (it must
     // live IN the page's segment — a parent-segment card is dropped when the
-    // page defines its own openGraph object), and it stays data-free: no DTO
-    // reaches it.
+    // page defines its own openGraph object). Default cards stay data-free;
+    // owner-approved details pass through the explicit public-field projector.
+    // The actual renderer privacy test covers both consent boundaries.
     const card = readFileSync(
       path.join(process.cwd(), "src", "app", "s", "[token]", "opengraph-image.tsx"),
       "utf8",
     );
-    assert.doesNotMatch(card, /resolveAudienceTimeline|AudienceTimelineDto|dto\./);
-    assert.match(card, /data-free/i);
+    assert.match(card, /result\.kind === "ok" \? master3SocialDetails\(result\.dto\) : null/);
+    assert.match(card, /dynamic = "force-dynamic"/);
+    assert.match(card, /revalidate = 0/);
+    assert.match(card, /Cache-Control": "private, no-store, max-age=0"/);
+    assert.match(card, /data-free by default/i);
   });
 });

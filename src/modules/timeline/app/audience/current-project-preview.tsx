@@ -1,3 +1,5 @@
+import { Master3SettingsForm } from './master3-settings-form';
+import { master3Settings } from '../../server/master3-settings';
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isDemoMode } from "@/lib/access-mode";
@@ -33,10 +35,14 @@ export default async function CurrentProjectPreview({ params, searchParams }: {
   const project = projects.find(candidate => candidate.slug === projectSlug);
   if (!project) notFound();
   const nodes = (await getEffectiveNodesForWorkspace(workspace.slug)).filter(node => node.projectSlug === project.slug);
+  const presentationSettings=await master3Settings.project(workspace.slug,project.slug);
   const timeline = ownerProjectToTimelineDto({ project, workspace, nodes,
     now: isDemoMode() ? new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso) : new Date(),
     settings: { ownerDisplayLabel: null },
+    presentationSettings,
+    settingsUpdatedAt:await master3Settings.projectUpdatedAt(workspace.slug,project.slug),
   });
   const backHref = buildTimelineProjectHref(project.slug, { workspaceId, planningPeriodId });
-  return <CurrentProjectPreviewView timeline={timeline} backHref={backHref} />;
+  const canEdit = workspace.ownerUserId === userId && await master3Settings.available();
+  return <><CurrentProjectPreviewView timeline={timeline} backHref={backHref} canEdit={canEdit} />{canEdit?<Master3SettingsForm workspaceSlug={workspace.slug} projectSlug={project.slug} settings={presentationSettings} items={nodes.filter(node=>!node.hidden).map(node=>({id:node.id,title:node.title}))}/>:null}</>;
 }

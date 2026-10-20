@@ -1,0 +1,586 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-18T07:31:31.869080+00:00",
+  "title": "Design System: Signal Timeline Master 3",
+  "extensions": {
+    "shadows": [
+      {
+        "name": "overlay-light",
+        "value": "0 16px 40px rgb(14 14 18 / 12%), 0 2px 6px rgb(14 14 18 / 6%)",
+        "purpose": "Popover and all-dates dialog."
+      },
+      {
+        "name": "overlay-dark",
+        "value": "0 16px 40px rgb(0 0 0 / 55%), 0 2px 6px rgb(0 0 0 / 40%)",
+        "purpose": "Dark popover and all-dates dialog."
+      }
+    ],
+    "motion": [
+      {
+        "name": "next-pulse",
+        "value": "nextPulse 2.4s ease-in-out 3",
+        "purpose": "Next/Today halo varies from 7px to 11px and rests at 7px."
+      },
+      {
+        "name": "control-transition",
+        "value": ".15s",
+        "purpose": "Background, border and Follow focus transitions; disabled by reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "stage-min-width",
+        "value": "1024px"
+      },
+      {
+        "name": "follow-stack",
+        "value": "680px"
+      },
+      {
+        "name": "narrow-stack",
+        "value": "350px"
+      }
+    ],
+    "focus": {
+      "artifact": "2px solid var(--x-m3-accent); offset 3px",
+      "followForm": "0 0 0 1px var(--x-m3-accent), 0 0 0 5px var(--x-m3-accent-soft)",
+      "stackedInput": "2px solid var(--x-m3-accent); offset 2px; soft halo 5px",
+      "forcedColors": "System Highlight outlines and CanvasText/ButtonText borders."
+    },
+    "responsive": {
+      "stage": {
+        "width": 1440,
+        "height": 810,
+        "minimumScale": 0.85,
+        "requires": "Not compact; width >=1024; text spacing and zoom checks pass. See useBoard."
+      },
+      "stack": {
+        "maxWidth": 680,
+        "gutter": 20,
+        "ordering": "Milestones before calendar/follow."
+      }
+    },
+    "runtimeTheme": {
+      "scope": "Artifact-local --x-m3-* variables, inherited by Follow; not :root tokens.",
+      "darkOverrides": "Dark-prefixed frontmatter roles replace the corresponding light roles; button foreground/background invert. See timeline-artifact.module.css."
+    },
+    "provenance": {
+      "sourceRevision": "8854f5a1909939d6bfcf41c184cfb522059e4ad1",
+      "scope": "src/modules/timeline/components/artifact",
+      "authority": "Supplied final Master 3 canvas49 after round6; accepted world, not native implementation acceptance.",
+      "packageReference": "C:/Users/ethan/Desktop/Signal Timeline - Master 3 pack/README.md",
+      "references": [
+        "docs/design/timeline-master3.md",
+        "AGENTS.md",
+        "docs/COLLABORATION_LOOP.md",
+        "src/modules/timeline/components/artifact/timeline-artifact.module.css",
+        "src/modules/timeline/components/artifact/timeline-follow.module.css",
+        "src/modules/timeline/components/artifact/timeline-artifact.tsx",
+        "src/modules/timeline/components/artifact/master3-model.ts",
+        "src/modules/timeline/components/artifact/master3-actions.tsx",
+        "src/modules/timeline/components/artifact/master3-follow-copy.ts",
+        "src/modules/timeline/components/artifact/timeline-follow.tsx"
+      ],
+      "rasterAssets": "None shipped. Original package boards are design references, not application image assets.",
+      "pinnedStyleOverride": "Eyebrows, large numeral, palette and tight tracking are explicit supplied-world choices."
+    },
+    "receivingBoundary": {
+      "status": "Source documentation only; post-fix review captures and verdict pending at documentation time.",
+      "requiredProof": [
+        "Fresh native UI captures and finish verdict",
+        "Final CI at integrated revision",
+        "Isolated Timeline migration rehearsal and approved migration receiving",
+        "Provider/service receiving and authorized deployment proof"
+      ],
+      "privacy": "Frozen public snapshots strictly allowlist public content. Current private preview remains unpublished; never exposes a bearer URL or records a qualified guest view.",
+      "productTruth": "Tasks owns milestone existence/execution. Explicit owner consent gates venue/address and detailed links. Follow requires real double opt-in; projected schedule is not a send receipt."
+    },
+    "colorMeta": {
+      "paper": {
+        "displayName": "Paper",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "ink": {
+        "displayName": "Ink",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "ink-secondary": {
+        "displayName": "Ink Secondary",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "ink-muted": {
+        "displayName": "Ink Muted",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "line": {
+        "displayName": "Line",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "edge": {
+        "displayName": "Edge",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "edge-soft": {
+        "displayName": "Edge Soft",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "next": {
+        "displayName": "Next",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15% 0.16 285)",
+          "oklch(27% 0.16 285)",
+          "oklch(39% 0.16 285)",
+          "oklch(51% 0.16 285)",
+          "oklch(63% 0.16 285)",
+          "oklch(75% 0.16 285)",
+          "oklch(87% 0.16 285)",
+          "oklch(95% 0.16 285)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "next-soft": {
+        "displayName": "Next Soft",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15% 0.16 285)",
+          "oklch(27% 0.16 285)",
+          "oklch(39% 0.16 285)",
+          "oklch(51% 0.16 285)",
+          "oklch(63% 0.16 285)",
+          "oklch(75% 0.16 285)",
+          "oklch(87% 0.16 285)",
+          "oklch(95% 0.16 285)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "chip": {
+        "displayName": "Chip",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "hover": {
+        "displayName": "Hover",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "button-hover": {
+        "displayName": "Button Hover",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "error": {
+        "displayName": "Error",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-paper": {
+        "displayName": "Dark Paper",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-surface": {
+        "displayName": "Dark Surface",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-ink": {
+        "displayName": "Dark Ink",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-ink-secondary": {
+        "displayName": "Dark Ink Secondary",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-ink-muted": {
+        "displayName": "Dark Ink Muted",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-line": {
+        "displayName": "Dark Line",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-edge": {
+        "displayName": "Dark Edge",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-edge-soft": {
+        "displayName": "Dark Edge Soft",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-next": {
+        "displayName": "Dark Next",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15% 0.16 285)",
+          "oklch(27% 0.16 285)",
+          "oklch(39% 0.16 285)",
+          "oklch(51% 0.16 285)",
+          "oklch(63% 0.16 285)",
+          "oklch(75% 0.16 285)",
+          "oklch(87% 0.16 285)",
+          "oklch(95% 0.16 285)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-next-soft": {
+        "displayName": "Dark Next Soft",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15% 0.16 285)",
+          "oklch(27% 0.16 285)",
+          "oklch(39% 0.16 285)",
+          "oklch(51% 0.16 285)",
+          "oklch(63% 0.16 285)",
+          "oklch(75% 0.16 285)",
+          "oklch(87% 0.16 285)",
+          "oklch(95% 0.16 285)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-chip": {
+        "displayName": "Dark Chip",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-hover": {
+        "displayName": "Dark Hover",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-button-hover": {
+        "displayName": "Dark Button Hover",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      },
+      "dark-error": {
+        "displayName": "Dark Error",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(27% 0 0)",
+          "oklch(39% 0 0)",
+          "oklch(51% 0 0)",
+          "oklch(63% 0 0)",
+          "oklch(75% 0 0)",
+          "oklch(87% 0 0)",
+          "oklch(95% 0 0)"
+        ],
+        "purpose": "Synthesized panel ramp only; not implementation tokens."
+      }
+    }
+  },
+  "components": [
+    {
+      "name": "Solid action",
+      "kind": "button",
+      "refersTo": "button-solid",
+      "description": "Artifact action, using the runtime artifact palette.",
+      "html": "<button class=\"ds-solid\">Add to my calendar</button>",
+      "css": ".ds-solid{font-family:var(--font-geist-sans),Geist,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:10px 20px;border-radius:999px;font-size:14px;line-height:20px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s;border:1px solid transparent;background:var(--x-m3-btn, #0e0e12);color:var(--x-m3-btn-fg, #fff);}.ds-solid:hover{background:var(--x-m3-btn-hover, #2a2a33);}.ds-solid:focus-visible{outline:2px solid var(--x-m3-accent, #4b3df2);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-solid{transition:none}}"
+    },
+    {
+      "name": "Outlined action",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Artifact action, using the runtime artifact palette.",
+      "html": "<button class=\"ds-outline\">Share this timeline</button>",
+      "css": ".ds-outline{font-family:var(--font-geist-sans),Geist,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:10px 20px;border-radius:999px;font-size:14px;line-height:20px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s;border:1px solid var(--x-m3-edge-soft, #d6d6dc);background:var(--x-m3-bg, #fff);color:var(--x-m3-ink, #0e0e12);}.ds-outline:hover{border-color:var(--x-m3-edge, #8f8f98);background:var(--x-m3-hover, #f4f4f7);}.ds-outline:focus-visible{outline:2px solid var(--x-m3-accent, #4b3df2);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-outline{transition:none}}"
+    },
+    {
+      "name": "Stacked email field",
+      "kind": "input",
+      "description": "Visible label and readable phone-size input from the stacked Follow form.",
+      "html": "<label class=\"ds-label\" for=\"ds-email\">Email address</label><input class=\"ds-email\" id=\"ds-email\" type=\"email\" placeholder=\"Your email address\">",
+      "css": ".ds-label{font-family:var(--font-geist-sans),Geist,sans-serif;display:block;margin-bottom:10px;font-size:13px;line-height:18px;font-weight:600;color:var(--x-m3-ink, #0e0e12)}.ds-email{font-family:var(--font-geist-sans),Geist,sans-serif;width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--x-m3-edge, #8f8f98);border-radius:999px;background:var(--x-m3-bg, #fff);color:var(--x-m3-ink, #0e0e12);font-size:16px}.ds-email::placeholder{color:var(--x-m3-ink-3, #6b6b75)}.ds-email:focus-visible{outline:2px solid var(--x-m3-accent, #4b3df2);outline-offset:2px;box-shadow:0 0 0 5px var(--x-m3-accent-soft, #eceafe)}"
+    },
+    {
+      "name": "Recipient tag",
+      "kind": "chip",
+      "description": "Recipient relevance accompanies the milestone title.",
+      "html": "<span class=\"ds-tag\">For you</span>",
+      "css": ".ds-tag{font-family:var(--font-geist-sans),Geist,sans-serif;display:inline-flex;min-height:18px;padding:0 7px;border:1px solid var(--x-m3-ink-3, #6b6b75);border-radius:999px;color:var(--x-m3-ink, #0e0e12);font-size:11px;line-height:16px;font-weight:600}"
+    },
+    {
+      "name": "Action menu",
+      "kind": "nav",
+      "description": "Temporary action surface with explicit destination guidance; static preview does not implement the React keyboard controller.",
+      "html": "<nav class=\"ds-menu\" aria-label=\"Calendar choices\"><button class=\"ds-item\">Apple or Outlook<small>Download an all-day calendar file</small></button><button class=\"ds-item\">Copy the date and place<small>To paste anywhere</small></button></nav>",
+      "css": ".ds-menu{font-family:var(--font-geist-sans),Geist,sans-serif;padding:6px;border:1px solid var(--x-m3-line, #e6e6ea);border-radius:14px;background:var(--x-m3-surface, #fff);color:var(--x-m3-ink, #0e0e12);box-shadow:var(--x-m3-shadow, 0 16px 40px rgb(14 14 18 / 12%), 0 2px 6px rgb(14 14 18 / 6%))}.ds-item{font-family:var(--font-geist-sans),Geist,sans-serif;display:flex;flex-direction:column;justify-content:center;width:100%;min-height:48px;border:0;border-radius:9px;padding:9px 12px;background:transparent;color:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer}.ds-item small{font-size:12px;line-height:17px;color:var(--x-m3-ink-3, #6b6b75)}.ds-item:hover,.ds-item:focus-visible{background:var(--x-m3-hover, #f4f4f7)}.ds-item:focus-visible{outline:2px solid var(--x-m3-accent, #4b3df2);outline-offset:3px;}"
+    },
+    {
+      "name": "On-day phone panel",
+      "kind": "card",
+      "description": "Quiet bounded container for the on-day message.",
+      "html": "<section class=\"ds-panel\"><p>The day is here.</p></section>",
+      "css": ".ds-panel{font-family:var(--font-geist-sans),Geist,sans-serif;border:1px solid var(--x-m3-line, #e6e6ea);border-radius:14px;padding:20px;background:var(--x-m3-bg, #fff);color:var(--x-m3-ink, #0e0e12);font-size:15px;line-height:23px}.ds-panel p{margin:0}"
+    }
+  ],
+  "narrative": {
+    "northStar": "One shared calendar story",
+    "overview": "Master 3 makes the main day and the next milestone immediately legible. White or near-black paper, Geist, generous countdown numerals and fine rails give the story its structure. Ink carries actions; indigo identifies Next. This document describes the native implementation at the recorded source revision, within this artifact directory only.\n\nThe guest surface is Experience: the calendar story leads and the interface recedes. Owner controls are Operate: explicit editing, sharing and guest-update information support a task. Both use the same artifact. The supplied Master 3 final canvas49 world is fixed; its eyebrow labels, large numeral, tight tracking and palette are explicit design choices.",
+    "keyCharacteristics": [
+      "Paper, ink and a precise indigo Next signal.",
+      "A fitted desktop composition with a readable scrolling alternative.",
+      "Thin rails, differentiated milestone marks and restrained motion.",
+      "Pill actions, quiet borders and elevated temporary overlays."
+    ],
+    "rules": [
+      {
+        "name": "The Ink Action Rule",
+        "body": "Primary actions use ink; indigo identifies Next and focus rather than replacing the action hierarchy.",
+        "section": "colors"
+      },
+      {
+        "name": "The Readable Fit Rule",
+        "body": "Preserve the supplied display hierarchy only while it remains readable; switch to the scrolling layout when fit, zoom or text spacing makes the stage unsuitable.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "**Do** preserve the supplied Master 3 palette, Geist hierarchy and indigo Next signal.",
+      "**Do** use the readable scrolling layout when stage fit, zoom or text spacing fails.",
+      "**Do** distinguish date passage, task completion and confirmed service outcomes.",
+      "**Do** retain visible focus, reduced motion and forced-colors treatments."
+    ],
+    "donts": [
+      "**Don't** invent missing dates, owner actions or sample wedding content for generic projects.",
+      "**Don't** treat a private current preview as a published guest page.",
+      "**Don't** turn the finite Next pulse into continuous decorative motion.",
+      "**Don't** generalize this artifact's composition into a replacement for the Timeline editor."
+    ]
+  }
+}

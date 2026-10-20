@@ -307,7 +307,11 @@ function validateSourceContract(fixture, entry, targetErrors) {
 }
 
 function isNewSourceReview(fixture, entry) {
-  const newSourceRegistration = new Set(["tasks.workspace.ping-personal-assistant", "tasks.page.app-timeline-by-project-slug-current-preview"]);
+  const newSourceRegistration = new Set([
+    "tasks.workspace.ping-personal-assistant", "tasks.page.app-timeline-by-project-slug-current-preview",
+    "tasks.page.s-by-token-follow-confirm", "tasks.page.s-by-token-follow-unsubscribe",
+    "tasks.page.s-follow-unsubscribe", "tasks.page.s-follow-view",
+  ]);
   return newSourceRegistration.has(fixture.id) && fixture.evidence === "source-contract" && fixture.sourceReviewedAt === "2026-10-18" && entry.auditStatus === "registered" && !entry.materialityReview && entry.approvedBaselineReference === null;
 }
 
@@ -485,6 +489,16 @@ if (selfTest) {
   if (!isNewSourceReview(sourceRegistration, registrationEntry)) throw Error("self-test rejected source registration");
   for (const invalid of [{...sourceRegistration, evidence: "rendered"}, {...sourceRegistration, id: "tasks.page.app"}, {...sourceRegistration, sourceReviewedAt: "2026-10-15"}]) {
     if (isNewSourceReview(invalid, registrationEntry)) throw Error("self-test admitted restamped or backdated source review");
+  }
+  for (const id of ["tasks.page.s-by-token-follow-confirm", "tasks.page.s-by-token-follow-unsubscribe", "tasks.page.s-follow-unsubscribe", "tasks.page.s-follow-view"]) {
+    const fixture = fixtures.experiences.find(item => item.id === id);
+    const entry = registry.experiences.find(item => item.id === id);
+    if (!fixture || !entry || !isNewSourceReview(fixture, entry)) throw Error("self-test rejected new Follow source registration: " + id);
+    for (const invalid of [{ ...fixture, evidence: "rendered" }, { ...fixture, sourceReviewedAt: "2026-10-15" }]) {
+      if (isNewSourceReview(invalid, entry)) throw Error("self-test admitted rendered/backdated Follow registration: " + id);
+    }
+    if (isNewSourceReview(fixture, { ...entry, approvedBaselineReference: "old-capture" }) ||
+        isNewSourceReview(fixture, { ...entry, materialityReview: {} })) throw Error("self-test manufactured reviewed Follow evidence: " + id);
   }
   const datedProbe = structuredClone(registry);
   applyMappedFixtureEvidence(datedProbe, fixtureById, "2026-10-15", []);

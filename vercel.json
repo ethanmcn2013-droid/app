@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/project-drive-grant-repair",
       "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/timeline/reminders",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

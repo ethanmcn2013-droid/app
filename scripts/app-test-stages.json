@@ -272,6 +272,7 @@
     "src/modules/timeline/server/sync/tasks-milestone-source.test.ts",
     "src/modules/timeline/timeline-public-url-contract.test.ts",
     "src/modules/timeline/timeline-shared-metadata-contract.test.ts",
+    "src/modules/timeline/timeline-shared-social-image.test.mjs",
     "src/modules/notes/server/demo/notes-fixtures.test.ts",
     "src/modules/notes/lib/notes-copy.test.ts",
     "src/modules/notes/lib/notes-view-model.test.ts",
@@ -462,5 +463,28 @@
   [
     "pnpm",
     "test:redis"
+  ],
+  [
+    "node",
+    "--import",
+    "tsx",
+    "--import",
+    "./src/test/register-server-only.mjs",
+    "--test",
+    "src/modules/timeline/components/artifact/master3-model.test.ts",
+    "src/modules/timeline/components/artifact/master3-follow-copy.test.ts",
+    "src/modules/timeline/lib/master3-presentation.test.ts",
+    "src/modules/timeline/lib/master3-calendar.test.ts",
+    "src/modules/timeline/lib/master3-social.test.ts",
+    "src/modules/timeline/server/master3-settings.test.ts",
+    "src/modules/timeline/server/owner-guest-summary.test.ts",
+    "src/modules/timeline/server/guest-services.test.ts",
+    "src/modules/timeline/server/guest-http.test.ts",
+    "src/modules/timeline/server/guest-notifications.test.ts",
+    "src/modules/timeline/app/audience/master3-composition.test.mjs",
+    "src/modules/timeline/components/artifact/master3-ui-regression.test.mjs",
+    "scripts/db/timeline-production-backup-custody.test.mjs",
+    "experience/timeline-master3/harness.test.mjs",
+    "experience/timeline-master3/guest-fixture.test.mjs"
   ]
 ]

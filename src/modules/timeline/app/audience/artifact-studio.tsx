@@ -1,31 +1,44 @@
+"use client";
 import Link from "next/link";
 import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeline";
-import type { AudienceOwnerPublication } from "@/modules/timeline/server/audience-timeline";
+import { master3TimelineTitle } from "@/modules/timeline/lib/master3-labels";
 import {
   TimelineArtifact,
   TimelinePhonePreview,
 } from "@/modules/timeline/components/artifact";
 import { effectivePublicationState, publicationStateLabel } from "@/modules/timeline/lib/format";
-import { presentViewerCount } from "@/modules/timeline/lib/viewer-count";
+import type { presentViewerCount } from "@/modules/timeline/lib/viewer-count";
 import styles from "./artifact-studio.module.css";
 
 export function TimelineArtifactStudio({
   publication,
   timeline,
   managerHref,
+  timelinesHref,
+  guestPreviewHref,
+  followerCount,
+  settingsAvailable,
+  saveReferralAction,
 }: {
-  publication: AudienceOwnerPublication;
+  publication: { state: string; activeShareCount: number; milestoneCount: number; views: ReturnType<typeof presentViewerCount> };
   timeline: AudienceTimelineDto;
   managerHref: string;
+  timelinesHref: string;
+  guestPreviewHref: string;
+  followerCount?: number;
+  settingsAvailable: boolean;
+  saveReferralAction?: (enabled: boolean) => Promise<void>;
 }) {
+  function openSettings() {
+    const settings = document.getElementById("timeline-presentation-settings");
+    if (!(settings instanceof HTMLDetailsElement)) return;
+    settings.open = true;
+    settings.scrollIntoView({ block: "start", behavior: "instant" });
+    settings.querySelector<HTMLElement>("summary")?.focus();
+  }
   const live = publication.state === "published" && publication.activeShareCount > 0;
-  // Never render publication.qualifiedViewCount or lastQualifiedViewAt
-  // directly. The presenter carries the floor and the month coarsening; a raw
-  // count beside a precise date names one guest and the day they read it.
-  const views = presentViewerCount({
-    count: publication.qualifiedViewCount,
-    lastViewedAt: publication.lastQualifiedViewAt,
-  });
+  // Already floor/coarsen the aggregate on the server; do not serialize raw view counts.
+  const views = publication.views;
 
   return (
     <div data-timeline-module className={styles.studio}>
@@ -45,11 +58,11 @@ export function TimelineArtifactStudio({
       <header className={styles.intro}>
         <div>
           <p className={styles.eyebrow}>Your shared page</p>
-          <h1>See the story they will see.</h1>
+          <h1>Your timeline, with the controls you need.</h1>
         </div>
         <p className={styles.introCopy}>
-          This is the standalone experience for anyone holding your link. It
-          carries no project navigation, private notes or operating controls.
+          Edit the details guests can see, manage sharing and check email followers.
+          The phone preview below shows the guest view without owner controls.
         </p>
       </header>
 
@@ -69,7 +82,7 @@ export function TimelineArtifactStudio({
         </div>
         <div className={styles.stat}>
           <dt className={styles.statLabel}>Milestones shared</dt>
-          <dd className={styles.statValue}>{publication.items.filter((item) => item.state !== "cancelled").length}</dd>
+          <dd className={styles.statValue}>{publication.milestoneCount}</dd>
         </div>
       </dl>
 
@@ -88,22 +101,28 @@ export function TimelineArtifactStudio({
           </Link>
         </div>
         <div className={styles.canvas}>
-          <TimelineArtifact timeline={timeline} embedded />
+          <TimelineArtifact timeline={timeline} embedded owner={{
+            initial: master3TimelineTitle(timeline).slice(0, 1),
+            ...(settingsAvailable ? { onEdit: openSettings } : { editHref: managerHref }),
+            menu: [...(settingsAvailable ? [{ label: "Timeline details", onSelect: openSettings }] : []), { label: "Preview as guest", href: guestPreviewHref }, { label: "Manage sharing", href: managerHref }, { label: "Your timelines", href: timelinesHref }],
+            ...(followerCount !== undefined ? { followerCount } : {}),
+            ...(saveReferralAction ? { referral: { enabled: timeline.presentation?.referral !== false, save: saveReferralAction } } : {}),
+          }} />
         </div>
       </section>
 
-      <section className={styles.phoneSection} aria-labelledby="phone-preview-heading">
+      <section id="guest-phone-preview" className={styles.phoneSection} aria-labelledby="phone-preview-heading">
         <div className={styles.phoneCopy}>
           <p className={styles.sectionIndex}>On a phone</p>
-          <h2 id="phone-preview-heading">The same story, in their hand.</h2>
+          <h2 id="phone-preview-heading">The guest view, on a phone.</h2>
           <p>
-            This is the real responsive artifact, not a screenshot. Scroll it,
-            switch the time lens and open milestones exactly as a viewer can.
+            This is the responsive guest view. Scroll it and open milestones
+            without the owner controls above.
           </p>
           <p className={styles.phoneNote}>Previewing never adds a view.</p>
         </div>
         <div className={styles.deviceStage}>
-          <TimelinePhonePreview timeline={timeline} label="Viewer phone preview" />
+          <TimelinePhonePreview timeline={timeline} label="Guest phone preview" />
         </div>
       </section>
     </div>
