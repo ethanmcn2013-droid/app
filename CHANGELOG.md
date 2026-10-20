@@ -1,12 +1,12 @@
 # Signal Tasks · the dispatch
 
-## 2026-10-18 · Candidate · The final Timeline design
+## 2026-10-20 · The final Timeline design
 
 Timeline uses the final Master 3 design across shared pages and private previews, with a clear next date, ordered milestones, light and dark themes, and a layout fitted to phones and larger screens. Project dates and explicit public settings supply the content; passing a date does not mark work complete.
 
 Owners can choose public notes, directions and calendar details. Following requires email confirmation, with unsubscribe and a short Undo. Published changes save their notification requests together; reminders run in bounded batches. Private previews stay unpublished.
 
-This candidate requires migration `0002_master3_presentation` before deployment, fresh visual acceptance and verified delivery configuration. It is not yet released. See `docs/design/timeline-master3.md` for the release order and privacy boundaries.
+Deployment requires migration `0002_master3_presentation`, reviewed visual evidence and verified delivery configuration. See `docs/design/timeline-master3.md` for the release order and privacy boundaries.
 
 ## 2026-10-18 · Internal candidate · Give Ping a text request
 
