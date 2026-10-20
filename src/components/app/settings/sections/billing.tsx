@@ -53,7 +53,7 @@ const TIER_META: TierMeta[] = [
     features: [
       "Unlimited projects",
       "Editing guest limit not yet published",
-      "All three products, with the daily briefing in Home",
+      "All three products, with one Home across them",
       "Recurring tasks and dates written in plain English",
     ],
     selfServe: true,

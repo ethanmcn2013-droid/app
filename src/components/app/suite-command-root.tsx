@@ -7,7 +7,6 @@ import { chatEnabled } from "@/components/shell/app-shell";
 import { ShellIcon, type ShellIconName } from "@/components/shell/shell-icons";
 import { STUDIO_PALETTE_EVENT } from "@/components/studio-bar/studio-chrome-context";
 import {
-  BRIEFING_APP_PATH,
   HOME_APP_PATH,
   MESSAGES_APP_PATH,
   MY_WORK_APP_PATH,
@@ -39,20 +38,12 @@ const DESTINATIONS: readonly SuiteDestination[] = Object.freeze([
   {
     id: "home",
     name: "Home",
-    promise: "Start with what needs you.",
+    promise: "Your next big day, this week and your year.",
     searchTerms:
-      "briefing risk attention daily quiet evidence signal home what matters now",
+      "home countdown target date launch week activity streak start overview",
     path: HOME_APP_PATH,
     icon: "home",
     suite: true,
-  },
-  {
-    id: "overview",
-    name: "Overview",
-    promise: "The wider view across your projects.",
-    searchTerms: "overview briefing summary pulse status progress signal",
-    path: BRIEFING_APP_PATH,
-    icon: "pulse",
   },
   {
     id: "projects",

@@ -6,7 +6,7 @@
 import { inviteAuthUrl, inviteReturnPath } from "./invite-intent";
 
 const STATIC_APP_PATHS = new Set([
-  "/app", "/app/home", "/app/home/briefing", "/app/project",
+  "/app", "/app/home", "/app/project",
   "/app/your-work", "/app/tasks", "/app/tasks/list",
   "/app/tasks/timeline", "/app/tasks/calendar", "/app/my-tasks",
   "/app/archived", "/app/messages", "/app/notes", "/app/timeline",
@@ -33,11 +33,6 @@ function allowedQuery(pathname: string, key: string, value: string): boolean {
     if (key === "note") return SAFE_ID.test(value);
   }
   if (TIMELINE_PATH.test(pathname) && key === "mode") return value === "view" || value === "edit";
-  if (pathname === "/app/home/briefing") {
-    if (key === "contextVersion") return value === "2";
-    if (key === "sourceProduct") return ["notes", "tasks", "timeline", "signal"].includes(value);
-    if (key === "planningPeriodId") return SAFE_ID.test(value);
-  }
   if (pathname === "/app/your-work" && key === "projectId") return SAFE_ID.test(value);
   return false;
 }

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-files-loading",
+  "source": "tasks/src/app/app/files/loading.tsx",
+  "materialityHash": "9beac142f8f04cb2",
+  "reviewedAt": "2026-10-20",
+  "reviewer": "Ethan McNamara (founder): reviewed the Home renders, the 188/188 capture summary and these receipt texts in chat on 2026-10-20",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-dc500176b3f4868f24d5823a-f78815d5a0dc4b90.json",
+    "attestationSha256": "4b1d55a3ca66babae541a854fe09eb269bbe5f40565f61e6c8f7b7712d5832d6",
+    "runId": "tasks-playwright-dc500176b3f4868f24d5823a",
+    "canonicalEvidenceSha256": "dc500176b3f4868f24d5823a6ec2ff4e408efcc32e40776d00da0661f68e1486",
+    "rawArtifactSha256": "f78815d5a0dc4b902d37d29124a712c25d4c50945f448871b7630dc1f4789bed",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-files-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture 188/188 one attempt each on the branch with main (Timeline Master 3) merged, after the Home rebuild and Full Briefing retirement changed the shared fixture contract. No production or numerical design rating claim.",
+  "decision": "accepted"
+}

@@ -42,8 +42,6 @@
  * key, and none of them was scanned.
  *
  *   tasks     src/server/db/schema.ts                 workspace_id
- *   signal    src/modules/signal/…/signal-tasks-db-schema.ts  (reads the
- *             Tasks database through its own client)   workspace_id
  *   notes     src/modules/notes/server/db/notes-schema.ts     user_id
  *   timeline  src/modules/timeline/server/db/timeline-schema.ts
  *                                                     workspace_slug

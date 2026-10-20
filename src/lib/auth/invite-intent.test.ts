@@ -40,7 +40,6 @@ test("known App destinations preserve only route-specific, unambiguous state", (
     "/app/messages?workspaceId=ws-owned",
     "/app/notes?workspaceId=ws-owned&view=review&note=n-one",
     "/app/timeline/our-day?workspaceId=ws-owned&mode=edit",
-    "/app/home/briefing?contextVersion=2&workspaceId=ws-owned",
   ]) assert.equal(appAuthReturnPath(target), target);
   assert.equal(appAuthReturnPath("/app/tasks?task=t-owned&workspaceId=ws-owned"),
     "/app/tasks?task=t-owned&workspaceId=ws-owned");

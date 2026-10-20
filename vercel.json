@@ -9,10 +9,6 @@
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/cron/analytics-snapshots",
-      "schedule": "30 2 * * *"
-    },
-    {
       "path": "/api/cron/project-drive-grant-repair",
       "schedule": "15 3 * * *"
     },

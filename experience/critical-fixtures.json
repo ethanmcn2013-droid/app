@@ -822,12 +822,12 @@
       "remainingStates": []
     },
     {
-      "id": "tasks.page.app-signal",
+      "id": "tasks.page.app-signal-by-rest",
       "evidence": "rendered",
       "cases": [
         {
-          "name": "legacy link lands on the briefing",
-          "path": "/app/signal",
+          "name": "retired Signal link lands on Home",
+          "path": "/app/signal/onboarding",
           "states": [
             "default",
             "reduced-motion",
@@ -836,7 +836,7 @@
           "assertions": [
             {
               "kind": "url",
-              "pathname": "/app/home/briefing",
+              "pathname": "/app/home",
               "proves": [
                 "default"
               ]
@@ -844,22 +844,14 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "Overview",
-              "proves": [
-                "default"
-              ]
-            },
-            {
-              "kind": "role",
-              "role": "heading",
-              "name": "What needs attention",
+              "name": "Good morning, Orla",
               "proves": [
                 "default"
               ]
             },
             {
               "kind": "text",
-              "text": "2 things need attention and 1 is at risk.",
+              "text": "Next big day",
               "proves": [
                 "default"
               ]
@@ -867,55 +859,15 @@
           ]
         }
       ],
-      "remainingStates": [
-        "loading"
-      ]
+      "remainingStates": []
     },
     {
-      "id": "tasks.page.app-signal-onboarding",
+      "id": "tasks.page.app-home-briefing-by-rest",
       "evidence": "rendered",
       "cases": [
         {
-          "name": "legacy link lands on briefing onboarding",
-          "path": "/app/signal/onboarding",
-          "states": [
-            "first-use",
-            "populated",
-            "reduced-motion",
-            "keyboard-only"
-          ],
-          "assertions": [
-            {
-              "kind": "url",
-              "pathname": "/app/home/briefing/onboarding",
-              "proves": [
-                "first-use"
-              ]
-            },
-            {
-              "kind": "role",
-              "role": "heading",
-              "name": "Signal found your project.",
-              "proves": [
-                "first-use",
-                "populated"
-              ]
-            }
-          ]
-        }
-      ],
-      "remainingStates": [
-        "empty",
-        "loading"
-      ]
-    },
-    {
-      "id": "tasks.page.app-signal-settings-notifications",
-      "evidence": "rendered",
-      "cases": [
-        {
-          "name": "legacy link lands on briefing cadence",
-          "path": "/app/signal/settings/notifications",
+          "name": "retired briefing link lands on Home",
+          "path": "/app/home/briefing",
           "states": [
             "default",
             "reduced-motion",
@@ -924,7 +876,7 @@
           "assertions": [
             {
               "kind": "url",
-              "pathname": "/app/home/briefing/settings/notifications",
+              "pathname": "/app/home",
               "proves": [
                 "default"
               ]
@@ -932,7 +884,14 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "The briefing is ready when you open it.",
+              "name": "Good morning, Orla",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "Next big day",
               "proves": [
                 "default"
               ]
@@ -940,9 +899,7 @@
           ]
         }
       ],
-      "remainingStates": [
-        "loading"
-      ]
+      "remainingStates": []
     },
     {
       "id": "tasks.page.app-notes",
@@ -1325,115 +1282,6 @@
         "partial-failure",
         "error",
         "restricted"
-      ]
-    },
-    {
-      "id": "tasks.page.app-home-briefing",
-      "evidence": "rendered",
-      "cases": [
-        {
-          "name": "overview",
-          "path": "/app/home/briefing",
-          "states": [
-            "default",
-            "reduced-motion",
-            "keyboard-only"
-          ],
-          "assertions": [
-            {
-              "kind": "url",
-              "pathname": "/app/home/briefing",
-              "proves": [
-                "default"
-              ]
-            },
-            {
-              "kind": "role",
-              "role": "heading",
-              "name": "Overview",
-              "proves": [
-                "default"
-              ]
-            },
-            {
-              "kind": "role",
-              "role": "heading",
-              "name": "What needs attention",
-              "proves": [
-                "default"
-              ]
-            },
-            {
-              "kind": "text",
-              "text": "2 things need attention and 1 is at risk.",
-              "proves": [
-                "default"
-              ]
-            }
-          ]
-        }
-      ],
-      "remainingStates": [
-        "loading"
-      ]
-    },
-    {
-      "id": "tasks.page.app-home-briefing-onboarding",
-      "evidence": "rendered",
-      "cases": [
-        {
-          "name": "briefing onboarding",
-          "path": "/app/home/briefing/onboarding",
-          "states": [
-            "first-use",
-            "populated",
-            "reduced-motion",
-            "keyboard-only"
-          ],
-          "assertions": [
-            {
-              "kind": "role",
-              "role": "heading",
-              "name": "Signal found your project.",
-              "proves": [
-                "first-use",
-                "populated"
-              ]
-            }
-          ]
-        }
-      ],
-      "remainingStates": [
-        "empty",
-        "loading"
-      ]
-    },
-    {
-      "id": "tasks.page.app-home-briefing-settings-notifications",
-      "evidence": "rendered",
-      "cases": [
-        {
-          "name": "briefing cadence",
-          "path": "/app/home/briefing/settings/notifications",
-          "states": [
-            "default",
-            "reduced-motion",
-            "keyboard-only"
-          ],
-          "assertions": [
-            {
-              "kind": "role",
-              "role": "heading",
-              "name": "The briefing is ready when you open it.",
-              "proves": [
-                "default"
-              ]
-            }
-          ]
-        }
-      ],
-      "remainingStates": [
-        "loading"
       ]
     },
     {
@@ -1936,8 +1784,6 @@
     "src/app/api/connections/google/callback/route.ts": "b88038e1c4aec0379da4d160cb30d90c6481aee2f735f1885ff6860d9005550d",
     "src/app/api/connections/google/start/route.ts": "89a04790a1677580fd3c7416415b5d3ff55e1bae22ca07a3390ab6255cafa7b1",
     "src/app/api/conversations/route.ts": "32042c2365ed4c1147e5abc8d059070db1f717d10d4067e30819bbe94a5449d0",
-    "src/app/api/cron/analytics-snapshots/route.test.ts": "5a033df9e1304c71f535b449a656d91a290c0dcbdccc89bee7c4b9b674d0cd78",
-    "src/app/api/cron/analytics-snapshots/route.ts": "62c545a137cda570031323912be827cd41c421b82859611beff18dd43cfe37cf",
     "src/app/api/cron/digest/route.ts": "e1748235ca6437ba3f60bcda0ac2ce29d0318ac8db0e95ccd44f4324abc9f481",
     "src/app/api/cron/outbox/route.ts": "f40807ed6455dfbfe6c2ccea87ce85e21a105324bfd1225a68e56e110867e218",
     "src/app/api/cron/project-drive-grant-repair/route-handler.ts": "0b233d02dc392ad3ea76dc192fb96b21b7c711dc94db201aac66917e31c4c5ad",
@@ -1991,17 +1837,9 @@
     "src/app/app/files/error.tsx": "83d088f7615c6a6b017300c3e3e29922a47ec030f44434435e46dd3049bf5121",
     "src/app/app/files/loading.tsx": "9beac142f8f04cb2c85eb1ac1d95adaee7104ced1039aea19a2b3d27ffbd96f4",
     "src/app/app/files/page.tsx": "08771bc864af3e7bf4181619a7856a8354842ce86bd8a04095ae0816b0853bc3",
-    "src/app/app/home/briefing/error.tsx": "7b7ed391aa1b72ab84dcd0a067e67b919aee4e62470f1554693a2a633b1dd832",
-    "src/app/app/home/briefing/layout.tsx": "34d9aedb46f45870ab9a752c0186ee6e4322effe1f7edd2260f87ab29cfe70fb",
-    "src/app/app/home/briefing/loading.tsx": "1ed8540842490cd65a7285c4aefb71ba6b2e0543ba10cfa923f05c4672d0dde1",
-    "src/app/app/home/briefing/onboarding/page.tsx": "ec1621e9729adbcdbbdc29fe9f28bc157d26f0ea7535f3b8b0bd5b7a54a4a92f",
-    "src/app/app/home/briefing/page.tsx": "1db016eb2770107afe1132e0af6b613383078dbc703f57657e1e50e890b5832e",
-    "src/app/app/home/briefing/settings/notifications/page.tsx": "5b7bfa490d36d8064b4d31267b08162d54e08ddd5d1ca64595b3407daa1c772e",
-    "src/app/app/home/error.tsx": "94e95fe898bce26d939bd04f323717688e109bea6c8468c15493830a138f4e09",
-    "src/app/app/home/home-data.test.tsx": "5fb20216b9711729b41d56db698826a2851c035c06cdfd81c2ffb2e6a3298e5e",
-    "src/app/app/home/home-data.ts": "bfbd2b51abf3430172b1ce85871d656a480469691dc8f780d5fc2e301ddc9a93",
-    "src/app/app/home/loading.tsx": "9dcb7b09c5c2c25423bb4f142bf9badb973dd5750fe47272fe5997c1dbf1bf24",
-    "src/app/app/home/page.tsx": "cc412a345ba4d6631907a8ca1269c52865038943f72d3a4c371502a5803c6781",
+    "src/app/app/home/error.tsx": "f0e4960b366e6091b98cb6c0af1f7d1abb8b408dcacc9921e1f4b61ef0eeb1c2",
+    "src/app/app/home/loading.tsx": "e0e6df7d2e7508c54c9cdd2548a0281fb7b4f1455a9493e019642699c6aba5c7",
+    "src/app/app/home/page.tsx": "13c879ddcdccbfccbf4f30e771f8ba50347fd363bf5182f47796d0b817ddc98d",
     "src/app/app/import/layout.tsx": "ef1d251b9c5a4907d877a614889f2473a566195a0b8e7de983d2fe883b995de3",
     "src/app/app/import/page.tsx": "eebace1707c19ec78a996eb7dbd160bdd6dd518197c9003db354fdb974387393",
     "src/app/app/inbox/layout.tsx": "db71114b417a56a938c66809f9e9b06707fafaf84fa2604ef3e5ed9a1033c5f6",
@@ -2021,9 +1859,6 @@
     "src/app/app/project/page.tsx": "795236cc4236a32a140df49e0c7e45fadc18c0a0579c1b4647a53ef4b8503f7e",
     "src/app/app/settings/layout.tsx": "a3a0bb896c7f1025ae69c6aaf7c12dab9491c8a5f5137ed09c107c4b2eb306ca",
     "src/app/app/settings/page.tsx": "3fcba4d3b2bb4dcfa6bf95630a7838fb81078185ff7228c6f44a6822fd1f6372",
-    "src/app/app/signal/onboarding/page.tsx": "dadba836d5e7d2b852d51c1b7d5ad5af630a488de03be7587ae1eb5dd290d1a9",
-    "src/app/app/signal/page.tsx": "72678cac7eb0d1c9d1a23dd04f2daac7f9bd3263c0453d315212d14996c8716c",
-    "src/app/app/signal/settings/notifications/page.tsx": "f4753d16267efa395059667a5309cb698b16451d060a2f35a06362016b5ecda1",
     "src/app/app/task/[id]/loading.tsx": "e4634ddd0d0acc4dcf4080c58e4976276abd2c85cb4de160c6df62a9ea00b9ab",
     "src/app/app/task/[id]/page.tsx": "a809bc29cf6e8034d584a6a915d1973f0de691bc8a1db820aa286e79a875ed70",
     "src/app/app/task/[id]/resolve-task-route.ts": "f4398b837e25d05cda25d5d27e38daed607c2a1cd4edcdf6427cedd34df95066",
@@ -2072,7 +1907,7 @@
     "src/app/icon1.tsx": "04d7007f5d1d3a384d73db5d0e888e33071e28efd0ff67dcf55309437fd81b18",
     "src/app/invite/[token]/accept-button.tsx": "bdbbcffd84286e49bbbe636d865b4f11761c4e2044ccb456e0b5ad3bb17c234a",
     "src/app/invite/[token]/layout.tsx": "3a39b4b471eb8e38262a887bd2f5ea56a5c33f85cb6bccc4785af656513ab598",
-    "src/app/invite/[token]/page.tsx": "be59ad3c4caf2218676871e1493f7d8b6bf24f6b0185447d12ade454d03a14b5",
+    "src/app/invite/[token]/page.tsx": "9f228082d6081c05a152aad3cc732c25e294a0ad7057daa9fd95276619e444b6",
     "src/app/lab/project-conversation/discussion/page.tsx": "6fdcf5b8391031662b073d305970ee122d16c0521fae79473183dd0ac6b63328",
     "src/app/lab/project-conversation/layout.tsx": "f7c6906d1cb62822b66e36ec7c52865b68aab0dff517a94b4a549cf41c9824ee",
     "src/app/lab/project-conversation/live/page.tsx": "555cf75c7e834cfb892a29365a23d2c4c4d75ff7f94ae83913edd8091eb891e7",
@@ -2106,7 +1941,7 @@
     "src/app/s/[token]/view/route.ts": "93552add426076844eb7a6e7292149da137ba8e9604b83a52fc976778b1beb9f",
     "src/app/s/layout.tsx": "cf021f8aa063689e79cafbb57d9de9f7e2addf95c561813bd22da9357dbfab01",
     "src/app/settings/layout.tsx": "6e03af06540f27113a22927c2a1de76a46efbf158bc219f9f3dccf7fe707d73e",
-    "src/app/settings/notifications/page.tsx": "ee2b4660f7b40532db0cef11d0dd480488458c0c52b9ede513f046bea3f8d042",
+    "src/app/settings/notifications/page.tsx": "32caf7de7ea7a52d3206b605c9aa7daf0f75f32d67c561eeaa55428bbf8e47ab",
     "src/app/settings/page.tsx": "6a2685b3bf5c6ffe9ea22444525a83df20aa659e5e6b95f96fa2cb755c751a5b",
     "src/app/settings/plan/page.tsx": "0b8e551245bd1e38c3e37443c5efb49efe10d849be32ae05252bd59c62e57d6b",
     "src/app/settings/profile/page.tsx": "a24a1b85fe91dad0f90d9e7ac87d66570d392e844cb713a4454918c0dc7cf3af",
@@ -2147,7 +1982,7 @@
     "src/components/app/analytics/scope-picker.tsx": "f331077f98f701b85f210a74a6614311ce7823d93dea8c4b3a3a974179b67277",
     "src/components/app/archived/archived-app.tsx": "b5231bee57cd6a19343487deb2966867dbea80b0dd34c69dbbf46a4f5f848cfa",
     "src/components/app/automations/automation-editor.tsx": "9ba7db0a35462938ef5b0a42516e0c871bef00963334148bd22bd0d22a40c015",
-    "src/components/app/automations/automation-icons.tsx": "3049a51bb01f2c56a90555a5f00df9bbef832d853009a583d64329ffe40719dd",
+    "src/components/app/automations/automation-icons.tsx": "3327f8432ac38b660dc16e86e70868da4fe20f62ac4214fb37c77bc98e20da54",
     "src/components/app/automations/automations-list.tsx": "37626e0ac747afeb5d422d72c583d697a70dacc4393efe56a386cbee2fbf3f1f",
     "src/components/app/automations/automations.module.css": "07c6ae0b6fa26ccf4fece431c029d7b0a97c15d3edc67bb17dd53c70e10c952a",
     "src/components/app/automations/editor-parts.tsx": "349906f0d5f7918c4db80721bbc757a5bb88fc6ef5c1ee780bfcf14ee7ff1f4e",
@@ -2196,15 +2031,6 @@
     "src/components/app/files/files.module.css": "942cbaae58b0e79f9ade064e4f0edc993fdb0cffa77e1a946fbdf99a775d83fc",
     "src/components/app/focus-mode.tsx": "87204d77dbc3bf5230e016a9f5537508350fbe0b0cde97cb276cd9ba96980dfa",
     "src/components/app/guest/guest-auth-context.tsx": "8c8afbce6111983963a5012aa5c52f038d5e4fc8b90acae3b156ca936db77368",
-    "src/components/app/home/home-analytics.tsx": "9bc21f789fccb1a6c6176bc85c90ff891961c0e2125dee6f2a1e10fa63bcd059",
-    "src/components/app/home/home-board.tsx": "3f4423a501c4d6df1e3acf9e75dd7c3ba133fd16444b67d578820d3703a40d6a",
-    "src/components/app/home/home-tab-ids.ts": "4a7e7b455e796047d167ba41b26b0dd000ce9d36d479f92cf1b3789380821063",
-    "src/components/app/home/home-tabs.module.css": "2a1cd79852ad238fe639c134b0151ea59707bc403c5c25dc1eef912c8ba8b437",
-    "src/components/app/home/home-tabs.tsx": "55ebfd6c4c5cb918093cb02958f91d261bccac3c53bf652980c3876e71a4de42",
-    "src/components/app/home/home-view.tsx": "39f1528fef99ab0816bf84589525f928aa4e5305ddfe186ccacf1c71fef0ba22",
-    "src/components/app/home/home.module.css": "3bd2a99217f074314b2ed998b7d52c4d6491ccd1919715ee461d2600a9a4eaed",
-    "src/components/app/home/overview/overview-river.module.css": "43f187e88739ddeadcef9289d7d583d2c70032c80495671ac9681af6a464fe34",
-    "src/components/app/home/overview/overview-river.tsx": "8904293c23d5f8b0ebeb70fcc5386750bb19b48ba01801cb346b7c379310ac21",
     "src/components/app/import/csv-parsers.ts": "9ba3e3900d34866c82a219303562beabea184349f609de042fa3f4c6a9bdf0af",
     "src/components/app/import/import-app.tsx": "5e1e4787c283693bfba963fb74009b618233325e4a7d55eb0967df57e4e80406",
     "src/components/app/inbox/conversation-attention.tsx": "8428def5c7e5416a43bb370ea95cf671d1aaf6bd05598fedb898351aa853d3ed",
@@ -2256,14 +2082,14 @@
     "src/components/app/messages/use-chat-dictation.ts": "5aa08abe1d87f7b75ee5921d1baa20531602b8f99a9169cbce3eed4c14f8718c",
     "src/components/app/messages/use-hidden-conversations.ts": "95e8e60ba11fed912c125c262643f93da8913fab7c72253b3bb6c4d2c0458fa8",
     "src/components/app/mobile-suite-nav.tsx": "62aa04d8185fb07d0bd2ae983286d741ed42eca2876efdb2fcf0972ebdffbbc0",
-    "src/components/app/my-week/my-tasks.module.css": "04d7e07d35ffba561aa933f7702bbabd747425083c7e7ed8c919467929d54229",
+    "src/components/app/my-week/my-tasks.module.css": "825ff92b56581813e546847dd86864a7f7f4088ce18bb78b5479069c22d426da",
     "src/components/app/my-week/my-week-app.tsx": "6c1031f9aaac316b8437dc4400675ce8229bac4169783f98075034b7bffc2974",
     "src/components/app/my-week/nudges-rail.tsx": "59b5e1c0e621c3a19b25ade047c33a4d1e7817c69b203e5829135355e761128b",
     "src/components/app/open-tasks-project.tsx": "f1b7354b09330d48f756c422b60629797a3229d6a73d9d41a58ccc65724aa7b9",
     "src/components/app/page-header-context.test.ts": "1f55e95d7629d8a958f8735ce5a0a126f886ae850fcad7168d0bcb19806b3aa7",
     "src/components/app/page-header-context.ts": "a3ee6304133dbae58cfa7a6c75fb590df170f77257e16888c656eb65332bb47a",
     "src/components/app/page-header.tsx": "9fbff32d4c5d11fa3459809232cf859f375a5948879c4bc79a998ae2c95caee9",
-    "src/components/app/palette/command-palette.tsx": "cda5bc88934c27deddb715d2bb0704b2a825e38595ba942204bb6c710fc70d11",
+    "src/components/app/palette/command-palette.tsx": "de699b605d04c68939f3373a0ec639c92cbb347767813c95c5e34bb10e143992",
     "src/components/app/portfolio/combined-timeline.module.css": "4598fdea74298a2ea51eaaff728fa132b6dfeba763442ecd5fa681ea5cc2e893",
     "src/components/app/portfolio/combined-timeline.tsx": "43f41b591b3503d2b77151bc1d9ddb01b9480e207aac646e3347808107f942df",
     "src/components/app/portfolio/portfolio-bar.tsx": "28c7899261915e90d2b9ae2aacfec73eef486fc6f3db20d4e5a9f1df2a709ccc",
@@ -2289,7 +2115,7 @@
     "src/components/app/print/print-calendar.tsx": "c68680409cd343ea6850fb46268616bbdaf09aa1289f26a5dbd724394d801565",
     "src/components/app/print/print-list.tsx": "456eaeeb0d8153123ddefdd882dceeb5bea9abda1ea5ef71cfb9e26635590f57",
     "src/components/app/print/print-timeline.tsx": "fbd76d6e23b88c6920b305712f4bb496791cf5659f4c51ee80a3dd12ba91113c",
-    "src/components/app/product-workspace-shell.tsx": "eb14569f024e4fc28f9938289b6082d1d34f7af3736918a92ff317b01ab995c5",
+    "src/components/app/product-workspace-shell.tsx": "b6469ce93194095e50ab5648403e4807c019e467144a435a03a146088d53e2fe",
     "src/components/app/project/project-console-skeleton.tsx": "9a61be78101a6c17dfcdcdbc5895480b3be28290024050bac617cdc029c5a05a",
     "src/components/app/project/project-console.module.css": "0a81b49cdead64e9aee54bab0bf452c54ec0d9808a726a6f178f6f12bc7fc1bd",
     "src/components/app/project/project-console.tsx": "606a88d3e63e8862f9cb82d5e75131c279000cd3c244d4a4e677dd85c9e04964",
@@ -2312,7 +2138,7 @@
     "src/components/app/room/room-tools-context.tsx": "1b5d0bf4f39c9670d29ae3da5a197767818cfdd9cc4ceb35c310610e8f58b06c",
     "src/components/app/settings/sections/appearance-radiogroup.test.ts": "938fc7c629b7358785144dbf264f60443291528a76d33a927f5f610811ffde2e",
     "src/components/app/settings/sections/appearance.tsx": "25952bbee384358f8019d618874b1794ddedb3d6661c01fec3ce9752c310318d",
-    "src/components/app/settings/sections/billing.tsx": "cf626ee4d6c2eacc1b93fa635e10411ae879e7e475cb2581ee35ad8a425799aa",
+    "src/components/app/settings/sections/billing.tsx": "2399cc7d0d05a37220251f9278f805cbd977151d13a1e3a7472d6dc64059ba88",
     "src/components/app/settings/sections/connections-review.tsx": "bd0863bdbab0094ab3fd8ce6e1191de5b43548ebe8482f6c0ab22af47115169c",
     "src/components/app/settings/sections/connections-view.tsx": "06252d7044d97c55490e9c0f1c8bbb8fab8e23874282a8e552878485a45d41f4",
     "src/components/app/settings/sections/connections.tsx": "579a789d367236e6e6e6bd75f3734742d32054040b515715f77cad22dae7d438",
@@ -2337,7 +2163,7 @@
     "src/components/app/share/share-button.tsx": "8d07649d2d012ec2975d9487cb62e66439f3532d94a7554c0aea5e8e3685b092",
     "src/components/app/sidebar.tsx": "4feb7f64ff009bba5f3f11813e1c771b1efe00b26c9cb18c8ce37199c54982ac",
     "src/components/app/suite-chrome-gate.tsx": "1ffb0a56430d711501408c366911a58f6548d68275afac920cf27e13985bd958",
-    "src/components/app/suite-command-root.tsx": "bb82dede5c9500301a118f44fe65768b6fd688322e575e7acee880c66f672588",
+    "src/components/app/suite-command-root.tsx": "c5001277d029a9860ca4a254103d358ec87fc205a9c59cefa4db0b12157adf74",
     "src/components/app/suite-context-publisher.tsx": "a05f0b2e2cab1f771a34565b5c5a40574c0103857223299ed7bb3ecfdf0f99c8",
     "src/components/app/suite-launcher.tsx": "0f457b12bef23f843012c9712794bf177396d38165449858c2ad315d179615f0",
     "src/components/app/suite-loading.tsx": "8d89ea64cfd69dcb27e4c412a9acadfd661e137762e528f15d410b3809547e4e",
@@ -2756,7 +2582,7 @@
     "src/components/marketing/domain-toggle.tsx": "e5541ef35a6127f12972b83005bbad9f4f58f5e135b8416f5ff3c71ca70a8fe5",
     "src/components/marketing/features.tsx": "c838241296b931d7c954db84cb16795d7543e8716d9178bb28b100aa514baeae",
     "src/components/marketing/hero.tsx": "6608e3803ae15c61c6d1b3b85ded49542230cd1a7eb66f82031a10133628177a",
-    "src/components/marketing/site-footer.tsx": "5aeca5253e3edc0bf9da20673624cdd64f3c2939dbe7b0c2590598250c5bd6f3",
+    "src/components/marketing/site-footer.tsx": "a9f9083d2215dfc900c6009aa3ffc1acd8de1d9079347cad99666ddafd41d83c",
     "src/components/marketing/site-nav-server.tsx": "be15d89176abeb89af03faec138ca37cf3524b67f513c718e1bad96e0eaadc54",
     "src/components/marketing/site-nav.tsx": "81c12e4885d2664734cd78aacd6ddf2d016d1360ab98082c9f008c676886253d",
     "src/components/marketing/tasks-hero-ticker.tsx": "da374c003e88483d3560b795531c36a959864cdcbe730171d466296740a09edf",
@@ -2784,7 +2610,7 @@
     "src/components/redeem/redeem-expiry-date.test.ts": "941ad2304312d3d00d2cd01e59f40240d23769e2fa8f7fce84d4a2eb9246bc35",
     "src/components/redeem/redeem-expiry-date.ts": "803a7e517f4e084b1819c1e7d7eb235c00a08046bdc6c44758bda421ce7bac37",
     "src/components/redeem/redeem-result-card.tsx": "325a8fe45ac8868eb6b0396300ab6ed375569b1d1888e3849cd43e5d38df44be",
-    "src/components/settings/notifications/notifications-form.tsx": "dd92e9aa7686bd0f94185e1af49b757dab6dd17f0b36bf182fbd9a995c013cb1",
+    "src/components/settings/notifications/notifications-form.tsx": "6bd95d80fb887f7255db98eadc6c3a13f4c303292ede3865ee80eb201ebd72a7",
     "src/components/settings/plan/plan-view.tsx": "36053c0de091a5c1707f0fbfcf5052c49e0726b33aecb8e3873c2c7543ca5615",
     "src/components/settings/profile/danger-zone.tsx": "acebf623d342b9fc73664d54f0a50a67659e764ea9c1152d6be39ddf76674182",
     "src/components/settings/profile/data-privacy.tsx": "3dbddd3fd95ad154fcc610975924e60ff2b31142612e3fb78828e3c055e20829",
@@ -2818,8 +2644,8 @@
     "src/components/shell/project-context-menu.module.css": "01775cb72088f3fcca272044f5ea2297d079aed53e87499b52e3333d1775aa87",
     "src/components/shell/project-context-menu.tsx": "33b648c3c84558937b1f5df286b8164a8ba66b720dfea3d6b0243129e3071828",
     "src/components/shell/shell-icons.tsx": "a10a02883fd5d4a1cc5305edd2aace5797c12b1cd98662e871365ef87a168094",
-    "src/components/shell/shell-nav.test.ts": "9b60046b2620b64bbc25419f81391c74df1d8ff37b62c34abb33cf22c04a9d85",
-    "src/components/shell/shell-nav.ts": "d09281214a4ccd6838302e2552894f60f8c774cc75f0353270fc89ad2f350a92",
+    "src/components/shell/shell-nav.test.ts": "5647e40c35f40feaf255392058e1a872fc82dabaf666a82dd3c99ca85b441fe0",
+    "src/components/shell/shell-nav.ts": "fbc32d28830db98bf5a88ea4cb0b90bca4cc7473989c703d681010ab885cbdae",
     "src/components/shell/shell.module.css": "77742b4674d0f94645bffbd5f0e6e874d996422d2eed7d1e1be0161f859e2ef0",
     "src/components/shell/sidebar-icon.tsx": "205e2ce815f67f4f701a06fe514f52ef4630e61320f222f938d04472f1ab35c2",
     "src/components/shell/sidebar-icons-contract.test.mjs": "f341efdba4a3bb0369e3bb9776aec07f6c5909c5b8011d83ee9734d5ac48f915",
@@ -2918,7 +2744,7 @@
     "src/components/welcome/welcome-picker.tsx": "c97371bd74f6bd564505445d177746d3f184d6b55bd7c9f8c81067a195683540",
     "src/ds/theme-overrides.css": "c831bb6c4749fda4d01d3c8899ef986cd7710e29e63a3b25aad7a3bb6135a2b2",
     "src/ds/v3.css": "d56a814aba91d88cdd60c7602313990fcc8387e16e1877564789af4b519e0000",
-    "src/env.ts": "26d2c64943712ed03f990cb72b89222c24dc84b5e532056c86dcf31d2229e271",
+    "src/env.ts": "28425411e27f884d5be0d77a5a2e4cf1e91170c65f20fd9970c6d4f3ef461902",
     "src/instrumentation-client.ts": "4160adc9b703b33aeedf0aa24f09e63c2ae40b8089f986ad3cd723bf79cca162",
     "src/instrumentation.ts": "101aec11959584cf15eb69d163eb3738b526d2ae0b75329eb85c08e5dbc3fed4",
     "src/lib/access-allowlist.ts": "bc3130c27339b591237a0252c0aa337526a03b325b652cb7b64af030a930cbf4",
@@ -2937,15 +2763,15 @@
     "src/lib/app-theme-bootstrap.ts": "984cb88fd8fe9e6d6fbc153e5231272a503a819e0331ce4bb901f664bd755ee0",
     "src/lib/attachment-claim.ts": "ca2205eee554ce5f1fa51d6d7163916c763340bb34b480e22b10caa3d6b4ca62",
     "src/lib/auth-context.tsx": "3bfd5f566f424ed8f388a37137432af7b483af5f2bc30b71a6c9587eae8a5598",
-    "src/lib/auth/app-return.ts": "ef1c50f16f481ab429889902ad587aea99d500be6e552a0f573a01cdae88f66d",
-    "src/lib/auth/invite-intent.test.ts": "8e254465e1889dc71b51273badf39335166ab56e8da0cd2c1c2fa0d0d4426362",
+    "src/lib/auth/app-return.ts": "5cc7576b7c43e3f4fdd4f624f67ff692c0d86ab53f85e4c1e35c72045c861c79",
+    "src/lib/auth/invite-intent.test.ts": "70f08b7622814050a823a480c8e5e60ed95656558332b04aa8b90607574331a3",
     "src/lib/auth/invite-intent.ts": "cf1751e7d8d94d12acc09e496834c32ea1e394e160f126eb17050bd320d11717",
     "src/lib/auth/recipient-proof-authorized-parties.test.ts": "a03c8732886ebc08bf0ca01c2d4cf36df49aa03a4ae7c9c218b28a3be5336c57",
     "src/lib/auth/recipient-proof-authorized-parties.ts": "7de684fc81f680a3624fe445bc14ffd9ab1288c90ef9b27dd751361a3fcacb6b",
     "src/lib/auth/social-providers.test.ts": "0c577e1428a08ec8f7847a69d36df28f480e5daeb5dac0e58fa6070423be1390",
     "src/lib/auth/social-providers.ts": "8fe8180da73602571ccef5d3a2ff9c1a01d0f20ee7099907bf61be2946b9062f",
-    "src/lib/automations/automations.test.ts": "5dadcad255b259ae6cb86cbbd65e6f90efb96aca1784fa502408ce463ca95ab8",
-    "src/lib/automations/catalogue.ts": "508839268deaa26847358052dbfcba645403f2fb04ffe6d233b9faf83906f9e7",
+    "src/lib/automations/automations.test.ts": "ea7e4be3064bc4c2d19281ddadab498c4408e46bb9f08326a1f2c426a7aa3424",
+    "src/lib/automations/catalogue.ts": "1449e55336f879e627860272c3b8a690d759ec3a4e22a300f69b9711a7fa7b9e",
     "src/lib/automations/draft-store.ts": "81bdcd75afc44216d01d720ac40319d21c7327aaa7cf48d9c86d684a3174b521",
     "src/lib/automations/graph.ts": "347e63c5b6f637170888eb6d74af62dbcf359eb7799c3d51056ff041bbbb5931",
     "src/lib/bare-artifact-path.ts": "2637728d3d2c1374c13855e3f5a25388125d1595e42450cdf1d174d31b248928",
@@ -2996,14 +2822,7 @@
     "src/lib/entitlements-shared/tiers.ts": "957777d0eb2309881e4c202d2e05d58c61479813414a357320910fcc038757d0",
     "src/lib/entitlements-shared/writes.ts": "8bc55755af1371f49a219de88f85faaa4451810128cc0565702e0c0ebe2d8aa8",
     "src/lib/exports.ts": "242957b43abc196027e74c7b78737873f0fc7a979514074ff0cebe8d9f2a0f38",
-    "src/lib/home/home-board.fixture.ts": "dc11f48cc59833c2a86936b2545a030ebbd46222b81134f6dce1b3b303362fc3",
-    "src/lib/home/home-board.test.ts": "a7c1dd20846b10d95681e9a11e21e9f809ac9846990b817e8b7a9252f3f05d6c",
-    "src/lib/home/home-board.ts": "cc7a6d8db0f40e57a88bcf48e84a87381d566c5cb8103d6bed4429502ce5b061",
     "src/lib/home/home-words.ts": "9e2688adb40a0acd25d0f20f67ff34158ad322e0489b1a722247e4860fc3d9b6",
-    "src/lib/home/overview-river-kit.ts": "e2aa314985b40f1e2082bfd7fcbdebf45fee6302dbad456c2372dd74c902c389",
-    "src/lib/home/overview-river.fixture.ts": "274d00d8d432783cb2e4500c9dd629b282d3e41f1ce62ec34b0ce4881e66d015",
-    "src/lib/home/overview-river.test.ts": "86565212ff1c4e7554acc8cb8c7f4dc53393b36c3fbed46460f422017f9258cc",
-    "src/lib/home/overview-river.ts": "ee75c6d7873576760f1c0743534d9ea163c83edaaf0af5841986d6951df7cdc3",
     "src/lib/ical.ts": "789919c06e63a64261c3377ab6be9283b01478071b4f1217c04b1a4a40621fc6",
     "src/lib/image/metadata.test.ts": "4eec1d157ec53b79a6301fa6c68c4406e7f134c2345f200409944484f7efd7fb",
     "src/lib/image/metadata.ts": "384880e20423ff19a98a5dd5771207eb59ba93bc763f39da0039483a32ae238a",
@@ -3012,7 +2831,6 @@
     "src/lib/keepsake/keepsake.test.ts": "92ffd998a8b3884119763c451d4527197257be2a3a2ea1f48be0b7a474575f33",
     "src/lib/keepsake/lifecycle.ts": "6e5524bacd517190b4a6706df49f91a0294819cc082e3c93de8765e836ddcb63",
     "src/lib/launch.ts": "3d841ba2df98aa9d539ad80af7670b15f335f8a7d9d22beb6aa6954ac43cce7b",
-    "src/lib/legacy-signal-redirect.ts": "42c5115dae9a34898f16083df2d9a7320e781b46588552f2ce1cf2a7ae67ab08",
     "src/lib/members.ts": "3e9f3bf20509e0b86c5d34352ad1bb58119ae6b3f5466f1c221254acb2fa84e4",
     "src/lib/milestones-pure.ts": "15d8ae7dcb2c9d7aa79d1ef267a838c92d35aeb756e9752cc4a9ab12df738164",
     "src/lib/money.test.ts": "ac491bc9870edbd59c19d33c98f6cb3648bce94b03a44130a37f597114fc6105",
@@ -3075,8 +2893,8 @@
     "src/lib/planning/sponsorship.test.ts": "4a9f1882cdceba0d7538ab76c39e82f7249f0a91136cac73a946237044d56d4f",
     "src/lib/planning/sponsorship.ts": "8a163736497e1c9194c90b841be78f0fec6a879507603c0d1a9636853de0887e",
     "src/lib/planning/vocabulary.test.ts": "a24dd0fc6189bf28b95c26f62e4b06b4d60d6d180e38aa16be979bbb447c60d8",
-    "src/lib/product-urls.test.ts": "e23d2e64162c440d4774162a874ff207f2fe30bbebf065a4e844aad658d24559",
-    "src/lib/product-urls.ts": "2211f956c507aff537b82c2a7ff9503364be1f7e9078060c1a89379fe95e0a79",
+    "src/lib/product-urls.test.ts": "579bf43d834759e4dca2505708c41d8069b75a6075aae7f71f21a4c739255d65",
+    "src/lib/product-urls.ts": "853a56803c0e21c920b0ad67c6c3aadccb324a858862c5fb92922c5035ed64d6",
     "src/lib/project-drive-follow-up.test.tsx": "68de49d88de7c6b96d23cf2cde6fc4b2be526a8b03278bb2f73c1594b3cf9466",
     "src/lib/project-drive-handover-ui.ts": "6bd3ab227c4516bd5e207491e1c3eb18c109b96149c6050b56f958a16feb3e02",
     "src/lib/project-drive-reload.ts": "2b172d5fd7b297ede93358ab20990559f35c9a202b5ebcdc5f1ef259b55832ed",
@@ -3119,8 +2937,8 @@
     "src/lib/projects/project-ref.ts": "33f0ed7ee3f979a75a61f3273e1f5b2bad3b36ea422a23eea08d1daaac62bd6b",
     "src/lib/projects/project-switch-redirect.test.ts": "4ba47af90ac9ec1e2a6fe68fdda37a08f1af5d7d9f6c1cf7974a17ce9344d456",
     "src/lib/projects/project-switch-redirect.ts": "5833cfee0f74166c945edbc2c598b5c896880aae13c20d6cd60e6a39cbf00b83",
-    "src/lib/projects/project-url.test.ts": "e46be947974d833603255d01c4b077cb5cd57052e0d2c5f47cf72d8f791724b3",
-    "src/lib/projects/project-url.ts": "ce41de2df0582300abb76529c83ef014c4927460a7b969d8b4973d67193a798d",
+    "src/lib/projects/project-url.test.ts": "951c8db2d04008a454ff76ae019c1f0b6d21db757043686ecab6fb47ece3a28e",
+    "src/lib/projects/project-url.ts": "11433e5af5138b1416a0cdc586b717ef47c94342979c46bc83489f13f1966ec9",
     "src/lib/projects/recovery-lock-retry.test.ts": "890cdebd9e7785b69509448fbd311668b2aebdcbfc80275041e6ffd94cea0007",
     "src/lib/projects/recovery-lock-retry.ts": "8826c1ead0447fc8b8dbca9e0122396ed32b0a59998349026bda3283bb3946ee",
     "src/lib/projects/recovery.ts": "3ab7168d38024d0311a611c5232ec7821cdfc610be7ea4333bb0064e5e562774",
@@ -3270,184 +3088,12 @@
     "src/modules/notes/server/tasks-personalization.ts": "f00e887d34cc8896ea5779c35885236f5b535b8c516e89a512b1d637cebb164a",
     "src/modules/notes/server/timeline-promotion-adapter.ts": "189aa84b37f4af0bf7a20296a771b56f1778335f239ebbdb448546eb278a67be",
     "src/modules/notes/types/speech-recognition.d.ts": "6245216b1c3c423c31ead80d57a84704c728f94df41ceab8dfe8c83621731108",
-    "src/modules/signal/app/error.tsx": "24a9daf2b825424c5efaa639fed982930fe308e0f3d6f85d8fe8b5828cded464",
-    "src/modules/signal/app/onboarding/signal-onboarding-actions.ts": "e2dc6be78875a1842a2c76064e9fa1b04c333a2bdfaefea1d7833cc2f9281368",
-    "src/modules/signal/app/onboarding/signal-onboarding-page.tsx": "ea038955a17950073650d6a711daa77c29804ae972e5889cffbdd4ec770af0f7",
-    "src/modules/signal/app/onboarding/signal-onboarding-picker.tsx": "84a7a3bde79c7d5ba95e600f889af252340ab4067e07c10ec580dc0744c476a6",
-    "src/modules/signal/app/settings/notifications/signal-cadence-actions.ts": "1b6509f24b7c916263a9c2c27dad1f25ef43c00a69ef07c7a9887dd65b76abc9",
-    "src/modules/signal/app/settings/notifications/signal-cadence-form.tsx": "aaeaa0cc91f7fcd3d4451f6fe1b42bd76e4c2eb4898ae6d49af45c91f81cc875",
-    "src/modules/signal/app/settings/notifications/signal-notifications-page.tsx": "89f8d806ce4c0c4d7c2491805346d501341686b132f093921a57575676fb7643",
-    "src/modules/signal/app/signal-brief-loading.tsx": "b26eae71b6eb73208b0de9a41e6b6109736f859a6568c56831fc6fe26d9a9992",
-    "src/modules/signal/app/signal-brief-page.tsx": "3bc1938b087c53cbe6ab3a1f5494794302c2e75e58d57861891c9a55945b8726",
-    "src/modules/signal/app/signal-feedback-actions.ts": "c4ebab2dea28278b6cd3fb853b331a5b69d1ccda10314cc7796e89a9eb95bd4b",
-    "src/modules/signal/app/signal-ledger-actions.ts": "0d9609b7d20202bcd7382bf9943b962fd13d555694bbb79f18bedb6b450fbe39",
-    "src/modules/signal/app/signal-legacy-briefing.tsx": "b0eaef01e089e5814c3ca084967a4c07a9498cd84256b9642aac49c95b72d68b",
-    "src/modules/signal/app/signal-page-data.ts": "2884ebf351f65cea3659c94ae3acf5ed8fe9f0c1d65a33b278e57fb1d8bff689",
-    "src/modules/signal/components/brief/scope-switcher.tsx": "72602d8e4ab7f551de6791fbcb4be8ccf0a5b8d1e64343b2e806a2b77dc8ab36",
-    "src/modules/signal/components/overview/overview-actions.tsx": "4bd694574d15fc862d298557dbc4f25073136c7fba5ad8e7d1a95beb44243e9f",
-    "src/modules/signal/components/overview/overview-view.tsx": "8fd97e96252e876f829c04dcaaac9a74ee352fb3bc20e4d1c4608e2c68ff8de6",
-    "src/modules/signal/components/overview/overview.module.css": "7a2fc47cf0c41451e22e14665b9db18826fa291cc85375bf27c17fd28b4eb663",
-    "src/modules/signal/components/signal/action-link.tsx": "d94ab5f2572571304e9aba8a85ae56ff44dba55e03e9eb06a6cfa2479b323cba",
-    "src/modules/signal/components/signal/action-queue.tsx": "ce1acffb74d5020b1d8fb7064260ec30fcddc8c5135b0954b6570df517348d95",
-    "src/modules/signal/components/signal/context-sidebar.tsx": "e2367c0ad59c28aeade2127e1135ca37f11f085e607b136839f6e1c3582b9371",
-    "src/modules/signal/components/signal/customize-mode.tsx": "13a5fc3278776b0455a13afbc780deac54a95f6dba088698e960d1d3a3f7fe47",
-    "src/modules/signal/components/signal/data-coverage-notice.tsx": "d641fd173276215735a7bad06746cccb1492c12e81161beab1a47b59b9468203",
-    "src/modules/signal/components/signal/evidence-drawer.tsx": "16392c4b3465f1789af4ba4bd4e63d48eb6836ac39e33fb763dd227b68d922d9",
-    "src/modules/signal/components/signal/format.ts": "2e2fa10ef41fa8e3230c68ef58c1a1b4ae7c7ed023ce13115d185d851fc403ae",
-    "src/modules/signal/components/signal/freshness-indicator.tsx": "c5d31349eb11bd6eeb1275123d77f2b5ce811179feafd9958b30a5802b9a79f1",
-    "src/modules/signal/components/signal/label-status-table.tsx": "f851174f5d02e4a40d574c3dded2e9594328cec2d3f6323e068c0c4985e2f256",
-    "src/modules/signal/components/signal/links.ts": "26039789df3ed0d7a27b7d3f3a8d013eaecbdf14f957a1ece9e45d696897c09c",
-    "src/modules/signal/components/signal/observation-card.tsx": "72b9a490378e0df1c0d51b896bfe56fb2e765c88959ccc00db1e08eacfd2c538",
-    "src/modules/signal/components/signal/overview-view.tsx": "a8fc381ba1c798d8cf71fae837f0679d70a8b726ffea840eb1cf80ab34a201fc",
-    "src/modules/signal/components/signal/signal-app-shell.tsx": "85ff2f866612160a3a9a807b0e369ad2dee6b64871353e631ccbd6d2eda05894",
-    "src/modules/signal/components/signal/signal-context-controls.tsx": "77ade485ea5deb74e94812954deb84b85b77b2d8466dd1aa8305fa51f52a5b6c",
-    "src/modules/signal/components/signal/signal-types.ts": "2b79232eb76fdc0c0e2ccc97a4eaef3e6576dccae91a8c848d80d9a8c2b9f0b2",
-    "src/modules/signal/components/signal/signal-view-tabs.tsx": "4ed524a2334f7d2bc40c68f3035e8882d032a611bc6818f3f467751653b9a8f9",
-    "src/modules/signal/components/signal/signal.css": "b67ba5af68ebbf20db8a64998d66ca696d693acccd61f481e0cfccd1864749c1",
-    "src/modules/signal/components/signal/source-record-list.tsx": "2c161fc2daff80a46d5e02c8a2f52ad580512ce507b2161dae907235ea8588fb",
-    "src/modules/signal/components/signal/summary-row.tsx": "b3de87e7f3ca316fc735a5112706ca43d3b40e5dcf8067e11fb10fc1b5aa118a",
-    "src/modules/signal/components/signal/trend-chart.tsx": "69b2f4893d20e3b724241985834458e7b707c96715ff8290815762623a4b06a7",
-    "src/modules/signal/components/signal/trends-view.tsx": "f2836d57118c50c25a9aff41a03dffc4eb1f7f514acadbc5b7f1bd27f1209e70",
-    "src/modules/signal/home.ts": "c5a025d5e5c0a295b070d188f74bd66433a694e36d0048b0af81c3f3f055be65",
-    "src/modules/signal/index.ts": "f0800a11477d607a42b42694a01cafb5f283dd242019cba93ec8c3d62cd591ab",
-    "src/modules/signal/lib/analytics/contracts.ts": "1de64d4c45bb04c3bc6b0d86453934429d6853bee43da82e5478b56f2966cdac",
-    "src/modules/signal/lib/analytics/evidence.ts": "a6cce1274fae80301b8629e683e30edb35b5c1dd05fe8f30456569ae1b24ff80",
-    "src/modules/signal/lib/analytics/fixtures.ts": "22025fd9100c2a668951b2061b511864bd9adfd6948f4c6555aab3068464b55c",
-    "src/modules/signal/lib/analytics/index.ts": "00f459f404891fd1c893b5ff0afb5463a970d7ae57ac0ac8050e3ed4b201a8d5",
-    "src/modules/signal/lib/analytics/ledger-adapters.test.ts": "4838135602c99f41d7e1842ccd51c058ed138a8cfd9e92dbfd48e5da7d8999e4",
-    "src/modules/signal/lib/analytics/ledger-adapters.ts": "31a0aaa564b9c7d38956d5748567c2e780dc6a770523d288d2c788603562d059",
-    "src/modules/signal/lib/analytics/ledger-contract.test.ts": "6252b888ff25098647ca6f8fa05978489b6ecea79c66f4c63f79ff08859252c9",
-    "src/modules/signal/lib/analytics/ledger-contract.ts": "85005f2de329346c9bd5643ddfbcf84ca001bfccf356ab3a584375ea48491922",
-    "src/modules/signal/lib/analytics/ledger-task-target.ts": "078f1989a1d52fa376f26ff29b181fc36d1886a28dea5c407bf20ea720b565a7",
-    "src/modules/signal/lib/analytics/metric-registry.test.ts": "62502a81807aadea6cbeaca1a138a933bea7d0dacdbf873d63e4bea9c932bf24",
-    "src/modules/signal/lib/analytics/metric-registry.ts": "25856c81b9e0e12694844d8f098b6feb093bdc70bdd8919f6d618e8b16495584",
-    "src/modules/signal/lib/analytics/metrics.ts": "47b472b187a7bb6b8be418a677f9ebcf64c99259667f157c8fe4ad8999b06246",
-    "src/modules/signal/lib/analytics/preferences.ts": "ff9929cd13336862766d227a14ca1f02a686f86d213e0bd7f98c63f97e470898",
-    "src/modules/signal/lib/analytics/rules-safety.test.ts": "4b841c2079a333f0a32be34c3a3afc1f937d3c02a654c2e3fdd2fadba8af5c7e",
-    "src/modules/signal/lib/analytics/rules.ts": "40691f8d796755c66e38828740b000e574b57b387943efbb772c6c62c80aa895",
-    "src/modules/signal/lib/analytics/scope.test.ts": "bbd386022b6c84f1819ffa3f79c584653a23bba731e142c39406ec2e7a0558ad",
-    "src/modules/signal/lib/analytics/scope.ts": "e63f551cdfabc854ce07d3ec9a811fc8f8d0b960af6f0d6ddc1b1500f624bce8",
-    "src/modules/signal/lib/analytics/task-events.ts": "2f371afedf3f5c3574c785bfba0b47f48f785c6d788a5017a42892d0543cfce9",
-    "src/modules/signal/lib/analytics/time.ts": "5443650c1b415ba241431a007469e2205fc4bd791cd68fb89b703b0c388e30aa",
-    "src/modules/signal/lib/analytics/timeline-dependencies.ts": "c374fb854ede0b7f3562541246b3e4d3cfb2dd8a16ebf69a96be80c375d41ca9",
-    "src/modules/signal/lib/analytics/trend-series.ts": "c80af8011a5f5c1101f989dd294dadb14babe6f1884d2b721a78b043938a4f7e",
-    "src/modules/signal/lib/analytics/url-state.ts": "8c8e9c1b7d9c3699646dc41d785247bf076c80a16e57ebbbe6a6cb4e45e9c8fb",
-    "src/modules/signal/lib/briefing/build.test.ts": "5486af0fdf1a73c9e9d349e1ab28fce2561d9201af4c97f3898e09e1274221ec",
-    "src/modules/signal/lib/briefing/build.ts": "8661e031e75c0c3bdfda8837827c4fa9913ade09f81304a10bd87f90b05d858d",
-    "src/modules/signal/lib/briefing/calendar-time.test.ts": "73ce33c42e16eab0681ba6faeb798ccfe3121ecadfc5ad2aa77c229a04366442",
-    "src/modules/signal/lib/briefing/calendar-time.ts": "d516fa784d1364291016e40a39a9f7e4996fcbf370197a4deff8711bc8b4a3ad",
-    "src/modules/signal/lib/briefing/context-observations.test.ts": "6954135b6a9534a91070bad1401d068e60cdb3f1a9dbb39470c22bf385486e69",
-    "src/modules/signal/lib/briefing/context-observations.ts": "107cd5c32bbd1ef1527844db296f56ceb26b842fd23d6b959cc8f2e602d338e8",
-    "src/modules/signal/lib/briefing/get-source.ts": "e5816d1496ef6af44ed2bc01ef3f18a25fb48d175408ca4477c23f36e44ce988",
-    "src/modules/signal/lib/briefing/mock-source.ts": "d927132624d9c5343709e0a357868572db8447064b2bbb9c1118fa96da671b58",
-    "src/modules/signal/lib/briefing/overload-truth.test.ts": "58caf8e47aeded0713c7e42a67aaaef5433f503ca44f58bca21317d7d387f8c9",
-    "src/modules/signal/lib/briefing/prose.test.ts": "80062ef26b184402defb9605a2152f7ffa4e8ad2eecf41a68176b0dc304c57b2",
-    "src/modules/signal/lib/briefing/prose.ts": "eda209daae811e52fb982cb4484e58e3abc5ca5f1b27b2deae27ef7eb9b2b0d9",
-    "src/modules/signal/lib/briefing/relationship-observations.test.ts": "902b688c9e9a739d504791b1383d68ef77094ceedd2ef78c25897c1c339c8e25",
-    "src/modules/signal/lib/briefing/relationship-observations.ts": "292c2ec29c59395d2a3cdb3e08a4a786618f43df78fc92a61475119e827cb82a",
-    "src/modules/signal/lib/briefing/source.ts": "f70e01ba7e3da2f5e4fa15cc234262b6fbd1d7302e3110b3e21176d16c99db21",
-    "src/modules/signal/lib/briefing/tasks-db-source.test.ts": "12572c1887fe5e7a94e5d4f4e1b6290b15a661a6d9386031718badc5f0bd7f14",
-    "src/modules/signal/lib/briefing/tasks-db-source.ts": "22b258f1c8431dd397efb3feee867d1156410ab3bcc1da7a36b0d8e0659df050",
-    "src/modules/signal/lib/briefing/tasks-read-contract.ts": "4e144fcd0eb06f45dc90d0c244165dbb7aca812f5eaf85061db223dd5ce0c61d",
-    "src/modules/signal/lib/briefing/tasks-read-contract.v1.json": "caba016f040a7a99c66b77f278b83896b11eedaa3bebc443f1ee2009fefd52b3",
-    "src/modules/signal/lib/briefing/triggers.test.ts": "66775797fe937717b149050d96aad8108d48324e1dcbd6e1b45a4b0376a30675",
-    "src/modules/signal/lib/briefing/triggers.ts": "6e3b63ab52dc8f22404e0ae871dd8264e8ab4fc7bf9cd3ce2b365c0648960216",
-    "src/modules/signal/lib/briefing/types.ts": "f3b7fb83d0838a6e793ab8bd98517772282fc4ce4c9bc471e81196224bfca907",
-    "src/modules/signal/lib/briefing/voice.test.ts": "a0bdf626d7b9beb996d31115aea8b3fc0cdf01c36a5fa46b125e070ee3d507a7",
-    "src/modules/signal/lib/briefing/voice.ts": "7327bceed2fec83d91071e08e7b85d80d217b6a8715a265459c3a8eb38404580",
-    "src/modules/signal/lib/briefing/wedding-briefing-selectivity.test.ts": "33c6347c6d69043e1e6d358fbb166fc39585d71ac247dcf978c69a6d644d4493",
-    "src/modules/signal/lib/data/deadline.test.ts": "4284c01727a842f0a60d3cdd093dfc63e027c0bedd4ee4c54c4fd266bd9fc710",
-    "src/modules/signal/lib/data/deadline.ts": "2cefea8fb3d98b92f00c714fca8d44f412fb6137071e7f61db5a1bbbc7bffd96",
-    "src/modules/signal/lib/data/source.persisted.test.ts": "60d335f0e5ad57b574ae0d5f899856c2a030b37cd269a5c1c24b72321546395a",
-    "src/modules/signal/lib/data/source.ts": "e39e4e3077c7b96b01c09a74f385b6d381d97053e82d2ed25672f878c12d22bd",
-    "src/modules/signal/lib/data/types.ts": "b3375987e4191e373e09272502571675773353e4a52e1d4ddbca7fa8b75f8eee",
     "src/modules/signal/lib/db/signal-prefs-schema.ts": "6ec5fcf32e1af1a93b6badebf3874335d1471ea48a6fa47798fc9fb9fd5a9c3f",
-    "src/modules/signal/lib/onboarding/personalization.ts": "c019543dad33eae0dcdfce1adbb1f8aedbb1e7dfc1934500a025b04f61f33d0e",
-    "src/modules/signal/lib/overview/overview-model.test.ts": "d2b3c853eaffb2c2e0da52796f2fd5ed2746c1743c53243c660af7051085c00e",
-    "src/modules/signal/lib/overview/overview-model.ts": "51f705caab19f390c29b5eef63a22e433dd5c448b7fd969db05f086c1492a581",
-    "src/modules/signal/lib/planning-periods/read-scope-hint.ts": "dddf6d5e4f9ad63a0cd52cbbba03badae55f60d6cd601f22b90e4209b522211b",
-    "src/modules/signal/lib/planning-periods/scope-hint.ts": "9b467c2b3bbe10187858ca429055597a4d5a8facf655681acacb50824e14965e",
-    "src/modules/signal/lib/planning-periods/scope.test.ts": "6a14b1a6ea9c2da3921a81be17d5bf29d01639d0af3b44d33817b96d0eb21718",
-    "src/modules/signal/lib/planning-periods/scope.ts": "c26d0a34b23caba1e5355aebb9e93af1f6ef99f0560294fe662de6e989ca573e",
-    "src/modules/signal/lib/prose/blocked.ts": "6f52de7d8dba7e599dfac8fb3fa05da47a2c102f63c9a04729b2e452c13b3373",
-    "src/modules/signal/lib/prose/dependency-stall.ts": "5fd02f740c7a1cc22937e4b8946b7cf7737053d478bd5674621365f0f129a13e",
-    "src/modules/signal/lib/prose/inactive-project.ts": "b9c6c56f40793585f2a293efc603fa8a220428d19a33ab5409037707fb9ecf03",
-    "src/modules/signal/lib/prose/index.ts": "31ce98cec20344585f5f05a3a74ed925f6e1f05372254c2147e65aee56eb413e",
-    "src/modules/signal/lib/prose/momentum-positive.ts": "58ef189c5f89abafe897e5a2662bdb3cb59f9e191700b924d36ce00c62894971",
-    "src/modules/signal/lib/prose/overdue.ts": "850beb4ce90c1084075b0aae0e77732ff4dbd2ef09d0fa0d0850f7a433aa2108",
-    "src/modules/signal/lib/prose/overload.ts": "2570c335e4050f4d4374cdfa76fad4aa622151f0542e34de0fdbc8d416c173bb",
-    "src/modules/signal/lib/prose/single-point-of-failure.ts": "151d4da82cb6a7fd43206d73527e9b88a6f31baf1b1b52b01b8f07d0a172aa93",
-    "src/modules/signal/lib/prose/slow-burn-deadline.ts": "997ccf959d14d46ebf15e17b4c9438bf6feee6c53989f209bb9475fb27992d82",
-    "src/modules/signal/lib/prose/streak.ts": "4a4c9ae2996acd8162ea70a7325835ac34d206ec036e13321109ea448e4a97df",
-    "src/modules/signal/lib/prose/types.ts": "770c2b6927cce50c95246d8ba6e7ab2df82f063d73e3c75ce1452eecb278071b",
-    "src/modules/signal/lib/prose/unresolved-recurring-block.ts": "5dc232bb1ea2393092cc311dd51a273f2f162c3891d6efad05a69bd127b5cabf",
-    "src/modules/signal/lib/signal-preferences.ts": "55f665668e657eebdd7c263c7d45ec2758dfb238c4a0c4653c8074e3d4a16054",
-    "src/modules/signal/lib/triggers/_helpers.ts": "3f807f110af78871b55cf2f9d49055374c22ece690c7c5a376d72e5267a0f293",
-    "src/modules/signal/lib/triggers/blocked.ts": "5a5105e3b34d3e59e575f777c1ed00d8defe0a79ecce0e5de30cf1d2e85139b7",
-    "src/modules/signal/lib/triggers/dependency-stall.ts": "429a9da162950384c75c103735f56e8e3b558ba3c0ce2ed91b79efadf4d6fd71",
-    "src/modules/signal/lib/triggers/inactive-project.ts": "70ff2b050fe3156fd7b126f5dcf04cd0ff1aefb0ced0415a82f39e3a9bcf84ef",
-    "src/modules/signal/lib/triggers/index.ts": "305ea58cfb02765cce81889d98d8dfe8f52281ee4952770170e400030f3af9b7",
-    "src/modules/signal/lib/triggers/momentum-positive.ts": "406d8f9c8fc5c64b2b7cbb1c322b004d26b9bc7d64fdc3c36c6232dfe339aa16",
-    "src/modules/signal/lib/triggers/overdue.ts": "1ecabae0fbe2c2c6491a771e9397e4ab4ad42ea67feadc6ee2a67ced315b6f0a",
-    "src/modules/signal/lib/triggers/overload.ts": "74ada4b5c8d88ed2915350f2f46de2a50ef75d703206638cee20917be4221ff6",
-    "src/modules/signal/lib/triggers/single-point-of-failure.ts": "912cef159931f188dc7e6bf5abbb987993052ac18697214c486c72b37061b7be",
-    "src/modules/signal/lib/triggers/slow-burn-deadline.ts": "da0f02f37425b5700f9219517ddc1cb13bedcdbfbb328795f2dd7e828002e43d",
-    "src/modules/signal/lib/triggers/streak.ts": "7c554dc31ec8f565fae63177ffe09c45befdeade2d17be6b0edb1394a3e98d02",
-    "src/modules/signal/lib/triggers/types.ts": "2c424de6379a2c2afdbcd966950aa68611c3d5ddda314c22663d40a82132867d",
-    "src/modules/signal/lib/triggers/unresolved-recurring-block.ts": "1f0762f4b20a5dbfaae69c49f4b7bbfa079c2b44f6ac37743beff52c7badd7fb",
-    "src/modules/signal/server/analytics/api-error.ts": "7f2aab3287cef3a323291fb943dbd8b491cfdda1a1e1a37d2da88e6a785ac9f5",
-    "src/modules/signal/server/analytics/build-ledger-dto.ts": "97512450cc38da9dec2898c188be94c6ab53e04b3f7f3169ec2e5beeb55655bd",
-    "src/modules/signal/server/analytics/errors.ts": "a270583f79dc015a1fcc56ef3091f718e15837fdb8b066b47dfee8cfdec55c65",
-    "src/modules/signal/server/analytics/feature-flag.test.ts": "d4683f59fc89c8b26d61f8817b5e4393a105f022d8ada11ed90d16cf2802f641",
-    "src/modules/signal/server/analytics/feature-flag.ts": "e3b40ee549b312b2bed854287b6463e44f478b43ea3f3c8e6850f9ff8917a905",
-    "src/modules/signal/server/analytics/fixture-access.ts": "ab078ae3ba147057de313bed9737a5be4465838c0717b1c3593a43f1e4dca12d",
-    "src/modules/signal/server/analytics/origin-policy.test.ts": "4a43ba1ac9d763b2a60b612584f17b5d99fc0fd283d977e804baab0cb216c9db",
-    "src/modules/signal/server/analytics/origin-policy.ts": "297f3137bf6b820be73769035c956a6a19fa67638e31f4c53b8a4999c0ae3172",
-    "src/modules/signal/server/analytics/origin.ts": "8960b14ec53e2351f9f69883330dcccc607b76c303fc66b6d81205176fa16725",
-    "src/modules/signal/server/analytics/page-context.ts": "c47cb60e2b7a20b3f7ef5c392f9eda4ff61a3b9a68b0b8497610a5eed2854dea",
-    "src/modules/signal/server/analytics/pagination.test.ts": "a0c9c026935d7d1d561efea4205cdc28173c797d29f4663e68d00612d75cf2f0",
-    "src/modules/signal/server/analytics/pagination.ts": "8a04217c53fbcdf9a5574178f32368de923cb6c38eb0d4da9902e007bbe68822",
-    "src/modules/signal/server/analytics/policy-contract.test.ts": "7ee85d44d52db0cd999fccbe34898ff8a0c9dc192f539a70f8474844d5c3f4c1",
-    "src/modules/signal/server/analytics/policy.ts": "60cd8c52a06059015da81a58bfd39d0b7ea107ac368fd3aa66eb8416675b53a3",
-    "src/modules/signal/server/analytics/preferences.ts": "939b7a26142bc5a9a59c6425687a30c2e8c4b2f2579350fe9f465cd3511f75e2",
-    "src/modules/signal/server/analytics/production-entry-contract.test.mjs": "7ecb6823a91a024b288c5fd0f03cef4961f26415a3d05c5a3693bb376e5a5365",
-    "src/modules/signal/server/analytics/providers/column-config.test.ts": "fb77c85691df87267103556efa30ee01d2d2dfd75bcafb2493313638a746047a",
-    "src/modules/signal/server/analytics/providers/column-config.ts": "24b4b5bd47ab4278db86d85c8802f5cd511d6d2c9b6e199e445de6d47c4a059f",
-    "src/modules/signal/server/analytics/providers/coverage.ts": "1aa772ecf0a8266c1db4df1cc4eddfbc8f45fed1c81cd05f95820285d8b5a0a9",
-    "src/modules/signal/server/analytics/providers/history-window.ts": "fead645c44d3cb3f39e8bf720d8f97f05a5b791a723d12f77e6c3c231ed7b175",
-    "src/modules/signal/server/analytics/providers/notes.ts": "bbcfc2b72665b4a4271c1eb97d8c25a3284508e1e7d28c5954f36b2bd752a28a",
-    "src/modules/signal/server/analytics/providers/optional-clients.ts": "9f87c3a4737a15752d2f9554bb80d2c98fc31cb2a87935823f081599898c6a71",
-    "src/modules/signal/server/analytics/providers/tasks-provider.live.test.ts": "5940ba76ed85ec95e991901ac6d46d1f6efb477facab1eb7c1ad77cebaecbab9",
-    "src/modules/signal/server/analytics/providers/tasks.ts": "e5f83fd3b092641e3903cfee55385c26c4215554430698e6ed96418201918c02",
-    "src/modules/signal/server/analytics/providers/timeline.ts": "308faf2520010b650ada9e4a8d718fd1b4169c4c842b4307ee85e76565d33254",
-    "src/modules/signal/server/analytics/query.test.ts": "3e81333e2c5f229bdd5f20db1105d9bdedda90092d73cc8aa3ffa90fbb84e298",
-    "src/modules/signal/server/analytics/query.ts": "fbbaadc2c6911dd9729ba9c29417814247bd2ed10c6d500537bd3898acc7e618",
-    "src/modules/signal/server/analytics/route.ts": "f4b4e59d0ba13b162b6302c0297d36b621f4f71f9f5265564da38fc2c7846098",
-    "src/modules/signal/server/analytics/service-persisted.test.ts": "4216ef387d1aa1c35fa56b9cfa778f802b74e7cb5922d7d41bd7127a64f96c98",
-    "src/modules/signal/server/analytics/service.ts": "8b0fbd8e16ccb00a673f8d708dd4191dd300ad93b0db896a73f54b4034e43741",
-    "src/modules/signal/server/analytics/snapshot-utils.ts": "640c7fac82cfcf3e457994ad6e894c64ee90aeeb446e49621941e6a288c2cf96",
-    "src/modules/signal/server/analytics/snapshots.ts": "9b09547ae8bf144e6aae5846db2bcd6fc85868fc794f0b3f584718df2232f35c",
-    "src/modules/signal/server/analytics/timezone.ts": "e8ec41555f3b846246364b906c1439f916552c8ef77dde03d1b44168fb48b38d",
-    "src/modules/signal/server/briefing/signal-build-for-user.persisted.test.ts": "0f1407da530cc272e8a7a0259e71ed6cf3b3f17eec7ba29b9b789ad76bfff674",
-    "src/modules/signal/server/briefing/signal-build-for-user.test.ts": "d6d4f3e216d58c8a20ff428afe106bb7183cef27345b17ae717c71ef46402621",
-    "src/modules/signal/server/briefing/signal-build-for-user.ts": "032d2ee9f6ab327e8d697f2e6549acd5bc0bad4f82fb82fded7b15706b1fc09a",
-    "src/modules/signal/server/briefing/signal-read-state.ts": "4d8b6d6b0288b51914c43686149dd40d62511ab4b89f80a23b1c9549131e76f1",
-    "src/modules/signal/server/briefing/signal-rotation.ts": "fa757f833e9e0f4425be209809741587063b741987868cd6c9fce324a5c79d49",
     "src/modules/signal/server/db/signal-analytics-client.ts": "ebe39f9d98675b09a397c014fe6350a240f521325b89761b197487fb7362b167",
     "src/modules/signal/server/db/signal-analytics-schema.ts": "9a272a31ccc49929a2ee3de003dd414de78fbc763166c8b71286e22a46d3bfcb",
     "src/modules/signal/server/db/signal-prefs-client.ts": "c684a85b8349b7b85beb875d81b60356cff832a818eb01a7221ee9fa760e2b55",
     "src/modules/signal/server/db/signal-prefs-schema.ts": "4d2142876ef2540a6da7726bb93b5d776e20d1a07648561dcb1bfd8c30b9c901",
-    "src/modules/signal/server/onboarding/signal-onboarding-queries.ts": "fe0fde163aa85d6d307e23e04a78b7987d4d63451d6c3fbb2491abc941020bd5",
-    "src/modules/signal/server/signal-auth-policy.test.ts": "54bdd9ab4e19759cb315dedbb901655852634e72562f03f34b35b58effa17c7e",
-    "src/modules/signal/server/signal-auth-policy.ts": "2073ef3123b1ed5a3f15905a3d5c2008d555bfabb5c28ad4b5c66ef5be229ba4",
-    "src/modules/signal/server/signal-auth.ts": "0609fbbf9b37dcedf3d4b9a39d0374d9b6643a5b02c33897dc140f3721fe9a1a",
     "src/modules/signal/server/signal-gdpr.ts": "412fa8601f0fe83775aa4cf0e2bda63547725180f950c128e1db572c319e059f",
-    "src/modules/signal/server/signal-planning-events.ts": "b0c58cfcb97de34064ade2409d6b78445d2dd2b40e92c29b9191a5de71dd37c4",
-    "src/modules/signal/server/signal-planning-scope-actions.ts": "5f5e8781510c71e528d1964a5a79c7a8818ea380f9ce80ad464e20b9a38eb4c2",
-    "src/modules/signal/server/tasks-db/signal-tasks-db-client.ts": "0f9f11912a811347339d082b626524a3f4f966816878de4a8b4a8a82b2e7211a",
-    "src/modules/signal/server/tasks-db/signal-tasks-db-schema.ts": "ec5b18279fadca14da4426d6756908508ae0b60be93f0b7bdfc653a4aae600bc",
-    "src/modules/signal/signal-public-url-contract.test.ts": "7f0d5593c4886e9a6060e54325500a69d596d7a8f98530c7ed9bb2316077fc0c",
-    "src/modules/signal/signal-suite-context.test.ts": "1e8c854ce3d583809dc9513b8db5d317ba01619d33c5e93beeb3086a0d7041d1",
     "src/modules/timeline/app/_components/create-project-form.tsx": "46b597451aa333fefff40ba1ad9abf798d5760adb95597e18d99ff9c37ccb32f",
     "src/modules/timeline/app/_components/timeline-index.module.css": "95d345cca83f105547c131f0cacff0066a3088e00821102c7afe07a7f3a4fd80",
     "src/modules/timeline/app/_components/timeline-loading.module.css": "5b160d3447a07ed0cf25a216516543136f8725ab54ffc319df7cb07e621492bb",
@@ -3586,7 +3232,7 @@
     "src/modules/timeline/timeline-shared-metadata-contract.test.ts": "493c0297d7ba3c7703e4babf08b2b28726f1928e8ffaff135828bb482bf14539",
     "src/modules/timeline/timeline.css": "482ebf117eb657ecd0ecd124f9478c130f5c9fc2a06f7ccac1a4c47a734540ea",
     "src/preview/hero-ticker-director-pass.html": "a4e1a4fe2221844744f5c133b16a9ac388f64aeb3d362acb81f4910a7002eff9",
-    "src/proxy.ts": "3ec1b9226c533038cbc75199c87f4b72182528ca3908781e22fd72feeda79c36",
+    "src/proxy.ts": "7692d17f1e9370565cd13891f70c9b32ab23ec8101a5d65252492341f6863fbe",
     "src/server/account-deletion-key.ts": "c1f261ce07f736e8d16b8179da259a0771b55bf0441b72b61ee99443136fc180",
     "src/server/account-deletion-lifecycle-contract.test.mjs": "fc1c1bed3f062707eb4eee2e229d73673ca3af1025005e511c8cdc97a5e97a10",
     "src/server/account-deletion-lifecycle.test.ts": "e9977741923745dca849b3c2328a6a44c0fe524cc7e4d9f80a42c79ef950c965",
@@ -3608,7 +3254,7 @@
     "src/server/actions/attachments.ts": "abb15195e45a8bf4d5b92a53903c1e730706fcac987f02920a350b665d1eb528",
     "src/server/actions/billing.ts": "b3e633372ebaa0a78aa683e7184b338dcddec4104633af313fefd48cbd07ffb4",
     "src/server/actions/board-fidelity.fixture-stub.cjs": "696a3c4e5cf8dd55be5aeb74be28e25b644cf1cb047be2169d36fff8b688864e",
-    "src/server/actions/board-fidelity.persisted.test.mjs": "9822502dd01ae2086df8f2bb8ebbeb7d32994c09f9bb98fdfb0f467d4925dc32",
+    "src/server/actions/board-fidelity.persisted.test.mjs": "3f9a9ec631c538f082c9631c4e4988a4f45c9381fe4d04e87377b491a38d1c8b",
     "src/server/actions/board.ts": "754578e61d77b996d73af02cc0a02ea2ef41535f8e84cecef868ac81273a06c3",
     "src/server/actions/comments.ts": "921eea3b28cafb2f236fc996b25f6ecfdb6f4cc5159716de6c26ac31298e1400",
     "src/server/actions/comp.ts": "ba3cd39c7ee8d682db324d5151242c19a70fa0ac1ce777c7edaeb6bf4488f297",
@@ -3669,7 +3315,7 @@
     "src/server/ai.ts": "a6b6d935ba2dfec2c4c8c56de12a50085e1d96ef8d9352fd7449f9653184d2ff",
     "src/server/app-access.ts": "e0c73b23ab52f25dc015fc0056a1df880b6461fa0e17243d7480de6a9d1026fa",
     "src/server/app-gate-contract.test.mjs": "e44c3d6c7f960460297335ec4d2b2a4a0dc99743c4ae00c076ac637a79bb5edb",
-    "src/server/app-gate-parity.test.mjs": "3a039258f6506bc2eb1dffec2596012479c87aef0dac1ddb18932a9f93095c95",
+    "src/server/app-gate-parity.test.mjs": "1ad977d18a4331395356daa899975e1723e145c9bd262976599f1300735940f8",
     "src/server/app-gate-runtime.test.mjs": "0ccb27c2248e778b0715da2e006646a619f9c654223210349aa6ee674fa34ca7",
     "src/server/attachment-client-upload-security.test.ts": "9ade13940233237d10d63e542c901c1b043f58c89a97d399aaf8c74ad720ef78",
     "src/server/attachment-upload-security.test.ts": "aee5f48ec9d30506b591ba056a0757fa24eefdd16177a54e765e0561b5a19ceb",
@@ -3865,10 +3511,7 @@
     "src/server/digest-narration.ts": "50908569bfd21cf3b1b38953503f2a7e27801dd0f98163bc6df01bd716fb331f",
     "src/server/email.ts": "18ab32d32f34b8152cc8175125bc0f46afe35b8aaceb9fdf1acefccc569ade05",
     "src/server/events.ts": "358b981300e09b7ada11cfdbead1068bffdae5ffee22a0a8bc564e40eda39695",
-    "src/server/home/home-board-read.ts": "d991d56c7947696a20ad1fbb82ae6b730b031b98d353a58245131d657572c033",
-    "src/server/home/home-reads.test.ts": "8e21bce9c307d89af7fdc2bd61b316ee6983f7e52e019311482d2a6ce214a29f",
-    "src/server/home/overview-river-read.ts": "9397226e775a40383686f2793727916b4224d19bc33352f74e2819247deb61d6",
-    "src/server/instrumentation-call-site-contract.test.mjs": "f27957cb7f3dc728ee1f49fde3119f77f7790113ed8f0d9af8aec7c7ffddd8db",
+    "src/server/instrumentation-call-site-contract.test.mjs": "cb613d2bfa051cf6333b90cebae46e39f9a715d9d61f9c30c9c5b5c8390619d9",
     "src/server/invitation-code-security.test.ts": "caffb1c4da5aee19bcf56432265b73ff73762e6922bed6377ee3b1379ceb6403",
     "src/server/invite-arrival.test.ts": "2d6125ed4f956d2f6235034f8ee012c6f42d05e19b98ec489576bd94e950cdee",
     "src/server/invite-lifecycle-contract.test.ts": "c46fa967b899355ede6b2b5211268f62b2f29bb1e3e1e8055bab6ce925594722",
@@ -3883,7 +3526,7 @@
     "src/server/onboarding-callers.test.tsx": "7b521750449bf70f944742607236a4a09752e0eaba77ac9cbd164b366f2d2a13",
     "src/server/onboarding-completion.test.ts": "8760d6b1eca50d5adf639bbce8990e5a073fec1e38d4aafbc565a3cb2aca3ee4",
     "src/server/onboarding-completion.ts": "bb6473cc7f8b2fa260fdf79ce731c4e6cc5bb0c33d13873cbcc3e1dc3924e896",
-    "src/server/operational-log-contract.test.mjs": "f03e7582db541b0c2b7b622f63bfbc7ee8d1ce97fc6d28d79fc223cfd08205df",
+    "src/server/operational-log-contract.test.mjs": "d0e87cf3cfe6bb77b6b8e4bb771d1f6995c081e52578f80cabbef8ed2ae827d5",
     "src/server/operational-log.test.ts": "c63debea2ad565d5354801c977356b4945a89ee3870514fea04c3e108c0d8b21",
     "src/server/operational-log.ts": "951020af87ae4478ea359a76806d6180b1d41b6574c7ddce4c3bb0177fe23171",
     "src/server/outbox-contract.test.mjs": "8a2d4448394b246bc99c6c80bc7bf4f0edc3e6b3c0789fa4cb4460b49483c92c",
@@ -4005,7 +3648,7 @@
     "src/server/stripe-lifecycle.ts": "04c8da72caf5c7be7ac95ce4568544baad50957fc3628922095942f85016c7b3",
     "src/server/stripe.ts": "2418005e0b54db7bf66b8bd7bd36a302b9a4520d112671cfa5d46713907eb95d",
     "src/server/suite-context-contract.test.mjs": "a969d6822a31b5895a74c71832ae14db649b417a3912050aa7c220211a7219f1",
-    "src/server/suite-navigation-contract.test.mjs": "8ce4d7ee725b930fde47ccc34bbce8f3ee17eee80fd369770e102f689792b7f8",
+    "src/server/suite-navigation-contract.test.mjs": "0f9603536e27eb9e4c82bca32ae6230f55f4bbf9e168db46409e4d4cf61b04b1",
     "src/server/tasks-security-regression.test.mjs": "9b11495f475045ea4460fcac1553ca7e32d5ac609ec69125b06c4ccb30b3ac8b",
     "src/server/tasks/create-task-core.test.ts": "d455e72c40d1efc6b6290d64280559cd20b1cc1d98c8cb1105c7d236c892766f",
     "src/server/tasks/create-task-core.ts": "ec09f70985787f1cab68e77d468361b45e50512bf0bcf60fd2ac6b916ec7ee9e",
@@ -4014,9 +3657,9 @@
     "src/server/tasks/mutation-http.test.ts": "e14b8c2862241c9a810b80edb0ed02c47d2c386d8cc29d9f37a5d28280d3b7cd",
     "src/server/tasks/mutation-http.ts": "a52923624de03e3333524e7c75582de8704049bb36b0b4c852672272d127ef14",
     "src/server/tasks/mutation-refusal.ts": "cdf2f1bde2295c0a40b8589b61af39007c13027bfa2971319e532dca0a75bbd8",
-    "src/server/tenant-scope-rules.mjs": "e1f40f93ca76a98b60270f6660a6b669b4e08996abdbbe9592cf409bfa11625e",
+    "src/server/tenant-scope-rules.mjs": "315b2c217d400cf72a701998f5d94c934b493f67265a51d14aa938f962bf29af",
     "src/server/tenant-scope-rules.test.mjs": "de353af4ffdab8501dea4225711c1680e443f030b8ba22bd7d3801e343026f63",
-    "src/server/tenant-scope.test.mjs": "10cd78343f2dee92e44c8d4a340adb12b2c6f065ce314083eb51943ddd194813",
+    "src/server/tenant-scope.test.mjs": "32e1a6b718b3a3417527ae4c27b053fcd6f0f8dc3807b7898be0b19aa2ba89e5",
     "src/server/upload-limit-contract.test.ts": "7a66e167fcd0e57c7ec132f9e5d2893f33a2fd4a10ca185af7adb2cf03dc2c3b",
     "src/server/venue-issuance/canonical.test.ts": "06c83b466f001b9818e361ccbd08e20db25f49cdc19e37ada2d2a2f736cc0c7d",
     "src/server/venue-issuance/canonical.ts": "4ed66ab798d2a8d23538a1f240eb1a126c90629a5c0b94435140d4a62ddff98e",
@@ -4121,6 +3764,18 @@
     "src/modules/timeline/server/owner-guest-summary.test.ts": "71e3c670192decccadbe4c1ee9f02440a3641fc46822dbfdf1948732b9a5c98a",
     "src/modules/timeline/server/owner-guest-summary.ts": "e23535678c109bdb07ed5145841531b711e6750b8433534e518d4ae959513bd6",
     "src/modules/timeline/components/artifact/timeline-follow-focus.browser.test.mjs": "971631d747e29f8374be8fa74b1748245bc383a25ab3ff18667daa4a798df142",
-    "src/modules/timeline/timeline-shared-social-image.test.mjs": "68772d6127f2dacc44c55cffa0ccb91e95d22bdba36bc17125752581ead5f825"
+    "src/modules/timeline/timeline-shared-social-image.test.mjs": "68772d6127f2dacc44c55cffa0ccb91e95d22bdba36bc17125752581ead5f825",
+    "src/components/app/home/bento/activity-card.tsx": "ef711437ef2be18892e39ad68f98e20178b20ef09c3999c09fac27d9d0bae93b",
+    "src/components/app/home/bento/chart-kit.ts": "a8493f98df78706082a748904cc923680f75cb1891a833fcdf113129d3b030e4",
+    "src/components/app/home/bento/enter-once.tsx": "5887e1a5c5fdc49523209b35e1aeb59f84bd2a9fba51c11630c8c3caf976a5b9",
+    "src/components/app/home/bento/home-bento-view.tsx": "8069f1a2773425d7592660961af5eec69dd5338846e185bab5d3680c761430cb",
+    "src/components/app/home/bento/home-bento.module.css": "f4d0b06881d5b177796ddce79bc9339e59f272dc9a141bb4624f7406f7400d40",
+    "src/components/app/home/bento/launch-card.tsx": "b5e765a491e16789d5a2682563893f59cab788b31834669b66e8f498e4471305",
+    "src/components/app/home/bento/week-card.tsx": "ed0707d58ed059fb64e0b4045dae80dfc0c3cbb492915b569b1a25a8eeaa0c7a",
+    "src/lib/home/home-bento.fixture.ts": "06640a78289bebd8e715322a0cf16f561a971b049cec436ebf7c458e54953f9b",
+    "src/lib/home/home-bento.test.ts": "a52e190587779dc11fc3e72fd505f943df0bb01f9123e9ec94fbd66128552f7c",
+    "src/lib/home/home-bento.ts": "7270463231680633fb1bf07ce464056dc85d61130bb3b80b10a5b423a16d476e",
+    "src/server/home/home-bento-read.test.ts": "42727fa2a8c0b0b3aa090fe39d3059cd9441b80d016b4174327c884c7d892c05",
+    "src/server/home/home-bento-read.ts": "d7d747e794a597c476a187b1bf8685733bbf29fa76da709d63a5ab75d0f81ff4"
   }
 }

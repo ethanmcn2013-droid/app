@@ -134,8 +134,7 @@
     "src/modules/timeline/server/qualified-view-security.test.mjs",
     "src/modules/timeline/server/timeline-provisioning-contract.test.mjs",
     "src/modules/timeline/components/artifact/timeline-artifact-contract.test.mjs",
-    "src/modules/timeline/components/artifact/timeline-artifact-layout.test.mjs",
-    "src/modules/signal/server/analytics/production-entry-contract.test.mjs"
+    "src/modules/timeline/components/artifact/timeline-artifact-layout.test.mjs"
   ],
   [
     "node",
@@ -224,7 +223,6 @@
     "src/server/db/apply-template.test.ts",
     "src/server/db/comp-redemption.test.ts",
     "src/server/db/venue-welcome.test.ts",
-    "src/app/app/home/home-data.test.tsx",
     "src/server/onboarding-completion.test.ts",
     "src/server/onboarding-callers.test.tsx",
     "src/lib/onboarding/retained-submission.test.ts",
@@ -280,21 +278,7 @@
     "src/modules/notes/lib/timeline-promotion.test.ts",
     "src/modules/notes/lib/notes-hybrid.test.ts",
     "src/modules/notes/server/notes-auth.test.ts",
-    "src/modules/notes/server/tasks-personalization.test.ts",
-    "src/modules/signal/server/signal-auth-policy.test.ts",
-    "src/modules/signal/lib/briefing/calendar-time.test.ts",
-    "src/modules/signal/lib/data/deadline.test.ts",
-    "src/modules/signal/lib/briefing/triggers.test.ts",
-    "src/modules/signal/lib/briefing/voice.test.ts",
-    "src/modules/signal/lib/briefing/prose.test.ts",
-    "src/modules/signal/lib/briefing/tasks-db-source.test.ts",
-    "src/modules/signal/lib/briefing/build.test.ts",
-    "src/modules/signal/lib/briefing/context-observations.test.ts",
-    "src/modules/signal/lib/briefing/overload-truth.test.ts",
-    "src/modules/signal/lib/briefing/wedding-briefing-selectivity.test.ts",
-    "src/modules/signal/lib/overview/overview-model.test.ts",
-    "src/modules/signal/signal-public-url-contract.test.ts",
-    "src/modules/signal/signal-suite-context.test.ts"
+    "src/modules/notes/server/tasks-personalization.test.ts"
   ],
   [
     "node",
@@ -304,10 +288,6 @@
     "./src/test/register-server-only.mjs",
     "--test",
     "src/server/crypto/secret-box.test.ts",
-    "src/modules/signal/server/briefing/signal-build-for-user.test.ts",
-    "src/modules/signal/server/briefing/signal-build-for-user.persisted.test.ts",
-    "src/modules/signal/lib/data/source.persisted.test.ts",
-    "src/modules/signal/server/analytics/providers/column-config.test.ts",
     "src/server/connections/google-oauth-state.test.ts",
     "src/server/provider-token-custody.test.ts",
     "src/server/attachment-client-upload-security.test.ts",
@@ -329,7 +309,6 @@
     "src/modules/timeline/server/actions/connect-suite-workspace-security.test.ts",
     "src/modules/timeline/server/db/binding-write-gates.test.ts",
     "src/modules/timeline/server/db/milestone-date-history.test.ts",
-    "src/app/api/cron/analytics-snapshots/route.test.ts",
     "src/lib/ops/ping-studio.test.ts",
     "src/modules/timeline/server/archived-project-readonly.test.ts",
     "src/modules/timeline/server/couple-artifact-boundary.test.ts",
@@ -361,10 +340,6 @@
   [
     "pnpm",
     "test:sponsored-use"
-  ],
-  [
-    "pnpm",
-    "test:home-scope"
   ],
   [
     "pnpm",
@@ -426,9 +401,8 @@
     "src/server/projects/project-analytics-portfolio.test.ts",
     "src/server/actions/nudge.test.ts",
     "src/lib/projects/project-console.test.ts",
-    "src/lib/home/home-board.test.ts",
-    "src/lib/home/overview-river.test.ts",
-    "src/server/home/home-reads.test.ts",
+    "src/lib/home/home-bento.test.ts",
+    "src/server/home/home-bento-read.test.ts",
     "src/lib/projects/project-files-analytics.test.ts",
     "src/lib/projects/sidebar-projects.test.ts",
     "src/lib/projects/combined-timeline.test.ts",

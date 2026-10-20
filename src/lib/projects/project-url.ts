@@ -17,7 +17,6 @@
  */
 
 import {
-  BRIEFING_APP_PATH,
   HOME_APP_PATH,
   PRODUCT_APP_PATHS,
   PROJECT_APP_PATH,
@@ -72,7 +71,7 @@ export type ProjectDestination =
   | Readonly<{ surface: "timeline"; timelineSlug?: string; mode?: "view" | "edit" }>
   | Readonly<{ surface: "notes"; view?: ProjectNotesView; noteId?: string }>
   | Readonly<{ surface: "project" }>
-  | Readonly<{ surface: "home"; briefing?: boolean }>
+  | Readonly<{ surface: "home" }>
   | Readonly<{ surface: "your-work" }>;
 
 export const PROJECT_DESTINATION_SURFACES = [
@@ -138,12 +137,8 @@ export function parseProjectDestination(value: unknown): ProjectDestination | nu
     }
     case "project":
       return { surface: "project" };
-    case "home": {
-      if (input.briefing !== undefined && typeof input.briefing !== "boolean") {
-        return null;
-      }
-      return { surface: "home", ...(input.briefing ? { briefing: true } : {}) };
-    }
+    case "home":
+      return { surface: "home" };
     case "your-work":
       return { surface: "your-work" };
     default:
@@ -164,7 +159,7 @@ function destinationPath(destination: ProjectDestination): string {
     case "project":
       return PROJECT_APP_PATH;
     case "home":
-      return destination.briefing ? BRIEFING_APP_PATH : HOME_APP_PATH;
+      return HOME_APP_PATH;
     case "your-work":
       return YOUR_WORK_APP_PATH;
   }

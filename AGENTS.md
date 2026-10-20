@@ -1,6 +1,6 @@
 # Signal App
 
-This repository owns the signed-in Signal Studio app at app.signalstudio.ie. Notes captures work, Tasks executes it, and Timeline provides direction. Home is the authenticated front door, with Today's Signal and the Full Briefing; it is not a fourth product. This entrypoint is self-contained in an isolated checkout. Product source and checks belong here; shared workflow tools live in Signal Operations.
+This repository owns the signed-in Signal Studio app at app.signalstudio.ie. Notes captures work, Tasks executes it, and Timeline provides direction. Home is the authenticated front door: the next target date, this week's pace, a year of activity and four ways to start. The Full Briefing was retired on 20 October 2026; /app/home/briefing and legacy /app/signal links redirect to Home. Home is not a fourth product. This entrypoint is self-contained in an isolated checkout. Product source and checks belong here; shared workflow tools live in Signal Operations.
 
 <!-- signal-shared-rules:begin -->
 <!-- Source: docs/agent-rules.md; sha256: b87309ff14660a99c962bd2deca2147faaf782e9f04ccfce01d5bec15b2c2068 -->

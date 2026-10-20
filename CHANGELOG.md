@@ -1,5 +1,13 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-20 · Release · A new Home, and the Full Briefing retires
+
+Home now opens on what is coming and how the week is going. The next target date counts down with a burn-up chart against plan, its stages and one next step; page through up to five dated Projects. Done this week sets each day beside the same day last week. Activity shows a year of finished work, by week or by hour, with a weeks-in-a-row streak. Four cards at the foot open Tasks, Projects, Files and Chat, or start something new in each.
+
+Figures that could not be read show as a dash, never a guess. Without Chat, a Notes card takes its place. The former task lists on Home are gone.
+
+The Full Briefing is retired, with its Overview tab, onboarding, cadence settings, the "Daily Signal email" setting, its command-palette entries and the nightly analytics snapshot job. `/app/home/briefing` and old `/app/signal` links now go to Home. Briefing data already stored stays covered by account export and erasure.
+
 ## 2026-10-20 · The final Timeline design
 
 Timeline uses the final Master 3 design across shared pages and private previews, with a clear next date, ordered milestones, light and dark themes, and a layout fitted to phones and larger screens. Project dates and explicit public settings supply the content; passing a date does not mark work complete.

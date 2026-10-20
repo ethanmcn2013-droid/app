@@ -32,10 +32,8 @@ async function runGoldenStory() {
     assert.equal((await sql('SELECT count(*) n FROM tasks'))[0].n,0);
     const notes=await store('notes','src/modules/notes/server/db/notes-schema','drizzle-notes');
     const timeline=await store('timeline','src/modules/timeline/server/db/timeline-schema','drizzle-timeline');
-    const signal=await store('signal','src/modules/signal/server/db/signal-analytics-schema','drizzle-signal');
     f.overrides.set('src/modules/notes/server/db/notes-client',{db:notes.db});
     f.overrides.set('src/modules/timeline/server/db/timeline-client',{db:timeline.db,schema:timeline.schema});
-    f.overrides.set('src/modules/signal/server/db/signal-analytics-client',{signalAnalyticsDb:signal.db});
     f.boundary['@libsql/client']={...dep('@libsql/client'),createClient: options=>{
       assert.ok(Object.values(urls).includes(options.url),'only this fixture’s exact SQLite stores are reachable');
       const client=createClient(options);clients.push(client);return client;
@@ -212,36 +210,30 @@ async function runGoldenStory() {
     check('actual creator revoke makes the outsider token unusable');
 
     f.state.actor='recipient';
-    const home=f.load('src/app/app/home/home-data');
-    const briefing=await home.loadHomeData({clerkId:'recipient',scope:{kind:'workspace',workspaceId:'project-b'}});
-    const identity={clerkId:'recipient',email:null};
-    const homeBoundary={legacy:await f.load('src/modules/signal/lib/data/source').dataSource.listForUser(identity),catalog:await f.load('src/modules/signal/lib/planning-periods/scope').listPlanningCatalogForUser(identity),briefing};
-    fs.writeFileSync(path.join(output,'home-boundary.json'),JSON.stringify(homeBoundary,null,2));
-    // Preserve the Home failure, but still exercise removal fences afterwards.
-    // The final assertion is unconditional: later negatives cannot turn a
-    // broken positive journey into a green run.
-    if(briefing.kind==='ok') {
-      const links=[...briefing.signalRows,...briefing.comingUp,...briefing.needsReview];
-      const exact=links.find(row=>row.href===urlsModule.taskFocusPath(taskId));assert.ok(exact,JSON.stringify(briefing));
-      assert.ok(JSON.stringify(briefing).includes('Changed private working title'));
-      f.cookies('project-a');
-      await assert.rejects(taskFocus({params:Promise.resolve({id:taskId})}),e=>{
-        const url=new URL(e.href,'https://fixture.invalid');return url.searchParams.get('task')===taskId&&url.searchParams.get('workspaceId')==='project-b';
-      });
-      fs.writeFileSync(path.join(output,'home.json'),JSON.stringify(briefing,null,2));
-      check('Home actual scope/catalog/SQLite source/ranking exposes the persisted task’s exact link, which reopens B with stale A',{href:exact.href});
-    }
+    // Home (20 October 2026) reads figures, never task titles, from every
+    // Project the reader can open. The Full Briefing it replaced is retired.
+    const home=f.load('src/server/home/home-bento-read');
+    const bento=await home.loadHomeBento();
+    fs.writeFileSync(path.join(output,'home.json'),JSON.stringify(bento,null,2));
+    assert.ok(bento,'Home reads for a recipient of an authorized project');
+    assert.equal(bento.hasProjects,true,JSON.stringify(bento));
+    assert.equal(JSON.stringify(bento).includes('Changed private working title'),false,'Home shows figures, never task titles');
+    f.cookies('project-a');
+    await assert.rejects(taskFocus({params:Promise.resolve({id:taskId})}),e=>{
+      const url=new URL(e.href,'https://fixture.invalid');return url.searchParams.get('task')===taskId&&url.searchParams.get('workspaceId')==='project-b';
+    });
+    check('Home reads the authorized project for the recipient, and the task link still reopens B with stale A');
     await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='project-b' AND user_id='recipient'");
     const before=JSON.stringify(await sql('SELECT title,lane FROM tasks WHERE id=?',[taskId]));
     await actions.updateTaskAction(taskId,{title:'Must not persist'});
     assert.equal(JSON.stringify(await sql('SELECT title,lane FROM tasks WHERE id=?',[taskId])),before);
     const unavailable=await myWork({searchParams:Promise.resolve({workspaceId:'project-b'})});
     assert.match(renderToStaticMarkup(unavailable),/Project unavailable/);
-    assert.equal((await home.loadHomeData({clerkId:'recipient',scope:{kind:'workspace',workspaceId:'project-b'}})).kind,'new-user');
+    const homeAfter=await home.loadHomeBento();
+    assert.ok(homeAfter===null||!homeAfter.launches.some(l=>l.id==='project-b'),'Home no longer counts a project the recipient left');
     assert.equal((await sql('SELECT count(*) n FROM sponsored_use_intents'))[0].n,0);
     assert.equal((await sql('SELECT count(*) n FROM entitlements'))[0].n,0);
     check('membership removal denies fresh page, action and Home; no grant or sponsored intent is fabricated for this free collaborator story');
-    assert.equal(briefing.kind,'ok','Home must retain the authorized project even without a planning period');
     return {checks,requests};
   } catch(error) {failure=error;throw error}
   finally {

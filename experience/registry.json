@@ -416,7 +416,7 @@
       "materialityReview": {
         "materialityHash": "3fcba4d3b2bb4dcf",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-settings.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-settings.json"
       }
     },
     {
@@ -648,7 +648,7 @@
       "lastReviewedAt": "2026-10-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "be59ad3c4caf2218"
+      "materialityHash": "9f228082d6081c05"
     },
     {
       "id": "tasks.page.p-by-slug",
@@ -1051,10 +1051,10 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-09-25",
+      "lastReviewedAt": "2026-10-20",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "ee2b4660f7b40532"
+      "materialityHash": "32caf7de7ea7a52d"
     },
     {
       "id": "tasks.page.settings-plan",
@@ -1422,7 +1422,7 @@
       "materialityReview": {
         "materialityHash": "56f4c16d02cbcebb",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.welcome.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.welcome.json"
       }
     },
     {
@@ -1725,7 +1725,7 @@
       "lastReviewedAt": "2026-10-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "cda5bc88934c27de"
+      "materialityHash": "de699b605d04c689"
     },
     {
       "id": "tasks.surface.empty-workspace",
@@ -2136,7 +2136,7 @@
       "materialityReview": {
         "materialityHash": "795236cc4236a32a",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-project.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-project.json"
       }
     },
     {
@@ -2184,26 +2184,25 @@
       "materialityReview": {
         "materialityHash": "50734606e8cded67",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-project-loading.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-project-loading.json"
       }
     },
     {
-      "id": "tasks.page.app-signal",
+      "id": "tasks.page.app-signal-by-rest",
       "product": "tasks",
       "surfaceType": "page",
       "route": "/app/signal",
-      "source": "tasks/src/app/app/signal/page.tsx",
+      "source": "tasks/src/app/app/signal/[[...rest]]/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "application-shell-and-navigation",
-      "primaryJob": "Land on the Full Briefing from a legacy Signal link, bookmark or notification without breaking.",
-      "primaryAction": "None â€” permanent redirect.",
+      "primaryJob": "Land on Home from a retired Signal or briefing link, bookmark or email without breaking.",
+      "primaryAction": "None — permanent redirect.",
       "roles": [
         "owner",
         "member"
       ],
       "requiredStates": [
         "default",
-        "loading",
         "reduced-motion",
         "keyboard-only"
       ],
@@ -2229,71 +2228,24 @@
       "lastReviewedAt": "2026-10-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "72678cac7eb0d1c9"
+      "materialityHash": "d12621d74eef050f"
     },
     {
-      "id": "tasks.page.app-signal-onboarding",
+      "id": "tasks.page.app-home-briefing-by-rest",
       "product": "tasks",
       "surfaceType": "page",
-      "route": "/app/signal/onboarding",
-      "source": "tasks/src/app/app/signal/onboarding/page.tsx",
-      "parentJourney": "access-and-onboarding",
-      "archetype": "onboarding-and-authentication",
-      "primaryJob": "Land on briefing onboarding from a legacy Signal link, bookmark or notification without breaking.",
-      "primaryAction": "None â€” permanent redirect.",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "first-use",
-        "empty",
-        "populated",
-        "loading",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "critical",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "preview",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "partial",
-      "screenshotCoverage": "partial",
-      "accessibilityCoverage": "partial",
-      "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-10-15",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "dadba836d5e7d2b8"
-    },
-    {
-      "id": "tasks.page.app-signal-settings-notifications",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/app/signal/settings/notifications",
-      "source": "tasks/src/app/app/signal/settings/notifications/page.tsx",
+      "route": "/app/home/briefing",
+      "source": "tasks/src/app/app/home/briefing/[[...rest]]/page.tsx",
       "parentJourney": "signed-in-work",
-      "archetype": "settings-and-administration",
-      "primaryJob": "Land on briefing notification settings from a legacy Signal link, bookmark or notification without breaking.",
-      "primaryAction": "None â€” permanent redirect.",
+      "archetype": "application-shell-and-navigation",
+      "primaryJob": "Land on Home from a retired Full Briefing link, bookmark or email without breaking.",
+      "primaryAction": "None — permanent redirect.",
       "roles": [
         "owner",
         "member"
       ],
       "requiredStates": [
         "default",
-        "loading",
         "reduced-motion",
         "keyboard-only"
       ],
@@ -2319,7 +2271,7 @@
       "lastReviewedAt": "2026-10-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f4753d16267efa39"
+      "materialityHash": "819eef19977032d7"
     },
     {
       "id": "tasks.page.app-notes",
@@ -2972,8 +2924,8 @@
       "source": "tasks/src/app/app/home/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "dashboard-or-command-centre",
-      "primaryJob": "See what matters now across Notes, Tasks and Timeline, and act on the day's top item.",
-      "primaryAction": "Open the day's top item.",
+      "primaryJob": "See the next target date, this week against last, a year of finished work, and start something new.",
+      "primaryAction": "Open the next big day’s tasks.",
       "roles": [
         "owner",
         "member"
@@ -3012,141 +2964,7 @@
       "lastReviewedAt": "2026-10-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "cc412a345ba4d663"
-    },
-    {
-      "id": "tasks.page.app-home-briefing",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/app/home/briefing",
-      "source": "tasks/src/app/app/home/briefing/page.tsx",
-      "parentJourney": "signed-in-work",
-      "archetype": "application-shell-and-navigation",
-      "primaryJob": "Access the Signal module from within the unified app shell.",
-      "primaryAction": "Open Signal.",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "default",
-        "loading",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "critical",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "preview",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "partial",
-      "screenshotCoverage": "partial",
-      "accessibilityCoverage": "partial",
-      "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-10-15",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "1db016eb2770107a"
-    },
-    {
-      "id": "tasks.page.app-home-briefing-onboarding",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/app/home/briefing/onboarding",
-      "source": "tasks/src/app/app/home/briefing/onboarding/page.tsx",
-      "parentJourney": "access-and-onboarding",
-      "archetype": "onboarding-and-authentication",
-      "primaryJob": "Link a Signal Tasks workspace to the Signal briefing module.",
-      "primaryAction": "Confirm workspace and start receiving briefings.",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "first-use",
-        "empty",
-        "populated",
-        "loading",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "critical",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "preview",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "partial",
-      "screenshotCoverage": "partial",
-      "accessibilityCoverage": "partial",
-      "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-10-15",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "ec1621e9729adbcd"
-    },
-    {
-      "id": "tasks.page.app-home-briefing-settings-notifications",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/app/home/briefing/settings/notifications",
-      "source": "tasks/src/app/app/home/briefing/settings/notifications/page.tsx",
-      "parentJourney": "signed-in-work",
-      "archetype": "settings-and-administration",
-      "primaryJob": "Choose how often the Signal briefing lands in the inbox.",
-      "primaryAction": "Select a cadence (daily / weekly / off).",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "default",
-        "loading",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "critical",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "preview",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "partial",
-      "screenshotCoverage": "partial",
-      "accessibilityCoverage": "partial",
-      "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-10-15",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "5b7bfa490d36d806"
+      "materialityHash": "13c879ddcdccbfcc"
     },
     {
       "id": "tasks.state.app-home-loading",
@@ -3188,11 +3006,11 @@
       "lastReviewedAt": "2026-10-20",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "9dcb7b09c5c2c254",
+      "materialityHash": "e0e6df7d2e7508c5",
       "materialityReview": {
-        "materialityHash": "9dcb7b09c5c2c254",
+        "materialityHash": "e0e6df7d2e7508c5",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-home-loading.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-home-loading.json"
       }
     },
     {
@@ -3203,7 +3021,7 @@
       "source": "tasks/src/app/app/home/error.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "feedback-interruption-and-exception",
-      "primaryJob": "Recover from a Home briefing read failure and keep the products one click away.",
+      "primaryJob": "Recover from a Home read failure and keep Tasks one click away.",
       "primaryAction": "Try again.",
       "roles": [
         "owner",
@@ -3235,96 +3053,12 @@
       "lastReviewedAt": "2026-10-20",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "94e95fe898bce26d",
+      "materialityHash": "f0e4960b366e6091",
       "materialityReview": {
-        "materialityHash": "94e95fe898bce26d",
+        "materialityHash": "f0e4960b366e6091",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-home-error.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-home-error.json"
       }
-    },
-    {
-      "id": "tasks.state.app-home-briefing-loading",
-      "product": "tasks",
-      "surfaceType": "loading",
-      "route": "/app/home/briefing",
-      "source": "tasks/src/app/app/home/briefing/loading.tsx",
-      "parentJourney": "signed-in-work",
-      "archetype": "feedback-interruption-and-exception",
-      "primaryJob": "Wait for the Full Briefing without losing orientation.",
-      "primaryAction": "None â€” resolves automatically.",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "default",
-        "reduced-motion"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "live",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "1ed8540842490cd6"
-    },
-    {
-      "id": "tasks.state.app-home-briefing-error",
-      "product": "tasks",
-      "surfaceType": "error",
-      "route": "/app/home/briefing",
-      "source": "tasks/src/app/app/home/briefing/error.tsx",
-      "parentJourney": "signed-in-work",
-      "archetype": "feedback-interruption-and-exception",
-      "primaryJob": "Recover from a Full Briefing load failure.",
-      "primaryAction": "Try again.",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "default",
-        "reduced-motion"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "live",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "7b7ed391aa1b72ab"
     },
     {
       "id": "tasks.page.lab-timeline-a",
@@ -3503,7 +3237,7 @@
       "materialityReview": {
         "materialityHash": "12140b4bae611a58",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-tasks-loading.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-tasks-loading.json"
       }
     },
     {
@@ -3744,7 +3478,7 @@
       "materialityReview": {
         "materialityHash": "19f85eac6f784ffa",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.resources.drive-upload.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.resources.drive-upload.json"
       }
     },
     {
@@ -4007,7 +3741,7 @@
       "materialityReview": {
         "materialityHash": "dacfebb578dd8234",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-messages.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-messages.json"
       }
     },
     {
@@ -4193,7 +3927,7 @@
       "materialityReview": {
         "materialityHash": "d89f2a4abd38ee57",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-analytics.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-analytics.json"
       }
     },
     {
@@ -4240,7 +3974,7 @@
       "materialityReview": {
         "materialityHash": "9a83f9e97a750b1b",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-analytics-loading.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-analytics-loading.json"
       }
     },
     {
@@ -4287,7 +4021,7 @@
       "materialityReview": {
         "materialityHash": "16a0888ed7b367ab",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-analytics-error.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-analytics-error.json"
       }
     },
     {
@@ -4517,7 +4251,7 @@
       "materialityReview": {
         "materialityHash": "4a1b05486b44306f",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-tools-by-slug.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-tools-by-slug.json"
       }
     },
     {
@@ -4565,7 +4299,7 @@
       "materialityReview": {
         "materialityHash": "45e0fc19aaf3ca48",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-tools-loading.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-tools-loading.json"
       }
     },
     {
@@ -4621,7 +4355,7 @@
       "materialityReview": {
         "materialityHash": "63e7924b683e8c06",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-concepts.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-concepts.json"
       }
     },
     {
@@ -4728,7 +4462,7 @@
       "materialityReview": {
         "materialityHash": "08771bc864af3e7b",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.page.app-files.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.page.app-files.json"
       }
     },
     {
@@ -4775,7 +4509,7 @@
       "materialityReview": {
         "materialityHash": "9beac142f8f04cb2",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-files-loading.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-files-loading.json"
       }
     },
     {
@@ -4822,7 +4556,7 @@
       "materialityReview": {
         "materialityHash": "83d088f7615c6a6b",
         "reviewedAt": "2026-10-20",
-        "evidence": "experience/reviews/2026-10-20-timeline-master3-final/receipts/tasks.state.app-files-error.json"
+        "evidence": "experience/reviews/2026-10-20-home-retire-briefing/receipts/tasks.state.app-files-error.json"
       }
     },
     {

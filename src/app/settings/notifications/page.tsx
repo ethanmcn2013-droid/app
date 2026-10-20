@@ -15,7 +15,6 @@ export default async function NotificationsSettingsPage() {
       >
         <NotificationsForm
           initial={{
-            dailySignalCadence: "weekdays",
             weeklySummary: "mondays",
             timeZone: "Europe/London",
           }}
@@ -34,7 +33,6 @@ export default async function NotificationsSettingsPage() {
     >
       <NotificationsForm
         initial={{
-          dailySignalCadence: prefs.dailySignalCadence,
           weeklySummary: prefs.weeklySummary,
           timeZone: prefs.timeZone,
         }}

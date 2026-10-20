@@ -20,7 +20,6 @@ import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { AvatarStack } from "@/components/showcase/avatar";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import {
-  BRIEFING_APP_PATH,
   HOME_APP_PATH,
   PRODUCT_APP_PATHS,
 } from "@/lib/product-urls";
@@ -678,11 +677,6 @@ const SUITE_JUMPS: { word: string; tagline: string; path: string }[] = [
     word: "notes",
     tagline: "Capture clarity",
     path: PRODUCT_APP_PATHS.notes,
-  },
-  {
-    word: "briefing",
-    tagline: "The full read",
-    path: BRIEFING_APP_PATH,
   },
 ];
 

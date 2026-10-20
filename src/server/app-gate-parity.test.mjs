@@ -137,9 +137,11 @@ test("the pages that carried the defect still gate, and gate widely", () => {
   // Named rather than counted. A count drifts as routes come and go; these four
   // are the surfaces the incident actually took down, and losing the gate
   // entirely would otherwise satisfy every assertion above by vacuous truth.
+  // The Full Briefing was retired on 20 October 2026; its address is now a
+  // catch-all redirect to Home, which still gates before it forwards.
   const mustGate = [
     ["app", "app", "home", "page.tsx"],
-    ["app", "app", "home", "briefing", "page.tsx"],
+    ["app", "app", "home", "briefing", "[[...rest]]", "page.tsx"],
     ["app", "app", "notes", "page.tsx"],
     ["app", "app", "timeline", "page.tsx"],
   ];

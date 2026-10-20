@@ -15,14 +15,14 @@ front door:
 | `notes` | Signal Notes | Notes | Product — captures the thinking |
 | `tasks` | Signal Tasks | Tasks | Product — moves the work |
 | `timeline` | Signal Timeline | Timeline | Product — makes the plan visible |
-| `home` | — (not marketed as a product) | Home | Front door — Today's Signal + Full Briefing |
+| `home` | — (not marketed as a product) | Home | Front door — next big day, this week, a year of activity, start cards |
 
 Signal is the company, the brand, and the outcome the system produces —
 never "our fourth product". The briefing capability formerly presented
-as the Signal product lives inside Home ("Today's Signal"; "Full
-Briefing" at `/app/home/briefing`). The internal `signal` product ID
-survives in code as a legacy identifier; it must not appear in new
-navigation, marketing, or copy.
+as the Signal product (later "Today's Signal" and the "Full Briefing"
+inside Home) was retired on 20 October 2026. The internal `signal`
+product ID survives in code as a legacy identifier; it must not appear
+in new navigation, marketing, or copy.
 
 Use the full name on marketing pages and at first reference in longer public copy. Use the short label in the rail, commands, breadcrumbs, and product-local headings. Do not call them separate apps. Do not use old capability labels such as “Plans” or “Morning Briefing” as product names.
 
@@ -48,11 +48,9 @@ share tokens, credentials or query strings; the original link target is kept.
 | In-app | `https://app.signalstudio.ie/app/notes` | `https://app.signalstudio.ie/app/tasks` | `https://app.signalstudio.ie/app/timeline` |
 
 Home: `https://app.signalstudio.ie/app/home` (the default authenticated
-destination; `/app` redirects here). Full Briefing:
-`https://app.signalstudio.ie/app/home/briefing`. The daily-briefing
-marketing story: `https://signalstudio.ie/features/daily-briefing`.
-Legacy `/app/signal*` and the old `signalstudio.ie/signal` product page
-permanently redirect to their successors.
+destination; `/app` redirects here). The retired Full Briefing at
+`/app/home/briefing`, and legacy `/app/signal*`, permanently redirect to
+Home.
 
 `https://signalstudio.ie` is the single marketing origin.  
 `https://app.signalstudio.ie` is the single signed-in app origin.
@@ -68,9 +66,8 @@ Tasks views live below the Tasks product entry:
 
 “Timeline” without the Tasks namespace always means the Signal Timeline
 product. “Signal” is the company and the outcome the system produces —
-never a product label. The briefing surfaces are named “Today's Signal”
-(inside Home) and “Full Briefing” (`/app/home/briefing`); “brief” alone
-is not a route or product label.
+never a product label. “Briefing” and “brief” are not route or product
+labels; the briefing was retired on 20 October 2026.
 
 ## Narrow public and service hosts
 
@@ -121,15 +118,14 @@ The 2026-07-25 canonical migration is:
 | `/app/list` | `/app/tasks/list` |
 | `/app/calendar` | `/app/tasks/calendar` |
 | `/app/plan/*` | `/app/timeline/*` |
-| `/app/brief/*` | `/app/home/briefing/*` |
+| `/app/brief/*` | `/app/home` |
 
 The 2026-08-04 consolidation adds:
 
 | Retired path | Canonical path |
 |---|---|
-| `/app/signal` | `/app/home/briefing` |
-| `/app/signal/onboarding` | `/app/home/briefing/onboarding` |
-| `/app/signal/settings/notifications` | `/app/home/briefing/settings/notifications` |
+| `/app/signal/*` | `/app/home` (since the 2026-10-20 retirement) |
+| `/app/home/briefing/*` | `/app/home` (since the 2026-10-20 retirement) |
 | `signalstudio.ie/signal` | `signalstudio.ie/features/daily-briefing` |
 
 The former Tasks view at `/app/timeline` moved to `/app/tasks/timeline`; that

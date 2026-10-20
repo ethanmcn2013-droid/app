@@ -30,11 +30,10 @@
     },
     {
       "id": "couple_plans",
-      "what": "The four products the couple actually uses — Notes, Tasks, Timeline, Signal — enforce their own auth policy.",
+      "what": "The three products the couple actually uses — Notes, Tasks, Timeline — enforce their own auth policy.",
       "coveredBy": [
         "src/modules/notes/server/notes-auth.test.ts",
         "src/modules/timeline/server/timeline-auth-policy.test.ts",
-        "src/modules/signal/server/signal-auth-policy.test.ts",
         "src/lib/planning/sponsorship.test.ts"
       ]
     },

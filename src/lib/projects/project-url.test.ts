@@ -40,7 +40,6 @@ test("every V3 destination carries workspaceId and no V2 vocabulary", () => {
     { surface: "notes", view: "review", noteId: "n-1" },
     { surface: "project" },
     { surface: "home" },
-    { surface: "home", briefing: true },
     { surface: "your-work" },
   ];
   const covered = new Set(destinations.map((d) => d.surface));
@@ -86,10 +85,6 @@ test("the canonical routes match the locked URL contract", () => {
   );
   assert.equal(buildProjectUrl({ surface: "project" }, A), "/app/project?workspaceId=ws-a");
   assert.equal(buildProjectUrl({ surface: "home" }, A), "/app/home?workspaceId=ws-a");
-  assert.equal(
-    buildProjectUrl({ surface: "home", briefing: true }, A),
-    "/app/home/briefing?workspaceId=ws-a",
-  );
   assert.equal(
     buildProjectUrl({ surface: "your-work" }, A),
     "/app/your-work?workspaceId=ws-a",

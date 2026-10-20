@@ -69,7 +69,7 @@ test("the navigation orders the primary links and Workspace, Projects, More and 
   assert.deepEqual([...order].sort((a, b) => a - b), order);
 });
 
-test("Home owns Overview without a separate Overview row", () => {
+test("Home is one page: no Overview row or crumb, and the retired briefing paths light Home", () => {
   assert.deepEqual([HOME_DESTINATION.label, HOME_DESTINATION.href], ["Home", "/app/home"]);
   const every = [...PRIMARY_DESTINATIONS, ...WORKSPACE_DESTINATIONS, ...MORE_DESTINATIONS, ...UTILITY_DESTINATIONS, ...TOOL_DESTINATIONS, ...FOOTER_DESTINATIONS];
   assert.equal(every.some((destination) => destination.label === "Overview" || destination.href === "/app/home/briefing"), false);
@@ -77,7 +77,7 @@ test("Home owns Overview without a separate Overview row", () => {
     assert.equal(activeDestinationId(inside), "home", inside);
   }
   assert.deepEqual(crumbsForPath("/app/home").map((crumb) => crumb.label), ["Signal Studio", "Home"]);
-  assert.deepEqual(crumbsForPath("/app/home/briefing").map((crumb) => crumb.label), ["Signal Studio", "Home", "Overview"]);
+  assert.deepEqual(crumbsForPath("/app/home/briefing").map((crumb) => crumb.label), ["Signal Studio", "Home"]);
 });
 
 test("Workspace is the three places of the work", () => {
@@ -230,7 +230,7 @@ test("the groups that fold start open and remember being folded", () => {
 test("the one create button follows the page: an automation, a project, otherwise a task", () => {
   for (const path of [AUTOMATIONS_APP_PATH, `${AUTOMATIONS_APP_PATH}/draft-1`]) assert.equal(createKindForPath(path), "automation", path);
   for (const path of ["/app/project", "/app/archived"]) assert.equal(createKindForPath(path), "project", path);
-  for (const path of ["/app/home", "/app/home/briefing", "/app/tasks", "/app/tasks/list", "/app/timeline", "/app/files", "/app/analytics", "/app/settings", "/app/messages", "/app/projects-like"]) {
+  for (const path of ["/app/home", "/app/tasks", "/app/tasks/list", "/app/timeline", "/app/files", "/app/analytics", "/app/settings", "/app/messages", "/app/projects-like"]) {
     assert.equal(createKindForPath(path), "task", path);
   }
   assert.deepEqual(CREATE_LABEL, { task: "New task", project: "New project", automation: "New automation" });

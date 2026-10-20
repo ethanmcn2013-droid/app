@@ -460,12 +460,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/app/brief",
-        destination: "/app/signal",
+        destination: "/app/home",
         permanent: false,
       },
       {
         source: "/app/brief/:path*",
-        destination: "/app/signal/:path*",
+        destination: "/app/home",
         permanent: false,
       },
       // The two /templates slug renames (final-paper-sprint,

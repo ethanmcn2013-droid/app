@@ -223,7 +223,7 @@
         },
         "path": {
           "type": "string",
-          "pattern": "^/app/(notes|tasks|timeline|home/briefing)$"
+          "pattern": "^/app/(notes|tasks|timeline|home)$"
         },
         "action": {
           "type": "string",

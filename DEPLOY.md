@@ -389,10 +389,10 @@ its production state can change independently.
 ## 5. Cron
 
 `vercel.json` declares the daily digest cron (`0 9 * * *` against
-`/api/cron/digest?send=1`), the analytics snapshot cron, and the shared Project
-Drive repair cron (`15 3 * * *` against
-`/api/cron/project-drive-grant-repair`). Confirm all three appear in Vercel →
-Settings → Cron Jobs after the first deploy.
+`/api/cron/digest?send=1`) and the shared Project Drive repair cron
+(`15 3 * * *` against `/api/cron/project-drive-grant-repair`). Confirm both
+appear in Vercel → Settings → Cron Jobs after the first deploy. The analytics
+snapshot cron was retired with the Full Briefing on 20 October 2026.
 
 The Project Drive route is count-only in its response and logs: it never emits
 member emails, provider ids, operation ids, byte locators, or stored error
@@ -413,8 +413,8 @@ still dispatches immediately and the cron is the safety net.
 - [ ] `/` renders
 - [ ] Sign-in works → `/app/home` renders, then `/app/tasks` board renders
 - [ ] Each product renders: `/app/notes`, `/app/tasks`, `/app/timeline`
-- [ ] Home renders Today's Signal and `/app/home/briefing` renders the Full Briefing
-- [ ] Legacy `/app/signal` redirects to `/app/home/briefing` and is never emitted by new UI
+- [ ] Home renders its countdown, Done this week, Activity and the four start cards, and `/app/home/briefing` and `/app/signal` redirect to `/app/home`
+- [ ] Neither `/app/signal` nor `/app/home/briefing` is ever emitted by new UI
 - [ ] Check off a task → completion animation fires
 - [ ] Share link → another tab/incognito visits → renders read-only
 - [ ] A safe test-environment pricing CTA preserves its selected plan through
