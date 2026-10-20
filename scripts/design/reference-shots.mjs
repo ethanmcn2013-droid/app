@@ -96,7 +96,6 @@ async function clickFirst(page, selectors, { timeout = 2500 } = {}) {
 const SCENES = [
   /* ── Home ─────────────────────────────────────────────────────── */
   { slug: "home", product: "home", state: "populated", url: "/app/home" },
-  { slug: "home-briefing", product: "home", state: "populated", url: "/app/home/briefing" },
   {
     slug: "home-loading",
     product: "home",

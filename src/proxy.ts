@@ -244,26 +244,28 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
 });
 
 /**
- * Legacy Signal routes → Full Briefing (Signal → Home consolidation).
- * Edge-level 308 so old links, bookmarks and notification deep-links
- * carry a real Location header before any rendering starts, in every
- * access mode. Query state (scope, evidence, planning-period params)
- * travels intact. The route files repeat the redirect as belt-and-braces
- * for any path that bypasses the proxy matcher.
+ * Retired briefing routes → Home. The Full Briefing (and the older
+ * /app/signal path that led to it) was retired on 20 October 2026; old
+ * links, bookmarks and email deep-links land on Home with a real 308
+ * before any rendering starts, in every access mode. Their query state
+ * belonged to the briefing, so it is dropped. The catch-all route files
+ * repeat the redirect for any path that bypasses the proxy matcher.
  */
-function legacySignalRedirect(request: NextRequest): NextResponse | null {
-  const { pathname } = request.nextUrl;
-  if (pathname !== "/app/signal" && !pathname.startsWith("/app/signal/")) {
-    return null;
-  }
+function retiredBriefingPath(pathname: string): boolean {
+  return /^\/app\/(signal|home\/briefing)(\/|$)/.test(pathname);
+}
+
+function retiredBriefingRedirect(request: NextRequest): NextResponse | null {
+  if (!retiredBriefingPath(request.nextUrl.pathname)) return null;
   const url = request.nextUrl.clone();
-  url.pathname = pathname.replace(/^\/app\/signal/, "/app/home/briefing");
+  url.pathname = "/app/home";
+  url.search = "";
   return NextResponse.redirect(url, 308);
 }
 
 export default function proxy(req: NextRequest, event: NextFetchEvent) {
-  const legacySignal = legacySignalRedirect(req);
-  if (legacySignal) return legacySignal;
+  const retired = retiredBriefingRedirect(req);
+  if (retired) return retired;
   if (isBareArtifactPath(req.nextUrl.pathname)) {
     const response = bareChromeResponse(req);
     for (const [key, value] of Object.entries(BARE_ARTIFACT_RESPONSE_HEADERS)) {

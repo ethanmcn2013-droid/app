@@ -35,12 +35,12 @@ const RECOMMENDED_IN_PRODUCTION: ReadonlyArray<readonly [string, string]> = [
   // is unaffected (module-isolated lazy DB init via file:roadmap.db dev fallback).
   ["TIMELINE_DATABASE_URL", "Timeline module database (timeline.signalstudio.ie Turso)"],
   ["TIMELINE_AUTH_TOKEN", "Timeline module database auth token"],
-  // Home briefing capability (legacy SIGNAL_* database name, 2026-07-31
-  // reset: briefing engine + folded-in user_preferences).
-  // Without these /app/home and /app/home/briefing degrade; the three product
-  // routes remain isolated (dev fallback file:signal.db).
-  ["SIGNAL_DATABASE_URL", "Home briefing database (legacy name; briefing engine + preferences)"],
-  ["SIGNAL_AUTH_TOKEN", "Home briefing database auth token (legacy name)"],
+  // The retired briefing's database (legacy SIGNAL_* name). The Full
+  // Briefing was retired on 20 October 2026; this stays so account export
+  // and erasure still reach the briefing data people already have stored
+  // (dev fallback file:signal.db).
+  ["SIGNAL_DATABASE_URL", "Retired briefing database (legacy name; kept for account export and erasure)"],
+  ["SIGNAL_AUTH_TOKEN", "Retired briefing database auth token (legacy name)"],
   // WP-0. Without this on a Vercel deployment `chooseBackend()` returns
   // "vercel-no-token" and every attachment upload throws at the moment a
   // customer tries one — the least useful place to learn it is missing.

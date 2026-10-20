@@ -64,7 +64,7 @@ function chain(): { doc: Automation; a: string; b: string; c: string } {
   let doc = blankAutomation("Test");
   const first = addStep(doc, "task-late", { at: { x: 0, y: 0 } });
   const second = addStep(first.doc, "nudge-owner", { after: first.stepId! });
-  const third = addStep(second.doc, "add-briefing", { after: second.stepId! });
+  const third = addStep(second.doc, "add-tag", { after: second.stepId! });
   doc = third.doc;
   return { doc, a: first.stepId!, b: second.stepId!, c: third.stepId! };
 }
@@ -80,7 +80,7 @@ function overlap(doc: Automation): boolean {
 
 test("the catalogue names real things in plain words", () => {
   assert.equal(STEP_TYPES.filter((type) => type.kind === "trigger").length, 6);
-  assert.equal(STEP_TYPES.filter((type) => type.kind === "action").length, 8);
+  assert.equal(STEP_TYPES.filter((type) => type.kind === "action").length, 7);
   assert.equal(STEP_TYPES.filter((type) => type.kind === "branch").length, 2);
   assert.equal(new Set(STEP_TYPES.map((type) => type.id)).size, STEP_TYPES.length);
   for (const type of STEP_TYPES) {
@@ -149,7 +149,7 @@ test("a branch has one way out per path and a new step takes the first free one"
   assert.equal(portsOf(branch).length, 4);
   assert.equal(stepHeight(branch), 84 + 4 * 36 + 44);
   const one = addStep(doc, "nudge-owner", { after: branch.id });
-  const two = addStep(one.doc, "add-briefing", { after: branch.id });
+  const two = addStep(one.doc, "add-tag", { after: branch.id });
   assert.deepEqual(outgoing(two.doc, branch.id).map((link) => link.port), [branch.conditions[0]!.id, branch.conditions[1]!.id]);
   assert.equal(overlap(two.doc), false);
   const outs = portsOf(branch).map((port) => outputPoint(branch, port).y);

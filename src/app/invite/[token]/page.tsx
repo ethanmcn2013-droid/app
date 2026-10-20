@@ -220,7 +220,7 @@ export default async function InviteAcceptPage({
                     because today there is only one collaborator role. */}
                 <p className="mt-3 text-[14.5px] leading-[1.55] text-ink-soft">
                   Accepting adds you to this workspace. You will see the same
-                  views, tasks and daily briefing the owner sees, and you can
+                  views and tasks the owner sees, and you can
                   edit them.
                 </p>
                 <div className="mt-5 grid gap-2 rounded-xl border border-line-soft bg-white px-4 py-3 text-[12.5px]">

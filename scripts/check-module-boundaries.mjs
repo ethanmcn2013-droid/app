@@ -89,10 +89,9 @@ function extractImportPaths(source) {
 const MODULES = ["notes", "timeline", "signal"];
 
 // Map: module name → the app route segment that is allowed to import it.
-// Signal → Home consolidation (D2): the signal module's route segment is
-// /app/home — Home consumes the briefing engine and the Full Briefing
-// mounts at /app/home/briefing. The legacy /app/signal segment holds
-// pure redirects that import nothing from the module.
+// The signal module is what remains of the Full Briefing, retired on
+// 20 October 2026: its databases and GDPR export/erasure only. No route
+// imports it; /app/home/briefing and /app/signal hold pure redirects.
 const MODULE_ROUTE_SEGMENT = {
   notes: "notes",
   timeline: "timeline",
@@ -209,16 +208,6 @@ for (const mod of MODULES) {
   if (mod === "timeline") {
     allowedDirs.push(path.join(srcDir, "app", "s") + path.sep);
   }
-  // The Signal analytics snapshot cron (T·146). Vercel invokes crons over
-  // HTTP, so the entry point must live under /api — it cannot sit inside the
-  // module's route segment. This one directory is the module's only
-  // scheduled entry point; it composes the snapshot module's own exported
-  // helpers and holds no logic of its own beyond auth and the flag.
-  if (mod === "signal") {
-    allowedDirs.push(
-      path.join(srcDir, "app", "api", "cron", "analytics-snapshots") + path.sep,
-    );
-  }
 
   for (const file of allSrcFiles) {
     // Skip files that live inside this module itself (already covered by rule 1).
@@ -276,8 +265,8 @@ for (const mod of MODULES) {
 // the top-level page (Phase 5 Opus review MINOR-1: sub-routes like
 // /app/timeline/[projectSlug] and /app/timeline/audience are module entries too).
 // "home" joined at the consolidation (D2); "signal" stays listed while its
-// legacy redirect pages exist — a redirect page still gates before it
-// forwards (AD-005 applies to every /app entry, redirects included).
+// retired-briefing redirect pages exist — a redirect page still gates
+// before it forwards (AD-005 applies to every /app entry, redirects included).
 //
 // The gate demanded here is requireAppAccessTasks() from "@/server/app-access",
 // NOT the allowlist-only requireAppAccess(). Until 2026-08-12 this rule demanded

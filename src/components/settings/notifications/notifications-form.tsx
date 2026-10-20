@@ -3,16 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { SettingsRow } from "@/components/settings/section";
 import { updateUserPreferencesAction } from "@/server/actions/preferences";
-import type {
-  DailySignalCadence,
-  WeeklySummary,
-} from "@/server/db/preferences";
-
-const CADENCE_OPTIONS: { value: DailySignalCadence; label: string }[] = [
-  { value: "off", label: "Off" },
-  { value: "weekdays", label: "Weekdays" },
-  { value: "daily", label: "Every day" },
-];
+import type { WeeklySummary } from "@/server/db/preferences";
 
 const SUMMARY_OPTIONS: { value: WeeklySummary; label: string }[] = [
   { value: "off", label: "Off" },
@@ -23,12 +14,10 @@ export function NotificationsForm({
   initial,
 }: {
   initial: {
-    dailySignalCadence: DailySignalCadence;
     weeklySummary: WeeklySummary;
     timeZone: string | null;
   };
 }) {
-  const [cadence, setCadence] = useState(initial.dailySignalCadence);
   const [summary, setSummary] = useState(initial.weeklySummary);
   const [tz, setTz] = useState(initial.timeZone ?? "");
   const [savedKey, setSavedKey] = useState<string | null>(null);
@@ -85,22 +74,6 @@ export function NotificationsForm({
   return (
     <div className="-mt-2">
       <SettingsRow
-        label="Daily Signal email"
-        hint="One quiet briefing per morning: the few things needing your eyes today. Skip the days you don’t want it."
-        control={
-          <RadioGroup
-            options={CADENCE_OPTIONS}
-            value={cadence}
-            onChange={(v) => {
-              setCadence(v);
-              save({ dailySignalCadence: v }, "cadence");
-            }}
-            saved={savedKey === "cadence"}
-            disabled={pending}
-          />
-        }
-      />
-      <SettingsRow
         label="Weekly summary"
         hint="Monday-morning view of last week and this week. Shipped on Mondays only, there’s no daily-roundup-as-weekly trick."
         control={
@@ -118,7 +91,7 @@ export function NotificationsForm({
       />
       <SettingsRow
         label="Time zone"
-        hint="Affects when daily and weekly emails arrive. We send at your local 06:00."
+        hint="Affects when your emails arrive. We send at your local 06:00."
         control={
           <div className="flex flex-col gap-1">
             <select

@@ -27,7 +27,6 @@ const PATHS: Record<IconName, ReactNode> = {
   due: <><path d={CALENDAR} /><path d="M8 9.6h.01" strokeWidth="2" /></>,
   tag: <><path d="M2.75 3.75a1 1 0 0 1 1-1h3.6a1 1 0 0 1 .7.3l5 5a1 1 0 0 1 0 1.4l-3.6 3.6a1 1 0 0 1-1.4 0l-5-5a1 1 0 0 1-.3-.7z" /><path d="M5.6 5.6h.01" strokeWidth="2" /></>,
   chat: <path d={BUBBLE} />,
-  briefing: <path d="M2.5 8H5l1.5-4 3 8L11 8h2.5" />,
   followUp: <path d="M11.25 6.75v-3a1 1 0 0 0-1-1h-6.5a1 1 0 0 0-1 1v8.5a1 1 0 0 0 1 1h3M5.25 6h3.5M9 11.5h4.5M11.75 9.75l1.75 1.75-1.75 1.75" />,
   split: <path d="M2.75 8h3.5M6.25 8c2.5 0 2-4.25 4.75-4.25h2.25M6.25 8c2.5 0 2 4.25 4.75 4.25h2.25M11.75 2.25l1.5 1.5-1.5 1.5M11.75 10.75l1.5 1.5-1.5 1.5" />,
   plus: <path d="M8 3.5v9M3.5 8h9" />,

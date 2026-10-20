@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-files-loading",
+  "source": "tasks/src/app/app/files/loading.tsx",
+  "materialityHash": "9beac142f8f04cb2",
+  "reviewedAt": "2026-10-20",
+  "reviewer": "Ethan McNamara (founder): reviewed the Home renders, the 188/188 capture summary and these receipt texts in chat on 2026-10-20",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-ad8b4503357cbc482c15cb38-b2555d72272533ce.json",
+    "attestationSha256": "aba4d744cc0c3cde5ee608275855f57923338bf0c36ce7965ae0c06cc3b63861",
+    "runId": "tasks-playwright-ad8b4503357cbc482c15cb38",
+    "canonicalEvidenceSha256": "ad8b4503357cbc482c15cb38c5e88b793db771bc159576ae5a48b7b4282157fc",
+    "rawArtifactSha256": "b2555d72272533cecd0e30ce452402b1a629d9944aa2e7b47f9c90adbb763db5",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-files-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Unchanged source; receipt relinked to fresh canonical capture 188/188 one attempt each after the Home rebuild and Full Briefing retirement changed the shared fixture contract. No production or numerical design rating claim.",
+  "decision": "accepted"
+}

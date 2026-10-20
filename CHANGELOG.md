@@ -1,5 +1,13 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-20 · Release · A new Home, and the Full Briefing retires
+
+Home now opens on what is coming and how the week is going. The next target date counts down with a burn-up chart against plan, its stages and one next step; page through up to five dated Projects. Done this week sets each day beside the same day last week. Activity shows a year of finished work, by week or by hour, with a weeks-in-a-row streak. Four cards at the foot open Tasks, Projects, Files and Chat, or start something new in each.
+
+Figures that could not be read show as a dash, never a guess. Without Chat, a Notes card takes its place. The former task lists on Home are gone.
+
+The Full Briefing is retired, with its Overview tab, onboarding, cadence settings, the "Daily Signal email" setting, its command-palette entries and the nightly analytics snapshot job. `/app/home/briefing` and old `/app/signal` links now go to Home. Briefing data already stored stays covered by account export and erasure.
+
 ## 2026-10-18 · Internal candidate · Give Ping a text request
 
 Ping can turn one text request into a bounded sequence of Project and task actions, with saved results for each step. Create up to 100 tasks in one action, assign work, set dates and milestones, archive with an exact Undo, or prepare the current Timeline in private preview. Draft mode lets you inspect a saved plan before applying it. Comments, chat, invitations and nudges retain their permission and receipt checks; an unconfirmed external delivery is never automatically repeated.

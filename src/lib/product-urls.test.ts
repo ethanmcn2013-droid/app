@@ -119,7 +119,7 @@ describe("Signal Studio URL contract", () => {
       ["/app/list", "/app/tasks/list"],
       ["/app/calendar", "/app/tasks/calendar"],
       ["/app/plan/:path*", "/app/timeline/:path*"],
-      ["/app/brief/:path*", "/app/signal/:path*"],
+      ["/app/brief/:path*", "/app/home"],
     ]) {
       assert.match(nextConfig, new RegExp(
         `source: "${source.replaceAll("/", "\\/").replaceAll("*", "\\*")}"[\\s\\S]*?destination: "${destination.replaceAll("/", "\\/").replaceAll("*", "\\*")}"`,

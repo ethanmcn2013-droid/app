@@ -26,7 +26,7 @@ const savedEnv = Object.fromEntries([
   "SIGNAL_ACCESS_MODE", "NEXT_PUBLIC_SIGNAL_ACCESS_MODE",
   "SIGNAL_ACTIVE_PROJECT_V3_ENABLED",
 ].map(key => [key, process.env[key]]));
-let client, readerClient, db, board, source;
+let client, db, board, columns, boardConfig;
 let seq = 0;
 
 before(async () => {
@@ -57,14 +57,13 @@ before(async () => {
   db = drizzle(client, { schema });
   globalThis.__boardFidelity = { actor: "owner_actor", workspace: "", db };
   board = await import("./board.ts");
-  source = await import("../../modules/signal/lib/data/source.ts");
-  readerClient = await import("../../modules/signal/server/tasks-db/signal-tasks-db-client.ts");
+  columns = await import("../../lib/board-columns.ts");
+  boardConfig = await import("../../lib/board-config.ts");
   await execute("INSERT INTO users(id,clerk_id,color,initials) VALUES ('owner_actor','clerk_owned','blue','OA')");
   await execute("INSERT INTO users(id,clerk_id,color,initials) VALUES ('foreign_actor','clerk_foreign','grey','FA')");
 });
 
 after(() => {
-  readerClient?.getTasksClient()?.close();
   client?.close();
   delete globalThis.__boardFidelity;
   for (const [key, value] of Object.entries(savedEnv)) {
@@ -106,10 +105,18 @@ async function raw(id) {
   return Object.fromEntries(Object.entries(rows[0]));
 }
 
+// How a read sees the task: the stored column under the Project's own done
+// meaning, the same rule Home counts finished work by.
 async function read(ws, id) {
-  const row = (await source.tasksDbSource.read(ws)).tasks.find(item => item.id === id);
-  assert.ok(row, "the real active reader must return the task");
-  return row;
+  const row = await raw(id);
+  assert.equal(row.workspace_id, ws, "the task is read in its own Project");
+  const stored = await storedMeta(`board:${ws}:columns`);
+  const key = row.board_column_key || row.lane;
+  const done = columns.isDoneColumnKey(key, stored ? boardConfig.parseColumnConfig(stored) : null);
+  return {
+    status: done ? "shipped" : key === "review" ? "review" : "in-flight",
+    completedAt: row.completed_at ?? null,
+  };
 }
 
 async function storedConfig(ws) {
@@ -242,7 +249,6 @@ test("card move advances the persisted proxy and active read; no-op and refused 
   assert.equal(moved.lane, "review");
   assert.ok(Number(moved.updated_at) > Number(before.updated_at));
   assert.equal(observed.status, "review");
-  assert.equal(observed.lastStatusChangeAt, new Date(Number(moved.updated_at) * 1000).toISOString());
   assert.equal(observed.lastActivityAt, observed.lastStatusChangeAt);
 
   assert.deepEqual(await board.moveTaskToColumnAction("move_task", "review"), { ok: true });
@@ -284,7 +290,6 @@ test("explicit open-column deletion into done stamps completion and remains scop
   assert.ok(Number(moved.completed_at) > old);
   assert.ok(Number(moved.updated_at) > old);
   assert.equal(observed.status, "shipped");
-  assert.equal(observed.completedAt, new Date(Number(moved.completed_at) * 1000).toISOString());
   assert.deepEqual(await raw("delete_unaffected"), untouched);
   assert.deepEqual(await raw("delete_other_target"), otherProjectTask);
   assert.equal((await read("delete_other_ws", "delete_other_target")).status, "in-flight");

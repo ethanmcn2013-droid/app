@@ -148,7 +148,6 @@ export const TENANT_SURFACES = [
       "src/server",
       "src/app",
       "src/lib/entitlements-shared",
-      "src/modules/signal",
     ],
     tenantColumns: ["workspace_id"],
     tables: [
@@ -214,22 +213,6 @@ export const TENANT_SURFACES = [
       processedWebhooks: "webhook idempotency ledger, provider-keyed",
       notificationPrefs: "per-user preference, no workspace",
       userPreferences: "per-user preference, no workspace",
-    },
-  },
-  {
-    id: "signal",
-    schema: "src/modules/signal/server/tasks-db/signal-tasks-db-schema.ts",
-    roots: ["src/modules/signal"],
-    tenantColumns: ["workspace_id"],
-    tables: [
-      "tasks",
-      "workspaces",
-      "workspaceMembers",
-      "activities",
-      "planningPeriods",
-    ],
-    globalTables: {
-      users: "identity directory, keyed by Clerk id, no tenant",
     },
   },
   {

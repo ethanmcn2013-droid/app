@@ -2,7 +2,7 @@
  * Automations: the steps a person can place, and the starters they can open.
  *
  * Every step is named for something Signal Studio already has (tasks, dates,
- * people, nudges, files, the project chat, the daily briefing). Nothing here
+ * people, nudges, files, the project chat). Nothing here
  * runs: there is no service behind Automations yet, so this file is words and
  * shapes only. Pure, no React, no browser.
  */
@@ -22,7 +22,6 @@ export type StepIcon =
   | "due"
   | "tag"
   | "chat"
-  | "briefing"
   | "followUp"
   | "split";
 
@@ -189,16 +188,6 @@ export const STEP_TYPES: readonly StepType[] = [
     summary: (v) => v.message?.trim() || "Write the message",
   },
   {
-    id: "add-briefing",
-    kind: "action",
-    title: "Add to the daily briefing",
-    icon: "briefing",
-    find: "morning summary today",
-    fields: [choice("under", "Under", ["Needs a look", "Coming up"])],
-    defaults: { under: "Needs a look" },
-    summary: (v) => `Under ${v.under || "Needs a look"}`,
-  },
-  {
     id: "follow-up",
     kind: "action",
     title: "Create a follow-up task",
@@ -284,7 +273,7 @@ export const TEMPLATES: readonly Template[] = [
       { key: "late", type: "task-late", col: 0, row: 1 },
       { key: "split", type: "split-lateness", col: 1, row: 1 },
       { key: "nudge", type: "nudge-owner", col: 2, row: 0 },
-      { key: "brief", type: "add-briefing", col: 2, row: 1 },
+      { key: "brief", type: "add-tag", col: 2, row: 1, values: { tag: "Needs a look" } },
       { key: "chat", type: "post-chat", col: 2, row: 2, values: { message: "More than a week late. Who can take it?" } },
       { key: "due", type: "set-due", col: 2, row: 3, values: { when: "In a week" } },
     ],
@@ -304,7 +293,7 @@ export const TEMPLATES: readonly Template[] = [
       { key: "joins", type: "person-joins", col: 0, row: 0 },
       { key: "chat", type: "post-chat", col: 1, row: 0, values: { message: "Welcome. Here is where to start." } },
       { key: "task", type: "follow-up", col: 2, row: 0, values: { title: "Show them around", who: "The project lead" } },
-      { key: "brief", type: "add-briefing", col: 3, row: 0, values: { under: "Coming up" } },
+      { key: "brief", type: "add-tag", col: 3, row: 0, values: { tag: "Coming up" } },
     ],
     links: [
       { from: "joins", to: "chat" },
@@ -321,7 +310,7 @@ export const TEMPLATES: readonly Template[] = [
       { key: "split", type: "split-project", col: 1, row: 1 },
       { key: "chat", type: "post-chat", col: 2, row: 0, values: { message: "One week to go on this." } },
       { key: "nudge", type: "nudge-owner", col: 2, row: 1, values: { when: "The next morning" } },
-      { key: "brief", type: "add-briefing", col: 2, row: 2, values: { under: "Coming up" } },
+      { key: "brief", type: "add-tag", col: 2, row: 2, values: { tag: "Coming up" } },
     ],
     links: [
       { from: "week", to: "split" },

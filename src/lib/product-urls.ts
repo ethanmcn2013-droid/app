@@ -87,13 +87,11 @@ export const TASKS_PUBLIC_DOMAIN = new URL(TASKS_PUBLIC_ORIGIN).hostname;
 
 /**
  * Home — the authenticated front door. Not a product: Notes, Tasks and
- * Timeline are the products; Home is where the system says what matters
- * now (Today's Signal), with the Full Briefing one level deeper. The
- * legacy /app/signal routes permanently redirect into the briefing.
+ * Timeline are the products. The Full Briefing was retired on 20 October
+ * 2026; /app/home/briefing and the legacy /app/signal routes redirect here.
  */
 export const HOME_APP_PATH = "/app/home";
 export const HOME_APP_URL = `${APP_ORIGIN}${HOME_APP_PATH}`;
-export const BRIEFING_APP_PATH = `${HOME_APP_PATH}/briefing`;
 
 /**
  * Project Overview and Your Work. Both routes already exist

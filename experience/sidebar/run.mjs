@@ -115,11 +115,12 @@ try {
       same(await aside.getByRole("button", { name: "Chat", exact: true }).getAttribute("aria-expanded"), "false", `${tag}: the fold is remembered`);
       await page.evaluate(() => window.localStorage.removeItem("signal:v3:sidebar-folded"));
 
-      // Overview is a tab of Home: Home stays lit.
+      // The retired Full Briefing lands on Home, and Home is lit.
       await open("/app/home/briefing");
-      same(await current(), ["Home"], `${tag}: Home is lit on Overview`);
+      same(new URL(page.url()).pathname, "/app/home", `${tag}: the retired briefing lands on Home`);
+      same(await current(), ["Home"], `${tag}: Home is lit after the briefing redirect`);
       if (!drawer) {
-        same(await page.getByRole("navigation", { name: "Breadcrumb" }).innerText().then((text) => text.replace(/\s+/g, " ").trim()), "Signal Studio / Home / Overview", `${tag}: Overview crumb`);
+        same(await page.getByRole("navigation", { name: "Breadcrumb" }).innerText().then((text) => text.replace(/\s+/g, " ").trim()), "Signal Studio / Home", `${tag}: Home crumb`);
       }
 
       // Automations: its row, its crumb, one create button.

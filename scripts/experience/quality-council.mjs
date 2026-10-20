@@ -1588,7 +1588,7 @@ function buildSelfTestFixture(root) {
     { order: 2, product: "notes", path: "/app/notes", action: "extract" },
     { order: 3, product: "tasks", path: "/app/tasks", action: "promote" },
     { order: 4, product: "timeline", path: "/app/timeline", action: "inspect" },
-    { order: 5, product: "home", path: "/app/home/briefing", action: "verify" },
+    { order: 5, product: "home", path: "/app/home", action: "verify" },
   ];
   const journeyReceiptPath =
     "experience/council-reviews/journeys/signal-studio.note-to-home.mobile.json";

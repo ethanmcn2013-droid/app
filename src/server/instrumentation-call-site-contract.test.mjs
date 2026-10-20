@@ -19,7 +19,6 @@ const read = (relative) =>
 const notes = read("src/modules/notes/server/actions/notes.ts");
 const tasks = read("src/server/actions/tasks.ts");
 const timeline = read("src/modules/timeline/server/actions/workspaces.ts");
-const signal = read("src/modules/signal/app/signal-ledger-actions.ts");
 const callSite = read("src/lib/account/instrumentation/call-site.ts");
 const sink = read("src/lib/account/instrumentation/sink.ts");
 const contract = JSON.parse(
@@ -35,7 +34,6 @@ test("every wired kind belongs to its product in the frozen contract", () => {
     ["timeline", "timeline_published"],
     ["timeline", "timeline_visibility_changed"],
     ["timeline", "timeline_curated"],
-    ["signal", "briefing_deliberately_opened"],
   ];
   for (const [product, kind] of wired) {
     assert.ok(
@@ -137,24 +135,6 @@ test("the flag and retention match the frozen contract", () => {
   assert.equal(contract.retentionDays, 35);
   assert.equal(contract.suppression.behaviouralMinimumWorkspaces, 3);
   assert.equal(contract.suppression.rateMinimumWorkspaces, 5);
-});
-
-test("Signal measures a deliberate gesture, not an automatic landing", () => {
-  // Opening a ledger entry cannot happen without a person choosing it, and the
-  // guards above the emit redirect away unless the briefing resolved.
-  assert.match(signal, /briefing_deliberately_opened/);
-  assert.match(signal, /if \(!demoMode\) \{/);
-  // The excluded candidates must stay excluded as *calls*. They are named in
-  // the comment above the emit, which is the point: the reasoning is recorded
-  // where the next person will look.
-  assert.ok(!/recordSurfaced\s*\(/.test(signal), "the surfaced record is a system event");
-  assert.ok(!/recordPlanningEvent\s*\(/.test(signal), "the planning event is a view");
-});
-
-test("demo and review sessions are excluded from Signal attribution", () => {
-  const emitIndex = signal.indexOf("briefing_deliberately_opened");
-  const guardIndex = signal.lastIndexOf("if (!demoMode) {", emitIndex);
-  assert.ok(guardIndex > 0 && guardIndex < emitIndex, "the emit must sit inside the guard");
 });
 
 test("acknowledgement stays unmapped, and the contract says exactly why", () => {

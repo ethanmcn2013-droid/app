@@ -109,13 +109,13 @@
     {
       "order": 5,
       "product": "home",
-      "path": "/app/home/briefing",
-      "action": "inspect-home-briefing-evidence",
+      "path": "/app/home",
+      "action": "inspect-home",
       "expected": [
-        "The briefing describes only evidence available from the active project.",
-        "The observation links back to the exact task and milestone.",
-        "Partial provider failure is disclosed rather than silently replaced.",
-        "The briefing remains a capability inside Home and is not presented as a fourth product."
+        "The promoted task counts toward its Project's countdown and this week's finished work.",
+        "Every figure comes from Projects the reader can open.",
+        "A figure that could not be read shows a dash rather than a guess.",
+        "Home is the front door and is not presented as a fourth product."
       ]
     }
   ],
@@ -167,11 +167,11 @@
         "hashRequired": true
       },
       {
-        "id": "home-briefing-opaque-evidence-resolution",
+        "id": "home-figures-scoped-to-authorised-projects",
         "proves": [
-          "the opaque Signal entry resolves server-side to the exact task",
-          "the rebuilt evidence remains scoped to the authorised workspace and project",
-          "the review evidence report associates that task with the public milestone without adding source identity to the public DTO"
+          "the promoted task counts toward its own Project's countdown and finished work",
+          "every Home figure is read only from Projects the reader can open",
+          "no task title or source identity from another Project reaches Home"
         ],
         "hashRequired": true
       }

@@ -1,17 +1,17 @@
 /**
- * Browser check for Home: a busy account, a sparse one, an empty one, no
- * Projects, a failed read, review mode, loading and error.
+ * Browser check for Home: a busy account, one behind plan, a Monday morning,
+ * no Projects, no target dates, an unread history, Chat switched off, a page
+ * that could not read its Projects, loading and error.
  *
  *   node experience/home-overview/home.mjs            # checks only
  *   node experience/home-overview/home.mjs --capture  # checks, then screenshots
  *   node experience/home-overview/home.mjs --capture <dir>
  *
  * Bundles `home-fixture.tsx` with the real Home, its real styles and the v3
- * tokens, and stubs only the server seams listed below. It checks the count
- * line, every group, ticking a task and taking it back through the task
- * action, a refused write, Nudge, the Home and Overview tabs by keyboard, the
- * C shortcut, the greeting on the viewer's own clock, the banned word list,
- * sideways scroll and axe, at four sizes in dark and light.
+ * tokens, and stubs only the server seams listed below. It checks the
+ * greeting, the launch pager by keyboard, the week and activity figures, the
+ * activity views, every start card's links, the banned word list, sideways
+ * scroll and axe, at four sizes in dark and light.
  */
 
 import assert from "node:assert/strict";
@@ -19,217 +19,187 @@ import path from "node:path";
 import { BANNED, VIEWPORTS, bundleFixture, captureArgs, createRunner, root, text } from "./harness.mjs";
 
 const { capture, outDir } = captureArgs("experience/output/home-overview/home");
+const dump = process.argv.includes("--dump");
 
 const stubs = new Map([
-  ["next/navigation", `export const useRouter=()=>({push:u=>window.homeProbe.pushed.push(u),replace:u=>window.homeProbe.pushed.push(u),refresh:()=>{}});`],
+  ["next/navigation", `export const useRouter=()=>({push:()=>{},replace:()=>{},refresh:()=>{}});`],
   ["next/link", `import {createElement} from "react";export default function Link({href,prefetch,scroll,...rest}){return createElement("a",{href,onClick:e=>e.preventDefault(),...rest})}`],
-  ["@/components/shell/app-sidebar", `const H=[1,2,3,4,8,9];export const projectColor=id=>{let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))>>>0;return "var(--v3-project-"+H[h%H.length]+")"};`],
   ["@/components/system/arrival-settle", `export const ArrivalSettle=()=>null;`],
-  ["@/lib/analytics/client", `export const captureClientEvent=()=>{};`],
-  [
-    "@/server/actions/tasks",
-    // The board's own toggle: an open task lands in Done, a done one in To do.
-    `export const toggleCompleteAction=async id=>{const p=window.homeProbe;p.toggled.push(id);if(p.refuse)return [];const was=p.lanes[id]??(id==="t-invoice"?"done":"todo");const repeats=id==="t-rota";p.lanes[id]=repeats?"todo":was==="done"?"todo":"done";await new Promise(r=>setTimeout(r,30));return [{id,lane:p.lanes[id]}]};`,
-  ],
-  ["@/server/actions/nudge", `export const sendNudgeAction=async id=>{window.homeProbe.nudged.push(id);return {ok:true,nudgedCount:1,lastNudgedAt:null,nudged:[{id:"u-aoife",name:"Aoife Brennan"}],alreadyNudged:[]}};`],
+  ["@/lib/analytics/client", `export const captureClientEvent=e=>{(window.homeEvents??=[]).push(e)};`],
 ]);
 
 const { js, css } = await bundleFixture("experience/home-overview/home-fixture.tsx", stubs);
 const run = createRunner({ js, css, origin: "http://127.0.0.1:49274", title: "Home", capture, outDir });
 
-const section = (page, name) => page.getByRole("region", { name, exact: true });
-const rowTitles = (page, name) => section(page, name).locator("li a").allInnerTexts();
-const heading = (page, name) => section(page, name).locator("h2").innerText().then(text);
+const region = (page, name) => page.getByRole("region", { name, exact: true });
+const hrefOf = (page, name) => page.getByRole("link", { name, exact: true }).getAttribute("href");
+
+if (dump) {
+  await run.launch();
+  for (const state of ["busy", "behind", "monday", "none", "notarget", "unread", "chatoff", "unavailable", "loading", "error"]) {
+    const { page, context, errors } = await run.open({ viewport: "desk", theme: "dark", state });
+    await page.waitForTimeout(300);
+    console.log(`\n== ${state}\n${text(await page.locator("#root").innerText())}\nerrors: ${JSON.stringify(errors)}`);
+    await context.close();
+  }
+  await run.close();
+  process.exit(0);
+}
+
+
+/** Every page: plain words, nothing sideways, axe, and a screenshot. */
+async function common(page, label, shot, { fullPage = false } = {}) {
+  assert.doesNotMatch(await page.locator("#root").innerText(), BANNED, `${label}: banned word`);
+  await run.noSidewaysScroll(page, label);
+  await run.axe(page, label);
+  await run.shot(page, shot, { fullPage });
+  run.checks += 1;
+}
 
 try {
   await run.launch();
 
   for (const viewport of Object.keys(VIEWPORTS)) {
     for (const theme of ["dark", "light"]) {
-      // 1. The busy account.
+      // 1. The busy account: three launches, the soonest one behind plan.
       {
         const { page, context, errors, label } = await run.open({ viewport, theme });
         await page.getByRole("heading", { name: "Good morning, Orla", level: 1 }).waitFor();
-        assert.equal(text(await page.locator("header p").first().innerText()), "7 things need you today · 10 late across your projects · 32 done this week");
-        assert.match(text(await page.locator("header").innerText()), /Monday 5 October/);
-        assert.match(text(await page.locator("header").innerText()), /Chase the florist deposit has been in Waiting with no change for 7 days\. Nudge Aoife Brennan · 2 more stuck/);
+        assert.match(text(await page.locator("header").first().innerText()), /Tuesday 20 October/);
+        const launch = region(page, "Autumn menu launch");
+        assert.match(text(await launch.innerText()), /Next big day 1 of 3 Autumn menu launch 17 17 days to go Friday 6 November 2 tasks behind plan/i);
+        assert.equal(await hrefOf(page, "Catch up: 3 due this week"), "/app/tasks?workspaceId=p-menu");
+        assert.equal(await hrefOf(page, "Open timeline"), "/app/timeline?workspaceId=p-menu&open=project");
+        assert.match(text(await launch.innerText()), /Next stage: Tasting · Thu 22 Oct/);
 
-        assert.equal(await heading(page, "Late"), "Late 3");
-        assert.deepEqual(await rowTitles(page, "Late"), ["Agree the winter price list", "Chase the headcount from Mark", "Approve the brochure copy"]);
-        assert.equal(await heading(page, "Due today"), "Due today 2 · 1 done");
-        assert.equal(await heading(page, "Due this week"), "Due this week 3");
-        assert.equal(await heading(page, "Waiting to be checked"), "Waiting to be checked 2");
-        assert.equal(await heading(page, "You are waiting on"), "You are waiting on 1");
-        assert.match(text(await section(page, "Late").innerText()), /Keane Legal retreat · in Waiting 3 days late/);
-        assert.match(text(await section(page, "Waiting to be checked").innerText()), /from Seán, no change in 5 days To check/);
-        // Nothing to tick on work that is someone else's to finish.
-        assert.equal(await section(page, "Waiting to be checked").getByRole("button").count(), 0);
+        const week = region(page, "Done this week");
+        assert.match(text(await week.innerText()), /Ahead of last week 9 done so far That's already more than all of last week \(6\)\. Same time last week: 4\./);
+        const activity = region(page, "Activity");
+        assert.match(text(await activity.innerText()), /weeks in a row \d+ tasks done in the last year/);
+        assert.equal(await activity.getByRole("button", { name: "Year" }).getAttribute("aria-pressed"), "true");
 
-        const side = page.getByRole("complementary", { name: "Coming up" });
-        assert.match(text(await side.innerText()), /Next big day Menu tasting Mara & Finn’s wedding Today, Monday 5 October At risk 21 open 2 late See the timeline Open its tasks/);
-        assert.equal(text(await section(page, "Projects").locator("h2").innerText()), "Projects");
-        assert.equal(await section(page, "Projects").getByRole("link", { name: "See all 10" }).getAttribute("href"), "/app/project");
-        assert.deepEqual((await section(page, "Projects").locator("li").allInnerTexts()).map(text).slice(0, 3), [
-          "Winter season launch Past its date · 4 late · 28 Sep",
-          "Mara & Finn’s wedding At risk · 2 late · 5 Oct",
-          "Barn roof and heating works At risk · 3 late · 10 Oct",
-        ]);
-        assert.match(text(await side.innerText()), /3 tasks are due today across your projects\. 10 late in all\./);
-        // One create button per screen, and it is the top bar's: Home has none.
-        assert.equal(await page.getByRole("link", { name: /^New task/ }).count() + (await page.getByRole("button", { name: /^New task/ }).count()), 0);
-        run.checks += 16;
-
-        // Plain words, lined-up figures, and one fixed thing only (the toast slot).
-        assert.doesNotMatch(await page.locator("#root").innerText(), BANNED, `${label}: banned word`);
-        assert.match(await section(page, "Late").locator("li span").last().evaluate((el) => getComputedStyle(el).fontVariantNumeric), /tabular-nums/);
-        await run.noSidewaysScroll(page, label);
-        await run.axe(page, label);
-        await run.shot(page, `home-busy-${viewport}-${theme}`);
+        const start = page.getByRole("region", { name: "Start something" });
+        assert.equal(await start.getByRole("link", { name: "View 30 open tasks" }).getAttribute("href"), "/app/tasks");
+        assert.equal(await start.getByRole("link", { name: "View 5 active projects" }).getAttribute("href"), "/app/project");
+        assert.equal(await start.getByRole("link", { name: "View files, 24 added in the last 30 days" }).getAttribute("href"), "/app/files");
+        assert.equal(await start.getByRole("link", { name: "View 4 new mentions and replies" }).getAttribute("href"), "/app/messages");
+        assert.equal(await start.getByRole("link", { name: "New task" }).getAttribute("href"), "/app/tasks?create=task");
+        assert.equal(await start.getByRole("link", { name: "New project" }).getAttribute("href"), "/app/project?create=project");
+        assert.equal(await start.getByRole("link", { name: "Upload file" }).getAttribute("href"), "/app/files");
+        assert.equal(await start.getByRole("link", { name: "Start chat" }).getAttribute("href"), "/app/messages");
+        assert.deepEqual(await page.evaluate(() => window.homeEvents), ["home_viewed"], "one view event");
+        run.checks += 18;
+        await common(page, label, `home-busy-${viewport}-${theme}`);
         if (theme === "dark" || viewport === "phone") await run.shot(page, `home-busy-${viewport}-${theme}-full`, { fullPage: true });
-        run.checks += 2;
         assert.deepEqual(errors, [], label);
         await context.close();
       }
 
-      // 2. Ticking, Undo, Nudge, tabs and keys.
+      // 2. The pager by keyboard keeps focus on the button; the activity views switch; arrows read the week.
       {
         const { page, context, errors, label } = await run.open({ viewport, theme });
-        const tick = page.getByRole("button", { name: "Mark Agree the winter price list done" });
-        await tick.click();
-        await page.getByText("Marked done").waitFor();
-        assert.deepEqual(await page.evaluate(() => window.homeProbe.toggled), ["t-prices"]);
-        assert.equal(await heading(page, "Late"), "Late 2 · 1 done");
-        assert.match(text(await section(page, "Late").locator("li").first().innerText()), /Done$/);
-        assert.equal(text(await page.locator("header p").first().innerText()).startsWith("6 things need you today"), true, "the count follows the tick");
-        await run.axe(page, `${label} ticked`);
-        await run.shot(page, `home-ticked-${viewport}-${theme}`);
+        const next = page.getByRole("button", { name: "Next launch" });
+        await next.focus();
+        await page.keyboard.press("Enter");
+        await page.getByRole("heading", { name: "Ping Private Release", level: 2 }).waitFor();
+        assert.equal(await next.evaluate((el) => el === document.activeElement), true, "focus stays on Next launch");
+        assert.match(text(await region(page, "Ping Private Release").innerText()), /Coming up 2 of 3 .*31 days to go .*On track/i);
+        await page.keyboard.press("Enter");
+        await page.getByRole("heading", { name: "Website refresh", level: 2 }).waitFor();
+        await page.getByRole("button", { name: "Previous launch" }).click();
+        await page.getByRole("heading", { name: "Ping Private Release", level: 2 }).waitFor();
+        run.checks += 4;
 
-        // Undo is the same action again, and the row comes back as it was.
-        await page.getByRole("button", { name: "Undo" }).click();
-        await page.getByRole("button", { name: "Mark Agree the winter price list done" }).waitFor();
-        assert.deepEqual(await page.evaluate(() => window.homeProbe.toggled), ["t-prices", "t-prices"]);
-        assert.equal(await heading(page, "Late"), "Late 3");
-        assert.equal(await page.getByText("Marked done").count(), 0);
+        const activity = region(page, "Activity");
+        for (const view of ["By week", "By hour", "Year", "By hour"]) {
+          await activity.getByRole("button", { name: view }).click();
+          assert.equal(await activity.getByRole("button", { name: view }).getAttribute("aria-pressed"), "true", `${label}: ${view}`);
+          run.checks += 1;
+        }
+        await common(page, `${label} by hour`, `home-hour-${viewport}-${theme}`);
 
-        // A task ticked earlier today can be reopened from its row.
-        await page.getByRole("button", { name: "Mark Send the final invoice to Mara and Finn not done" }).click();
-        await page.getByText("Marked not done").waitFor();
-        assert.equal(await heading(page, "Due today"), "Due today 3");
-
-        // A repeating task comes round again, so there is nothing to undo.
-        await page.getByRole("button", { name: "Mark Send the weekend rota done" }).click();
-        await page.getByText("Marked done. It repeats, so it is back on your list with its next date.").waitFor();
-        assert.equal(await page.getByRole("button", { name: "Undo" }).count(), 0);
-
-        // Nudge goes through the real action and names who it reached.
-        await page.getByRole("button", { name: "Nudge Aoife Brennan" }).click();
-        await page.getByText("Nudged Aoife Brennan.").waitFor();
-        assert.deepEqual(await page.evaluate(() => window.homeProbe.nudged), ["t-florist"]);
-        assert.equal(await page.getByText("Nudged today").count(), 1);
-        assert.equal(await page.getByRole("button", { name: /^Nudge/ }).count(), 0);
-
-        // Home and Overview: a tablist, one tab stop, arrows open the other view.
-        const tabs = page.getByRole("tablist", { name: "Home views" });
-        assert.deepEqual(await tabs.getByRole("tab").allInnerTexts(), ["Home", "Overview"]);
-        assert.equal(await tabs.getByRole("tab", { name: "Home" }).getAttribute("aria-selected"), "true");
-        assert.equal(await tabs.getByRole("tab", { name: "Overview" }).getAttribute("tabindex"), "-1");
-        assert.equal(await tabs.getByRole("tab", { name: "Overview" }).getAttribute("href"), "/app/home/briefing?contextVersion=2&workspaceId=p-mara");
-        assert.equal(await page.getByRole("tabpanel").getAttribute("aria-labelledby"), await tabs.getByRole("tab", { name: "Home" }).getAttribute("id"));
-        await tabs.getByRole("tab", { name: "Home" }).focus();
-        await page.keyboard.press("ArrowRight");
-        assert.equal(await tabs.getByRole("tab", { name: "Overview" }).evaluate((el) => el === document.activeElement), true);
-        assert.deepEqual(await page.evaluate(() => window.homeProbe.pushed), ["/app/home/briefing?contextVersion=2&workspaceId=p-mara"]);
-
-        // C starts a new task by the top bar's own route; where the add-task
-        // dialog is mounted it answers C itself, so Home stays out of it.
-        await page.locator("body").press("c");
-        assert.equal(await page.evaluate(() => window.homeProbe.pushed.at(-1)), "/app/tasks?create=task&workspaceId=p-mara");
-        await page.evaluate(() => document.documentElement.setAttribute("data-create-ready", ""));
-        await page.locator("body").press("c");
-        assert.equal(await page.evaluate(() => window.homeProbe.pushed.length), 2);
-        run.checks += 22;
+        const days = region(page, "Done this week").getByRole("group");
+        await days.focus();
+        await page.keyboard.press("ArrowLeft");
+        await page.waitForFunction(() => [...document.querySelectorAll("[aria-live]")].some((el) => /Monday: 5 tasks this week · 2 tasks last week/.test(el.textContent)));
+        run.checks += 1;
         assert.deepEqual(errors, [], label);
         await context.close();
       }
 
-      // 3. A write the server refused changes nothing on screen.
+      // 3. Behind plan, a Monday morning, no Projects, no target dates.
       {
-        const { page, context, errors, label } = await run.open({ viewport, theme, query: "&refuse=1" });
-        await page.getByRole("button", { name: "Mark Agree the winter price list done" }).click();
-        await page.getByText("That did not save. Open the task to change it there.").waitFor();
-        assert.equal(await heading(page, "Late"), "Late 3");
-        assert.equal(await page.getByRole("button", { name: "Undo" }).count(), 0);
-        run.checks += 2;
+        const { page, context, errors, label } = await run.open({ viewport, theme, state: "behind" });
+        await page.getByRole("heading", { name: "Ping Private Release", level: 2 }).waitFor();
+        assert.match(text(await region(page, "Ping Private Release").innerText()), /1 of 2 .*4 tasks behind plan .*Catch up: 2 due this week/i);
+        run.checks += 1;
+        await common(page, label, `home-behind-${viewport}-${theme}`);
         assert.deepEqual(errors, [], label);
         await context.close();
       }
-
-      // 4. Review: nothing is saved or sent, and Nudge is not offered.
       {
-        const { page, context, errors, label } = await run.open({ viewport, theme, state: "review" });
+        const { page, context, errors, label } = await run.open({ viewport, theme, state: "monday" });
         await page.getByRole("heading", { level: 1 }).waitFor();
-        assert.equal(await page.getByRole("button", { name: /^Nudge/ }).count(), 0);
-        await page.getByRole("button", { name: "Mark Agree the winter price list done" }).click();
-        await page.getByText("This is a review copy, so nothing is saved.").waitFor();
-        assert.deepEqual(await page.evaluate(() => window.homeProbe.toggled), []);
-        run.checks += 3;
-        assert.deepEqual(errors, [], label);
-        await context.close();
-      }
-
-      // 5. The sparse account: one Project, nine tasks, none assigned.
-      {
-        const { page, context, errors, label } = await run.open({ viewport, theme, state: "sparse" });
-        await page.getByRole("heading", { name: "Good morning, Orla", level: 1 }).waitFor();
-        assert.equal(text(await page.locator("header p").first().innerText()), "2 things need you today · 1 late in Test project · 1 done this week");
-        assert.equal(await heading(page, "Late"), "Late 1");
-        assert.match(text(await section(page, "Late").innerText()), /Pick a date for the first tasting no one assigned 3 days late/);
-        assert.equal(await page.getByRole("region", { name: "Waiting to be checked" }).count(), 0, "an empty optional group is not drawn");
-        assert.equal(await page.getByRole("region", { name: "You are waiting on" }).count(), 0, "an empty optional group is not drawn");
-        assert.equal(await page.getByRole("link", { name: "5 of your open tasks have no date yet" }).getAttribute("href"), "/app/tasks?workspaceId=p-test");
-        assert.match(text(await page.getByRole("complementary").innerText()), /Next big day No big day is set\./);
-        assert.equal(await section(page, "Projects").getByRole("link", { name: "Open Projects" }).count(), 1);
-        assert.doesNotMatch(await page.locator("#root").innerText(), BANNED, `${label}: banned word`);
-        await run.noSidewaysScroll(page, label);
-        await run.axe(page, label);
-        await run.shot(page, `home-sparse-${viewport}-${theme}`, { fullPage: viewport === "phone" });
-        run.checks += 9;
-        assert.deepEqual(errors, [], label);
-        await context.close();
-      }
-
-      // 6. A Project with no tasks, no Projects at all, and counts that could not be read.
-      {
-        const { page, context, errors, label } = await run.open({ viewport, theme, state: "empty" });
-        await page.getByText("Nothing needs you today").waitFor();
-        assert.equal(text(await section(page, "Late").innerText()), "Late 0 Nothing of yours is late.");
-        assert.equal(text(await section(page, "Due today").innerText()), "Due today 0 Nothing of yours is due today.");
-        await run.axe(page, label);
-        await run.shot(page, `home-empty-${viewport}-${theme}`);
+        assert.match(text(await region(page, "Done this week").innerText()), /New week 0 done so far New week\. Last week you finished 6, and 8 tasks are due this week\./);
+        run.checks += 1;
+        await common(page, label, `home-monday-${viewport}-${theme}`);
         assert.deepEqual(errors, [], label);
         await context.close();
       }
       {
         const { page, context, errors, label } = await run.open({ viewport, theme, state: "none" });
-        await page.getByRole("heading", { name: "No projects yet" }).waitFor();
-        assert.equal(await page.getByRole("link", { name: "New project" }).getAttribute("href"), "/app/project");
-        assert.equal(await page.locator("header p").count(), 0, "no count line without projects");
-        await run.axe(page, label);
-        await run.shot(page, `home-no-projects-${viewport}-${theme}`);
+        await page.getByRole("heading", { name: "Welcome to Signal Studio", level: 1 }).waitFor();
+        assert.equal(await hrefOf(page, "Set up your first project"), "/welcome");
+        assert.match(text(await region(page, "Activity").innerText()), /Your year starts here/);
+        assert.equal(await page.getByRole("link", { name: "View 0 open tasks" }).count(), 1);
+        run.checks += 3;
+        await common(page, label, `home-none-${viewport}-${theme}`, { fullPage: viewport === "phone" });
         assert.deepEqual(errors, [], label);
         await context.close();
       }
       {
-        const { page, context, errors, label } = await run.open({ viewport, theme, state: "partial" });
-        await page.getByRole("heading", { level: 1 }).waitFor();
-        assert.equal(text(await page.locator("header p").first().innerText()), "8 things need you today", "figures that were not read are not shown");
-        await run.axe(page, label);
-        await run.shot(page, `home-partial-${viewport}-${theme}`);
+        const { page, context, errors, label } = await run.open({ viewport, theme, state: "notarget" });
+        await page.getByRole("heading", { name: "No target dates yet", level: 2 }).waitFor();
+        assert.equal(await hrefOf(page, "Set a target date"), "/app/project");
+        run.checks += 1;
+        await common(page, label, `home-notarget-${viewport}-${theme}`);
         assert.deepEqual(errors, [], label);
         await context.close();
       }
 
-      // 7. Loading and error.
+      // 4. Figures that were not read are not guessed; with Chat off, Notes takes its place.
+      {
+        const { page, context, errors, label } = await run.open({ viewport, theme, state: "unread" });
+        await page.getByRole("heading", { level: 1 }).waitFor();
+        assert.match(text(await region(page, "Done this week").innerText()), /– done so far This week's finished work could not be read just now\./);
+        assert.match(text(await region(page, "Activity").innerText()), /Could not be read just now/);
+        assert.equal(await page.getByRole("link", { name: "Open Files. The count could not be read just now" }).getAttribute("href"), "/app/files");
+        run.checks += 3;
+        await common(page, label, `home-unread-${viewport}-${theme}`);
+        assert.deepEqual(errors, [], label);
+        await context.close();
+      }
+      {
+        const { page, context, errors, label } = await run.open({ viewport, theme, state: "chatoff" });
+        await page.getByRole("heading", { level: 1 }).waitFor();
+        assert.equal(await page.getByRole("link", { name: "Start chat" }).count(), 0);
+        assert.equal(await hrefOf(page, "New note"), "/app/notes");
+        run.checks += 2;
+        await common(page, label, `home-chatoff-${viewport}-${theme}`);
+        assert.deepEqual(errors, [], label);
+        await context.close();
+      }
+
+      // 5. Projects could not be read, loading and error.
+      {
+        const { page, context, errors, label } = await run.open({ viewport, theme, state: "unavailable" });
+        await page.getByRole("heading", { name: "Home could not read your work just now", level: 1 }).waitFor();
+        assert.equal(await hrefOf(page, "Open Tasks"), "/app/tasks");
+        run.checks += 1;
+        await common(page, label, `home-unavailable-${viewport}-${theme}`);
+        assert.deepEqual(errors, [], label);
+        await context.close();
+      }
       {
         const { page, context, label } = await run.open({ viewport, theme, state: "loading" });
         await page.getByRole("status", { name: "Opening Home" }).waitFor();
@@ -245,28 +215,20 @@ try {
         await run.shot(page, `home-error-${viewport}-${theme}`);
         await context.close();
       }
-      run.checks += 8;
+      run.checks += 3;
     }
   }
 
-  // 8. The greeting follows the viewer's own clock, not the server's.
-  for (const [timezoneId, hello] of [["Pacific/Auckland", "Good evening"], ["America/Los_Angeles", "Still up"], ["Europe/Dublin", "Good morning"]]) {
-    const { page, context } = await run.open({ viewport: "desk", theme: "dark", query: "&hour=local", timezoneId });
-    await page.clock.setFixedTime(new Date("2026-10-05T09:30:00+01:00"));
-    await page.reload();
-    await page.getByRole("heading", { name: `${hello}, Orla`, level: 1 }).waitFor();
-    run.checks += 1;
-    await context.close();
-  }
-
-  // 9. With motion allowed, the page still settles and nothing is left mid-animation.
+  // 6. With motion allowed, the page settles and nothing but the today pulse is left running.
   {
     const { page, context, errors } = await run.open({ viewport: "desk", theme: "dark", reducedMotion: "no-preference" });
     await page.getByRole("heading", { level: 1 }).waitFor();
-    await page.waitForTimeout(400);
-    assert.equal(await page.locator("[data-home-board] [class*='grid']").first().evaluate((el) => getComputedStyle(el).opacity), "1");
+    await page.waitForTimeout(3000);
+    const running = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").map((a) => a.animationName ?? "waapi"));
+    assert.deepEqual(running, [], "animations still running after arrival");
+    assert.equal(await page.locator("section").first().evaluate((el) => getComputedStyle(el).opacity), "1");
     assert.deepEqual(errors, []);
-    run.checks += 1;
+    run.checks += 2;
     await context.close();
   }
 

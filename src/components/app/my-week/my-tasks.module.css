@@ -1,6 +1,6 @@
 /* My tasks v3: the personal task list. Tokens only from src/ds/v3.css.
    Rows, circles, pills and due cells deliberately match Home's
-   (src/components/app/home/home.module.css) so the two read as one product. */
+   (src/components/app/home/bento/home-bento.module.css) so the two read as one product. */
 
 .scroll {
   flex: 1;

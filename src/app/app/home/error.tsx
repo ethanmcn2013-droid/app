@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import styles from "@/components/app/home/home.module.css";
+import styles from "@/components/app/home/bento/home-bento.module.css";
 
 /**
  * /app/home error boundary. The read behind Home failed; Home stays
@@ -22,25 +22,19 @@ export default function HomeError({
 
   return (
     <div className={`${styles.page} thin-scroll`}>
-      <div className={styles.inner}>
-        <div className={styles.centered} role="alert">
+      <div className={styles.inner} role="alert">
+        <header className={styles.head}>
           <h1 className={styles.h1}>Home did not load</h1>
-          <p className={styles.centeredText}>
-            Your work could not be read just now. Nothing has changed. Try again, or go straight to your tasks.
-          </p>
-          {error.digest ? (
-            <p className={styles.footnote} style={{ marginTop: 12 }}>
-              Reference {error.digest}
-            </p>
-          ) : null}
-          <div className={styles.centeredActions}>
-            <button type="button" className={styles.primary} onClick={reset}>
-              Try again
-            </button>
-            <Link href="/app/tasks" className={styles.secondary}>
-              Open Tasks
-            </Link>
-          </div>
+          <p className={styles.welcome}>Your work could not be read just now. Nothing has changed. Try again, or go straight to your tasks.</p>
+          {error.digest ? <p className={styles.date}>Reference {error.digest}</p> : null}
+        </header>
+        <div className={styles.actions}>
+          <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={reset}>
+            Try again
+          </button>
+          <Link href="/app/tasks" className={styles.btn} style={{ border: "1px solid var(--v3-border-strong)", color: "var(--v3-text)" }}>
+            Open Tasks
+          </Link>
         </div>
       </div>
     </div>

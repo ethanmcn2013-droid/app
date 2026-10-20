@@ -67,11 +67,9 @@
     ],
     "home": {
       "canonicalPath": "/app/home",
-      "fullBriefingPath": "/app/home/briefing",
       "role": "authenticated-front-door-not-a-product",
       "criticalExperienceIds": [
-        "tasks.page.app-home",
-        "tasks.page.app-home-briefing"
+        "tasks.page.app-home"
       ]
     }
   },

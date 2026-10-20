@@ -241,11 +241,6 @@ export function activeDestinationId(pathname: string): string | null {
   return id && TOOL_IDS.has(id) ? "tools" : id;
 }
 
-/** Whether a path is one of Home's tabs' second page. */
-function isOverviewPath(pathname: string): boolean {
-  return ownsPath(pathname, "/app/home/briefing") || ownsPath(pathname, "/app/signal");
-}
-
 /* ── Fold memory ────────────────────────────────────────────────────
    The sidebar keeps one list per browser: a group is listed by its id once
    someone folds it, so an empty list means "as designed" (everything open).
@@ -273,7 +268,6 @@ export function crumbsForPath(pathname: string): Crumb[] {
   if (TOOL_DESTINATIONS.includes(destination)) crumbs.push(APPS_AND_TOOLS);
   if (WEDDING_DESTINATIONS.includes(destination)) crumbs.push({ label: "Wedding tools" });
   crumbs.push({ label: destination.label, href: destination.href });
-  if (destination.id === "home" && isOverviewPath(pathname)) crumbs.push({ label: "Overview" });
   if (destination.id === "automations" && pathname !== AUTOMATIONS_APP_PATH) crumbs.push({ label: "Draft" });
   if (destination.id === "tools" && pathname.startsWith("/app/tools/")) {
     const tool = toolBySlug(pathname.slice("/app/tools/".length).split("/")[0] ?? "");
