@@ -22,7 +22,7 @@
   "qualificationStatus": "Independent18receipt/72tuple comparison accepted; five evidence links mechanically rebound with every other field preserved.",
   "sourceNote": "Includes accepted FilesPR306. Same evaluated planner/action code;41of42evaluation inputs exact,package.json adds only acceptedFilesbrowser test script. Original model fingerprint retained.",
   "review": "experience/reviews/2026-10-21-ping-release2/final-composition/independent-review.json",
-  "reviewSha256": "b3cef6d06c05b06ed05dda35feab2c9958808419ce255eb2c849a00a5967918f",
+  "reviewSha256": "8be71602d9011d96cc3560e024f01701afcaa17833b5d375abaa859060034d86",
   "receiptMatrix": "experience/reviews/2026-10-21-ping-release2/final-composition/receipt-refresh-matrix-final.json",
   "receiptMatrixSha256": "dbae098fbefc5833d58e1ff6b0e997e1e5e799070b8ad7559cc975752d6bd18a",
   "filesEvidenceBoundary": "Canonical188cases render defaultFilesView. AcceptedFilesoperatorSourcesShelf dedicated UI evidence is preserved separately from main64.",
@@ -139,5 +139,7 @@
     "receiptMatrix": "experience/reviews/2026-10-21-ping-release2/capture/receipt-refresh-matrix-final-ui-2026-10-21.json",
     "receiptMatrixSha256": "c732e9af6b231ca07c0b254826e8a6644b57096d0212babd2b723a3d7efd4b74",
     "cleanup": "Own temporary optionalcapturebranch opt-in removed; requiredDesignquality andVerify gates unchanged."
-  }
+  },
+  "reviewSourceRawSha256": "b3cef6d06c05b06ed05dda35feab2c9958808419ce255eb2c849a00a5967918f",
+  "reviewHashNote": "reviewSha256 hashes canonical committed LF bytes; reviewSourceRawSha256 retains original external CRLF bytes."
 }
