@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-21",
+  "reviewer": "/root/r2_independent_review",
+  "decision": "approve_exact_five_field_mechanical_rebind",
+  "matrix": {
+    "path": "D:/Codex-scratch/project-ping/release2-proof-oct21/archived-count-capture/receipt-refresh-matrix-final.json",
+    "sha256": "a5c7f8d8bbf07a9bd4f77533fca60c207e80fa528e1bf9b16642e5d224124b3f"
+  },
+  "candidateCommit": "481c7da111cbe8fcda3b98f1d4f3dbe335e17696",
+  "freshCapture": {
+    "runId": "tasks-playwright-924697ff8bfadcb2a9725679",
+    "artifactId": 12384344275,
+    "artifactDigest": "sha256:d43dfc3a14e01c62a7cd5125e3396ac8fdf8bb64934aacbf40efec5d3b0c10c1",
+    "attestationSha256": "0ef647273114594763c565a6246ab39a64856c3f99b10f5ca614bddace9a6434",
+    "rawArtifactSha256": "b633cdd86bf45b0de0896322c6c1c3c53d4f8de822c369f3945652c09379f0de",
+    "canonicalEvidenceSha256": "924697ff8bfadcb2a972567999ff8aa54c6e8ddde22150fa409be4d432baca95",
+    "fixtureManifestSha256": "a5b1f72a6423d4c30fa297ab5f87f1c8a2a7b4a7eea1227f7d8cdca206b927f5",
+    "expected": 188,
+    "passed": 188,
+    "unexpected": 0,
+    "errors": 0
+  },
+  "receipts": {
+    "count": 18,
+    "tupleCount": 72,
+    "tupleMismatches": 0,
+    "sourceHashesMatch": true,
+    "materialityMatchesRegistry": true,
+    "reviewFieldsPreserved": true,
+    "coveragePresencePreserved": true,
+    "filesUnchangedDuringPreparation": true
+  },
+  "registry": {
+    "sha256": "e5f8f0f505bcc941b29d8804198dcde56aa41bd33946dee26cfd37a68227a197",
+    "unchanged": true
+  },
+  "allowedFields": [
+    "attestationPath",
+    "attestationSha256",
+    "runId",
+    "canonicalEvidenceSha256",
+    "rawArtifactSha256"
+  ],
+  "mustPreserve": [
+    "source",
+    "materialityHash",
+    "reviewer",
+    "reviewedAt",
+    "reviewedChange",
+    "decision",
+    "coverage presence/absence",
+    "all remaining fields"
+  ],
+  "noNewReviewOrAcceptanceClaim": true,
+  "reviewerMadeReceiptOrRepoEdits": false
+}

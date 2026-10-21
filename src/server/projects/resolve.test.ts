@@ -52,8 +52,10 @@ async function fixture() {
       ('t-open', 'ws-a', 'Open root task', 'todo', 'medium'),
       ('t-done', 'ws-a', 'Finished root task', 'done', 'medium'),
       ('t-sub', 'ws-a', 'Subtask', 'todo', 'medium'),
+      ('t-archived-root', 'ws-a', 'Archived open root', 'todo', 'medium'),
       ('t-legacy', 'ws-unreachable', 'Private legacy task', 'todo', 'medium');
     UPDATE tasks SET parent_task_id = 't-open' WHERE id = 't-sub';
+    UPDATE tasks SET archived_at = 1700000000 WHERE id = 't-archived-root';
   `);
   return harness;
 }
@@ -77,8 +79,8 @@ test("an explicit workspaceId returns that exact Project and never a substitute"
   assert(result.state.kind === "ready");
   assert.equal(result.state.project.id, "ws-a");
   assert.equal(result.state.source, "url");
-  // One count definition: active top-level tasks. The done root task and the
-  // subtask are both excluded.
+  // One count definition: active top-level tasks. Done, archived, and child
+  // tasks are excluded.
   assert.equal(result.state.project.activeRootTaskCount, 1);
 });
 

@@ -1,12 +1,14 @@
 # Signal Tasks · the dispatch
 
-## 2026-10-21 · Internal candidate · Follow a conversation with Ping
+## 2026-10-21 · Private release · Follow a conversation with Ping
 
 Ping can prepare a plan from an authorized conversation or task discussion, quote what it read, and link back to the source. Follow-ups can change a waiting plan's owner, date or time, or remove one item. Nothing changes until Apply plan.
 
 Checklist items stay separate from their parent task. Individual saved steps can be taken back when their targets have not changed since Ping acted; messages and comments use the original conversation checks. Delivered emails cannot be recalled. Private in-chat requests stay visible only to the person who asked.
 
-The approved Chat design, recovery controls, access switches and spending limits remain in force. The independent fresh model evaluation passed 58 of 62 fixed requests (93.55%). Final interface qualification and production receiving are still required; this entry records a candidate, not a deployment.
+Undo updates the task board as soon as the saved change is taken back. Archived tasks stay out of open-task counts in Project navigation.
+
+Ping remains available to the approved private cohort. The approved Chat design, recovery controls, access switches and spending limits remain in force. The independent fresh model evaluation passed 58 of 62 fixed requests (93.55%). Broader Ping access remains off, and private Timeline previews remain unpublished.
 
 ## 2026-10-21 · Internal, flagged · Files as Sources + shelf, for operators only
 

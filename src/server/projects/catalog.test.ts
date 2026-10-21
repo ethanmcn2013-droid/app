@@ -433,13 +433,15 @@ test("the query is membership-first: owning a period grants nothing", async () =
     INSERT INTO tasks (id, workspace_id, title, lane, priority) VALUES
       ('t1', 'ws-mine', 'Open', 'todo', 'medium'),
       ('t2', 'ws-mine', 'Done', 'done', 'medium'),
-      ('t3', 'ws-mine', 'Child', 'todo', 'medium');
+      ('t3', 'ws-mine', 'Child', 'todo', 'medium'),
+      ('t4', 'ws-mine', 'Archived open root', 'todo', 'medium');
     UPDATE tasks SET parent_task_id = 't1' WHERE id = 't3';
+    UPDATE tasks SET archived_at = 1700000000 WHERE id = 't4';
   `);
 
   const rows = await listProjectCatalogRows(db, "me");
   assert.deepEqual(rows.map((r) => r.id), ["ws-mine"]);
-  assert.equal(rows[0].activeRootTaskCount, 1);
+  assert.equal(rows[0].activeRootTaskCount, 1, "archived, not-done root tasks are not open");
   assert.equal(rows[0].planningPeriodOwnerUserId, "me");
 
   const catalog = buildProjectCatalog(rows, "me");

@@ -1,0 +1,70 @@
+{
+  "schema": "ping-release2-live-receiving/1",
+  "recordedAt": "2026-10-21T21:43:05.0915081+00:00",
+  "status": "passed-bounded-production-board-canary",
+  "source": "ab0650d2dbbd7a72db4482cc208298b18c931c5e",
+  "tree": "de19f32312a7cb7fa678f066d36c9ac2b06b39de",
+  "candidate": "c1391a10015c339d0c581385a588914cf5760d93",
+  "deployment": "dpl_6tV8qgDffHLJ9SWfKmSzvJLpqnKo",
+  "alias": "app.signalstudio.ie",
+  "projectId": "ws-d8f85f1fe4c1f297343f1f91b75766d1",
+  "taskId": "assistant-t-1f9ef85998d50c7feddcf53e3ef7c475",
+  "title": "TEST ONLY - Ping R2 Undo refresh check 21 Oct 2026",
+  "planningSubmissions": 1,
+  "applyClicks": 1,
+  "undoClicks": 1,
+  "taskCounts": {
+    "baseline": 2,
+    "afterPersistenceReload": 2,
+    "afterDraft": 2,
+    "afterApply": 3,
+    "afterUndoWithoutReload": 2
+  },
+  "observations": {
+    "originalTwoTaskTitlesDatesAndOwnersUnchanged": true,
+    "baselinePersistedAfterReload": true,
+    "undoRemovedOwnedCardAndUpdatedBoardWithoutReloadOrNavigation": true,
+    "exactlyOneTaskCreated": true,
+    "approvedChatDesignVisible": true,
+    "explicitDraftBeforeChanges": true,
+    "correctSelfOwnerAnd23OctoberDay": true
+  },
+  "retainedTestData": "Owned canary archived through Undo; audit history retained.",
+  "externalMessagesOrTimelinePublication": false,
+  "credentialOrBillingChanges": false,
+  "limits": [
+    "One genuine authenticated live-model planning submission; this record does not establish physical model-call count or live latency from computer-use timing.",
+    "Separate pre-existing sidebar count mismatch remains: board/header active count2, sidebar described3 before new test and4 after; its cause is not established.",
+    "Earlier synthetic receiver remains overallFAILED; its12passingchecks are not a whole-run pass."
+  ],
+  "artifacts": [
+    {
+      "file": "live-draft-baseline-two.png",
+      "sha256": "0acdb9764219ba7626deefa36d62c1e7572ffd22f3036ab91d487e25dcd78278"
+    },
+    {
+      "file": "live-after-apply-three.png",
+      "sha256": "7b376172c4984a510d10610dec71fe6084eca0b4dc09ad89050eb2c99a3daed1"
+    },
+    {
+      "file": "live-undo-no-reload-two.png",
+      "sha256": "1a246d514887ae6a029d835d4325e87ba0bd0cb7828ef689313ef4bf980a7c34"
+    },
+    {
+      "file": "live-persisted-baseline-two.png",
+      "sha256": "d0b13aae9010cd104a08a8342ab76ff53007b417747cdc62370d46f9695a6d00"
+    },
+    {
+      "file": "live-undo-no-reload-ax.txt",
+      "sha256": "2d25c47482914b445eb7b8f29f310f80a4ca7b0eb6f0d4ba1e40048c2b8da037"
+    },
+    {
+      "file": "live-after-reload-ax.txt",
+      "sha256": "c05116550277318b302197350659a81c751e0ef1d73d41cc016ca793b20a56cb"
+    },
+    {
+      "file": "provider-source-receipt.json",
+      "sha256": "f0c58b00d679772d750a89ecb6be1a3a18193e7e531eaf6ed5bbc9ad0f3d38fd"
+    }
+  ]
+}

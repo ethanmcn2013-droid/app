@@ -1,0 +1,262 @@
+{
+  "baseline": "ab0650d2dbbd7a72db4482cc208298b18c931c5e",
+  "candidate": "481c7da111cbe8fcda3b98f1d4f3dbe335e17696",
+  "inputCount": 42,
+  "exactCount": 42,
+  "providerCalls": 0,
+  "note": "All frozen evaluation inputs match the accepted pre-count-correction composition. Original5c fingerprint and Files package-script exception remain preserved; this is not a model rerun or release acceptance.",
+  "inputBlobs": [
+    {
+      "path": "experience/ping-assistant/release2-model-eval.ts",
+      "before": "bef9f8ca5fa04292c2adcbac6fcb3f78cb21e17a",
+      "after": "bef9f8ca5fa04292c2adcbac6fcb3f78cb21e17a",
+      "exact": true
+    },
+    {
+      "path": "experience/ping-assistant/release2-model-fixture.ts",
+      "before": "1bd02a6eadc58ae42378a0fbcc690167c8449f62",
+      "after": "1bd02a6eadc58ae42378a0fbcc690167c8449f62",
+      "exact": true
+    },
+    {
+      "path": "experience/ping-assistant/release2-partial-recovery.ts",
+      "before": "0d04897f6cc4dd2ca6725d62f2871770a127306c",
+      "after": "0d04897f6cc4dd2ca6725d62f2871770a127306c",
+      "exact": true
+    },
+    {
+      "path": "experience/ping-assistant/release2-partial-recovery.test.ts",
+      "before": "72fc7db25769b05a50a99c57d82499fd5bd39aed",
+      "after": "72fc7db25769b05a50a99c57d82499fd5bd39aed",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/proof-fixture.ts",
+      "before": "7b6256cc06117cc4cb1dd3e7dd8d259818ab9e2b",
+      "after": "7b6256cc06117cc4cb1dd3e7dd8d259818ab9e2b",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/store.ts",
+      "before": "ea7f839b9ab76386621970652bd2090b1f86a990",
+      "after": "ea7f839b9ab76386621970652bd2090b1f86a990",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/service.ts",
+      "before": "29f165e3670a0cbb95ac147dfa608f695e09160e",
+      "after": "29f165e3670a0cbb95ac147dfa608f695e09160e",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/claude-planner.ts",
+      "before": "107161d168d4e6ae5efd1cedf8d3fd3497d199e0",
+      "after": "107161d168d4e6ae5efd1cedf8d3fd3497d199e0",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/planner-budget.ts",
+      "before": "fbaf7be0fc4e75f05bcaf596dd2ecadc7169ce72",
+      "after": "fbaf7be0fc4e75f05bcaf596dd2ecadc7169ce72",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/planner-attempt-metadata.ts",
+      "before": "34bfd6e0208c5edf20709c387be46f454bb25b5f",
+      "after": "34bfd6e0208c5edf20709c387be46f454bb25b5f",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/conversation-memory.ts",
+      "before": "255ed7ea400f9b6ee3ff05c4dc3ced0c64589f6c",
+      "after": "255ed7ea400f9b6ee3ff05c4dc3ced0c64589f6c",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/task-snapshot.ts",
+      "before": "c51339f005ee53589038557230ff3dcbf41b15f5",
+      "after": "c51339f005ee53589038557230ff3dcbf41b15f5",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/task-batch.ts",
+      "before": "46866fa2ced4d049654568cfea60a2bb602f316a",
+      "after": "46866fa2ced4d049654568cfea60a2bb602f316a",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/task-update-batch.ts",
+      "before": "0fe1dd99991c9b8ba6fc45feb1027209af0b8304",
+      "after": "0fe1dd99991c9b8ba6fc45feb1027209af0b8304",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/calendar-time.ts",
+      "before": "441c4658f2f768bbd4babb82c15336a1e077be2f",
+      "after": "441c4658f2f768bbd4babb82c15336a1e077be2f",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/context.ts",
+      "before": "caf23ea4ca53c7b1a0658cac82618ae55ff77135",
+      "after": "caf23ea4ca53c7b1a0658cac82618ae55ff77135",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/conversation-context.ts",
+      "before": "fbf54b5f53d34063058a255c207d6ef69edcc672",
+      "after": "fbf54b5f53d34063058a255c207d6ef69edcc672",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/task-context.ts",
+      "before": "40df514f21ff0903ecda5b43d07844b9bef79239",
+      "after": "40df514f21ff0903ecda5b43d07844b9bef79239",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/conversation-transaction.ts",
+      "before": "ff6c45b327d229dd4998b947694bb930ea7d5e3c",
+      "after": "ff6c45b327d229dd4998b947694bb930ea7d5e3c",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/actions.ts",
+      "before": "9b1976d9ae41ae475c6b35616025bc31a2071ba9",
+      "after": "9b1976d9ae41ae475c6b35616025bc31a2071ba9",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/undo.ts",
+      "before": "52f53fa40f033df1981f238ec28029de739d49ee",
+      "after": "52f53fa40f033df1981f238ec28029de739d49ee",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/plan-targets.ts",
+      "before": "85e6ede4e9381bbc76bd59e2da2ef82f48a451c0",
+      "after": "85e6ede4e9381bbc76bd59e2da2ef82f48a451c0",
+      "exact": true
+    },
+    {
+      "path": "src/server/ping/assistant/planner-context.ts",
+      "before": "46ed7a6be3377d38b35d164740c5b6eb48ace121",
+      "after": "46ed7a6be3377d38b35d164740c5b6eb48ace121",
+      "exact": true
+    },
+    {
+      "path": "src/lib/ping/assistant/contract.ts",
+      "before": "62244518a8cc9f457b86a325f3ba79b640a682bc",
+      "after": "62244518a8cc9f457b86a325f3ba79b640a682bc",
+      "exact": true
+    },
+    {
+      "path": "src/lib/ping/assistant/release2.ts",
+      "before": "4ee6756461a3c8f655c96387d868476d644ae1c6",
+      "after": "4ee6756461a3c8f655c96387d868476d644ae1c6",
+      "exact": true
+    },
+    {
+      "path": "src/server/conversations/service.ts",
+      "before": "ae8ec4395d315975fedfc5a40cdcacef3a0004aa",
+      "after": "ae8ec4395d315975fedfc5a40cdcacef3a0004aa",
+      "exact": true
+    },
+    {
+      "path": "src/server/conversations/task-discussion.ts",
+      "before": "07e4c3b26bf8ba4bfa61a8c6369cff2b1e3c9eef",
+      "after": "07e4c3b26bf8ba4bfa61a8c6369cff2b1e3c9eef",
+      "exact": true
+    },
+    {
+      "path": "src/server/conversations/attention.ts",
+      "before": "fa04e6e05d9698c1aad9c924036e3194209ec747",
+      "after": "fa04e6e05d9698c1aad9c924036e3194209ec747",
+      "exact": true
+    },
+    {
+      "path": "src/server/conversations/database.ts",
+      "before": "2e7f718fe1f1ce3430fa8a626bbe941286533a03",
+      "after": "2e7f718fe1f1ce3430fa8a626bbe941286533a03",
+      "exact": true
+    },
+    {
+      "path": "src/server/db/board-config-read.ts",
+      "before": "53e506f449beb9322a7708381762e4bb631316e6",
+      "after": "53e506f449beb9322a7708381762e4bb631316e6",
+      "exact": true
+    },
+    {
+      "path": "src/server/db/schema.ts",
+      "before": "0369251a1010b48ac2507fd1f83d7fb0887f6b5d",
+      "after": "0369251a1010b48ac2507fd1f83d7fb0887f6b5d",
+      "exact": true
+    },
+    {
+      "path": "src/server/actions/project-authz.ts",
+      "before": "2bdb9ef3d7793f07b9a4c867171ed3932e787e23",
+      "after": "2bdb9ef3d7793f07b9a4c867171ed3932e787e23",
+      "exact": true
+    },
+    {
+      "path": "src/server/projects/project-deletion-fence.ts",
+      "before": "e1a415470793993e7b3847741a90843959e20a2d",
+      "after": "e1a415470793993e7b3847741a90843959e20a2d",
+      "exact": true
+    },
+    {
+      "path": "src/server/account-deletion-key.ts",
+      "before": "1c354d2d22440b211fb1496b7d35427e27dbba79",
+      "after": "1c354d2d22440b211fb1496b7d35427e27dbba79",
+      "exact": true
+    },
+    {
+      "path": "src/server/tasks/create-task-core.ts",
+      "before": "4973c6efc41b94c61db322fd7c684281c28775ce",
+      "after": "4973c6efc41b94c61db322fd7c684281c28775ce",
+      "exact": true
+    },
+    {
+      "path": "src/server/projects/create-project-core.ts",
+      "before": "bcf23ad54bb522caa0558011af01049745c26641",
+      "after": "bcf23ad54bb522caa0558011af01049745c26641",
+      "exact": true
+    },
+    {
+      "path": "src/server/actions/private-task-db-write.ts",
+      "before": "62ef2ef3959e2136212b8ec63f297d478e1ef42c",
+      "after": "62ef2ef3959e2136212b8ec63f297d478e1ef42c",
+      "exact": true
+    },
+    {
+      "path": "package.json",
+      "before": "1c0172cbbed60e21bad1926cd4b6f69e22432d1e",
+      "after": "1c0172cbbed60e21bad1926cd4b6f69e22432d1e",
+      "exact": true
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "before": "ee84a18f4a274ac2a5f6a082320ca607bca2f2e0",
+      "after": "ee84a18f4a274ac2a5f6a082320ca607bca2f2e0",
+      "exact": true
+    },
+    {
+      "path": "docs/projects/chat-ping-redesign/ping-requests.md",
+      "before": "03e8a75b53d880b3b3eaae247413a165f62332a9",
+      "after": "03e8a75b53d880b3b3eaae247413a165f62332a9",
+      "exact": true
+    },
+    {
+      "path": "docs/projects/chat-ping-redesign/ping-eval.md",
+      "before": "0abdedb1f732c8e1b8f0eccb080407ad37502ad6",
+      "after": "0abdedb1f732c8e1b8f0eccb080407ad37502ad6",
+      "exact": true
+    },
+    {
+      "path": "docs/projects/chat-ping-redesign/scorecards.md",
+      "before": "953d93bb014f12d31a4c8762eb2dfcee5a8f2d1f",
+      "after": "953d93bb014f12d31a4c8762eb2dfcee5a8f2d1f",
+      "exact": true
+    }
+  ]
+}

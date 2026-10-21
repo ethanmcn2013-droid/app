@@ -1,0 +1,202 @@
+TAP version 13
+# Subtest: grouped, loose and shared branches are all merged, and nothing is dropped
+ok 1 - grouped, loose and shared branches are all merged, and nothing is dropped
+  ---
+  duration_ms: 16.5535
+  type: 'test'
+  ...
+# Subtest: a Project in an owned period is emitted even when there are many periods
+ok 2 - a Project in an owned period is emitted even when there are many periods
+  ---
+  duration_ms: 2.4512
+  type: 'test'
+  ...
+# Subtest: another owner's Planning Period name and dates are never exposed
+ok 3 - another owner's Planning Period name and dates are never exposed
+  ---
+  duration_ms: 0.2506
+  type: 'test'
+  ...
+# Subtest: a co-owner inside somebody else's period is also filed under Shared with you
+ok 4 - a co-owner inside somebody else's period is also filed under Shared with you
+  ---
+  duration_ms: 0.2675
+  type: 'test'
+  ...
+# Subtest: ordering is deterministic and independent of input order
+ok 5 - ordering is deterministic and independent of input order
+  ---
+  duration_ms: 11.0891
+  type: 'test'
+  ...
+# Subtest: archived Projects are collapsed, read-only, and out of the ordinary groups
+ok 6 - archived Projects are collapsed, read-only, and out of the ordinary groups
+  ---
+  duration_ms: 0.3663
+  type: 'test'
+  ...
+# Subtest: duplicate names are disambiguated permission-safely, never by raw id
+ok 7 - duplicate names are disambiguated permission-safely, never by raw id
+  ---
+  duration_ms: 2.7862
+  type: 'test'
+  ...
+# Subtest: disambiguation escalates to role, then to creation month and year
+ok 8 - disambiguation escalates to role, then to creation month and year
+  ---
+  duration_ms: 1.0375
+  type: 'test'
+  ...
+# Subtest: indistinguishable rows are blocked rather than exposed by internal id
+ok 9 - indistinguishable rows are blocked rather than exposed by internal id
+  ---
+  duration_ms: 0.7676
+  type: 'test'
+  ...
+# Subtest: an owned Project whose period row does not join stays in the caller's own group
+ok 10 - an owned Project whose period row does not join stays in the caller's own group
+  ---
+  duration_ms: 0.4636
+  type: 'test'
+  ...
+# Subtest: a mixed grouped-and-loose name collision is disambiguated, not blocked
+ok 11 - a mixed grouped-and-loose name collision is disambiguated, not blocked
+  ---
+  duration_ms: 0.5628
+  type: 'test'
+  ...
+# Subtest: archive state is a disambiguation level of its own
+ok 12 - archive state is a disambiguation level of its own
+  ---
+  duration_ms: 0.4539
+  type: 'test'
+  ...
+# Subtest: a Planning Period named like a reserved group does not collide with it
+ok 13 - a Planning Period named like a reserved group does not collide with it
+  ---
+  duration_ms: 0.1989
+  type: 'test'
+  ...
+# Subtest: a repeated Project id collapses instead of appearing twice
+ok 14 - a repeated Project id collapses instead of appearing twice
+  ---
+  duration_ms: 0.1347
+  type: 'test'
+  ...
+# Subtest: the query is membership-first: owning a period grants nothing
+ok 15 - the query is membership-first: owning a period grants nothing
+  ---
+  duration_ms: 179.8299
+  type: 'test'
+  ...
+# Subtest: the query is ordered, and the order matches the projection's
+ok 16 - the query is ordered, and the order matches the projection's
+  ---
+  duration_ms: 168.4358
+  type: 'test'
+  ...
+# Subtest: hitting the row cap is surfaced, not swallowed
+ok 17 - hitting the row cap is surfaced, not swallowed
+  ---
+  duration_ms: 164.8408
+  type: 'test'
+  ...
+# Subtest: the first-membership fallback is deterministic across repeated calls
+ok 18 - the first-membership fallback is deterministic across repeated calls
+  ---
+  duration_ms: 174.7306
+  type: 'test'
+  ...
+# Subtest: the fallback breaks position ties by name, then by id
+ok 19 - the fallback breaks position ties by name, then by id
+  ---
+  duration_ms: 167.887
+  type: 'test'
+  ...
+# Subtest: a caller with no membership gets null, not a guess
+ok 20 - a caller with no membership gets null, not a guess
+  ---
+  duration_ms: 163.8037
+  type: 'test'
+  ...
+# Subtest: an explicit workspaceId returns that exact Project and never a substitute
+ok 21 - an explicit workspaceId returns that exact Project and never a substitute
+  ---
+  duration_ms: 187.9985
+  type: 'test'
+  ...
+# Subtest: a forbidden Project collapses to neutral unavailable and leaks no existence
+ok 22 - a forbidden Project collapses to neutral unavailable and leaks no existence
+  ---
+  duration_ms: 179.6219
+  type: 'test'
+  ...
+# Subtest: a forbidden explicit Project never falls back to an accessible one
+ok 23 - a forbidden explicit Project never falls back to an accessible one
+  ---
+  duration_ms: 177.9207
+  type: 'test'
+  ...
+# Subtest: a malformed or repeated explicit workspaceId is unavailable, not ignored
+ok 24 - a malformed or repeated explicit workspaceId is unavailable, not ignored
+  ---
+  duration_ms: 175.2763
+  type: 'test'
+  ...
+# Subtest: an explicitly requested archived Project opens read-only, not unavailable
+ok 25 - an explicitly requested archived Project opens read-only, not unavailable
+  ---
+  duration_ms: 281.6826
+  type: 'test'
+  ...
+# Subtest: bare entry honours the unified cookie and replace-redirects to a canonical URL
+ok 26 - bare entry honours the unified cookie and replace-redirects to a canonical URL
+  ---
+  duration_ms: 284.3973
+  type: 'test'
+  ...
+# Subtest: bare entry falls through to the legacy cookie during migration
+ok 27 - bare entry falls through to the legacy cookie during migration
+  ---
+  duration_ms: 175.5579
+  type: 'test'
+  ...
+# Subtest: a cookie naming an archived or unauthorized Project is skipped, not honoured
+ok 28 - a cookie naming an archived or unauthorized Project is skipped, not honoured
+  ---
+  duration_ms: 200.443
+  type: 'test'
+  ...
+# Subtest: bare entry with no cookie picks the first accessible active Project deterministically
+ok 29 - bare entry with no cookie picks the first accessible active Project deterministically
+  ---
+  duration_ms: 178.2389
+  type: 'test'
+  ...
+# Subtest: D-005: a user with no membership gets the empty state, never LEGACY_WORKSPACE_ID
+ok 30 - D-005: a user with no membership gets the empty state, never LEGACY_WORKSPACE_ID
+  ---
+  duration_ms: 179.4472
+  type: 'test'
+  ...
+# Subtest: the resolver source names no legacy workspace constant at all
+ok 31 - the resolver source names no legacy workspace constant at all
+  ---
+  duration_ms: 0.6881
+  type: 'test'
+  ...
+# Subtest: the empty state is reached even when the actor owns periods but no Project
+ok 32 - the empty state is reached even when the actor owns periods but no Project
+  ---
+  duration_ms: 174.139
+  type: 'test'
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 32
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5817.4454
