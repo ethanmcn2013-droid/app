@@ -7,7 +7,7 @@ import {chromium} from '@playwright/test';
 const output=path.resolve(process.argv[2]);
 const ready=JSON.parse(await fs.readFile(path.join(output,'ready.json'),'utf8'));
 const root=process.cwd(),browser=await chromium.launch({headless:true});
-const evidence={version:'ping.release2.synthetic-receiver.v1',startedAt:new Date().toISOString(),ready,exactInputs:[],checks:[],screenshots:[],errors:[],networkFailures:[]};
+const evidence={version:'ping.release2.synthetic-receiver.v1',startedAt:new Date().toISOString(),ready,exactInputs:[],checks:[],screenshots:[],errors:[],httpErrors:[],networkFailures:[],expectedNavigationAborts:[]};
 async function snapshot(){const r=await fetch(ready.url+'/fixture/snapshot');assert.equal(r.status,200);return r.json();}
 async function shot(page,id){const file=path.join(output,id+'.png');await page.screenshot({path:file,fullPage:true});const bytes=await fs.readFile(file);evidence.screenshots.push({id,path:file,sha256:createHash('sha256').update(bytes).digest('hex'),bytes:bytes.length});}
 async function openPing(page,pathName='/assistant'){await page.goto(ready.url+pathName);await page.getByRole('textbox',{name:'Request for Ping'}).waitFor();}
@@ -19,9 +19,14 @@ try{
   const viewport=process.argv[3]||'1440x960';
   const [width,height]=viewport.split('x').map(Number);assert.ok(width&&height,'Use widthxheight');
   const context=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await context.newPage();
+  let explicitReloadInProgress=false;
   page.on('pageerror',error=>evidence.errors.push({kind:'pageerror',message:error.message}));
   page.on('console',message=>{if(message.type()==='error')evidence.errors.push({kind:'console',message:message.text()});});
-  page.on('requestfailed',request=>evidence.networkFailures.push({url:request.url(),error:request.failure()?.errorText}));
+  page.on('response',response=>{if(response.status()>=400)evidence.httpErrors.push({status:response.status(),url:response.url()});});
+  page.on('requestfailed',request=>{const failure={url:request.url(),method:request.method(),error:request.failure()?.errorText};
+    if(explicitReloadInProgress&&request.method()==='GET'&&new URL(request.url()).pathname==='/api/ping/assistant'&&failure.error==='net::ERR_ABORTED')evidence.expectedNavigationAborts.push(failure);
+    else evidence.networkFailures.push(failure);
+  });
   await openPing(page,'/assistant-source');await shot(page,`${viewport}-source-empty`);
   let before=await snapshot();
   await send(page,'What did we decide about drinks?');
@@ -107,13 +112,16 @@ try{
   assert.equal(afterPrivate.messages.length,beforePrivate.messages.length,'the request does not create shared or private messages before Apply');
   await shot(page,`${viewport}-at-ping-private-draft`);await check('desktop @Ping Enter routes once to a private plan, with no pre-Apply domain write');
   const privateCount=afterPrivate.requests.filter(r=>r.operation==='submit').length;
-  await page.reload();await page.getByRole('textbox',{name:'Message Synthetic launch'}).waitFor();await page.getByText('We decided the welcome drink will be Spritz.').waitFor();
+  explicitReloadInProgress=true;await page.reload();await page.getByRole('textbox',{name:'Message Synthetic launch'}).waitFor();await page.getByText('We decided the welcome drink will be Spritz.').waitFor();
   assert.equal((await snapshot()).requests.filter(r=>r.operation==='submit').length,privateCount,'reload does not auto-replay the forwarded command');
   const afterReload=await snapshot();assert.equal(afterReload.tasks.length,beforePrivate.tasks.length);assert.equal(afterReload.messages.length,beforePrivate.messages.length);
+  explicitReloadInProgress=false;
   await check('reload does not replay the forwarded @Ping request');
   const beforeOrdinary=afterReload.conversationRequests.filter(r=>r.method==='POST'&&r.action==='send').length;
   await page.getByRole('textbox',{name:'Message Synthetic launch'}).fill('Ordinary shared message.');await page.getByRole('button',{name:'Send',exact:true}).click();
-  await page.getByText('Ordinary shared message.').last().waitFor();const afterOrdinary=await snapshot();
+  await page.getByText('Ordinary shared message.').last().waitFor();
+  await page.waitForFunction(async(expected)=>{const response=await fetch('/fixture/snapshot');if(!response.ok)return false;const state=await response.json();return state.conversationRequests.filter(request=>request.method==='POST'&&request.action==='send').length>=expected&&state.messages.some(message=>message.body==='Ordinary shared message.');},beforeOrdinary+1,{timeout:10000});
+  const afterOrdinary=await snapshot();
   assert.equal(afterOrdinary.conversationRequests.filter(r=>r.method==='POST'&&r.action==='send').length,beforeOrdinary+1,'ordinary messages still use canonical shared send once');
   assert.equal(afterOrdinary.conversationRequests.filter(r=>r.method==='POST'&&r.action==='send').at(-1).conversationId,ready.sourceConversationId);
   await check('ordinary Send uses canonical shared conversation path exactly once');
@@ -129,6 +137,7 @@ try{
 
   await page.evaluate(()=>{document.documentElement.dataset.theme='light';});await shot(page,`${viewport}-light-theme`);
   assert.deepEqual(evidence.errors,[],'browser must not report runtime errors');assert.deepEqual(evidence.networkFailures,[],'synthetic app requests must all resolve');
+  assert.ok(evidence.expectedNavigationAborts.length<=1,'only a single Ping read may be cancelled by the explicit page reload');
   const selectedFiles=['src/components/app/messages/ping-personal-assistant.tsx','src/components/app/messages/ping-personal-assistant-client.ts','src/components/app/messages/conversation-workspace.tsx','src/components/app/messages/conversation-session-provider.tsx','src/components/app/messages/private-ping-command-router.tsx','src/server/ping/assistant/service.ts','src/server/ping/assistant/store.ts','src/server/ping/assistant/actions.ts','src/server/ping/assistant/undo.ts','src/server/ping/assistant/conversation-context.ts','src/server/ping/assistant/task-context.ts','src/server/ping/assistant/plan-targets.ts','src/server/ping/assistant/task-snapshot.ts','src/server/conversations/http.ts','src/server/conversations/service.ts','src/lib/ping/assistant/contract.ts','src/lib/ping/assistant/release2.ts'];
   evidence.sourceHashesAtServerStart=ready.sourceHashes;evidence.sourceHashesAfter={};for(const file of selectedFiles){const bytes=await fs.readFile(path.join(root,file));evidence.sourceHashesAfter[file]=createHash('sha256').update(bytes).digest('hex');}
   evidence.changedDuringRun=selectedFiles.filter(file=>ready.sourceHashes[file]!==evidence.sourceHashesAfter[file]);

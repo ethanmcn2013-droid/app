@@ -19,6 +19,8 @@ import {createAssistantConversationContext} from '../../src/server/ping/assistan
 import {loadAssistantTaskContext,validateAssistantTaskSources} from '../../src/server/ping/assistant/task-context';
 import {createConversationService} from '../../src/server/conversations/service';
 import {createConversationHttp} from '../../src/server/conversations/http';
+import {createTaskDiscussionService} from '../../src/server/conversations/task-discussion';
+import {createTaskDiscussionHttp} from '../../src/server/conversations/task-discussion-http';
 import type {AssistantAction,AssistantPlan,AssistantPlannerContext} from '../../src/lib/ping/assistant/contract';
 import {buildRelease2Ui} from './release2-build-ui.mjs';
 import {assertProjectId} from '../../src/lib/projects/project-ref';
@@ -133,6 +135,9 @@ async function main(){
   const conversationHttp=createConversationHttp({authenticate:async()=> 'owner',
     controls:()=>({internalEnabled:true,sendsEnabled:true,deliveryEnabled:true,directMessagesEnabled:true,allowedActorIds:new Set(['owner','bob']),allowAllActors:false,guestsEnabled:false,attachmentsEnabled:false,aiEnabled:false}),
     service:async()=>chat});
+  const taskDiscussionHttp=createTaskDiscussionHttp({authenticate:async()=> 'owner',
+    controls:()=>({internalEnabled:true,sendsEnabled:true,deliveryEnabled:true,directMessagesEnabled:true,allowedActorIds:new Set(['owner','bob']),allowAllActors:false,guestsEnabled:false,attachmentsEnabled:false,aiEnabled:false}),
+    service:async()=>createTaskDiscussionService(proof.adapter)});
   const ui=await buildRelease2Ui(source.replaceAll('\\','/'),output);
   async function snapshot(){return{plans,executions,undos,requests,conversationRequests,diagnostics,
     tasks:(await proof.client.execute('SELECT id,workspace_id,parent_task_id,title,completed_at,archived_at,due,due_at,assignees FROM tasks ORDER BY workspace_id,seq')).rows,
@@ -157,6 +162,11 @@ async function main(){
       const value=body?JSON.parse(body):{};conversationRequests.push({method:req.method!,action:body?value.action:url.searchParams.get('action')??undefined,body:value.body,conversationId:body?value.conversationId:url.searchParams.get('conversationId')??undefined,at:new Date().toISOString()});
       const request=new Request(url,{method:req.method,headers:{...Object.fromEntries(Object.entries(req.headers).filter(([,v])=>typeof v==='string')),...(req.method==='POST'?{origin}:{})},...(body?{body}:{})});
       const response=await conversationHttp(request);res.writeHead(response.status,Object.fromEntries(response.headers));res.end(await response.text());return;
+    }
+    if(url.pathname==='/api/task-discussion'){
+      const chunks:Buffer[]=[];if(req.method==='POST')for await(const chunk of req)chunks.push(Buffer.from(chunk));const body=Buffer.concat(chunks).toString();
+      const request=new Request(url,{method:req.method,headers:{...Object.fromEntries(Object.entries(req.headers).filter(([,v])=>typeof v==='string')),...(req.method==='POST'?{origin}:{})},...(body?{body}:{})});
+      const response=await taskDiscussionHttp(request);res.writeHead(response.status,Object.fromEntries(response.headers));res.end(await response.text());return;
     }
     if(url.pathname==='/fixture/snapshot'){res.setHeader('content-type','application/json');res.end(JSON.stringify(await snapshot()));return;}
     const files:Record<string,string>={'/app.js':'app.js','/app.css':'app.css','/globals.css':'globals.css'};
