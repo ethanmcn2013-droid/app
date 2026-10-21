@@ -22,13 +22,13 @@ jobs:
       - name: Check out the reviewed release 2 source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: 75088b0f43c1fe016250d8cf54f16681b0d0cff1
+          ref: 3dfaee21820ab3a3edf245877e647924d325cdfa
           persist-credentials: false
 
       - name: Require the reviewed source revision
         shell: bash
         run: |
-          test "$(git rev-parse HEAD)" = "75088b0f43c1fe016250d8cf54f16681b0d0cff1"
+          test "$(git rev-parse HEAD)" = "3dfaee21820ab3a3edf245877e647924d325cdfa"
 
       - name: Set up pnpm
         uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
@@ -230,11 +230,11 @@ jobs:
           PING_RELEASE2_MODEL_EVAL_AUTHORIZED: '1'
           SEED_DIR: ${{ steps.seed.outputs.seed_dir }}
           APPROVAL_PATH: ${{ steps.bind.outputs.approval_path }}
-          PREFLIGHT_PATH: experience/output/ping-release2-model-eval/ci-${{ github.run_id }}-${{ github.run_attempt }}-a3-preflight.json
+          PREFLIGHT_PATH: experience/output/ping-release2-model-eval/approved-${{ github.run_id }}-${{ github.run_attempt }}-recovery-preflight.json
         run: |
           set -euo pipefail
           umask 077
-          node -e 'const r=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));if(r.mode!=="a3-recovery-preflight"||r.providerCalls!==0||r.recoveryChecked!==true)process.exit(1)' "$PREFLIGHT_PATH"
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));if(r.mode!=="a3-recovery-preflight"||r.providerCalls!==0||r.spendUsd!==0||r.carriedPhysicalAttempts!==3||r.carriedEstimatedMicroUsd!==118528||r.baseline.taskSha256!==r.finalTaskState.taskSha256||r.records[2].status!=="provider_failed_no_answer_no_quality_credit")process.exit(1)' "$PREFLIGHT_PATH"
           test -n "$PING_R2_SYNTHETIC_KEY"
           key_file="$RUNNER_TEMP/ping-r2-api-key"
           printf '%s' "$PING_R2_SYNTHETIC_KEY" > "$key_file"
