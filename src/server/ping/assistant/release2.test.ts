@@ -167,7 +167,7 @@ test('a waiting plan does not waive citations for unrelated answers or forged pl
 });
 
 test('canonical target bindings stay private and survive Apply and receipt recovery',async()=>{
- const f=await assistantFixture();let binds=0,writes=0;const targets={update:{projectId:'synthetic',taskIds:['canonical_private_task']}};try{
+ const f=await assistantFixture();let binds=0,writes=0;const targets={update:{projectId:'synthetic',taskIds:['canonical_private_task'],taskHashes:{canonical_private_task:'0'.repeat(64)},priorActionIds:[]}};try{
   const update:Extract<AssistantPlan,{outcome:'plan'}>={...plan,actions:[{id:'update',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Original task']},changes:{dueDate:'tomorrow'}}]};
   const service=createAssistantService({requireApproval:true,store:f.store,context:async()=>context,planner:{plan:async()=>({plan:update})},bindTargets:async()=>{binds++;return targets;},
    execute:input=>{assert.deepEqual(input.boundTaskTargets,targets);return input.commitStep(input.stepId,input.fence,async()=>{writes++;return {stepId:input.stepId,kind:input.step.kind,status:'completed',summary:'Updated',affectedCount:1};});}});

@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import * as schema from "@/server/db/schema";
 import { createPingProofFixture, PROOF_PROJECT, seedProofTask } from "../proof-fixture";
 import { executeAssistantAction, type AssistantActionInput } from "./actions";
+import { validateAssistantTaskPostImages } from './task-snapshot';
 import type { AssistantAction, AssistantActionResult } from "@/lib/ping/assistant/contract";
 import { getAssistantContext } from "./context";
 import type { AssistantDeliveryPort } from "./delivery";
@@ -385,7 +386,7 @@ test('checklist binding never switches to a same-title replacement child',async(
   await f.client.execute({sql:"UPDATE tasks SET archived_at=1 WHERE id='original-checklist-child'"});
   await seedProofTask(f.client,'replacement-checklist-child',{projectId:PROOF_PROJECT});
   await f.client.execute({sql:"UPDATE tasks SET title='Catering',parent_task_id=? WHERE id='replacement-checklist-child'",args:[parentId]});
-  await assert.rejects(()=>f.run(tick,{boundTaskTargets:bound}),/unavailable/);
+  await assert.rejects(()=>f.run(tick,{boundTaskTargets:bound}),/unavailable|stale/);
   const rows=await f.client.execute({sql:"SELECT id,lane,completed_at FROM tasks WHERE id IN ('original-checklist-child','replacement-checklist-child') ORDER BY id"});
   assert.deepEqual(rows.rows.map(row=>[row.id,row.lane,row.completed_at]),[
     ['original-checklist-child','todo',null],['replacement-checklist-child','todo',null],
@@ -398,8 +399,48 @@ test('bound target IDs cannot be replayed against another Project or a foreign t
   await f.run({id:'seed',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Authorized target'}]});
   await seedProofTask(f.client,'foreign-target',{projectId:'synthetic-foreign-project'});
   const action:AssistantAction={id:'update',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Authorized target']},changes:{description:'must not run'}};
-  await assert.rejects(()=>f.run(action,{boundTaskTargets:{update:{projectId:'synthetic-foreign-project',taskIds:['foreign-target']}}}),/unavailable/);
-  await assert.rejects(()=>f.run(action,{boundTaskTargets:{update:{projectId:PROOF_PROJECT,taskIds:['foreign-target']}}}),/stale/);
+  await assert.rejects(()=>f.run(action,{boundTaskTargets:{update:{projectId:'synthetic-foreign-project',taskIds:['foreign-target'],taskHashes:{},priorActionIds:[]}}}),/unavailable/);
+  await assert.rejects(()=>f.run(action,{boundTaskTargets:{update:{projectId:PROOF_PROJECT,taskIds:['foreign-target'],taskHashes:{},priorActionIds:[]}}}),/stale/);
   assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM tasks WHERE description='must not run'")).rows[0].n),0);
+ }finally{f.client.close();}
+});
+
+test('a task moved out of the approved status invalidates the whole bound batch before any archive',async()=>{
+ const f=await fixture();try{
+  const made=await f.run({id:'seed',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'First to do'},{title:'Second to do'}]});
+  const archive:AssistantAction={id:'archive',kind:'archive_tasks',project:{kind:'current'},targets:{kind:'all',status:'todo'},archived:true};
+  const bound=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[archive]},currentProjectId:PROOF_PROJECT}));
+  // Deliberately retain updated_at: full state, rather than a coarse timestamp, must detect the change.
+  await f.client.execute({sql:"UPDATE tasks SET lane='done',board_column_key='done',completed_at=1 WHERE id=?",args:[made.createdTaskIds![1]]});
+  await assert.rejects(f.run(archive,{boundTaskTargets:bound}),/stale/);
+  assert.equal(Number((await f.client.execute('SELECT COUNT(*) n FROM tasks WHERE archived_at IS NOT NULL')).rows[0].n),0);
+ }finally{f.client.close();}
+});
+
+test('bound state follows committed step order even for numeric action IDs and refuses a later collaborator edit',async()=>{
+ const f=await fixture();try{
+  const made=await f.run({id:'seed',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Ordered task'}]});
+  const first:AssistantAction={id:'10',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Ordered task']},changes:{title:'Renamed ordered task'}};
+  const second:AssistantAction={id:'2',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Ordered task']},changes:{dueDate:'tomorrow'}};
+  const last:AssistantAction={id:'last',kind:'archive_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Ordered task']},archived:true};
+  const bound=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[first,second,last]},currentProjectId:PROOF_PROJECT}));
+  await f.run(first,{boundTaskTargets:bound});await f.run(second,{boundTaskTargets:bound});
+  await f.client.execute({sql:'UPDATE tasks SET description=? WHERE id=?',args:['Collaborator changed this after the second step',made.createdTaskIds![0]]});
+  await assert.rejects(f.run(last,{boundTaskTargets:bound}),/stale/);
+  await f.client.execute({sql:'UPDATE tasks SET description=NULL WHERE id=?',args:[made.createdTaskIds![0]]});
+  const result=await f.run(last,{boundTaskTargets:bound});assert.equal(result.affectedCount,1);
+ }finally{f.client.close();}
+});
+
+test('an earlier step cannot exempt its source task from later collaborator changes before another action',async()=>{
+ const f=await fixture();try{
+  const made=await f.run({id:'seed',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Source decision'}]});
+  const id=made.createdTaskIds![0];
+  const changed=await f.run({id:'change',kind:'update_tasks',project:{kind:'current'},targets:{kind:'created',stepId:'seed'},changes:{status:'done'}});
+  const sources=[{ref:'task_source_1',kind:'task' as const,projectId:PROOF_PROJECT,scopeId:id,itemId:id,revision:1,audienceEpoch:1,body:'Earlier source',authorName:'Task',createdAt:'2026-10-21T00:00:00Z',href:'/app/tasks'}];
+  assert.equal(await f.database.transaction(tx=>validateAssistantTaskPostImages(tx,'alice',sources,[changed])),true);
+  await f.client.execute({sql:'UPDATE tasks SET description=? WHERE id=?',args:['A later collaborator edit',id]});
+  assert.equal(await f.database.transaction(tx=>validateAssistantTaskPostImages(tx,'alice',sources,[changed])),false);
+  assert.equal(await f.database.transaction(tx=>validateAssistantTaskPostImages(tx,'alice',sources,[{...changed,undoResult:{status:'reverted',summary:'Restored',affectedCount:1}}])),false);
  }finally{f.client.close();}
 });

@@ -4,6 +4,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { AssistantAction, AssistantActionResult, AssistantProjectRef, AssistantResultItem, AssistantTaskFields, AssistantTaskSelector } from "@/lib/ping/assistant/contract";
 import type { AssistantReversal } from "@/lib/ping/assistant/release2";
 import type {BoundAssistantTaskTarget} from './plan-targets';
+import {taskSnapshot,taskSnapshotHash} from './task-snapshot';
+import {assistantPayloadHash} from './store';
 import { isAssistantInternalHref, resolveAssistantDate } from "@/lib/ping/assistant/contract";
 import { activities, pendingInvites, tasks, workspaceEvents } from "@/server/db/schema";
 import { prepareCanonicalTaskCreate } from "@/server/tasks/create-task-core";
@@ -44,6 +46,18 @@ export type AssistantActionInput = Readonly<{
 const stableId = (prefix: string, parts: readonly unknown[]) => `${prefix}-${createHash("sha256").update(JSON.stringify(parts)).digest("hex").slice(0, 32)}`;
 const ordinary = (row: typeof tasks.$inferSelect) => row.parentTaskId === null && row.recurrence === null;
 const taskEffectKinds = new Set(["create_tasks", "create_checklist_items", "set_checklist_item", "update_tasks", "archive_tasks", "add_comment", "nudge_tasks"]);
+function assertBoundTaskState(input:AssistantActionInput,binding:BoundAssistantTaskTarget,row:typeof tasks.$inferSelect){
+  let expected=binding.taskHashes?.[row.id];
+  if(!Array.isArray(binding.priorActionIds))throw new AssistantActionRefusal('stale');
+  for(const key of binding.priorActionIds){
+    const result=input.results[key];
+    if(!result||key==='__previous'||result.status!=='completed'||result.projectId!==binding.projectId||result.reversal?.kind!=='tasks')continue;
+    const changed=result.reversal.rows.find(value=>value.id===row.id);if(!changed)continue;
+    if(result.undoResult?.status==='reverted')throw new AssistantActionRefusal('stale');
+    expected=assistantPayloadHash(changed.after);
+  }
+  if(!expected||taskSnapshotHash(row)!==expected)throw new AssistantActionRefusal('stale');
+}
 function remainingEffects(input: AssistantActionInput) {
   return 500 - Object.entries(input.results).filter(([key, result]) => key !== "__previous" && result.status === "completed" && taskEffectKinds.has(result.kind))
     .reduce((sum, [, result]) => sum + result.affectedCount, 0);
@@ -89,6 +103,7 @@ async function targetsFor(tx: AssistantActionTransaction, input: AssistantAction
     }
   }
   const rows = await assistantTasksByIds(tx, input.actorId, projectId, ids);
+  if(binding)for(const row of rows)assertBoundTaskState(input,binding,row);
   if (rows.some(row => (ordinaryOnly && !ordinary(row)) || (!includeArchived && row.archivedAt !== null))) throw new AssistantActionRefusal("unsupported");
   return rows;
 }
@@ -104,17 +119,6 @@ async function fieldsFor(tx: AssistantActionTransaction, input: AssistantActionI
   return { assignees, due, dueTime: fields.dueTime, dueAt: due === undefined ? undefined : due === null ? null : new Date(`${due}T${fields.dueTime ?? "09:00"}:00Z`) };
 }
 
-/** All mutable task state is retained server-side so Undo can refuse after any intervening edit. */
-function taskSnapshot(row: typeof tasks.$inferSelect): Record<string, unknown> {
-  return { id: row.id, workspaceId: row.workspaceId, seq: row.seq, title: row.title, description: row.description,
-    lane: row.lane, priority: row.priority, assignees: row.assignees, due: row.due, dueAt: row.dueAt?.toISOString() ?? null,
-    estimate: row.estimate, tags: row.tags, idleDays: row.idleDays, blockedBy: row.blockedBy, recurrence: row.recurrence,
-    startDay: row.startDay, durationDays: row.durationDays, position: row.position, parentTaskId: row.parentTaskId,
-    externalContactName: row.externalContactName, externalContactEmail: row.externalContactEmail, cents: row.cents,
-    sourceNoteId: row.sourceNoteId, sourceNoteExtractBody: row.sourceNoteExtractBody, sourceNoteExtractSha256: row.sourceNoteExtractSha256,
-    boardColumnKey: row.boardColumnKey, completedAt: row.completedAt?.toISOString() ?? null, isMilestone: row.isMilestone,
-    archivedAt: row.archivedAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString() };
-}
 async function taskReversal(tx: AssistantActionTransaction, projectId: string, ids: readonly string[], before: readonly (typeof tasks.$inferSelect | null)[]): Promise<AssistantReversal> {
   const after = ids.length ? await tx.select().from(tasks).where(and(eq(tasks.workspaceId, projectId), inArray(tasks.id, ids))) : [];
   if (after.length !== ids.length) throw new AssistantActionRefusal("stale");
@@ -218,6 +222,7 @@ export async function executeAssistantAction(input: AssistantActionInput): Promi
       const children = binding?.checklistItemId
         ? await assistantTasksByIds(tx,input.actorId,projectId,[binding.checklistItemId])
         : await tx.select().from(tasks).where(and(eq(tasks.workspaceId, projectId), eq(tasks.parentTaskId, parent.id)));
+      if(binding?.checklistItemId)for(const child of children)assertBoundTaskState(input,binding,child);
       const normalized = step.itemTitle.normalize("NFKC").trim().toLocaleLowerCase("en-US");
       const matches = children.filter(row => row.parentTaskId===parent.id&&row.archivedAt === null && row.title.normalize("NFKC").trim().toLocaleLowerCase("en-US") === normalized);
       if (matches.length !== 1) throw new AssistantActionRefusal(matches.length > 1 ? "ambiguous" : "unavailable");

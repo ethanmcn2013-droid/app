@@ -2,10 +2,11 @@ import 'server-only';
 import {and,eq} from 'drizzle-orm';
 import type {AssistantAction,AssistantActionResult,AssistantPlan,AssistantTaskSelector} from '@/lib/ping/assistant/contract';
 import {tasks} from '@/server/db/schema';
+import {taskSnapshotHash} from './task-snapshot';
 import {AssistantActionRefusal,assistantTaskCatalog,assistantTasksByIds,authorizeAssistantProject,resolveAssistantProjectName,type AssistantActionTransaction} from './context';
 
 /** Canonical targets selected while the plan is bound. IDs never get re-resolved from mutable titles during apply. */
-export type BoundAssistantTaskTarget=Readonly<{projectId:string;taskIds:readonly string[];checklistItemId?:string}>;
+export type BoundAssistantTaskTarget=Readonly<{projectId:string;taskIds:readonly string[];taskHashes:Readonly<Record<string,string>>;priorActionIds:readonly string[];checklistItemId?:string}>;
 export type AssistantPlanTargetBindingInput=Readonly<{
   actorId:string;plan:AssistantPlan;currentProjectId?:string|null;selectedTaskIds?:readonly string[];
   priorTaskResult?:AssistantActionResult;
@@ -60,7 +61,9 @@ async function selectIds(tx:AssistantActionTransaction,input:AssistantPlanTarget
 export async function bindAssistantPlanTargets(tx:AssistantActionTransaction,input:AssistantPlanTargetBindingInput):Promise<Readonly<Record<string,BoundAssistantTaskTarget>>>{
   if(input.plan.outcome!=='plan')return{};
   const bound:Record<string,BoundAssistantTaskTarget>={};
+  const priorActionIds:string[]=[];
   for(const action of input.plan.actions){
+    const earlier=[...priorActionIds];priorActionIds.push(action.id);
     if(!('project'in action))continue;
     const selector=action.kind==='set_checklist_item'||action.kind==='create_checklist_items'?action.parent:
       'targets'in action?action.targets:null;
@@ -69,13 +72,16 @@ export async function bindAssistantPlanTargets(tx:AssistantActionTransaction,inp
     const archive=action.kind==='archive_tasks';
     const options={includeArchived:archive&&!action.archived,ordinaryOnly:!archive};
     const taskIds=await selectIds(tx,input,projectId,selector,options);if(!taskIds)continue;
-    const entry: {projectId:string;taskIds:readonly string[];checklistItemId?:string}={projectId,taskIds};
+    const rows=await assistantTasksByIds(tx,input.actorId,projectId,taskIds);
+    const taskHashes:Record<string,string>=Object.fromEntries(rows.map(row=>[row.id,taskSnapshotHash(row)]));
+    const entry: {projectId:string;taskIds:readonly string[];taskHashes:Readonly<Record<string,string>>;priorActionIds:readonly string[];checklistItemId?:string}={projectId,taskIds,taskHashes,priorActionIds:earlier};
     if(action.kind==='set_checklist_item'){
       if(taskIds.length!==1)throw new AssistantActionRefusal(taskIds.length>1?'ambiguous':'unavailable');
       const parentId=taskIds[0],children=await tx.select().from(tasks).where(and(eq(tasks.workspaceId,projectId),eq(tasks.parentTaskId,parentId)));
       const matches=children.filter(row=>row.archivedAt===null&&normalized(row.title)===normalized(action.itemTitle));
       if(matches.length!==1)throw new AssistantActionRefusal(matches.length>1?'ambiguous':'unavailable');
       entry.checklistItemId=matches[0].id;
+      taskHashes[matches[0].id]=taskSnapshotHash(matches[0]);
     }
     bound[action.id]=entry;
   }

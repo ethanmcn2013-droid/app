@@ -26,6 +26,7 @@ import { guardAssistantCommitStep } from "./runtime-admission";
 import { resolveConversationControls } from '@/lib/conversations/flags';
 import { loadAssistantTaskContext, validateAssistantTaskSources } from './task-context';
 import { bindAssistantPlanTargets } from './plan-targets';
+import {validateAssistantTaskPostImages} from './task-snapshot';
 
 type Target = NonNullable<ReturnType<typeof assistantTarget>>;
 const currentTarget = () => assistantTarget(process.env, isDemoMode());
@@ -137,6 +138,8 @@ function createInstance(target: Target) {
         const selector='targets' in input.step?input.step.targets:'parent' in input.step?input.step.parent:undefined;
         if(selector&&selector.kind!=='created'&&'project' in input.step&&input.step.project.kind!=='created'&&!input.boundTaskTargets?.[input.step.id])throw new AssistantActionRefusal('stale');
         for(const projectId of input.authorizationProjects??[])await authorizeAssistantProject(tx,input.actorId,projectId);
+        const ordered=(input.actionOrder??[]).flatMap(id=>input.results[id]?[input.results[id]]:[]);
+        if(!await validateAssistantTaskPostImages(tx,input.actorId,input.authorizationSources??[],ordered))throw new AssistantActionRefusal('stale');
         const sources=assistantUnchangedSources(input.authorizationSources??[],Object.values(input.results));
         if(sources.length&&!await validateSources(tx,input.actorId,sources))throw new AssistantActionRefusal('stale');
       }), dispatch: dispatcher, deliveryTransaction: transact,
