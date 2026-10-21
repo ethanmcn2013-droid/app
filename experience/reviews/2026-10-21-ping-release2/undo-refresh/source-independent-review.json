@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-21",
+  "reviewer": "/root/r2_independent_review",
+  "candidateCommit": "a1bbfa1daab3b70d735c722600350bb561c0c1ac",
+  "baseCommit": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+  "verdict": "conditional_approval",
+  "productFile": "src/components/app/messages/ping-personal-assistant.tsx",
+  "productGitBlobSha1": "1c34da0012b0eb19ebad26f37d33d054c83f5290",
+  "productNormalizedSha256": "af8863c9cbbc893b5502e112acf1fb50fa624da3b096f0bd7b2d53ef1eb8f922",
+  "change": "Post-Undo task refresh operation changed from read to undo",
+  "focusedEvidence": {
+    "path": "D:/Codex-scratch/project-ping/release2-proof-oct21/undo-refresh-capture/focused-checks-a1bb.json",
+    "sha256": "8f5d213811b9ac40736cd27d69beaf849624b0f63babcd7904cf76ad20d10f4b",
+    "clientTests": "34/34",
+    "typecheckExitCode": 0,
+    "scopedLintExitCode": 0,
+    "providerCalls": 0
+  },
+  "broadTests": {
+    "summaryPath": "D:/Codex-scratch/project-ping/release2-proof-oct21/undo-refresh-capture/broad-test-session-63929-summary.txt",
+    "summarySha256Prefix": "78f80f43",
+    "passed": 201,
+    "failed": 0,
+    "skipped": 0,
+    "rawStdoutAvailable": false
+  },
+  "receiver": {
+    "path": "D:/Codex-scratch/project-ping/release2-proof-oct21/current-functional-undo-refresh-oct21/release2-failure.json",
+    "sha256": "a5297d9086c533b5be0f5bb7856f9db600d79dae90ff36e72b4bd5f7d29e5aec",
+    "overallStatus": "failed",
+    "passedChecks": 12,
+    "screenshots": 9,
+    "undoEventCount": 1,
+    "syntheticDbRollbackObserved": true,
+    "failure": "Later unrelated DM-source submission failed connection refused/timeout",
+    "visibleBoardRefreshProven": false
+  },
+  "releaseGates": {
+    "freshExactHeadCaptureRequired": true,
+    "allRequiredCIRequired": true,
+    "realProductionBoardCanaryRequired": true,
+    "canary": "Owned task count 2 to 3 to 2 immediately without reload; verify no unrelated task changed"
+  },
+  "reviewLimits": [
+    "No model/provider calls",
+    "No deployment or production change",
+    "No repo edits"
+  ]
+}

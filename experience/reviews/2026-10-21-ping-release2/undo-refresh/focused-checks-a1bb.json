@@ -1,0 +1,30 @@
+{
+  "source": "a1bbfa1daab3b70d735c722600350bb561c0c1ac",
+  "client": {
+    "tests": 34,
+    "passed": 34,
+    "failed": 0,
+    "skipped": 0
+  },
+  "typecheckExitCode": 0,
+  "scopedLintExitCode": 0,
+  "logs": [
+    {
+      "file": "client-a1bb.log",
+      "sha256": "1418099712b568cc37d61f65be31358df5fd392c2a64b583f4cc555542811193",
+      "exitCode": 0
+    },
+    {
+      "file": "types-a1bb.log",
+      "sha256": "e0eddf17f5c613cde38a9ee4d152820b9e76a65a14199b38dd83048194ff40a5",
+      "exitCode": 0
+    },
+    {
+      "file": "lint-a1bb.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exitCode": 0
+    }
+  ],
+  "modelProviderCalls": 0,
+  "scope": "Focused client behavior, types and component/receiver lint. Broader Windows suite is separate."
+}

@@ -1,0 +1,9 @@
+Command: corepack pnpm test:ping-assistant
+Started as exec session: 63929
+Observed process PID: 45628; stress-test worker PID: 44664 (native child 23860)
+Final process result: exit code 0
+Node test summary: 201 tests; 201 passed; 0 failed; 0 cancelled; 0 skipped; 0 todo
+Node-reported duration: 653281.7897 ms
+Stress case: 100 actual SQLite service/action scenarios in isolated native-client processes, passed; 401055.1601 ms
+Scope note: synthetic/local SQLite tests; no production latency claim.
+This is a summary of final tool output, not a raw stdout transcript. Exact durable logs for current-candidate client/typecheck/lint are in the parent-provided undo-refresh-capture directory.

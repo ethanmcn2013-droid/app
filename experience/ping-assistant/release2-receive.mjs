@@ -87,8 +87,12 @@ try{
   await applyLatest(page);after=await snapshot();
   let florist=after.tasks.find(t=>t.title==='Call the florist');assert.ok(florist);assert.equal(florist.due,'2026-10-22 11:00');
   assert.deepEqual(JSON.parse(florist.assignees),['bob']);await shot(page,`${viewport}-florist-applied`);await check('apply persists edited task date, clock, and owner',{taskId:florist.id,due:florist.due,assignees:florist.assignees});
+  await page.evaluate(()=>{window.__PING_TASK_EPOCH_EVENTS__=0;window.addEventListener('signal-task-snapshot-epoch-changed',()=>window.__PING_TASK_EPOCH_EVENTS__++);});
   await page.getByRole('button',{name:'Undo step',exact:true}).last().click();
   await page.waitForFunction(async()=>{const s=await fetch('/fixture/snapshot').then(r=>r.json());const t=s.tasks.find(t=>t.title==='Call the florist');return t?.archived_at!==null;});
+  await page.waitForFunction(()=>window.__PING_TASK_EPOCH_EVENTS__>0);
+  assert.equal(await page.evaluate(()=>window.__PING_TASK_EPOCH_EVENTS__),1,'Undo must publish exactly one task snapshot invalidation to connected task surfaces');
+  await check('Undo publishes the task snapshot invalidation event used by task surfaces');
   const undone=await snapshot();florist=undone.tasks.find(t=>t.title==='Call the florist');assert.ok(florist.archived_at);await shot(page,`${viewport}-florist-undo`);
   const history=await fetch(ready.url+'/api/ping/assistant').then(r=>r.json());const undoneRun=history.runs.find(r=>r.requestId===appliedPlanRequest);const undoneStep=undoneRun.steps.find(s=>s.kind==='create_tasks');
   const repeated=await fetch(ready.url+'/api/ping/assistant',{method:'POST',headers:{'content-type':'application/json',origin:ready.url},body:JSON.stringify({operation:'undo',runId:undoneRun.id,stepId:undoneStep.id})});

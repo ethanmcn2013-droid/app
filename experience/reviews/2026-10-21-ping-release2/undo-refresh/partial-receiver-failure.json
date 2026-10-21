@@ -1,0 +1,272 @@
+{
+  "version": "ping.release2.synthetic-receiver.v1",
+  "startedAt": "2026-10-21T20:53:09.528Z",
+  "ready": {
+    "pid": 18168,
+    "url": "http://127.0.0.1:62438",
+    "source": "D:\\Codex-scratch\\project-ping\\ping-release2-oct21",
+    "head": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+    "dirtyManifest": {
+      "status": " M experience/ping-assistant/release2-receive.mjs\n M src/components/app/messages/ping-personal-assistant.tsx\n?? .dashboard/ping-r2-context-repairs-2026-10-21-plan.json\n?? .dashboard/ping-r2-context-repairs-2026-10-21/events.jsonl\n?? .dashboard/ping-r2-context-repairs-2026-10-21/index.html\n?? .dashboard/ping-r2-context-repairs-2026-10-21/state.json\n?? .dashboard/ping-r2-experience-2026-10-21/events.jsonl\n?? .dashboard/ping-r2-experience-2026-10-21/index.html\n?? .dashboard/ping-r2-experience-2026-10-21/state.json\n?? .dashboard/ping-r2-experience-2026-10-21/state.previous.json\n?? .dashboard/ping-r2-experience-2026-10-21/update-after-merged-capture.json\n?? .dashboard/ping-r2-experience-2026-10-21/update-final.json\n?? .ping-r2-assistant-final.log\n?? .ping-r2-avatar-parity-lint.log\n?? .ping-r2-avatar-stack-lint.log\n?? .ping-r2-build-acceptance.log\n?? .ping-r2-build-after-chat-fix.log\n?? .ping-r2-build-final.log\n?? .ping-r2-checklist-warning-actions.log\n?? .ping-r2-checklist-warning-service.log\n?? .ping-r2-checklist-warning-types.log\n?? .ping-r2-cited-plan-tests.log\n?? .ping-r2-context-probe.ts\n?? .ping-r2-conversations-candidate.log\n?? .ping-r2-conversations-final-identity.log\n?? .ping-r2-conversations-final.log\n?? .ping-r2-conversations.log\n?? .ping-r2-experience-current.log\n?? .ping-r2-experience.log\n?? .ping-r2-final-eval-types.log\n?? .ping-r2-final-owning-subset.log\n?? .ping-r2-fixtures-current.log\n?? .ping-r2-fixtures.log\n?? .ping-r2-focused-final.log\n?? .ping-r2-grouped-eval-A.log\n?? .ping-r2-lint-candidate.log\n?? .ping-r2-lint-final-delta.log\n?? .ping-r2-lint-final.log\n?? .ping-r2-lint.log\n?? .ping-r2-memory-eval-lint.log\n?? .ping-r2-memory-final.log\n?? .ping-r2-needs-you-parity.log\n?? .ping-r2-owned-lint.log\n?? .ping-r2-owning.log\n?? .ping-r2-personal-files-acceptance.log\n?? .ping-r2-personal-files-built.log\n?? .ping-r2-personal-files-final-identity.log\n?? .ping-r2-personal-files-final.log\n?? .ping-r2-plan-fence-final.log\n?? .ping-r2-quality-fixes-lint.log\n?? .ping-r2-release2-serial.log\n?? .ping-r2-root-check.log\n?? .ping-r2-root-final-grouped-lint.log\n?? .ping-r2-root-final-grouped-types.log\n?? .ping-r2-root-recovery-types.log\n?? .ping-r2-safety-final.log\n?? .ping-r2-snapshot-probe.ts\n?? .ping-r2-sonnet-eval-round1.log\n?? .ping-r2-sonnet-eval-round2-diagnostic.log\n?? .ping-r2-sonnet-eval-round3.log\n?? .ping-r2-source-fence-tests.log\n?? .ping-r2-source-postimage-focused.log\n?? .ping-r2-state-acceptance.log\n?? .ping-r2-target-state-tests.log\n?? .ping-r2-types-combined.log\n?? .ping-r2-types-final-candidate.log\n?? .ping-r2-types-final.log\n?? .ping-r2-types-memory-final.log\n?? .ping-r2-types-receiving.log\n?? .ping-r2-types-source-fence.log\n?? .ping-r2-types-state-fence.log\n?? .ping-r2-types.log\n?? experience/reviews/2026-10-21-ping-release2/capture/evidence-attestation-2026-10-21-merged-370ec5ea.json\n?? experience/reviews/2026-10-21-ping-release2/capture/evidence-attestation-2026-10-21.json\n",
+      "trackedDiffSha256": "4ba039edfacfbb37686c04c09ab1ca58e0950acf3280ae15493bc9c826a14a5c"
+    },
+    "sourceHashes": {
+      "src/components/app/messages/ping-personal-assistant.tsx": "fc4563b7e4d4dacb8545ba12193a3baae071abc8d9c75328515ea2ee3358731c",
+      "src/components/app/messages/ping-personal-assistant-client.ts": "5065e9a0f7e10752bf7be63a59786c29b6cfd52dd9eace306bfd0541bd205bed",
+      "src/components/app/messages/conversation-workspace.tsx": "103b4f1eb53a81807f039e1bd6a756acfdc3c06821e1dc075080114b38f650b6",
+      "src/components/app/messages/conversation-session-provider.tsx": "82f25c370c90084ad2f11ddc4208fda3f6cfee65ebf76a886a28f71f55dfc6d1",
+      "src/components/app/messages/private-ping-command-router.tsx": "4382718bdb128a86f820b8ecd1df5cd20a8477789ed4a033f327f40c76c7984d",
+      "src/server/ping/assistant/service.ts": "3245f11aaff5ce26b06bc63717b5ef0dc4286fe6550d55e6f68d067bdd6f2b62",
+      "src/server/ping/assistant/store.ts": "25daf3c0b2df840d17925b307caad26107a1014c241b441cbee3966352e3cca7",
+      "src/server/ping/assistant/actions.ts": "edc472017bd00413323ece33dfe58354244314af14c34fcff4d46554fc5a12d2",
+      "src/server/ping/assistant/undo.ts": "b1df2bf63a0a10e9ce2929b0aa9883f90354e4f68e68c845456dd12f1390c4da",
+      "src/server/ping/assistant/conversation-context.ts": "d53286a2f8f8417e077c4710c51837ebc2ab873db8ec62116aed672df3140c4c",
+      "src/server/ping/assistant/task-context.ts": "8eaeb0c9de2c067f8897430d67bbd3f25b55901965174905fee21388fe0f0a94",
+      "src/server/ping/assistant/plan-targets.ts": "584fb3b42366355ad1f0699a4cce81e89e77925879a3a80efb06f3e474f941a4",
+      "src/server/ping/assistant/task-snapshot.ts": "9a79f85de495b190491c08d9133eca7cd2fba5967dde4c946f7fe14ce1648fa3",
+      "src/server/conversations/http.ts": "9731c1491b2a1c42b626797e157c90671d79bc17396e39664f6f1eff1df5ab1e",
+      "src/server/conversations/service.ts": "ed0ce1887244214c9f07a5214424c7f9a61afe9d1347e6785a039eee4209864c",
+      "src/lib/ping/assistant/contract.ts": "8e93b4d0e81b02bd3454c48755acb9d98346e3bfe1f016aa23980bff2186f60e",
+      "src/lib/ping/assistant/release2.ts": "e30af7d3960a8a00db15f874a1044b8e747b96e368f823b4b4d00aa433c2631a"
+    },
+    "databasePath": "C:\\Users\\ethan\\AppData\\Local\\Temp\\signal-ping-proof-Eo8Vw3\\synthetic.db",
+    "output": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\current-functional-undo-refresh-oct21",
+    "sourceConversationId": "project_3ac19ee8ac780b2502c2ce36a55a8feb",
+    "sourceMessageId": "message_649a895c018a8bca54baf0ea562073e6",
+    "privateConversationId": "dm_416d2a640709ffe1c21210ac39a96319",
+    "privateSourceMessageId": "message_5ea69796b9d58dfc3c9e0fdaf5c5dd7b",
+    "checklistParentId": "release2_wedding_plan",
+    "scope": "Actual Ping UI + HTTP/service/store/actions/undo + canonical conversation context + synthetic SQLite. Owner auth, finite planner, no provider/outbound/production access."
+  },
+  "exactInputs": [
+    {
+      "text": "What did we decide about drinks?",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "path": "/assistant-source"
+    },
+    {
+      "text": "Create florist reminder tomorrow at 10",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "path": "/assistant-source"
+    },
+    {
+      "text": "Make it 11",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "path": "/assistant-source"
+    },
+    {
+      "text": "What time is the florist reminder?",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "path": "/assistant-source"
+    },
+    {
+      "text": "Assign it to Bob",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "path": "/assistant-source"
+    },
+    {
+      "text": "Create a new Project with one starter task",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "path": "/assistant-source"
+    },
+    {
+      "text": "Tick Catering on the wedding checklist",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "path": "/assistant-source"
+    },
+    {
+      "text": "Message Bob privately: please review the florist task",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "path": "/assistant-source"
+    },
+    {
+      "text": "Draft one cancellable task",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "path": "/assistant-source"
+    },
+    {
+      "text": "What did Bob say about the client review?",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      },
+      "path": "/assistant-dm-source"
+    }
+  ],
+  "checks": [
+    {
+      "name": "canonical conversation context quoted and linked",
+      "ok": true,
+      "messageId": "message_649a895c018a8bca54baf0ea562073e6"
+    },
+    {
+      "name": "follow-up time edit keeps the original waiting plan day and cancelled prior plan is no longer applicable",
+      "ok": true
+    },
+    {
+      "name": "question answered from current waiting plan",
+      "ok": true
+    },
+    {
+      "name": "answer-follow-up edit reconciles ancestor waiting plan before Apply",
+      "ok": true
+    },
+    {
+      "name": "follow-up owner edit remains draft until apply",
+      "ok": true
+    },
+    {
+      "name": "apply persists edited task date, clock, and owner",
+      "ok": true,
+      "taskId": "assistant-t-fc75692bb4bf4ce5c6cc02cf11292f3f",
+      "due": "2026-10-22 11:00",
+      "assignees": "[\"bob\"]"
+    },
+    {
+      "name": "Undo publishes the task snapshot invalidation event used by task surfaces",
+      "ok": true
+    },
+    {
+      "name": "per-step task Undo is idempotent and database freshness is visible",
+      "ok": true
+    },
+    {
+      "name": "dependent Project creation and task assignment persisted",
+      "ok": true,
+      "projectId": "ws-3994226df3084db339cff8e28f2b4e6e",
+      "taskId": "assistant-t-f1d3f2ab5b897ae5f0ef7620ddc8d16e"
+    },
+    {
+      "name": "checklist action toggles only the exact child item",
+      "ok": true
+    },
+    {
+      "name": "private message targets only accepted DM and canonical Undo takes it back",
+      "ok": true
+    },
+    {
+      "name": "Cancel closes a pending draft without mutation",
+      "ok": true
+    }
+  ],
+  "screenshots": [
+    {
+      "id": "1440x960-source-empty",
+      "path": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\current-functional-undo-refresh-oct21\\1440x960-source-empty.png",
+      "sha256": "64c186d5f37d1a905f5807939e2247502cabd6e229f2aa8a54ed205d5f9766e6",
+      "bytes": 42206
+    },
+    {
+      "id": "1440x960-source-quoted-linked",
+      "path": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\current-functional-undo-refresh-oct21\\1440x960-source-quoted-linked.png",
+      "sha256": "02bf2668a2e899328b09ff0b81df425063d03c240bd5212d760db18024ff919d",
+      "bytes": 32926
+    },
+    {
+      "id": "1440x960-plan-first-empty",
+      "path": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\current-functional-undo-refresh-oct21\\1440x960-plan-first-empty.png",
+      "sha256": "649f6504ec69cfaba5c4711290e04ad35368114e789b4e733530ebbdf894ace4",
+      "bytes": 25367
+    },
+    {
+      "id": "1440x960-florist-plan-unapplied",
+      "path": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\current-functional-undo-refresh-oct21\\1440x960-florist-plan-unapplied.png",
+      "sha256": "e4f18841265321d77e42cd4f9c106c69c81dc783d4b53f1aaa27d9f986b0e24b",
+      "bytes": 53355
+    },
+    {
+      "id": "1440x960-waiting-plan-memory",
+      "path": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\current-functional-undo-refresh-oct21\\1440x960-waiting-plan-memory.png",
+      "sha256": "078b08f34d4e19bca5eec70b3cb4bcfcd9c8f09a892b5131080a795f68871f7c",
+      "bytes": 66733
+    },
+    {
+      "id": "1440x960-answered-ancestor-plan-cancelled",
+      "path": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\current-functional-undo-refresh-oct21\\1440x960-answered-ancestor-plan-cancelled.png",
+      "sha256": "5a92c585a6f7d39f844df03c0c089295781c71f01a4722bd413d7e94eed55d21",
+      "bytes": 69353
+    },
+    {
+      "id": "1440x960-florist-applied",
+      "path": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\current-functional-undo-refresh-oct21\\1440x960-florist-applied.png",
+      "sha256": "7c161f668ede9e23169154b56a7e0e08b12c452ee1d20a88cb958f413f026dd6",
+      "bytes": 67359
+    },
+    {
+      "id": "1440x960-florist-undo",
+      "path": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\current-functional-undo-refresh-oct21\\1440x960-florist-undo.png",
+      "sha256": "b7ac38eae3bfb1408a472880bf072e8d11ceb2784c3f33921bc74354e9f015c7",
+      "bytes": 68802
+    },
+    {
+      "id": "1440x960-checklist-one-child",
+      "path": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\current-functional-undo-refresh-oct21\\1440x960-checklist-one-child.png",
+      "sha256": "4e20a24c650b4d0dba21e2b86be601668f372b9a95f9c2cd2f27155034ba11b9",
+      "bytes": 63165
+    }
+  ],
+  "errors": [
+    {
+      "kind": "console",
+      "message": "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+    }
+  ],
+  "httpErrors": [],
+  "networkFailures": [
+    {
+      "url": "http://127.0.0.1:62438/api/ping/assistant",
+      "method": "POST",
+      "error": "net::ERR_CONNECTION_REFUSED"
+    }
+  ],
+  "navigationTransitions": [
+    {
+      "from": "blank",
+      "to": "/assistant-source",
+      "startedAt": "2026-10-21T20:53:09.841Z",
+      "completedAt": "2026-10-21T20:53:10.143Z"
+    },
+    {
+      "from": "/assistant-source",
+      "to": "/assistant-source",
+      "startedAt": "2026-10-21T20:53:10.568Z",
+      "completedAt": "2026-10-21T20:53:10.620Z"
+    },
+    {
+      "from": "/assistant-source",
+      "to": "/assistant-dm-source",
+      "startedAt": "2026-10-21T20:53:15.551Z",
+      "completedAt": "2026-10-21T20:53:15.600Z"
+    }
+  ],
+  "expectedNavigationAborts": [],
+  "failure": "TimeoutError: page.waitForFunction: Timeout 15000ms exceeded.",
+  "finishedAt": "2026-10-21T20:53:31.411Z"
+}

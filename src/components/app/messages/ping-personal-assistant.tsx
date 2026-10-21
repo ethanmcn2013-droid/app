@@ -207,7 +207,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
     if(latch.current||pendingRef.current&&pendingRef.current.requestId!==run.requestId)return;
     latch.current=true;setBusy(true);setError(null);const timing=beginVisibleTiming(run.requestId);const epoch=generation.current;
     try{keepPending({version:1,requestId:run.requestId,runId:run.id});const response=await assistantRequest("",{operation:"undo",runId:run.id,stepId},undefined,timing);
-      if(mounted.current&&epoch===generation.current){receive(response);refreshAssistantTasks({state:taskRefresh.current,actorId,operation:"read",response,invalidate:invalidateTaskSnapshotEpoch});}}
+      if(mounted.current&&epoch===generation.current){receive(response);refreshAssistantTasks({state:taskRefresh.current,actorId,operation:"undo",response,invalidate:invalidateTaskSnapshotEpoch});}}
     catch{finishAssistantTiming(timing,"unknown");if(mounted.current&&epoch===generation.current)setError("The take-back result is not confirmed. Check status before trying again.");}
     finally{if(epoch===generation.current){latch.current=false;if(mounted.current)setBusy(false);}}
   }

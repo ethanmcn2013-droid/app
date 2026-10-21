@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-21",
+  "reviewer": "/root/r2_independent_review",
+  "decision": "approve_mechanical_rebind_only",
+  "matrix": {
+    "path": "D:/Codex-scratch/project-ping/release2-proof-oct21/undo-refresh-capture/receipt-refresh-matrix-final.json",
+    "sha256": "e7921a27da86dfea3c27d30b907adf527afe5bdcfc0f59c0e7a34106414814de"
+  },
+  "candidateCommit": "a1bbfa1daab3b70d735c722600350bb561c0c1ac",
+  "freshCapture": {
+    "runId": "tasks-playwright-d775549c648bb865e05bddaf",
+    "artifactId": 12381162598,
+    "artifactDigest": "sha256:73fc28d15cb00ae9b90a4373b3ee271f28a4ac13d766eb69875affd921c6fd1c",
+    "attestationSha256": "08753063637b7740b54ccf4047ea4622e08812a7401a5972f6f73bcf4026444d",
+    "rawArtifactSha256": "362e7709aa243f4da05b370f74841db346b6404ac60741bfcb943c7dae89b756",
+    "canonicalEvidenceSha256": "d775549c648bb865e05bddaff1c4a43cf2029b6ffb269d4591de09e678bd50eb",
+    "fixtureManifestSha256": "8a876e86108fd622ce1c761bb682325cbd239694c3068f6218d0b8e511d9b305",
+    "expected": 188,
+    "passed": 188,
+    "unexpected": 0,
+    "errors": 0
+  },
+  "receipts": {
+    "count": 18,
+    "projectTuples": 72,
+    "tuplesEqual": true,
+    "sourceHashesMatch": true,
+    "materialityHashesMatch": true,
+    "reviewerDatesDecisionsPreserved": true,
+    "coveragePresencePreserved": true,
+    "receiptPathsFromCurrentRegistry": true
+  },
+  "registry": {
+    "currentSha256": "e5f8f0f505bcc941b29d8804198dcde56aa41bd33946dee26cfd37a68227a197",
+    "priorPingMaterialityHash": "440401ebff7ab9b0",
+    "currentPingMaterialityHash": "af8863c9cbbc893b",
+    "onlyUnreviewedPingHashChanged": true
+  },
+  "allowedReceiptFields": [
+    "attestationPath",
+    "attestationSha256",
+    "runId",
+    "canonicalEvidenceSha256",
+    "rawArtifactSha256"
+  ],
+  "explicitlyPreserve": [
+    "source",
+    "materialityHash",
+    "reviewer",
+    "reviewedAt",
+    "reviewedChange",
+    "decision",
+    "coverage presence/absence",
+    "all other receipt fields",
+    "registry except documented Ping hash"
+  ],
+  "scope": "Mechanical evidence relink only; no new source review, model grade, or product/release acceptance",
+  "reviewerMadeReceiptOrRegistryEdits": false
+}
