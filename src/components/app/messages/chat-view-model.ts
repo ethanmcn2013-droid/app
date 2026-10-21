@@ -199,6 +199,11 @@ export function toneOf(id: string): number {
   return hash % 6;
 }
 
+// Reference-design people tones: clay, slate, teal, green, rose and olive.
+// Shared by Chat avatars and member stacks; Project hues must not colour people.
+const PERSON_TONES = ["#9a3412", "#475569", "#0f766e", "#166534", "#be185d", "#4d5a12"] as const;
+export function personToneColor(id: string): string { return PERSON_TONES[toneOf(id)]!; }
+
 export function hostOf(href: string): string {
   try { return new URL(href).host.replace(/^www\./, ""); } catch { return href; }
 }

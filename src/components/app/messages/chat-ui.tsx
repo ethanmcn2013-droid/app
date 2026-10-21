@@ -9,7 +9,7 @@
 import { Fragment, useCallback, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from "react";
 import { projectColor } from "@/components/shell/app-sidebar";
 import { shouldSendComposerKey } from "./conversation-client-model";
-import { activeMentionQuery, dayKey, fullStampLabel, groupMessages, initialsOf, linkLabel, mentionCandidates, mentionsPerson, timeLabel, tokenizeBody, toneOf, type ChatClock, type ChatMessage, type ChatPerson, type ChatTaskStatus } from "./chat-view-model";
+import { activeMentionQuery, dayKey, fullStampLabel, groupMessages, initialsOf, linkLabel, mentionCandidates, mentionsPerson, personToneColor, timeLabel, tokenizeBody, toneOf, type ChatClock, type ChatMessage, type ChatPerson, type ChatTaskStatus } from "./chat-view-model";
 import { AvatarStack } from "@/components/app/presence/avatar-stack";
 import styles from "./chat.module.css";
 import { ConversationOptions } from "./conversation-options";
@@ -53,12 +53,8 @@ export const ChatIcon = {
 
 /* ── Identity ───────────────────────────────────────────────────────── */
 
-// Reference-design people tones: clay, slate, teal, green, rose and olive.
-// Project colours include Signal-like indigo and must never colour a person.
-const PERSON_TONES = ["#9a3412", "#475569", "#0f766e", "#166534", "#be185d", "#4d5a12"] as const;
-
 export function Avatar({ id, name, size = 36 }: { id: string; name: string; size?: number }) {
-  return <span aria-hidden="true" className={styles.avatar} data-tone={toneOf(id)} style={{ "--size": `${size}px`, "--tone": PERSON_TONES[toneOf(id)] } as React.CSSProperties}>{initialsOf(name)}</span>;
+  return <span aria-hidden="true" className={styles.avatar} data-tone={toneOf(id)} style={{ "--size": `${size}px`, "--tone": personToneColor(id) } as React.CSSProperties}>{initialsOf(name)}</span>;
 }
 
 export function ProjectTile({ id, name, size = 36 }: { id: string; name: string; size?: number }) {
@@ -370,7 +366,7 @@ function MessageItem({ message, people, selfId, clock, first, actions, editing, 
         </a> : null}
       </div> : null}
       {message.replyCount && actions?.onReply ? <button aria-expanded={threadOpen} className={styles.thread} onClick={() => actions.onReply!(message)} type="button">
-        <span aria-hidden="true" className={styles.threadFaces}><AvatarStack max={3} members={replyAuthors} size="sm" /></span>
+        <span aria-hidden="true" className={styles.threadFaces}><AvatarStack max={3} members={replyAuthors.map(person=>({...person,colour:personToneColor(person.id)}))} size="sm" /></span>
         <span className={styles.threadCount}>{message.replyCount} {message.replyCount === 1 ? "reply" : "replies"}</span>
         {message.lastReplyAt ? <span className={styles.threadLast}>Last reply {timeLabel(message.lastReplyAt, clock)}</span> : null}
         <span className={styles.threadGo}><ChatIcon.chevron size={14} /></span>
