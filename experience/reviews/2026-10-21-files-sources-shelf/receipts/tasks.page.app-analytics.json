@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-analytics",
+  "source": "tasks/src/app/app/analytics/page.tsx",
+  "materialityHash": "d89f2a4abd38ee57",
+  "reviewedAt": "2026-10-21",
+  "reviewer": "",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-0e5b99e3a971996d51daa39f-336c75640ae7655a.json",
+    "attestationSha256": "4d75c225cd2c59cad63564188871c706aef0256c429305d7327222cc1412cf16",
+    "runId": "tasks-playwright-0e5b99e3a971996d51daa39f",
+    "canonicalEvidenceSha256": "0e5b99e3a971996d51daa39fb5a4401ef31e37dc0d41c5a791cf545856b446ac",
+    "rawArtifactSha256": "336c75640ae7655aad5a597944820688e49d310a1a74aa3a97fe8074b51cba59",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-analytics",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim. PENDING Ethan's review: reviewer and decision are unsigned.",
+  "decision": ""
+}
