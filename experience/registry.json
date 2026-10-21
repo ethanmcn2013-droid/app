@@ -3737,11 +3737,11 @@
       "lastReviewedAt": "2026-10-21",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "dacfebb578dd8234",
+      "materialityHash": "b3090728f061cdbd",
       "materialityReview": {
-        "materialityHash": "dacfebb578dd8234",
+        "materialityHash": "b3090728f061cdbd",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-chat-ping-redesign/receipts/tasks.page.app-messages.json"
+        "evidence": "experience/reviews/2026-10-21-ping-release2/receipts/tasks.page.app-messages.json"
       }
     },
     {
@@ -5033,7 +5033,7 @@
       "lastReviewedAt": "2026-10-18",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "e1b0cb5150a2a0e3"
+      "materialityHash": "a37edafb391a9d1e"
     },
     {
       "id": "tasks.page.s-by-token-follow-confirm",

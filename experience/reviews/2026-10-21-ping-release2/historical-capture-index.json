@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "signal-ping-historical-playwright-capture/1",
+  "runId": "tasks-playwright-4da6219e5a70697f23901917",
+  "status": "passed",
+  "passedCases": 188,
+  "totalCases": 188,
+  "rawReportPath": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\historical-capture-2026-10-21\\critical-evidence-188.json",
+  "rawReportSha256": "9c594cd1e3e9e67443292edbf431e278d153fd09e1e5420d2202112267134969",
+  "bytes": 22255884,
+  "manifestSha256": "b63413d93905c96e5785f8ee1e68a4a1fa8134292693ab7cd5b9a8030b2d2628",
+  "attestationPath": "experience/evidence-runs/tasks-playwright-4da6219e5a70697f23901917-9c594cd1e3e9e674.json",
+  "note": "Historical capture predates final Chat identity correction. Retained for provenance only, not as verification of current final UI."
+}

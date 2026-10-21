@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "signal-ping-aborted-playwright-archive/1",
+  "recordedAt": "2026-10-21",
+  "status": "aborted",
+  "completedCases": 24,
+  "totalCases": 188,
+  "reportOrAttestationProduced": false,
+  "artifactPath": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\aborted-run-2026-10-21-1537",
+  "fileCount": 1133,
+  "byteCount": 151137383,
+  "inventorySha256": "40c3234a270eb66a96da0c2a7494c79a8da52120f79cb246076a7e1070e3ace8",
+  "inventoryDefinition": "SHA256 of sorted UTF-8 records: relative-path, NUL, byte length, NUL, per-file SHA256, LF."
+}

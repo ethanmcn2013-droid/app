@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "signal-ping-playwright-capture-index/1",
+  "capturedAt": "2026-10-21",
+  "runId": "tasks-playwright-1f4724792bd3db9cde25f4f8",
+  "canonicalEvidenceSha256": "1f4724792bd3db9cde25f4f8507480110b6bb8d7c4caf9e845cda8c7c837912d",
+  "rawReportPath": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\final-capture-2026-10-21\\critical-evidence-188.json",
+  "rawReportSha256": "2f7d16e3929ee02fba5a2a5294f5c51d809cb170626adabe769d1ade5d54d091",
+  "bytes": 22224476,
+  "testCount": 188,
+  "passedCount": 188,
+  "unexpectedCount": 0,
+  "manifestSha256": "b33f9894bef03495afc569ed2769d670c0b3e251c0b8b4afd1dde5db47bfaf33",
+  "attestation": "experience/evidence-runs/tasks-playwright-1f4724792bd3db9cde25f4f8-2f7d16e3929ee02f.json",
+  "canonicalCommand": "corepack pnpm experience:test",
+  "canonicalCommandExit": "Playwright: passed 188/188; receipt verification then failed because existing materiality receipt still binds pre-refresh manifest; fresh attestation was archived with --write-record and is available for independent review.",
+  "screenshotNote": "Successful canonical runs collect screenshots only for failing cases; none were generated for this all-pass run."
+}
