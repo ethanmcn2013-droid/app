@@ -19,7 +19,12 @@ export async function loadAssistantMemory(store:AssistantStore,actorId:string,re
     if(visited.has(next))throw new AssistantStoreError('request_conflict');visited.add(next);
     const run=await store.getRun(actorId,next);
     const prior=run.requestJson?parseAssistantRequest(JSON.parse(run.requestJson)):null;
-    if(!prior||!sameAssistantRoom(request,prior)||!await authorize(run.id))throw new AssistantStoreError('unavailable');
+    if(!prior||!sameAssistantRoom(request,prior))throw new AssistantStoreError('unavailable');
+    // Current context is loaded afresh. Stale historical snapshots must not poison a new
+    // request, nor may newer replies retain facts derived from an inaccessible ancestor.
+    // Missing/foreign rooms and authorization failures still throw; only explicit false
+    // discards this whole inherited chain, including any waiting plan.
+    if(!await authorize(run.id))return {turns:[],waiting:undefined};
     const metadata=JSON.parse(run.resultJson??'{}');
     const bound=run.planJson?JSON.parse(run.planJson):null;
     const parsed=bound?parseAssistantPlan(bound.plan):null;

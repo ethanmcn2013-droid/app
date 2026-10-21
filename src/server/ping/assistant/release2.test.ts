@@ -6,13 +6,43 @@ import {createAssistantService,assistantUnchangedSources} from './service';
 import {createAssistantHttp} from './http';
 import {assistantFixture} from './store-fixture';
 import {assistantConversationPlannerContext} from './planner-context';
-import {editAssistantPlan} from './conversation-memory';
+import {editAssistantPlan,loadAssistantMemory} from './conversation-memory';
 import {instantFromAssistantDayTime,assistantLocalDayTime} from './calendar-time';
 
 const context:AssistantPlannerContext={actorName:'Alice',projectName:'Synthetic',projects:[{name:'Synthetic'}],members:[{name:'Alice'},{name:'Niamh'}],selectedTaskCount:0,previousTaskCount:0,referenceDate:'2026-07-16',timeZone:'Europe/Dublin'};
 const request={requestId:'request_r20001',text:'Call the florist tomorrow at 10',scope:{kind:'project' as const,projectId:'synthetic'},mode:'draft' as const};
 const plan:Extract<AssistantPlan,{outcome:'plan'}>={version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[{id:'call',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Call the florist',assignees:[{kind:'self'}],dueDate:'tomorrow',dueTime:'10:00'}]}]};
 const source:AssistantSource={ref:'source1',kind:'conversation',projectId:'synthetic',scopeId:'chat_1',itemId:'message_1',revision:1,audienceEpoch:1,body:'We agreed on Spritz, not wine.',authorName:'Alice',createdAt:'2026-07-16T09:00:00.000Z',href:'/app/messages?projectId=synthetic&messageId=message_1'};
+
+test('stale history clears the inherited chain and waiting plan without blocking a fresh request',async()=>{
+ const f=await assistantFixture();let oldCurrent=true,calls=0;try{
+  const service=createAssistantService({store:f.store,context:async()=>calls===0?{...context,sources:[source]}:context,
+   validateSources:async()=>oldCurrent,planner:{plan:async input=>{calls++;
+    if(calls===1)return{plan};
+    assert.equal(input.context.memory,undefined);assert.equal(input.context.waitingPlan,undefined);
+    return{plan:{version:'ping.assistant.v1',outcome:'clarification',message:'What would you like to do next?'}};
+   }},execute:async()=>{throw Error('no writes');}});
+  const prior=await service.submit('alice',request);assert.equal(prior.status,'ready');oldCurrent=false;
+  const next=await service.submit('alice',{...request,requestId:'request_r2_fresh01',text:'A new request',replyToRunId:prior.id});
+  assert.equal(next.status,'clarification');assert.equal(calls,2);
+  await assert.rejects(service.apply('alice',prior.id));
+ }finally{await f.close();}
+});
+
+test('an inaccessible older ancestor clears newer derived turns; foreign rooms and callback failures still refuse',async()=>{
+ const f=await assistantFixture();try{
+  const service=createAssistantService({store:f.store,context:async()=>context,planner:{plan:async()=>({plan})},execute:async()=>{throw Error('no writes');}});
+  const first=await service.submit('alice',request);
+  const second=await service.submit('alice',{...request,requestId:'request_r2_chain02',replyToRunId:first.id});
+  const seen:string[]=[];
+  const next={...request,requestId:'request_r2_chain03',replyToRunId:second.id};
+  const memory=await loadAssistantMemory(f.store,'alice',next,async id=>{seen.push(id);return id!==first.id;});
+  assert.deepEqual(seen,[second.id,first.id]);assert.deepEqual(memory,{turns:[],waiting:undefined});
+  await assert.rejects(loadAssistantMemory(f.store,'bob',next,async()=>true));
+  await assert.rejects(loadAssistantMemory(f.store,'alice',{...next,scope:{kind:'project',projectId:'other'}},async()=>false));
+  await assert.rejects(loadAssistantMemory(f.store,'alice',next,async()=>{throw Error('authorization storage failed');}),/authorization storage failed/);
+ }finally{await f.close();}
+});
 
 test('public endpoint forces a waiting plan even when caller forges execute; only Apply writes',async()=>{
  const f=await assistantFixture();let writes=0;try{
