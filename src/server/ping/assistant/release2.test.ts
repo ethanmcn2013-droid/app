@@ -149,4 +149,5 @@ test('only a task snapshot changed by this run is exempt from its own pre-plan r
  const result:AssistantActionResult={stepId:'update',kind:'update_tasks',status:'completed',summary:'Updated',affectedCount:1,reversal:{kind:'tasks',projectId:'synthetic',rows:[{id:'changed_task',before:{title:'Before'},after:{title:'After'}}]}};
  assert.deepEqual(assistantUnchangedSources([source,task,untouched],[result]),[source,untouched]);
  assert.deepEqual(assistantUnchangedSources([source,task,untouched],[{...result,status:'blocked'}]),[source,task,untouched]);
+ assert.deepEqual(assistantUnchangedSources([source,task,untouched],[{...result,undoResult:{status:'reverted',summary:'Restored',affectedCount:1}}]),[source,task,untouched]);
 });

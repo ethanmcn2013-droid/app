@@ -17,7 +17,7 @@ export type AssistantExecuteInput = {
  * Its Project permission and the step's own domain guards still apply. Chat sources never get this exemption.
  */
 export function assistantUnchangedSources(sources:readonly AssistantSource[],results:readonly AssistantActionResult[]){
-  const changed=new Set(results.filter(result=>result.status==='completed'&&result.reversal?.kind==='tasks').flatMap(result=>result.reversal?.kind==='tasks'?result.reversal.rows.map(row=>row.id):[]));
+  const changed=new Set(results.filter(result=>result.status==='completed'&&result.undoResult?.status!=='reverted'&&result.reversal?.kind==='tasks').flatMap(result=>result.reversal?.kind==='tasks'?result.reversal.rows.map(row=>row.id):[]));
   return sources.filter(source=>source.kind!=='task'||!changed.has(source.itemId));
 }
 export function createAssistantService(deps: {
