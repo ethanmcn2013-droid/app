@@ -1,7 +1,7 @@
 /**
  * /app/home loading boundary. Chrome exists, so loading stays in the content
- * region as a tracing of the settled page: the greeting, the launch tile and
- * done this week side by side, the activity strip, and four start cards. No
+ * region as a tracing of the settled page: the greeting, four start cards,
+ * the launch tile and done this week side by side, and the activity strip. No
  * fake figures, no full-screen takeover. The soft breathing is switched off
  * under reduced motion in the stylesheet.
  *
@@ -26,6 +26,13 @@ export default function HomeLoading() {
             <Bone width="150px" height={12} />
           </div>
           <div className={styles.bento}>
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className={`${styles.card} ${styles.boneTile}`} style={{ minHeight: 168, padding: 20, gap: 16 }}>
+                <Bone width="40px" height={40} />
+                <Bone width="48px" height={24} />
+                <Bone width="70%" />
+              </div>
+            ))}
             <div className={`${styles.tile} ${styles.s7} ${styles.boneTile} ${styles.boneHero}`}>
               <Bone width="120px" />
               <Bone width="45%" height={20} />
@@ -40,13 +47,6 @@ export default function HomeLoading() {
               <Bone width="90px" />
               <Bone width="100%" height={120} />
             </div>
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className={`${styles.card} ${styles.boneTile}`} style={{ minHeight: 168, padding: 20, gap: 16 }}>
-                <Bone width="40px" height={40} />
-                <Bone width="48px" height={24} />
-                <Bone width="70%" />
-              </div>
-            ))}
           </div>
         </div>
       </div>
