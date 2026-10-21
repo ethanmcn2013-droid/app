@@ -1,0 +1,341 @@
+{
+  "gate": 9.5,
+  "seats": [
+    "UX and information architecture",
+    "First-use usability and taste",
+    "Visual design, typography and brand",
+    "Motion and interaction",
+    "Accessibility and resilience"
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "scores": {
+        "UX and information architecture": 7.6,
+        "First-use usability and taste": 7.6,
+        "Visual design, typography and brand": 7.2,
+        "Motion and interaction": 8.3,
+        "Accessibility and resilience": 7.1
+      },
+      "findings": 25,
+      "confirmed": 25,
+      "refuted": 0,
+      "fixed": 25,
+      "headline": "A 7.1 floor. The page held at full width and came apart at the edges: names cut mid-word at 1280, folders lost their marks on phones, thumbnail type ballooned at 768, a skip link that acted as a route, and a selection you could only make with a mouse. Every finding survived its refuter; all 25 are fixed and guarded by 41 new behaviour assertions.",
+      "worst": [
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.5,
+          "problem": "The upload tray covered the bottom of the page, so keyboard focus could land behind it, and on phones the tray, States and skip link stayed reachable behind the modal preview sheet.",
+          "done": "The page now reserves the tray band (padding and scroll-padding follow the tray height); the phone sheet makes tray, States and skip link inert and keeps Tab inside itself."
+        },
+        {
+          "seat": "Visual design, typography and brand",
+          "cost": 0.5,
+          "problem": "At 1280 card metadata was cut mid-word (\"Google Dri…\"), and Latest additions squeezed six cards into 150px columns.",
+          "done": "One card template: where and when on line one, never cut; who and context on line two, where only the context yields. Latest additions is one row of cards at 180px or wider."
+        },
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.4,
+          "problem": "The skip link changed the URL to #view and the router treated it as a route; multi-select in the list worked only with a mouse.",
+          "done": "The skip link moves focus to the files; the router ignores non-route hashes. Arrow keys reach the checkbox column, Space ticks, and the count is announced."
+        },
+        {
+          "seat": "UX and information architecture",
+          "cost": 0.4,
+          "problem": "The In Signal folder, the notice and the filter each counted unattached files differently, and the filter hid inside the Project select.",
+          "done": "One definition feeds all three; Not attached is its own toggle, and the notice opens In Signal with it on."
+        },
+        {
+          "seat": "Motion and interaction",
+          "cost": 0.4,
+          "problem": "Opening the preview slid cards diagonally across each other as they changed rows.",
+          "done": "Cards that stay on their row glide; cards that change rows fade in at their new place (160ms after 80ms)."
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "scores": {
+        "UX and information architecture": 8.1,
+        "First-use usability and taste": 7.7,
+        "Visual design, typography and brand": 7.5,
+        "Motion and interaction": 8.1,
+        "Accessibility and resilience": 7.6
+      },
+      "findings": 25,
+      "confirmed": 24,
+      "refuted": 1,
+      "fixed": 24,
+      "headline": "The floor rose from 7.1 to 7.5, and the panel moved from the happy path to the edges. It caught a regression from round 1 (the phone header panned sideways inside the page), search denying files it had only hidden, failed uploads announced as finished, and an Add menu promising a paste-a-link flow that did not exist. 24 of 25 findings survived; all 24 are fixed, and the gate now measures inner scrollers so the regression class cannot return.",
+      "worst": [
+        {
+          "seat": "First-use usability and taste",
+          "cost": 0.5,
+          "problem": "On a phone the first swipe panned the whole page sideways by up to 112px: the header facts had no break points, and the gate only measured document scroll, not the main scroller.",
+          "done": "Facts wrap whole, with each separator dot dropped when its fact starts a line; the gate now checks every overflow:auto element in every state at every width."
+        },
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.5,
+          "problem": "A single-slot live region let messages overwrite each other, so a batch with a failed upload was announced as \"All uploads finished\".",
+          "done": "Announcements queue; failures go to an assertive region; the batch summary uses the tray title counts (\"1 file uploaded, 1 couldn’t upload. Retry or Remove is in the uploads panel.\")."
+        },
+        {
+          "seat": "First-use usability and taste",
+          "cost": 0.5,
+          "problem": "\"Paste a link\" appeared in three places but only showed a toast; there was no field, and pasting on the page did nothing.",
+          "done": "The Add menu turns into a labelled field in place with validation, Save and Undo; pasting a web address anywhere outside a text field saves it too."
+        },
+        {
+          "seat": "Visual design, typography and brand",
+          "cost": 0.5,
+          "problem": "The folder filter bar reflowed into 2 to 4 rows depending on width, stranding the layout switch and Show archived in different places.",
+          "done": "Two fixed slots: filters on the left may wrap; layout and Show archived stay pinned top right at every width."
+        },
+        {
+          "seat": "UX and information architecture",
+          "cost": 0.4,
+          "problem": "Searching the exact name of a file on an archived task, or in a disconnected Drive, answered \"No files match\".",
+          "done": "Search names what matched behind the archived switch or Drive (\"1 file on an archived task matches. Show it\") and offers the one action that reveals it."
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "scores": {
+        "UX and information architecture": 8,
+        "First-use usability and taste": 8.1,
+        "Visual design, typography and brand": 7.8,
+        "Motion and interaction": 8.3,
+        "Accessibility and resilience": 7.9
+      },
+      "findings": 24,
+      "confirmed": 24,
+      "refuted": 0,
+      "fixed": 24,
+      "headline": "The floor rose to 7.8. Every finding survived its refuter, many in sharpened form: the panel moved to what happens after you act. Files on other projects tasks were missing from those folders, Link from Google Drive produced nothing, undo died with its toast, the previewed file could glide off screen, and a click meant close while Enter meant open. All 24 are fixed (the thumbnail finding by the founders placeholder decision), with 31 new behaviour assertions.",
+      "worst": [
+        {
+          "seat": "First-use usability and taste",
+          "cost": 0.5,
+          "problem": "Link from Google Drive was the only add path that never produced a file: it toasted an instruction to choose a file the page never offered.",
+          "done": "Google s picker is stubbed the way Upload stubs the file dialog: two Drive files rise into place, take focus, and can be undone."
+        },
+        {
+          "seat": "UX and information architecture",
+          "cost": 0.45,
+          "problem": "A file attached to a task in another project did not appear in that project, and pulled the other project s task into its first project as a group.",
+          "done": "Project membership is the set of every project the file s tasks belong to; groups show only the folder s own tasks."
+        },
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.4,
+          "problem": "Ctrl+Z stopped working when the 8-second toast left, so keyboard users had seconds to find Undo.",
+          "done": "Undo lives until the next undoable action or a change of folder, is announced as Press Control Z, and names what came back."
+        },
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.4,
+          "problem": "Files were pressed toggles: a click on the previewed file closed it while Enter opened it, and double-click opened while closing the preview.",
+          "done": "The previewed file is aria-current with a described hint; clicking keeps it previewed, Enter and double-click open, Space only selects."
+        },
+        {
+          "seat": "Motion and interaction",
+          "cost": 0.35,
+          "problem": "Opening the preview glided the chosen file below the fold at 1280 and 1440.",
+          "done": "The same FLIP now scrolls the file into view as part of its glide; delete, undo and attach also run through one FLIP."
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "scores": {
+        "UX and information architecture": 8.2,
+        "First-use usability and taste": 8.4,
+        "Visual design, typography and brand": 8.3,
+        "Motion and interaction": 8.2,
+        "Accessibility and resilience": 8.2
+      },
+      "findings": 23,
+      "confirmed": 20,
+      "refuted": 3,
+      "fixed": 20,
+      "headline": "The floor rose to 8.2 and the spread tightened to 0.2. Refuters threw out three findings for the first time: snapped filter changes, a duplicate on list columns, and project-name wrapping are deliberate. The 20 that stood were about the list and the moments after acting: ticking a row shoved the rows under the pointer, list rows dropped where each file lives, the picker toast reported the wrong change, and Drive files escaped the not-attached count. All 20 are fixed, with 30 new behaviour assertions.",
+      "worst": [
+        {
+          "seat": "UX and information architecture",
+          "cost": 0.45,
+          "problem": "The list view dropped where each file lives, and on phones dropped the date too.",
+          "done": "Rows carry the source mark and a Where column; on narrow screens a second line repeats the card's facts."
+        },
+        {
+          "seat": "Motion and interaction",
+          "cost": 0.4,
+          "problem": "Ticking a row inserted a selection bar above the list and pushed every row down under the pointer.",
+          "done": "The selection bar floats over the bottom of the pane and is patched in place; rows never move."
+        },
+        {
+          "seat": "First-use usability and taste",
+          "cost": 0.4,
+          "problem": "The picker toast said Attached when you had removed a task, and toasted even when nothing changed.",
+          "done": "The toast is worked out per file from what changed; no change means no toast and no undo."
+        },
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.4,
+          "problem": "In windows under 640px tall the details panel clipped its lower controls out of reach.",
+          "done": "The panel scrolls on its own and the preview shrinks in short windows, so every control is reachable."
+        },
+        {
+          "seat": "First-use usability and taste",
+          "cost": 0.3,
+          "problem": "Files linked from Google Drive without a task were never counted as not attached.",
+          "done": "Not attached means no task, wherever the file lives; the Drive folder states its count."
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "scores": {
+        "UX and information architecture": 8.4,
+        "First-use usability and taste": 8.5,
+        "Visual design, typography and brand": 8.4,
+        "Motion and interaction": 7.6,
+        "Accessibility and resilience": 7.8
+      },
+      "findings": 24,
+      "confirmed": 21,
+      "refuted": 3,
+      "fixed": 21,
+      "headline": "Three seats rose and two fell, so the floor dropped to 7.6. The motion and accessibility seats looked where no gate had measured: opening the preview blanked seven of eight files for a beat, a double-click on a folder previewed a stray file, the task picker clipped its Done button on every phone, and contrast themes erased every selected state. Three findings were refuted as deliberate. All 21 that stood are fixed, with 27 new behaviour assertions.",
+      "worst": [
+        {
+          "seat": "Motion and interaction",
+          "cost": 0.6,
+          "problem": "Opening or closing the preview faded seven of eight files to nothing and back, because any file that changed row re-faded instead of moving.",
+          "done": "Every file on screen now glides to its new place with the chosen one, in one 300ms beat; only files arriving from off screen fade in."
+        },
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.5,
+          "problem": "The task picker was 440px wide on every phone, so Done was clipped at 390 and off screen at 360, and filtering moved the search field.",
+          "done": "The picker is the screen's width on phones and a fixed height everywhere, so every button fits and the field never moves."
+        },
+        {
+          "seat": "Motion and interaction",
+          "cost": 0.4,
+          "problem": "Double-clicking a folder cut its morph short and previewed whichever file landed under the pointer.",
+          "done": "The second click of a double-click is swallowed; the morph plays out and nothing is selected."
+        },
+        {
+          "seat": "First-use usability and taste",
+          "cost": 0.3,
+          "problem": "Enter on a ticked task unticked it, and pasted links were named after IDs: 'Team', '88', 'AbC123'.",
+          "done": "Enter confirms the picker; links take their most readable words, and pull requests read 'studio #88'."
+        },
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.3,
+          "problem": "Card view, the default layout, had no way to select several files, and contrast themes showed no pressed or previewed state.",
+          "done": "X, Shift+Space and Ctrl+click select cards with a tick; a forced-colours block outlines every selected state."
+        }
+      ]
+    },
+    {
+      "round": 6,
+      "scores": {
+        "UX and information architecture": 8.6,
+        "First-use usability and taste": 8.6,
+        "Visual design, typography and brand": 8.5,
+        "Motion and interaction": 7.5,
+        "Accessibility and resilience": 8.3
+      },
+      "findings": 24,
+      "confirmed": 20,
+      "refuted": 4,
+      "fixed": 20,
+      "headline": "Four seats rose; Motion held the floor at 7.5. The seat drove the 1000 to 1100px band and interruptions nobody screenshots: the search's own width transition made the header jump 44px mid-glide, Back during a folder morph finished the page before reversing, and the tray fold snapped 241px. Four findings were refuted, two of them because the proposed fix would have undone round 5's gated work. The 20 that stood are fixed, with 20 new behaviour assertions.",
+      "worst": [
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.5,
+          "problem": "Card groups were plain buttons in role=group, so screen readers stayed in browse mode, X and D never reached the page, and 'selected' was part of the name.",
+          "done": "Card groups are multi-select listboxes; each card is an option with aria-selected."
+        },
+        {
+          "seat": "Motion and interaction",
+          "cost": 0.4,
+          "problem": "At about 1000 to 1100px, the search box's width transition re-wrapped the header mid-glide and the grid jumped 44px in one frame.",
+          "done": "The search takes its new width in the frame the glide is measured; the header never changes height during it."
+        },
+        {
+          "seat": "Visual design, typography and brand",
+          "cost": 0.4,
+          "problem": "Between 768 and about 1300px, or with the preview open, the folder toolbar stacked into two or three ragged rows with orphaned controls.",
+          "done": "A narrow files column moves secondary settings into Display, which opens as a popover from a tablet up."
+        },
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.4,
+          "problem": "Home and End never moved focus in a file group; the browser scrolled instead.",
+          "done": "Home and End go to the first and last file in the group."
+        },
+        {
+          "seat": "First-use usability and taste",
+          "cost": 0.3,
+          "problem": "One upload said 'not attached' five times in three places, and the notice pushed the page down just as the tray finished.",
+          "done": "While the tray asks to attach new uploads, the page doesn't; the notice appears once the tray is closed or folded."
+        }
+      ]
+    },
+    {
+      "round": 7,
+      "scores": {
+        "UX and information architecture": 8.6,
+        "First-use usability and taste": 8.8,
+        "Visual design, typography and brand": 8.6,
+        "Motion and interaction": 8.3,
+        "Accessibility and resilience": 8.4
+      },
+      "findings": 25,
+      "confirmed": 22,
+      "refuted": 3,
+      "fixed": 22,
+      "headline": "The floor rose to 8.3 and every seat moved up; the spread is now 0.5. What remained was second-order: a header that ignored the files you had just added, Esc that skipped the search, a toolbar that still wrapped at 1280, a listbox that announced Space but previewed instead, and a popover that claimed to be modal. Three findings were refuted, including preview-follows-focus, which would have broken the gated Enter model. The 22 that stood are fixed, with 20 new behaviour assertions. Stopped here at the founder's request to ship.",
+      "worst": [
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.4,
+          "problem": "Card groups announced themselves as multi-select listboxes, but Space previewed a file instead of selecting it.",
+          "done": "Space toggles selection on a card; Enter still previews, then opens."
+        },
+        {
+          "seat": "UX and information architecture",
+          "cost": 0.3,
+          "problem": "In a searched folder one Esc threw away both the search and the folder; on home, Esc on a result did nothing.",
+          "done": "Esc clears the search first wherever focus is, and keeps your place."
+        },
+        {
+          "seat": "First-use usability and taste",
+          "cost": 0.3,
+          "problem": "After an upload the header still counted only files in projects, so it disagreed with the folders right under it.",
+          "done": "The header counts every file and names the ones in projects: '20 files · 18 in 4 projects · 11 added'."
+        },
+        {
+          "seat": "Visual design, typography and brand",
+          "cost": 0.3,
+          "problem": "A folder with the Not attached toggle still wrapped its toolbar at 1280 and 1366, orphaning Sort.",
+          "done": "The toolbar collapses into Display whenever it would wrap, measured, not by a fixed width."
+        },
+        {
+          "seat": "Accessibility and resilience",
+          "cost": 0.3,
+          "problem": "The Display popover said aria-modal while focus could leave it, and Tab left it open behind you.",
+          "done": "The popover is non-modal, closes when focus leaves, and reports aria-expanded; the phone sheet stays modal."
+        }
+      ]
+    }
+  ]
+}

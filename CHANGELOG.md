@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-21 · Internal, flagged · Files as Sources + shelf, for operators only
+
+Operators now see the Files redesign: three folders by where files live (In Signal, Google Drive and Links), each with a count and one fact, a dashed Add files folder that points to Tasks, and Latest additions as one row of cards or a newest-first list. A folder opens with `?source=`, so its address can be shared; inside it, type chips narrow when two or more types exist and the filter states itself with Clear. Search reads names, tasks, people and where files live, and lights the words where it found them. Each file type has one greyscale placeholder, without type badges. The preview is the existing one, docked on wide screens and a sheet on phones.
+
+Everyone else, including demo and review builds, sees the current Files page unchanged. The gate is the existing operator check (`ADMIN_USER_IDS`) and fails closed. There is no upload, attach, delete or Drive connection on this page; files are still added from a task. Status and what was left out: `docs/projects/files-sources-shelf/STATUS.md`.
+
 ## 2026-10-20 · Release · A new Home, and the Full Briefing retires
 
 Home now opens on what is coming and how the week is going. The next target date counts down with a burn-up chart against plan, its stages and one next step; page through up to five dated Projects. Done this week sets each day beside the same day last week. Activity shows a year of finished work, by week or by hour, with a weeks-in-a-row streak. Four cards at the foot open Tasks, Projects, Files and Chat, or start something new in each.

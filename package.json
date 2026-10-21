@@ -94,6 +94,7 @@
     "test:project-console:browser": "node experience/project-console/run.mjs",
     "test:home-overview:browser": "node experience/home-overview/home.mjs",
     "test:files-analytics:browser": "node experience/files-analytics/run.mjs",
+    "test:files-sources-shelf:browser": "node experience/files-sources-shelf/run.mjs",
     "test:tasks-views": "node --import tsx --test src/components/tasks/tasks-pulse.test.ts src/components/tasks/status-glyph-model.test.ts src/components/tasks/view-order.test.ts src/components/tasks/surface-keys.test.ts src/components/tasks/display-prefs.test.ts",
     "test:tasks-views:browser": "node experience/tasks-views/run.mjs",
     "test:floor-calendar": "node --test experience/recipient-project-work/floor-calendar.test.cjs",

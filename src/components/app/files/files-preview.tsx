@@ -46,12 +46,16 @@ export function FilePreview({
   mode,
   sample,
   onClose,
+  whereLabel,
 }: {
   file: ProjectFile;
   mode: "docked" | "sheet";
   /** Review and demo: sample files with nothing to open. */
   sample: boolean;
+  /** The sheet always closes; a docked panel shows a close button only when given this. */
   onClose?: () => void;
+  /** Overrides the "Where it lives" fact. The Files page passes none and keeps its own words. */
+  whereLabel?: (file: ProjectFile) => string;
 }) {
   const sheet = mode === "sheet";
   const panelRef = useRef<HTMLDivElement>(null);
@@ -117,8 +121,8 @@ export function FilePreview({
             <span>Added {formatAddedDate(file.addedAt)}</span>
           </p>
         </div>
-        {sheet ? (
-          <button ref={closeRef} type="button" className={styles.iconBtn} onClick={onClose} aria-label="Close">
+        {sheet || onClose ? (
+          <button ref={closeRef} type="button" className={styles.iconBtn} onClick={onClose} aria-label={sheet ? "Close" : "Close preview"}>
             <FilesIcon name="x" size={16} />
           </button>
         ) : null}
@@ -177,7 +181,7 @@ export function FilePreview({
           </div>
           <div>
             <dt>Where it lives</dt>
-            <dd>{whereItLives(file)}</dd>
+            <dd>{whereLabel ? whereLabel(file) : whereItLives(file)}</dd>
           </div>
           {file.storage === "signal" && file.sizeBytes ? (
             <div>
