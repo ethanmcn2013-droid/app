@@ -20,7 +20,7 @@ async function applyLatest(page){const buttons=page.getByRole('button',{name:'Ap
 async function check(name,details={}){evidence.checks.push({name,ok:true,...details});}
 async function inspectPersonAvatar(page,theme){return page.evaluate(theme=>{
   document.documentElement.dataset.theme=theme;
-  const avatar=[...document.querySelectorAll('[aria-hidden="true"][data-tone]')].find(node=>node.textContent?.trim()==='B');
+  const avatar=[...document.querySelectorAll('[aria-hidden="true"][data-tone]')].find(node=>node.textContent?.trim()==='BO');
   if(!avatar)throw new Error('The rendered Bob DM has no person avatar');
   const parse=value=>{const m=value.match(/rgba?\((\d+)\D+(\d+)\D+(\d+)/);if(m)return[+m[1],+m[2],+m[3]];const h=value.match(/^#([0-9a-f]{6})$/i);return h?[parseInt(h[1].slice(0,2),16),parseInt(h[1].slice(2,4),16),parseInt(h[1].slice(4,6),16)]:null;};
   const foreground=getComputedStyle(avatar).color,background=getComputedStyle(avatar).backgroundColor;
