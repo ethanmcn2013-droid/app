@@ -6,7 +6,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { eq } from "drizzle-orm";
 import * as schema from "@/server/db/schema";
 import { isDemoMode } from "@/lib/access-mode";
-import { assistantTarget, createAssistantAuthentication } from "./controls";
+import { assistantTarget, assistantTargetAdmits, createAssistantAuthentication } from "./controls";
 import { assistantDatabaseTransaction, createAssistantStore } from "./store";
 import { createAssistantService } from "./service";
 import { createPingAssistantPlanner } from "./claude-planner";
@@ -113,5 +113,5 @@ export const authenticateAssistantActor = createAssistantAuthentication({ target
   },
 });
 export async function getAssistantService(actorId: string) {
-  const target = currentTarget(); return target?.actors.includes(actorId) ? instance(target)?.service ?? null : null;
+  const target = currentTarget(); return assistantTargetAdmits(target, actorId) ? instance(target!)?.service ?? null : null;
 }

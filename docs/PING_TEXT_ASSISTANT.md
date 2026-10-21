@@ -10,6 +10,8 @@ Ping applies that direction within Signal: a floating text command panel, progre
 
 The references do not add desktop control, arbitrary generated components or a new speech dependency to this version. Existing Signal views remain the result surfaces; requested task changes are saved and the current Timeline stays unpublished.
 
+Since 21 October 2026 the panel follows the chat and Ping design contract in `docs/projects/chat-ping-redesign/README.md`: Ping is a row in the chat list, every request is a plan first (draft mode) with Cancel and Apply plan, and nothing changes until it is applied.
+
 ## Request and result
 
 Choose an account or Project scope, enter the whole request, and choose execution or draft mode. One bounded model response produces a finite plan; server validation and domain operations decide what can run. The model cannot supply internal IDs, change permissions, publish a Timeline or choose another database.
@@ -50,6 +52,7 @@ Use approved secret storage; never put values in this document, source control o
 | `TASKS_DATABASE_URL`, `TASKS_AUTH_TOKEN` | Exact Tasks target and its credential. The canonical Timeline bridge also requires a token for a local file fixture; use a nonsensitive fixture token there. |
 | `PING_ASSISTANT_TASKS_URL_SHA256` | SHA-256 of the exact configured database URL. A mismatch refuses admission. |
 | `PING_ASSISTANT_ACTOR_IDS` | Explicit persisted Tasks user IDs, not Clerk subjects; 1–20 unique IDs, no wildcard. |
+| `PING_ASSISTANT_OPEN_TO_ALL` | Exactly `1` admits every persisted, non-erased Tasks actor (general release, founder decision 21 Oct 2026). Session and actor resolution are still required; the actor list is ignored while it is on. |
 | `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Both must be configured. There is no development identity fallback. |
 | `PING_ASSISTANT_ANTHROPIC_API_KEY` | Dedicated server-only Ping planner credential. There is no fallback to `ANTHROPIC_API_KEY`. Changing it requires a runtime restart. |
 | `PING_ASSISTANT_EXTERNAL_DELIVERY_ENABLED` | Must be `1` for external email; independent of assistant enablement. Default is off. |
@@ -73,7 +76,7 @@ The production planner makes one bounded Sonnet generation for every request, wi
 
 The frozen ten-prompt paired synthetic comparison recorded semantic completeness of 9/10 for Haiku and 10/10 for Sonnet. It used a controlled 16,384-token output cap for both models, which differs from the small-request production cap. The earlier Haiku literal-title failure remains historical evidence. These bounded results support the initial routing choice; they do not establish general accuracy or production readiness.
 
-Before dispatch, the durable budget reserves a conservative maximum under the $5 development sub-cap and $100 total cap. Unknown outcomes retain reservations. Provider token usage and rate-card estimates are recorded separately from settled billing; the UI estimate is not an invoice. No live provider spend, production readiness or latency improvement is established by these defaults.
+Before dispatch, the durable budget reserves a conservative maximum. In production (`VERCEL_ENV=production`) the cap is $100 a calendar month (UTC), counting only runs created this month (founder decision, 21 Oct 2026); every other environment keeps the $5 development sub-cap over all runs. Unknown outcomes retain reservations. Provider token usage and rate-card estimates are recorded separately from settled billing; the UI estimate is not an invoice. No live provider spend, production readiness or latency improvement is established by these defaults.
 
 
 ### Private model-attempt ledger

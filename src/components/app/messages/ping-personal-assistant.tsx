@@ -1,25 +1,27 @@
 "use client";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { ASSISTANT_LIMITS, type AssistantApiResponse, type AssistantRequest, type AssistantRunView, isAssistantInternalHref } from "@/lib/ping/assistant/contract";
 import { createBrowserPingTelemetry, pingTelemetryBegin } from "@/lib/ping/telemetry-client";
 import { invalidateTaskSnapshotEpoch } from "@/lib/tasks/task-snapshot-epoch";
-import { Composer } from "./chat-ui";
+import { ChatHeader, Composer } from "./chat-ui";
+import { PingTile } from "./chat-marks";
 import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
 import styles from "./ping-personal-assistant.module.css";
 function readEventTime() { return performance.now(); }
 const queryFor = (pending: PendingAssistantRequest) => pending.runId ? `?runId=${encodeURIComponent(pending.runId)}` : `?clientRequestId=${encodeURIComponent(pending.requestId)}`;
 /** Actor-keyed by the chat shell. A recovery note stores identifiers, never request text or results. */
-export function PingPersonalAssistant({ actorId, projects, visible }: { actorId: string; projects: readonly { id: string; name: string }[]; visible: boolean }) {
+export function PingPersonalAssistant({ actorId, projects, visible, onBack, actions }: { actorId: string; projects: readonly { id: string; name: string }[]; visible: boolean; onBack?: () => void; actions?: ReactNode }) {
   const router = useRouter();
   const [runs, setRuns] = useState<readonly AssistantRunView[]>([]);
   const [draft, setDraft] = useState("");
   const [scope, setScope] = useState("");
   const [createdProjects, setCreatedProjects] = useState<readonly { id: string; name: string }[]>([]);
   const scopeProjects = [...projects, ...createdProjects.filter(project => !projects.some(value => value.id === project.id))];
-  const [mode, setMode] = useState<"execute" | "draft">("execute");
+  // Ping always shows a plan before anything changes (founder decision): requests are drafts until applied.
+  const [mode, setMode] = useState<"execute" | "draft">("draft");
   const [ready, setReady] = useState(false);
   const [available, setAvailable] = useState(false);
   const [pending, setPending] = useState<PendingAssistantRequest | null>(null);
@@ -54,7 +56,7 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
       if (pendingRef.current?.requestId === run.requestId) {
         keepPending(assistantNeedsRecovery(run) ? { version: 1, requestId: run.requestId, runId: run.id } : null);
         setAbsent(false); setReentering(false);
-        if (original.current?.requestId === run.requestId) { original.current = null; setHasOriginal(false); setDraft(""); if (historyRef.current) historyRef.current.scrollTop = 0; }
+        if (original.current?.requestId === run.requestId) { original.current = null; setHasOriginal(false); setDraft(""); requestAnimationFrame(() => { if (historyRef.current) historyRef.current.scrollTop = historyRef.current.scrollHeight; }); }
       }
     }
     return response;
@@ -169,43 +171,51 @@ export function PingPersonalAssistant({ actorId, projects, visible }: { actorId:
   const latest = runs[0];
   const currentStep = latest?.steps.find(step => step.status === "running");
   const working = busy || !!latest && assistantIsWorking(latest);
+  // A conversation: oldest at the top, the newest request and its plan at the bottom.
+  const ordered = [...runs].reverse();
+  const status = working ? currentStep ? assistantStepLabel(currentStep.kind) : "Working" : pending ? "Check request" : !ready ? "Loading" : !available ? "Unavailable" : "Ready";
   return <section className={styles.assistant} aria-label="Ping personal assistant">
-    <header className={styles.header}><div className={styles.identity}><h2>Ping</h2><span className={styles.presence} data-active={working || undefined} role="status"><span aria-hidden="true" />{working ? currentStep ? assistantStepLabel(currentStep.kind) : "Working" : pending ? "Check request" : !ready ? "Loading" : !available ? "Unavailable" : "Ready"}</span></div>
-      <label className={styles.scope}>Work in<select value={scope} onChange={event => setScope(event.target.value)} disabled={!ready || !!pending && !reentering || busy} aria-label="Ping scope">
-        <option value="">Across my account</option>{scopeProjects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
-      </select></label>
-    </header>
+    <ChatHeader panel onBack={onBack} backLabel="All chats" leading={<PingTile size={32} working={working} />} title="Ping"
+      subtitle={<span className={styles.presence} data-active={working || undefined} role="status"><span aria-hidden="true" />{status} · only you see what you ask</span>} actions={actions} />
+    <div className={styles.scopeBar}><label className={styles.scope}>Work in<select value={scope} onChange={event => setScope(event.target.value)} disabled={!ready || !!pending && !reentering || busy} aria-label="Ping scope">
+      <option value="">Across my account</option>{scopeProjects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
+    </select></label></div>
     <div className={styles.history} ref={historyRef} tabIndex={0} aria-label="Ping requests and results">
       {!ready && !error ? <p className={styles.note} role="status">Loading your saved requests...</p> : null}
       {ready && !available ? <p className={styles.note}>Ping is not available for this account yet.</p> : null}
-      {ready && available && !runs.length && !pending ? <div className={styles.empty}><h3>What would you like to move forward?</h3><p>Create a Project, put tasks in order, assign work or prepare a private Timeline preview. You can put several actions in one request.</p><p>Choose a Project above, or name one in your request.</p></div> : null}
-      <ol className={styles.runs}>{runs.map((run,index) => <li key={run.id} className={styles.run} data-current={index === 0 || undefined}><details open={index === 0} className={styles.runDetails}>
-        <summary className={styles.request}><p>{run.text}</p>{index > 0 ? <span>{assistantRunLabel(run)}</span> : null}</summary>
-        <div className={styles.result}><div className={styles.resultHead}><h3 aria-live={index === 0 ? "polite" : undefined}>{assistantRunLabel(run)}</h3>{run.steps.length ? <span className={styles.progress}>{run.steps.filter(step => assistantVisibleStepStatus(step) === "completed" && step.result?.status === "completed").length} of {run.steps.length} {run.steps.length === 1 ? "step" : "steps"} complete</span> : null}</div>{run.message ? <p>{run.message}</p> : null}
-          {run.status === "ready" && run.mode === "draft" ? <p className={styles.note}>This is a draft. No changes have been made.</p> : null}
-          <ol className={styles.steps}>{run.steps.map(step => { const visibleStatus = assistantVisibleStepStatus(step); return <li key={step.id} data-state={visibleStatus}>
-            <div className={styles.stepHead}><span className={styles.stepTitle}><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">{visibleStatus === "completed" && step.result?.status === "completed" ? <path d="m3.5 8 3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/> : <circle cx="8" cy="8" r="4.5" stroke="currentColor"/>}</svg>{assistantStepLabel(step.kind)}</span><span>{visibleStatus === "completed" ? "Done" : visibleStatus === "running" ? "In progress" : visibleStatus === "queued" ? run.mode === "draft" && run.status === "ready" ? "Planned" : "Waiting" : visibleStatus === "unknown" ? "Not confirmed" : visibleStatus === "cancelled" ? "Cancelled" : visibleStatus === "blocked" ? "Needs attention" : "Could not finish"}</span></div>
-            {step.result ? <><p>{step.result.summary}</p>{step.result.status === "completed" && step.result.affectedCount > 0 && ["create_tasks", "update_tasks", "archive_tasks"].includes(step.kind) ? <p className={styles.note}>{step.result.affectedCount} {step.result.affectedCount === 1 ? "task" : "tasks"}</p> : null}
-              <div className={styles.resultLinks}>{isAssistantInternalHref(step.result.href) ? <Link href={step.result.href}>{step.kind === "preview_timeline" ? "Open private preview" : step.kind === "open_project" ? "Open tasks" : step.kind === "open_chat" || step.kind === "send_message" ? "Open chat" : step.kind === "read_timeline" ? "Open Timeline" : "Open result"}</Link> : null}
-              {step.result.status === "completed" && step.result.projectId && ["create_tasks", "update_tasks", "archive_tasks"].includes(step.kind) ? <Link href={`${PRODUCT_APP_PATHS.tasks}?workspaceId=${encodeURIComponent(step.result.projectId)}`}>Open tasks</Link> : null}</div>
-              {step.result.delivery ? <p className={styles.note}>Delivery: {step.result.delivery.queued} queued / {step.result.delivery.accepted} accepted / {step.result.delivery.unknown} unconfirmed / {step.result.delivery.suppressed} suppressed</p> : null}
-              {step.result.items?.length ? <details><summary>View {step.result.items.length} {step.result.items.length === 1 ? "item" : "items"}</summary><ul className={styles.items}>{step.result.items.map(item => <li key={item.id}>{isAssistantInternalHref(item.href) ? <Link href={item.href}>{item.title}</Link> : <span>{item.title}</span>}{typeof item.detail === "string" ? <p>{item.detail}</p> : null}</li>)}</ul></details> : null}
-            </> : null}
-          </li>; })}</ol>
-          <div className={styles.actions}>
-            {run.status === "ready" && run.mode === "draft" ? <button type="button" disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("apply", run)}>Apply this draft</button> : null}
-            {assistantCanContinue(run) ? <button type="button" disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("resume", run)}>{run.status === "partial" ? "Retry private preview" : "Continue remaining work"}</button> : null}
-            {["planning", "ready", "running", "partial", "unknown"].includes(run.status) ? <button type="button" disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("cancel", run)}>Cancel remaining work</button> : null}
-          </div>
-        </div>
-      </details></li>)}</ol>
+      {ready && available && !runs.length && !pending ? <div className={styles.empty}><PingTile size={44} /><h3>What would you like to move forward?</h3><p>Ask in your own words: create a Project, put tasks in order, assign work or prepare a private Timeline preview. You can put several actions in one request.</p><p>Ping always shows you a plan first. Nothing changes until you apply it.</p></div> : null}
+      <ol className={styles.runs}>{ordered.map((run, index) => { const current = index === ordered.length - 1; const plan = run.status === "ready" && run.mode === "draft"; return <li key={run.id} className={styles.run} data-current={current || undefined}>
+        <div className={styles.ask}><span className={styles.who}>You</span><p>{run.text}</p></div>
+        <div className={styles.reply}><PingTile size={28} /><div className={styles.result}>
+          <div className={styles.resultHead}><h3 aria-live={current ? "polite" : undefined}>{plan ? "Here's the plan" : assistantRunLabel(run)}</h3>{run.steps.length && !plan ? <span className={styles.progress}>{run.steps.filter(step => assistantVisibleStepStatus(step) === "completed" && step.result?.status === "completed").length} of {run.steps.length} {run.steps.length === 1 ? "step" : "steps"} complete</span> : null}</div>
+          {run.message ? <p>{run.message}</p> : null}
+          {run.steps.length ? <div className={styles.plan} role="group" aria-label={plan ? "Ping's plan" : "Ping's steps"} data-plan={plan || undefined}>
+            {plan ? <div className={styles.planHead}><strong>Plan · {run.steps.length} {run.steps.length === 1 ? "change" : "changes"}</strong></div> : null}
+            <ol className={styles.steps}>{run.steps.map(step => { const visibleStatus = assistantVisibleStepStatus(step); return <li key={step.id} data-state={visibleStatus}>
+              <div className={styles.stepHead}><span className={styles.stepTitle}><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">{visibleStatus === "completed" && step.result?.status === "completed" ? <path d="m3.5 8 3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/> : <circle cx="8" cy="8" r="4.5" stroke="currentColor"/>}</svg>{assistantStepLabel(step.kind)}</span><span>{visibleStatus === "completed" ? "Done" : visibleStatus === "running" ? "In progress" : visibleStatus === "queued" ? plan ? "Planned" : "Waiting" : visibleStatus === "unknown" ? "Not confirmed" : visibleStatus === "cancelled" ? "Cancelled" : visibleStatus === "blocked" ? "Needs attention" : "Could not finish"}</span></div>
+              {step.result ? <><p>{step.result.summary}</p>{step.result.status === "completed" && step.result.affectedCount > 0 && ["create_tasks", "update_tasks", "archive_tasks"].includes(step.kind) ? <p className={styles.note}>{step.result.affectedCount} {step.result.affectedCount === 1 ? "task" : "tasks"}</p> : null}
+                <div className={styles.resultLinks}>{isAssistantInternalHref(step.result.href) ? <Link href={step.result.href}>{step.kind === "preview_timeline" ? "Open private preview" : step.kind === "open_project" ? "Open tasks" : step.kind === "open_chat" || step.kind === "send_message" ? "Open chat" : step.kind === "read_timeline" ? "Open Timeline" : "Open result"}</Link> : null}
+                {step.result.status === "completed" && step.result.projectId && ["create_tasks", "update_tasks", "archive_tasks"].includes(step.kind) ? <Link href={`${PRODUCT_APP_PATHS.tasks}?workspaceId=${encodeURIComponent(step.result.projectId)}`}>Open tasks</Link> : null}</div>
+                {step.result.delivery ? <p className={styles.note}>Delivery: {step.result.delivery.queued} queued / {step.result.delivery.accepted} accepted / {step.result.delivery.unknown} unconfirmed / {step.result.delivery.suppressed} suppressed</p> : null}
+                {step.result.items?.length ? <details><summary>View {step.result.items.length} {step.result.items.length === 1 ? "item" : "items"}</summary><ul className={styles.items}>{step.result.items.map(item => <li key={item.id}>{isAssistantInternalHref(item.href) ? <Link href={item.href}>{item.title}</Link> : <span>{item.title}</span>}{typeof item.detail === "string" ? <p>{item.detail}</p> : null}</li>)}</ul></details> : null}
+              </> : null}
+            </li>; })}</ol>
+            <div className={styles.actions}>
+              {plan ? <span className={styles.hint}>Nothing changes until you apply</span> : null}
+              {["planning", "ready", "running", "partial", "unknown"].includes(run.status) ? <button type="button" className={styles.secondary} disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("cancel", run)}>{plan ? "Cancel" : "Cancel remaining work"}</button> : null}
+              {assistantCanContinue(run) ? <button type="button" className={styles.secondary} disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("resume", run)}>{run.status === "partial" ? "Retry private preview" : "Continue remaining work"}</button> : null}
+              {plan ? <button type="button" className={styles.primary} disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("apply", run)}>Apply plan</button> : null}
+            </div>
+          </div> : null}
+        </div></div>
+      </li>; })}</ol>
     </div>
     {error ? <div className={styles.error} role="alert">{error}</div> : null}
     {pending ? <div className={styles.recovery} role="status"><span>{busy ? "Waiting for the latest result..." : "Your request is kept until its result is confirmed."}</span><button type="button" onClick={() => void checkOriginal()} disabled={busy}>Check status</button>{absent && !hasOriginal && !reentering ? <button type="button" disabled={busy} onClick={() => setReentering(true)}>Re-enter original request</button> : null}{absent && hasOriginal ? <button type="button" onClick={() => void submit(true)} disabled={busy}>Retry original request</button> : null}</div> : null}
     <div className={styles.compose}>
-      {reentering ? <p className={styles.note}>Re-enter the exact original request and choose its original scope and mode. Ping will use the saved request ID to check for duplicate work.</p> : null}
-      <label className={styles.mode}><input type="checkbox" checked={mode === "draft"} onChange={event => setMode(event.target.checked ? "draft" : "execute")} disabled={!ready || !!pending && !reentering || busy} />Draft only</label>
-      <Composer value={draft} onChange={setDraft} onSend={() => void submit()} label="Request for Ping" placeholder="Tell Ping what you want to get done" people={[]} selfId={actorId} mentionIds={[]} disabled={!ready || !available || !!pending && !reentering || busy} sendDisabled={!draft.trim() || draft.length > ASSISTANT_LIMITS.text} showHint={false} count={<span className={styles.note}>{draft.length.toLocaleString()} / {ASSISTANT_LIMITS.text.toLocaleString()}</span>} />
+      {reentering ? <><p className={styles.note}>Re-enter the exact original request and choose its original scope and mode. Ping will use the saved request ID to check for duplicate work.</p>
+        <label className={styles.mode}><input type="checkbox" checked={mode === "draft"} onChange={event => setMode(event.target.checked ? "draft" : "execute")} disabled={busy} />Show a plan first</label></> : null}
+      <Composer value={draft} onChange={setDraft} onSend={() => void submit()} label="Request for Ping" placeholder="Ask Ping to get something done" people={[]} selfId={actorId} mentionIds={[]} disabled={!ready || !available || !!pending && !reentering || busy} sendDisabled={!draft.trim() || draft.length > ASSISTANT_LIMITS.text} showHint={false} count={<span className={styles.note}>{draft.length.toLocaleString()} / {ASSISTANT_LIMITS.text.toLocaleString()}</span>} />
     </div>
   </section>;
 }

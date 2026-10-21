@@ -180,3 +180,14 @@ test('real planner metadata shares reservation custody, survives cancel/result m
   await f.database.delete(schema.assistantRuns).where(eq(schema.assistantRuns.id,run.id));await assert.rejects(f.store.getPlannerAttempt('alice',run.id),/unavailable/);
  }finally{await f.close();}
 });
+
+test('a monthly period counts only runs created in it; without one the cap stays lifetime',async()=>{
+ const f=await assistantFixture();try {const {run}=await f.store.createRun(runInput());const input={runId:run.id,requestId:'month0001',model:'synthetic',reservedMicroUsd:100,developmentCapMicroUsd:150,totalCapMicroUsd:1000,rateCardId:'fixed'};
+  assert.equal(await f.store.budget.reserve(input),true);
+  const next=await f.store.createRun(runInput('request0002'));
+  assert.equal(await f.store.budget.reserve({...input,runId:next.run.id,requestId:'month0002'}),false);
+  // A new month: earlier reservations no longer count toward this month's cap.
+  assert.equal(await f.store.budget.reserve({...input,runId:next.run.id,requestId:'month0002',periodStartMs:Date.now()+86_400_000}),true);
+  await assert.rejects(f.store.budget.reserve({...input,runId:next.run.id,requestId:'month0003',periodStartMs:-1}),/invalid_input/);
+ }finally{await f.close();}
+});

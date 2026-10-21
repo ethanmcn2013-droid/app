@@ -69,7 +69,9 @@ export function createClaudeAssistantPlanner<Plan>(options: {
     // Reserve the entire supported context ceiling, rather than pretending a
     // local token estimate or the provider's estimated count is a hard bound.
     const reservation = plannerReservation({runId:request.runId, requestId:request.requestId, model,
-      inputTokenUpperBound:INPUT_CONTEXT_CEILING, maxOutputTokens});
+      inputTokenUpperBound:INPUT_CONTEXT_CEILING, maxOutputTokens,
+      // Production spends against the monthly cap; previews and local runs keep the $5 development cap.
+      production: process.env.VERCEL_ENV === "production"});
     const body = JSON.stringify({model, max_tokens:maxOutputTokens, stream:false,
       system:wireInstructions, messages:[{role:"user", content:JSON.stringify({text:request.text, context:request.context})}],
       output_config:{format:{type:"json_schema", schema:wireSchema},...(model === "claude-sonnet-5-5" ? {effort:"medium"} : {})},

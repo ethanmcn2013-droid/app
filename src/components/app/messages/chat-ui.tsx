@@ -163,10 +163,12 @@ function ChatListRow({ item, selected, onSelect }: { item: ChatListItem; selecte
 
 /* ── Header ─────────────────────────────────────────────────────────── */
 
-export function ChatHeader({ leading, title, subtitle, onBack, backLabel = "All conversations", backRef, actions, titleId }: {
+export function ChatHeader({ leading, title, subtitle, onBack, backLabel = "All conversations", backRef, actions, titleId, panel = false }: {
   leading?: ReactNode; title: ReactNode; subtitle?: ReactNode; onBack?: () => void; backLabel?: string; backRef?: Ref<HTMLButtonElement>; actions?: ReactNode; titleId?: string;
+  /** Inside the floating panel the back button always shows: each view is one step from the list. */
+  panel?: boolean;
 }) {
-  return <header className={styles.header}>
+  return <header className={styles.header} data-panel={panel ? "" : undefined}>
     {onBack ? <button aria-label={backLabel} className={`${styles.iconButton} ${styles.back}`} onClick={onBack} ref={backRef} type="button"><ChatIcon.back /></button> : null}
     {leading}
     <div className={styles.headerText}>

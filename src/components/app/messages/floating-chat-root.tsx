@@ -12,11 +12,12 @@ import type { DemoMessagesSnapshot } from "./demo-messages-model";
 import { PersonalChat } from "./personal-chat";
 import dynamic from "next/dynamic";
 const PingPersonalAssistant = dynamic(() => import("./ping-personal-assistant").then(module => module.PingPersonalAssistant));
-import { ChatIcon } from "./chat-ui";
+import { ChatHeader, ChatIcon } from "./chat-ui";
 import styles from "./floating-chat.module.css";
 import { parseFloatingChatTarget, type ChatNavigationTarget } from "./chat-navigation";
 import { ChatCatalogUnavailable } from "./chat-catalog-unavailable";
 import { useFloatingChatViewport } from "./use-floating-chat-viewport";
+import { ChatHome, type ChatHomeTarget } from "./chat-home";
 
 type RequestedConversation = ChatNavigationTarget;
 type ChatContext = { registerPage: (node: HTMLDivElement | null, requested?: RequestedConversation, unavailable?: boolean) => void };
@@ -47,9 +48,10 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
 }) {
   const [open, setOpen] = useState(false);
   const [started, setStarted] = useState(false);
-  const [tab, setTab] = useState<"project" | "self" | "ping">("project");
+  // One view at a time: the list, a Project conversation, Saved notes or Ping.
+  const [view, setView] = useState<"home" | "project" | "self" | "ping">("home");
   const [assistantStarted, setAssistantStarted] = useState(false);
-  const activeTab = tab === "ping" && !assistantEnabled ? "project" : tab;
+  const activeTab = view === "ping" && !assistantEnabled ? "home" : view;
   const [requested, setRequested] = useState<RequestedConversation>({});
   const [navigationVersion, setNavigationVersion] = useState(0);
   const router = useRouter();
@@ -70,7 +72,7 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
   const registerPage = useCallback((node: HTMLDivElement | null, next?: RequestedConversation, unavailable?: boolean) => {
     setPage(node);
     setPageCatalogUnavailable(!!node && !!unavailable);
-    if (node) { setStarted(true); setOpen(true); if (next && Object.values(next).some((value) => value !== undefined)) { setRequested(next); setNavigationVersion((version) => version + 1); setTab("project"); } }
+    if (node) { setStarted(true); setOpen(true); if (next && Object.values(next).some((value) => value !== undefined)) { setRequested(next); setNavigationVersion((version) => version + 1); setView("project"); } }
   }, []);
   const [context] = useState(() => ({ registerPage }));
   useLayoutEffect(() => {
@@ -83,7 +85,7 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
 
   const show = useCallback((next?: RequestedConversation) => {
     trigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    if (next) { setRequested(next); if (Object.values(next).some((value) => value !== undefined)) setNavigationVersion((version) => version + 1); setTab("project"); }
+    if (next) { setRequested(next); if (Object.values(next).some((value) => value !== undefined)) { setNavigationVersion((version) => version + 1); setView("project"); } }
     setStarted(true); setOpen(true);
     requestAnimationFrame(() => panel.current?.querySelector<HTMLElement>("button, textarea")?.focus());
   }, []);
@@ -134,6 +136,19 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
     };
   }, [visible, page, viewportBounds]);
 
+  const homeRef = useRef<HTMLDivElement>(null);
+  // Back returns to the list with focus on the row you came from.
+  const lastRow = useRef<string | null>(null);
+  const goHome = () => { setView("home"); requestAnimationFrame(() => { const row = lastRow.current ? homeRef.current?.querySelector<HTMLElement>(`[data-conversation-row="${CSS.escape(lastRow.current)}"]`) : null; (row ?? homeRef.current?.querySelector<HTMLElement>("button"))?.focus(); }); };
+  const openTarget = (target: ChatHomeTarget) => {
+    lastRow.current = target;
+    if (target === "ping") { setAssistantStarted(true); setView("ping"); }
+    else if (target === "self") setView("self");
+    else if (target === "project:demo") setView("project");
+    else { const projectId = target.slice("project:".length) as ProjectId; const project = availableProjects.find((value) => value.id === projectId); setRequested({ projectId, projectName: project?.name }); setNavigationVersion((version) => version + 1); setView("project"); }
+  };
+  const panelActions = !page ? <span className={styles.headActions}><Link aria-label="Open chat in full view" data-chat-full-page href="/app/messages" title="Full view"><ChatIcon.panel /></Link><button aria-label="Close chat" onClick={close} title="Close chat · your draft stays here" type="button"><ChatIcon.close /></button></span> : null;
+
   return <Context.Provider value={context}>{children}
     {!bare && !visible ? <button aria-label="Open chat" title="Open chat" className={styles.launcher} onClick={() => show()} ref={launcher} type="button"><ChatIcon.thread size={22} /></button> : null}
     {mobile && visible && !page ? <button aria-label="Close chat" className={styles.scrim} onClick={close} tabIndex={-1} type="button" /> : null}
@@ -146,13 +161,14 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
     }} ref={panel} role={page ? "main" : mobile ? "dialog" : "region"} style={page ? bounds : viewportBounds} tabIndex={-1}>
-      <div className={styles.head}><div className={styles.tabs} aria-label="Chat type"><button aria-pressed={activeTab === "project"} onClick={() => setTab("project")} type="button">Conversations</button><button aria-pressed={activeTab === "self"} onClick={() => setTab("self")} type="button">{actorName} <span>(you)</span></button>{assistantEnabled ? <button aria-pressed={activeTab === "ping"} onClick={() => { setAssistantStarted(true); setTab("ping"); }} type="button">Ping</button> : null}</div><div className={styles.headActions}>{!page ? <Link aria-label="Open chat in full view" data-chat-full-page href="/app/messages" title="Full view"><ChatIcon.panel /></Link> : null}{!page ? <button aria-label="Close chat" onClick={close} title="Close chat · your draft stays here" type="button"><ChatIcon.close /></button> : null}</div></div>
+      <div className={styles.body} hidden={activeTab !== "home"} inert={activeTab !== "home"} ref={homeRef}><ChatHome actions={panelActions} assistantEnabled={assistantEnabled} demo={!!demoSnapshot} projects={demoSnapshot || catalogUnavailable || pageCatalogUnavailable ? [] : availableProjects} onOpen={openTarget}
+        projectsNotice={!demoSnapshot && (catalogUnavailable || pageCatalogUnavailable) ? <ChatCatalogUnavailable retrying={catalogRetrying} onRetry={() => startCatalogRetry(() => router.refresh())} /> : undefined} /></div>
       <div className={styles.body} hidden={activeTab !== "project"} inert={activeTab !== "project"}>{demoSnapshot
-        ? <DemoMessagesApp embedded requestedConversationId={requested.demoId} snapshot={demoSnapshot} visible={visible && activeTab === "project"} />
+        ? <div className={styles.stack}><ChatHeader panel onBack={goHome} backLabel="All chats" title="Team chat" subtitle="Preview · nothing here is saved" actions={panelActions} /><DemoMessagesApp embedded requestedConversationId={requested.demoId} snapshot={demoSnapshot} visible={visible && activeTab === "project"} /></div>
         : catalogUnavailable || pageCatalogUnavailable ? <ChatCatalogUnavailable className={styles.personalIntro} retrying={catalogRetrying} onRetry={() => startCatalogRetry(() => router.refresh())} />
-        : <ConversationWorkspace actorId={actorId} directMessagesEnabled={directMessagesEnabled} initialProjectId={requested.projectId} initialRootId={requested.rootId} initialMessageId={requested.messageId} initialMessageSeq={requested.messageSeq} navigationVersion={navigationVersion} projects={availableProjects} visible={visible && activeTab === "project"} />}</div>
-      {assistantEnabled && assistantStarted ? <div className={styles.body} hidden={activeTab !== "ping"} inert={activeTab !== "ping"}><PingPersonalAssistant key={actorId} actorId={actorId} projects={availableProjects} visible={visible && activeTab === "ping"} /></div> : null}
-      <div className={styles.body} hidden={activeTab !== "self"} inert={activeTab !== "self"}><PersonalChat actorId={actorId} actorName={actorName} demo={!!demoSnapshot} visible={visible && activeTab === "self"} /></div>
+        : <ConversationWorkspace actorId={actorId} directMessagesEnabled={directMessagesEnabled} initialProjectId={requested.projectId} initialRootId={requested.rootId} initialMessageId={requested.messageId} initialMessageSeq={requested.messageSeq} navigationVersion={navigationVersion} projects={availableProjects} visible={visible && activeTab === "project"} stacked onBack={goHome} headerActions={panelActions} />}</div>
+      {assistantEnabled && assistantStarted ? <div className={styles.body} hidden={activeTab !== "ping"} inert={activeTab !== "ping"}><PingPersonalAssistant key={actorId} actorId={actorId} projects={availableProjects} visible={visible && activeTab === "ping"} onBack={goHome} actions={panelActions} /></div> : null}
+      <div className={styles.body} hidden={activeTab !== "self"} inert={activeTab !== "self"}><PersonalChat actorId={actorId} actorName={actorName} demo={!!demoSnapshot} visible={visible && activeTab === "self"} onBack={goHome} actions={panelActions} /></div>
     </div> : null}
   </Context.Provider>;
 }

@@ -17,6 +17,23 @@
 }
 
 .workspace[data-view="context"] { grid-template-columns: minmax(0, 820px); justify-content: end; }
+.workspace { --gutter: 20px; }
+/* The floating panel: one pane at a time (the conversation, or its directory). */
+.workspace[data-stacked] { grid-template-columns: minmax(0, 1fr); height: 100%; --gutter: 14px; }
+.workspace[data-stacked][data-pane="conversation"] .projectList { display: none; }
+.workspace[data-stacked][data-pane="directory"] > .main { display: none; }
+.workspace[data-stacked] .projectList { border-right: 0; display: block; overflow-x: hidden; padding: 0 0 16px; }
+.workspace[data-stacked] .projectList > :not(header) { margin-inline: 12px; }
+.workspace[data-stacked] .projectList > p { display: none; }
+.workspace[data-stacked] .viewBar { flex-basis: 30px; padding-inline: 14px; }
+.workspace[data-stacked] .feed { padding: 18px 14px 24px; }
+.workspace[data-stacked] .message { gap: 10px; margin-bottom: 18px; }
+.workspace[data-stacked] .message p { font-size: 13.5px; }
+.workspace[data-stacked] .composer { margin-bottom: 12px; width: calc(100% - 24px); }
+.workspace[data-stacked] .composer textarea { min-height: 56px; }
+.headIcon { align-items: center; background: transparent; border: 0; border-radius: 8px; color: var(--v3-text-2); cursor: pointer; display: inline-grid; height: 40px; place-items: center; width: 40px; }
+.headIcon:hover { background: var(--v3-hover); color: var(--v3-text); }
+.headIcon[aria-expanded="true"] { background: var(--v3-hover); color: var(--v3-text); }
 .workspace[data-view="context"] .projectList { display: none; }
 .workspace ::selection { background: var(--v3-accent-soft); }
 .workspace :is(button, textarea):focus-visible { outline: 2px solid var(--cw-indigo); outline-offset: 2px; }
@@ -176,3 +193,29 @@
 .discussionDirectory a { text-decoration: none; }
 .discussionDirectory a:hover { background: var(--v3-hover); }
 @media (max-width: 760px) { .discussionDirectory { align-items: center; border: 0; display: flex; flex: 0 0 auto; gap: 6px; margin: 0; padding: 0 4px; } .discussionDirectory h2, .discussionDirectory p { display: none; } }
+
+/* The floating panel keeps its own geometry at every viewport width: the
+   page-level phone layout above must not reach into it. */
+.workspace[data-stacked], .workspace[data-stacked][data-view="context"] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 100%; width: 100%; }
+.workspace[data-stacked][data-pane="directory"] .projectList { display: block; overflow-y: auto; }
+.workspace[data-stacked] :is(.privateDirectory, .discussionDirectory) { display: block; border-top: 1px solid var(--cw-line); margin-top: 16px; padding: 12px 0 0; }
+.workspace[data-stacked] :is(.privateDirectory h2, .discussionDirectory h2, .discussionDirectory p) { display: block; }
+.workspace[data-stacked] .roomChoice { max-width: none; width: 100%; margin-top: 8px; }
+.workspace[data-stacked] .requestForm { position: static; box-shadow: none; }
+.workspace[data-stacked] .notice { align-items: flex-start; flex-direction: column; }
+/* Panel composer: the words first, then one row of tools with Send at the end. */
+.workspace[data-stacked] .composer { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; padding: 6px 8px 8px; }
+.workspace[data-stacked] .composer > textarea { flex: 1 0 100%; min-height: 44px; max-height: 160px; resize: none; padding: 8px; }
+.workspace[data-stacked] .composer > .mentionPicker { margin-right: auto; }
+.workspace[data-stacked] .composer > div:last-child { margin-left: auto; }
+.workspace[data-stacked] .composer > p { flex-basis: 100%; }
+/* People are circles in their own tone, the same as everywhere in the app. */
+.avatarSlot { flex: 0 0 32px; padding-top: 1px; }
+/* Message actions are quiet until you reach for them (always shown on touch). */
+.workspace[data-stacked] .messageActions button { color: var(--v3-text-2); }
+.workspace[data-stacked] .messageActions button:hover { color: var(--v3-text); }
+@media (hover: hover) and (pointer: fine) {
+  .workspace[data-stacked] .message .messageActions { opacity: 0; transition: opacity 140ms var(--v3-ease); }
+  .workspace[data-stacked] .message:hover .messageActions, .workspace[data-stacked] .message:focus-within .messageActions { opacity: 1; }
+}
+.workspace[data-stacked] .composer textarea:focus-visible { outline: none; }

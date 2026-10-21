@@ -26,3 +26,13 @@ test("invalid counts, identities and models fail closed",()=>{
   assert.throws(()=>estimatePlannerMicroUsd("unknown" as never,1,1));
   assert.throws(()=>plannerReservation({runId:"private name!",requestId:"r",model:"claude-haiku-5-5",inputTokenUpperBound:1,maxOutputTokens:1}));
 });
+test("production reserves against $100 a month from the first of the UTC month; elsewhere the $5 development cap stays",()=>{
+  const now=Date.UTC(2026,9,21,14,30);
+  const production=plannerReservation({runId:"run_a",requestId:"request_a",model:"claude-sonnet-5-5",inputTokenUpperBound:1_000,maxOutputTokens:100,production:true,nowMs:now});
+  assert.equal(production.developmentCapMicroUsd,100_000_000);
+  assert.equal(production.totalCapMicroUsd,100_000_000);
+  assert.equal(production.periodStartMs,Date.UTC(2026,9,1));
+  const local=plannerReservation({runId:"run_b",requestId:"request_b",model:"claude-sonnet-5-5",inputTokenUpperBound:1_000,maxOutputTokens:100});
+  assert.equal(local.developmentCapMicroUsd,PLANNER_DEVELOPMENT_CAP_MICRO_USD);
+  assert.equal(local.periodStartMs,undefined);
+});
