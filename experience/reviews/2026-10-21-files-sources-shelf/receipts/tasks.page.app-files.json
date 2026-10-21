@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-files",
+  "source": "tasks/src/app/app/files/page.tsx",
+  "materialityHash": "20ffc2d1e68dcfdd",
+  "reviewedAt": "2026-10-21",
+  "reviewer": "Ethan McNamara (founder): reviewed the Files Sources + shelf view (home, In Signal folder with preview, phone dark, search), the 188/188 capture and these receipts in chat on 2026-10-21 and answered 'Approve all 18'",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-0e5b99e3a971996d51daa39f-336c75640ae7655a.json",
+    "attestationSha256": "4d75c225cd2c59cad63564188871c706aef0256c429305d7327222cc1412cf16",
+    "runId": "tasks-playwright-0e5b99e3a971996d51daa39f",
+    "canonicalEvidenceSha256": "0e5b99e3a971996d51daa39fb5a4401ef31e37dc0d41c5a791cf545856b446ac",
+    "rawArtifactSha256": "336c75640ae7655aad5a597944820688e49d310a1a74aa3a97fe8074b51cba59",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-files",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Files page now renders the internal Sources + shelf view (FilesShelfView) for operators only, gated by filesSourcesShelfEnabled (callerIsAdmin, fails closed, false in demo and review); everyone else gets FilesView unchanged. Canonical capture tasks-playwright-0e5b99e3a971996d51daa39f ran 188/188 one attempt each in demo, where the default view is shown. Shelf evidence: docs/projects/files-sources-shelf/evidence and experience/files-sources-shelf.",
+  "decision": "accepted"
+}

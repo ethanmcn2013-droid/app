@@ -396,6 +396,8 @@
     "src/server/projects/project-console-facts.test.ts",
     "src/server/projects/project-deletion-meta.test.ts",
     "src/server/projects/project-files.test.ts",
+    "src/server/files-sources-shelf-gate.test.ts",
+    "src/components/app/files-shelf/shelf-model.test.ts",
     "src/server/wedding/guests.test.ts",
     "src/lib/wedding/guests.test.ts",
     "src/server/projects/project-analytics-portfolio.test.ts",
