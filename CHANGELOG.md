@@ -1,5 +1,9 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-21 · Release · Home in three rows
+
+Home now reads in three rows: the next big day with Done this week beside it, then the four start cards (Tasks, Projects, Files and Chat), then Activity. The loading tracing follows the same order.
+
 ## 2026-10-21 · Release · Home leads with your four ways in
 
 Home now opens with the four start cards, Tasks, Projects, Files and Chat, straight under the greeting. The next big day, Done this week and Activity follow below them. The loading tracing matches the new order.
