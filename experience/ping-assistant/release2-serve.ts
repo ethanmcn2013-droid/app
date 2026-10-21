@@ -12,7 +12,8 @@ import {createAssistantService} from '../../src/server/ping/assistant/service';
 import {createAssistantHttp} from '../../src/server/ping/assistant/http';
 import {executeAssistantAction} from '../../src/server/ping/assistant/actions';
 import {executeAssistantUndo} from '../../src/server/ping/assistant/undo';
-import {getAssistantContext,authorizeAssistantProject} from '../../src/server/ping/assistant/context';
+import {getAssistantContext,authorizeAssistantProject,assertAssistantActor,resolveAssistantProjectName} from '../../src/server/ping/assistant/context';
+import {bindAssistantPlanTargets} from '../../src/server/ping/assistant/plan-targets';
 import {assistantConversationAdapter} from '../../src/server/ping/assistant/conversation-transaction';
 import {createAssistantConversationContext} from '../../src/server/ping/assistant/conversation-context';
 import {loadAssistantTaskContext,validateAssistantTaskSources} from '../../src/server/ping/assistant/task-context';
@@ -95,9 +96,10 @@ async function main(){
   let plans=0,executions=0,undos=0;
   const requests:{requestId?:string;operation:string;text?:string;at:string}[]=[];
   const conversationRequests:{method:string;action?:string;body?:string;conversationId?:string;at:string}[]=[];
+  const diagnostics:string[]=[];
   const conversationContext=createAssistantConversationContext(proof.adapter,{directMessagesEnabled:true});
   const service=createAssistantService({store,requireApproval:true,
-    planner:{plan:async input=>{plans++;return{plan:planFor(input.text,input.context),model:'injected-finite-planner'};}},
+    planner:{plan:async input=>{plans++;const plan=planFor(input.text,input.context);diagnostics.push(`planner:${input.text}:${plan.outcome}`);return{plan,model:'injected-finite-planner'};}},
     context:(actor,request)=>transact(async tx=>{
       const c=await getAssistantContext(tx,actor,request.scope.kind==='project'?request.scope.projectId:null);
       const sourceContext=await createAssistantConversationContext(assistantConversationAdapter(tx),{directMessagesEnabled:true}).load(actor,request);
@@ -109,10 +111,20 @@ async function main(){
     }),
     validateSources:(actor,sources)=>transact(async tx=>{
       const chatSources=sources.filter(s=>s.kind!=='task'),taskSources=sources.filter(s=>s.kind==='task');
-      if(chatSources.length&&!await createAssistantConversationContext(assistantConversationAdapter(tx),{directMessagesEnabled:true}).validate(actor,chatSources))return false;
-      return !taskSources.length||validateAssistantTaskSources(tx,actor,taskSources,'Europe/Dublin');
+      if(chatSources.length&&!await createAssistantConversationContext(assistantConversationAdapter(tx),{directMessagesEnabled:true}).validate(actor,chatSources)){diagnostics.push('validateSources:chat:false');return false;}
+      const valid=!taskSources.length||await validateAssistantTaskSources(tx,actor,taskSources,'Europe/Dublin');diagnostics.push(`validateSources:tasks:${valid}`);return valid;
     }),
     priorTaskResult:async()=>null,
+    authorizePlan:(actor,request,plan)=>transact(async tx=>{
+      await assertAssistantActor(tx,actor);const ids=new Set<string>();
+      for(const action of plan.actions){if(!('project'in action)||action.project.kind==='created')continue;
+        if(action.project.kind==='current'){if(request.scope.kind!=='project')throw new Error('synthetic assistant Project unavailable');await authorizeAssistantProject(tx,actor,request.scope.projectId);ids.add(request.scope.projectId);}
+        else ids.add((await resolveAssistantProjectName(tx,actor,action.project.name)).id);
+      }
+      diagnostics.push('authorizePlan:ok');return [...ids];
+    }),
+    bindTargets:(actor,request,plan,prior)=>transact(async tx=>{const bound=await bindAssistantPlanTargets(tx,{actorId:actor,plan,
+      currentProjectId:request.scope.kind==='project'?request.scope.projectId:undefined,selectedTaskIds:request.selectedTaskIds,priorTaskResult:prior});diagnostics.push(`bindTargets:${Object.keys(bound).length}`);return bound;}),
     authorizeView:(actor,run)=>transact(async tx=>{try{for(const p of new Set([...(run.scope.kind==='project'?[run.scope.projectId]:[]),...run.steps.flatMap(s=>s.result?.projectId?[s.result.projectId]:[])]))await authorizeAssistantProject(tx,actor,p);return true;}catch{return false;}}),
     undo:(tx,actor,result)=>{undos++;return executeAssistantUndo(tx,actor,result.reversal!,{directMessagesEnabled:true});},
     execute:input=>{executions++;return executeAssistantAction({...input,directMessagesEnabled:true,deliveryTransaction:transact,dispatch:async()=>({outcome:'accepted'})});}
@@ -122,7 +134,7 @@ async function main(){
     controls:()=>({internalEnabled:true,sendsEnabled:true,deliveryEnabled:true,directMessagesEnabled:true,allowedActorIds:new Set(['owner','bob']),allowAllActors:false,guestsEnabled:false,attachmentsEnabled:false,aiEnabled:false}),
     service:async()=>chat});
   const ui=await buildRelease2Ui(source.replaceAll('\\','/'),output);
-  async function snapshot(){return{plans,executions,undos,requests,conversationRequests,
+  async function snapshot(){return{plans,executions,undos,requests,conversationRequests,diagnostics,
     tasks:(await proof.client.execute('SELECT id,workspace_id,parent_task_id,title,completed_at,archived_at,due,due_at,assignees FROM tasks ORDER BY workspace_id,seq')).rows,
     conversations:(await proof.client.execute('SELECT id,workspace_id,kind FROM conversations ORDER BY id')).rows,
     messages:(await proof.client.execute('SELECT id,conversation_id,body,deleted_at FROM conversation_messages ORDER BY create_seq')).rows,
