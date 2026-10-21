@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-analytics",
+  "source": "tasks/src/app/app/analytics/page.tsx",
+  "materialityHash": "d89f2a4abd38ee57",
+  "reviewedAt": "2026-10-21",
+  "reviewer": "Ethan McNamara (founder): reviewed the start-cards-first renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-a84608ba71d1d3695dceee42-c475e87f4b728524.json",
+    "attestationSha256": "71cdcd31d7470160cd8ae288021e5bc725b6e275d1e9abac6064b94145fa94c7",
+    "runId": "tasks-playwright-a84608ba71d1d3695dceee42",
+    "canonicalEvidenceSha256": "a84608ba71d1d3695dceee42c8e921acf743c22bf2409bc325c2712c0ccf8128",
+    "rawArtifactSha256": "c475e87f4b728524275cfa1c6d91b102bfc2b467a5e7c18a3e7f260647216691",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-analytics",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home's start cards moved under the greeting changed the shared fixture contract. No production or numerical design rating claim.",
+  "decision": "accepted"
+}
