@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseAssistantApiCommand,parseAssistantPlan,type AssistantPlan,type AssistantPlannerContext,type AssistantActionResult} from '@/lib/ping/assistant/contract';
 import type {AssistantSource} from '@/lib/ping/assistant/release2';
-import {createAssistantService} from './service';
+import {createAssistantService,assistantUnchangedSources} from './service';
 import {createAssistantHttp} from './http';
 import {assistantFixture} from './store-fixture';
 import {assistantConversationPlannerContext} from './planner-context';
@@ -112,7 +112,7 @@ test('Undo saves one atomic receipt, repeated Undo does not repeat effects, snap
 test('an account waiting plan retains source authorization before any write and cannot apply after revocation',async()=>{
  const f=await assistantFixture();let allowed=true,writes=0;const seen:string[][]=[];try{
   const service=createAssistantService({requireApproval:true,store:f.store,context:async()=>({...context,sources:[source]}),
-   authorizePlan:async()=>['target-project'],authorizeView:async(_actor,_run,projects)=>{seen.push([...(projects??[])]);return allowed;},
+   validateSources:async()=>true,authorizePlan:async()=>['target-project'],authorizeView:async(_actor,_run,projects)=>{seen.push([...(projects??[])]);return allowed;},
    planner:{plan:async()=>({plan})},execute:input=>input.commitStep(input.stepId,input.fence,async()=>{writes++;return {stepId:input.stepId,kind:input.step.kind,status:'completed',summary:'Created',affectedCount:1};})});
   const draft=await service.submit('alice',{...request,scope:{kind:'account'}});
   assert.equal(draft.status,'ready');assert.equal(writes,0);assert.deepEqual(seen.at(-1),['target-project','synthetic']);
@@ -123,4 +123,30 @@ test('an account waiting plan retains source authorization before any write and 
   assert.equal(redacted.accessUnavailable,true);assert.equal(redacted.steps[0].plan,undefined);
   await assert.rejects(service.apply('alice',draft.id));assert.equal(writes,0);
  }finally{await f.close();}
+});
+
+test('a waiting plan with an edited or inaccessible source is hidden and cannot Apply or resume',async()=>{
+ const f=await assistantFixture();let current=true,writes=0;try{
+  const service=createAssistantService({requireApproval:true,store:f.store,context:async()=>({...context,sources:[source]}),validateSources:async()=>current,
+   planner:{plan:async()=>({plan})},execute:input=>input.commitStep(input.stepId,input.fence,async()=>{writes++;return {stepId:input.stepId,kind:input.step.kind,status:'completed',summary:'Created',affectedCount:1};})});
+  const draft=await service.submit('alice',request);assert.equal(draft.status,'ready');
+  current=false;const hidden=await service.view('alice',draft.id);assert.equal(hidden.accessUnavailable,true);assert.equal(hidden.steps[0].plan,undefined);
+  await assert.rejects(service.apply('alice',draft.id));await assert.rejects(service.resume('alice',draft.id));assert.equal(writes,0);
+ }finally{await f.close();}
+});
+
+test('factual source answers require an exact citation; questions about a waiting plan use its retained payload',async()=>{
+ const f=await assistantFixture();try{
+  const service=createAssistantService({store:f.store,context:async()=>({...context,sources:[source]}),validateSources:async()=>true,
+   planner:{plan:async()=>({plan:{version:'ping.assistant.v1',outcome:'answer',message:'An unsupported assertion.',citations:[]}})},execute:async()=>{throw Error('no writes');}});
+  const refused=await service.submit('alice',request);assert.equal(refused.status,'failed');assert.doesNotMatch(JSON.stringify(refused),/unsupported assertion/);
+ }finally{await f.close();}
+});
+
+test('only a task snapshot changed by this run is exempt from its own pre-plan revision check',()=>{
+ const task:AssistantSource={...source,ref:'task_source_1',kind:'task',scopeId:'changed_task',itemId:'changed_task'};
+ const untouched={...task,ref:'task_source_2',scopeId:'other_task',itemId:'other_task'};
+ const result:AssistantActionResult={stepId:'update',kind:'update_tasks',status:'completed',summary:'Updated',affectedCount:1,reversal:{kind:'tasks',projectId:'synthetic',rows:[{id:'changed_task',before:{title:'Before'},after:{title:'After'}}]}};
+ assert.deepEqual(assistantUnchangedSources([source,task,untouched],[result]),[source,untouched]);
+ assert.deepEqual(assistantUnchangedSources([source,task,untouched],[{...result,status:'blocked'}]),[source,task,untouched]);
 });

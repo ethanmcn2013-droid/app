@@ -161,5 +161,10 @@ test("Ping reads a direct conversation only after consent and only for an enable
     assert.equal(cited.authorName, "Bob");
     assert.equal(await gated.validate("ping_ctx_alice", [cited]), true);
     assert.equal(await gated.validate("ping_ctx_other", [cited]), false);
+    assert.equal(new URL(cited.href,'https://app.signalstudio.ie').searchParams.get('conversationId'),source.conversationId);
+    const blocked=await dmConversation.transitionDirectMessage({actorId:'ping_ctx_bob',projectId,conversationId:source.conversationId,
+      clientRequestId:'ping_context_dm_block_001',expectedAudienceEpoch:accepted.value.scope.audienceEpoch,operation:'block'});
+    assert.equal(blocked.ok,true);
+    assert.equal(await gated.validate('ping_ctx_alice',[cited]),false,'remaining a Project member must not retain private DM context after consent is withdrawn');
   } finally { f.client.close(); }
 });

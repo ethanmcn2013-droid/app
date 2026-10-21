@@ -40,3 +40,13 @@ test("project-scoped context fails closed for a project outside the actor member
     await assert.rejects(database.transaction(tx => loadAssistantTaskContext(tx, "alice", request, "UTC"), { behavior: "immediate" }));
   } finally { proof.client.close(); }
 });
+
+test('a former assignee is described as unavailable, never unassigned',async()=>{
+ const proof=await createPingProofFixture();const database=drizzle(proof.client,{schema});try{
+  await seedProofTask(proof.client,'former-owner',{assignees:['former-member']});
+  const loaded=await database.transaction(tx=>loadAssistantTaskContext(tx,'alice',projectRequest,'UTC'),{behavior:'immediate'});
+  assert.deepEqual(loaded.tasks[0].assignees,['Assigned person unavailable']);
+  assert.match(loaded.sources[0].body,/Assigned to: Assigned person unavailable/);assert.doesNotMatch(loaded.sources[0].body,/No one/);
+  assert.equal(await database.transaction(tx=>validateAssistantTaskSources(tx,'alice',loaded.sources,'UTC'),{behavior:'immediate'}),true);
+ }finally{proof.client.close();}
+});

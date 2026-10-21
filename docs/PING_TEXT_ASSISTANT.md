@@ -55,7 +55,7 @@ This candidate adds no migration, provider key, budget increase, publication or 
 
 Each HTTP request requires both a Clerk user and session, resolves the persisted Tasks actor, and checks the explicit actor allowlist. Each step freshly checks database Project capability, archive/deletion state and actor/owner account fences. This is not a remote Clerk session-revocation query before every step.
 
-The planner receives the request text plus a bounded projection of authorized Project/member names, selection counts, prior-task count and calendar context. It does not receive the database credentials or internal identity references from the action layer. Requests, plans and receipts are application records; do not put secrets into requests. Diagnostic stage events are metadata only and are separate from those records.
+The planner receives the request text plus bounded authorized Project/member names, chat excerpts, task summaries, earlier turns, the waiting plan, selection counts and calendar context. Sources use opaque references; database credentials and internal source identities stay on the server. Requests, plans and receipts are application records; do not put secrets into requests. Diagnostic stage events are metadata only and are separate from those records.
 
 ## Configuration and receiving
 

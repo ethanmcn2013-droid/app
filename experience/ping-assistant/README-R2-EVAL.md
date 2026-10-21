@@ -32,6 +32,6 @@ An isolated action adapter check can run separately without a model/provider cal
 pnpm exec tsx experience/ping-assistant/release2-model-eval.ts --action-check --output experience/output/ping-release2-model-eval/action-check-2026-10-21-a.json
 ```
 
-It drafts one synthetic task, confirms draft caused no change, explicitly applies it through the actual action adapter, then invokes actual Undo and verifies the fixture returns to baseline. This is separate from, and not scored as part of, the model cases.
+It drafts one synthetic task, confirms draft caused no change, explicitly applies it through the actual action adapter, then invokes actual Undo and verifies the fixture returns to baseline. It uses the same canonical source-revalidation callback as live evaluation, so sourced plans fail closed if their exact authorized source has changed. This is separate from, and not scored as part of, the model cases.
 
 Use a fresh unique output path per run. Preserve every failed or interrupted run and its original denominator; do not overwrite or relabel it.

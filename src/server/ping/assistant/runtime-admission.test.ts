@@ -51,3 +51,13 @@ test("original receipt remains readable without executing callback; restored tar
   assert.deepEqual(await recovery(result.stepId, 1, async () => { effects++; return result; }), result);
   assert.equal(effects, 0);
 });
+
+test('source access is rechecked after writer queue admission and cannot create a new effect after revocation',async()=>{
+ let readable=true,effects=0;const queued=latch(),release=latch();
+ const commit:AssistantExecuteInput['commitStep']=async(_step,_fence,operation)=>{queued.resolve();await release.promise;return operation({} as Parameters<Parameters<AssistantExecuteInput['commitStep']>[2]>[0]);};
+ const guarded=guardAssistantCommitStep(commit,()=>true,async()=>{if(!readable)throw new Error('source_revoked');});
+ const running=guarded(result.stepId,1,async()=>{effects++;return result;});
+ await queued.promise;readable=false;release.resolve();await assert.rejects(running,/source_revoked/);assert.equal(effects,0);
+ let validations=0;const receipt=guardAssistantCommitStep(async()=>result,()=>true,async()=>{validations++;throw Error('must not re-execute');});
+ assert.deepEqual(await receipt(result.stepId,1,async()=>{effects++;return result;}),result);assert.equal(validations,0);assert.equal(effects,0);
+});

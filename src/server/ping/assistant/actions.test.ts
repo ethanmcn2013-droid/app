@@ -294,7 +294,7 @@ test("recipient message uses only an already-consented exact direct conversation
   const accepted=await service.transitionDirectMessage({actorId:"bob",projectId,conversationId:id,operation:"accept",clientRequestId:"ping_dm_accept_01",expectedAudienceEpoch:bobScope.value.audienceEpoch});
   assert.equal(accepted.ok,true);
   const result=await f.run({id:"private",kind:"send_message",project:{kind:"current"},recipient:{kind:"name",name:"bob"},body:"Private note to Bob"},{directMessagesEnabled:true});
-  assert.equal(result.status,"completed");assert.match(result.href??"",/\/app\/messages\?c=/);
+  assert.equal(result.status,"completed");assert.equal(new URL(result.href!,'https://app.signalstudio.ie').searchParams.get('conversationId'),id);
   const dmRows=await f.client.execute({sql:"SELECT m.body,m.conversation_id FROM conversation_messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.kind='dm'"});
   assert.equal(dmRows.rows.length,1);assert.equal(dmRows.rows[0].body,"Private note to Bob");assert.equal(dmRows.rows[0].conversation_id,id);
   assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM conversations WHERE kind='project'")).rows[0].n),0);

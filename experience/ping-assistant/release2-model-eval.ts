@@ -16,6 +16,7 @@ import { loadAssistantTaskContext, validateAssistantTaskSources } from "../../sr
 import { executeAssistantAction } from "../../src/server/ping/assistant/actions";
 import { executeAssistantUndo } from "../../src/server/ping/assistant/undo";
 import type { AssistantRequest, AssistantPlannerContext } from "../../src/lib/ping/assistant/contract";
+import type { AssistantSource } from "../../src/lib/ping/assistant/release2";
 import { estimatePlannerMicroUsd } from "../../src/server/ping/assistant/planner-budget";
 import type { PlannerModel } from "../../src/server/ping/assistant/planner-budget";
 import { EVAL_WORLD, RELEASE2_EVAL_CASES, RELEASE2_EVAL_PREREQUISITE, createRelease2SyntheticWorld, type EvalCase, type EvalSource } from "./release2-model-fixture";
@@ -101,6 +102,17 @@ async function contextFor(database:AssistantDatabase,actorId:string,request:Assi
   });
 }
 
+/** Apply the production source-revalidation contract to both local action checks and model runs. */
+async function validateSourcesFor(database:AssistantDatabase,actorId:string,sources:readonly AssistantSource[]):Promise<boolean>{
+  return assistantDatabaseTransaction(database,async tx=>{
+    const chatContext= createAssistantConversationContext(assistantConversationAdapter(tx),{directMessagesEnabled:true});
+    const chat=sources.filter(source=>source.kind==="conversation"||source.kind==="task_discussion");
+    if(chat.length&&!await chatContext.validate(actorId,chat))return false;
+    const tasks=sources.filter(source=>source.kind==="task");
+    return !tasks.length||validateAssistantTaskSources(tx,actorId,tasks,EVAL_WORLD.timeZone);
+  });
+}
+
 async function ensureOutputUnused(output:string){
   await mkdir(dirname(output),{recursive:true});
   const root=await realpath(OUTPUT_ROOT);
@@ -145,6 +157,7 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
         outcome:"plan" as const,mode:"draft" as const,actions:[{id:"step_action_check",kind:"create_tasks" as const,project:{kind:"current" as const},tasks:[{
           title:"Synthetic action adapter proof",description:"Local action-check fixture only.",assignees:[{kind:"self" as const}],dueDate:null}]}]}})};
       const service=createAssistantService({store,planner,requireApproval:true,context:contextFor.bind(null,database),
+        validateSources:(actorId,sources)=>validateSourcesFor(database,actorId,sources),
         execute:input=>executeAssistantAction({...input,directMessagesEnabled:true,now:()=>Date.parse(`${EVAL_WORLD.referenceDate}T09:12:00.000+01:00`)}),
         undo:(tx,actorId,result)=>executeAssistantUndo(tx,actorId,result.reversal!)});
       const beforeAction=await taskDigest(fixture.client);
@@ -209,13 +222,7 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
       return fetch(input,{...init,redirect:"error"});
     }});
     const service=createAssistantService({store,planner,requireApproval:true,execute:input=>executeAssistantAction({...input,directMessagesEnabled:true,now:()=>Date.parse(`${EVAL_WORLD.referenceDate}T09:12:00.000+01:00`)}),
-      context:contextFor.bind(null,database),validateSources:async(actorId,sources)=>assistantDatabaseTransaction(database,async tx=>{
-        const context=await createAssistantConversationContext(assistantConversationAdapter(tx),{directMessagesEnabled:true});
-        const chat=sources.filter(source=>source.kind==="conversation"||source.kind==="task_discussion");
-        if(chat.length&&!await context.validate(actorId,chat))return false;
-        const task=sources.filter(source=>source.kind==="task");
-        return !task.length||await validateAssistantTaskSources(tx,actorId,task,EVAL_WORLD.timeZone);
-      }),undo:(tx,actorId,result)=>executeAssistantUndo(tx,actorId,result.reversal!)});
+      context:contextFor.bind(null,database),validateSources:(actorId,sources)=>validateSourcesFor(database,actorId,sources),undo:(tx,actorId,result)=>executeAssistantUndo(tx,actorId,result.reversal!)});
     let priorRunId:string|undefined,priorGroup="";
     const attempts:number[]=[];
     for(const item of inventory){

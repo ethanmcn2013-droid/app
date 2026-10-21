@@ -30,7 +30,7 @@ function dueDate(row: typeof tasks.$inferSelect, timeZone: string): string | nul
 }
 function taskDetail(row: typeof tasks.$inferSelect, projectName: string, memberNames: ReadonlyMap<string, string>, parentTitle: string | null,
   timeZone: string): AssistantTaskContext {
-  return { title: row.title, projectName, ...(row.description?{description:row.description.slice(0,500)}:{}),assignees: row.assignees.map(id => memberNames.get(id)).filter((name): name is string => !!name),
+  return { title: row.title, projectName, ...(row.description?{description:row.description.slice(0,500)}:{}),assignees: row.assignees.map(id => memberNames.get(id)??'Assigned person unavailable'),
     dueDate: dueDate(row, timeZone), dueTime: dueTime(row, timeZone), status: row.boardColumnKey ?? row.lane, parentTitle };
 }
 function taskBody(detail: AssistantTaskContext): string {
@@ -166,7 +166,7 @@ export async function validateAssistantTaskSources(tx: AssistantActionTransactio
     const row = pack.catalog.find(task => task.id === source.itemId && task.workspaceId === source.projectId && task.archivedAt === null);
     if (!row || Math.max(0, row.updatedAt.getTime()) !== source.revision) return false;
     const parent = row.parentTaskId ? pack.catalog.find(task => task.id === row.parentTaskId) : undefined;
-    const detail = taskDetail(row, pack.project.name, pack.members, parent?.title ?? null, timeZone);
+    const detail = taskDetail(row, pack.project.name, pack.members, parent?.title ?? (row.parentTaskId?'Unavailable parent':null), timeZone);
     if (taskBody(detail) !== source.body || row.createdAt.toISOString() !== source.createdAt || source.authorName !== "Signal task record") return false;
     if (source.href !== taskHref(source.projectId, source.itemId)) return false;
   }

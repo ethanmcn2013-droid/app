@@ -8,10 +8,11 @@ import * as schema from "@/server/db/schema";
 import { isDemoMode } from "@/lib/access-mode";
 import { assistantTarget, assistantTargetAdmits, createAssistantAuthentication } from "./controls";
 import { assistantDatabaseTransaction, createAssistantStore } from "./store";
-import { createAssistantService } from "./service";
+import { createAssistantService,assistantUnchangedSources } from "./service";
+import type { AssistantSource } from '@/lib/ping/assistant/release2';
 import { createPingAssistantPlanner } from "./claude-planner";
 import { pingAssistantApiKey } from "./provider-key";
-import { assertAssistantActor, authorizeAssistantProject, getAssistantContext,resolveAssistantProjectName } from "./context";
+import { assertAssistantActor, authorizeAssistantProject, getAssistantContext,resolveAssistantProjectName,AssistantActionRefusal } from "./context";
 import { assistantConversationAdapter } from './conversation-transaction';
 import { createAssistantConversationContext } from './conversation-context';
 import { executeAssistantUndo } from './undo';
@@ -47,6 +48,14 @@ function createInstance(target: Target) {
   // credentials requires restart; old result reads remain available meanwhile.
   const planner = key ? createPingAssistantPlanner({ apiKey: key, fetch, budget: store.budget, retainCompletion: completion => after(() => completion) }) : null;
   const dispatcher = createAssistantDispatcher(database);
+  async function validateSources(tx:Parameters<Parameters<typeof transact>[0]>[0],actorId:string,sources:readonly AssistantSource[]){
+    const chat=sources.filter(source=>source.kind!=='task'),task=sources.filter(source=>source.kind==='task');
+    if(chat.length&&!await createAssistantConversationContext(assistantConversationAdapter(tx),{directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled}).validate(actorId,chat))return false;
+    for(const zone of new Set(task.map(source=>source.timeZone??'UTC'))){
+      if(!await validateAssistantTaskSources(tx,actorId,task.filter(source=>(source.timeZone??'UTC')===zone),zone))return false;
+    }
+    return true;
+  }
   const service = createAssistantService({ store,requireApproval:true,
     planner: { plan: (input, signal) => {
       if (!planner || !stillCurrent() || pingAssistantApiKey(process.env) !== key) throw new Error("planner_unavailable");
@@ -93,14 +102,7 @@ function createInstance(target: Target) {
         needsYouTotal:conversations.needsYouTotal,needsYouComplete:conversations.needsYouComplete,
         tasks:taskContext.tasks };
     }),
-    validateSources:(actorId,sources)=>transact(async tx=>{
-      const chat=sources.filter(source=>source.kind!=='task'),task=sources.filter(source=>source.kind==='task');
-      if(chat.length&&!await createAssistantConversationContext(assistantConversationAdapter(tx),{directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled}).validate(actorId,chat))return false;
-      for(const zone of new Set(task.map(source=>source.timeZone??'UTC'))){
-        if(!await validateAssistantTaskSources(tx,actorId,task.filter(source=>(source.timeZone??'UTC')===zone),zone))return false;
-      }
-      return true;
-    }),
+    validateSources:(actorId,sources)=>transact(tx=>validateSources(tx,actorId,sources)),
     undo:(tx,actorId,result)=>{
       if(!stillCurrent()||!result.reversal)throw new Error('assistant_configuration_changed');
       return pingTelemetrySpan('execute',()=>executeAssistantUndo(tx,actorId,result.reversal!,{directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled}));
@@ -128,9 +130,10 @@ function createInstance(target: Target) {
       } catch { return false; }
     }),
     execute: input => pingTelemetrySpan("execute", () => executeAssistantAction({ ...input,directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled,
-      commitStep:(stepId,fence,operation)=>guardAssistantCommitStep(input.commitStep,stillCurrent)(stepId,fence,async tx=>{
+      commitStep:guardAssistantCommitStep(input.commitStep,stillCurrent,async tx=>{
         for(const projectId of input.authorizationProjects??[])await authorizeAssistantProject(tx,input.actorId,projectId);
-        return operation(tx);
+        const sources=assistantUnchangedSources(input.authorizationSources??[],Object.values(input.results));
+        if(sources.length&&!await validateSources(tx,input.actorId,sources))throw new AssistantActionRefusal('stale');
       }), dispatch: dispatcher, deliveryTransaction: transact,
       prepareTimeline: action => prepareAssistantTimeline(action, (actorId, projectId) => transact(async tx => {
         const actor = await assertAssistantActor(tx, actorId), project = await authorizeAssistantProject(tx, actorId, projectId);

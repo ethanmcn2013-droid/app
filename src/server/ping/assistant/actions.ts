@@ -375,7 +375,7 @@ export async function executeAssistantAction(input: AssistantActionInput): Promi
         itemId=prior.value.receipt.messageId;revision=prior.value.receipt.revision;
       }
       return { ...base, projectId, affectedCount: 1, summary: recipientId?"Sent a private message.":"Saved the message to Project chat.",
-        href: recipientId?`/app/messages?c=${encodeURIComponent(conversationId)}`:`/app/messages?workspaceId=${encodeURIComponent(projectId)}`,
+        href: `/app/messages?projectId=${encodeURIComponent(projectId)}${recipientId?`&conversationId=${encodeURIComponent(conversationId)}`:''}`,
         reversal:{kind:"messages",projectId,items:[{kind:"conversation",scopeId:conversationId,itemId,revision,audienceEpoch}]} };
     }
     if (step.kind === "preview_timeline" || step.kind === "read_timeline") {
@@ -383,7 +383,7 @@ export async function executeAssistantAction(input: AssistantActionInput): Promi
     }
     if (step.kind === "open_project" || step.kind === "open_chat") {
       const query = `workspaceId=${encodeURIComponent(projectId)}`;
-      const href = step.kind === "open_chat" ? `/app/messages?${query}` : `/app/tasks?${query}`;
+      const href = step.kind === "open_chat" ? `/app/messages?projectId=${encodeURIComponent(projectId)}` : `/app/tasks?${query}`;
       return { ...base, projectId, href, summary: `Open ${project.name}.`, affectedCount: 0 };
     }
     // No success claim until the original communication service and its receipt are wired.

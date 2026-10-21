@@ -42,9 +42,10 @@ function validSourceScope(value: unknown): value is AssistantSourceScope {
   return false;
 }
 
-function messageHref(projectId: string, itemId: string, createSeq: number, rootId: string | null): string {
+function messageHref(projectId: string, itemId: string, createSeq: number, rootId: string | null, directConversationId?:string): string {
   const query = new URLSearchParams({ projectId, messageId: itemId, messageSeq: String(createSeq) });
   if (rootId) query.set("rootId", rootId);
+  if(directConversationId)query.set('conversationId',directConversationId);
   return `/app/messages?${query.toString()}`;
 }
 
@@ -147,7 +148,7 @@ export function createAssistantConversationContextFromServices(services: Service
         return [{ kind: "conversation" as const, projectId, scopeId: conversationId, itemId: message.id,
           revision: message.revision, audienceEpoch: page.value.audienceEpoch, body,
           authorName: message.authorId ? names.get(message.authorId) ?? "Project member" : "Project member",
-          createdAt: iso(message.createdAt), href: messageHref(projectId, message.id, message.createSeq, message.rootId),
+          createdAt: iso(message.createdAt), href: messageHref(projectId, message.id, message.createSeq, message.rootId,projectThread?undefined:conversationId),
           ...((message.rootId ?? rootId) ? { rootId: message.rootId ?? rootId! } : {}) }];
       });
     }
