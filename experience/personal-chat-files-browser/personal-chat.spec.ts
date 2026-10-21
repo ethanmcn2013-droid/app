@@ -131,7 +131,7 @@ test("tab-local drafts, files and notifications retain a reachable compact Chat"
   expect(rect.x).toBeGreaterThanOrEqual(0);
   expect(rect.y + rect.height).toBeLessThanOrEqual(page.viewportSize()!.height);
   await expect(panel.getByRole("navigation", { name: "Conversations", exact: true })).toBeVisible();
-  await panel.getByRole("button", { name: /\(you\)/ }).click();
+  await panel.getByRole("button", { name: /Saved notes/ }).click();
   const self = panel.getByRole("region", { name: "Your private conversation" });
   const composer = self.getByRole("textbox", { name: "Message yourself" });
   const send = self.getByRole("button", { name: "Send message" });

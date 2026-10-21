@@ -5,6 +5,8 @@ export type ConversationControls = Readonly<{
   deliveryEnabled: boolean;
   directMessagesEnabled: boolean;
   allowedActorIds: ReadonlySet<string>;
+  /** SIGNAL_CONVERSATION_OPEN_TO_ALL=true: every authenticated member (general release, founder decision 21 Oct 2026). */
+  allowAllActors?: boolean;
   guestsEnabled: false;
   attachmentsEnabled: false;
   aiEnabled: false;
@@ -20,6 +22,8 @@ export function resolveConversationControls(env: Readonly<Record<string, string 
     // DMs need their own lifecycle decision. Room sends never imply DM access.
     directMessagesEnabled: internalEnabled && env.SIGNAL_CONVERSATION_DM_ENABLED === "true",
     allowedActorIds: new Set((env.SIGNAL_CONVERSATION_INTERNAL_ACTOR_IDS ?? "").split(",").map((id) => id.trim()).filter(Boolean)),
+    // A separate, explicit switch opens chat to everyone signed in; the actor list never does.
+    allowAllActors: internalEnabled && env.SIGNAL_CONVERSATION_OPEN_TO_ALL === "true",
     guestsEnabled: false,
     attachmentsEnabled: false,
     aiEnabled: false,
@@ -32,6 +36,6 @@ export function conversationAvailability(controls: ConversationControls, authent
   send: boolean;
   deliver: boolean;
 }> {
-  const read = controls.internalEnabled && !!authenticatedActorId && controls.allowedActorIds.has(authenticatedActorId);
+  const read = controls.internalEnabled && !!authenticatedActorId && (controls.allowAllActors || controls.allowedActorIds.has(authenticatedActorId));
   return { read, send: read && controls.sendsEnabled, deliver: read && controls.deliveryEnabled };
 }

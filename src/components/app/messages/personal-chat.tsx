@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { normalizeMessageBody, validMessageBody } from "@/lib/conversations/contracts";
-import { Composer, MessageBody, useBottomAnchor, JumpToLatest } from "./chat-ui";
+import { ChatHeader, Composer, MessageBody, useBottomAnchor, JumpToLatest } from "./chat-ui";
+import { NoteTile } from "./chat-marks";
 import { appendDictatedText } from "./chat-composer-model";
 import { ChatDictationTools, ChatDraftCounter } from "./chat-composer-tools";
 import type { PersonalChatAttachment } from "@/lib/conversations/personal-chat-contracts";
@@ -28,7 +29,7 @@ function download(markdown: string) {
 }
 
 /** One private owner, independent of Project membership and two-person DMs. */
-export function PersonalChat({ actorId, actorName, demo, visible }: { actorId: string; actorName: string; demo: boolean; visible: boolean }) {
+export function PersonalChat({ actorId, demo, visible, onBack, actions }: { actorId: string; actorName?: string; demo: boolean; visible: boolean; onBack?: () => void; actions?: ReactNode }) {
   const [messages, setMessages] = useState<PersonalMessage[]>([]);
   const [draft, setDraft] = useState("");
   const draftRef = useRef("");
@@ -106,11 +107,12 @@ export function PersonalChat({ actorId, actorName, demo, visible }: { actorId: s
   }
 
   return <section aria-label="Your private conversation" className={styles.personal}>
-    <header className={styles.personalHead}><div><h2>{actorName} <span>(you)</span></h2><p>{demo ? "Preview · messages stay in this tab" : "Private to you · saved to your account"}</p></div><button disabled={exporting || (!demo && !ready)} onClick={() => void exportChat()} type="button">{exporting ? "Exporting…" : "Export Markdown"}</button></header>
+    <ChatHeader panel onBack={onBack} backLabel="All chats" leading={<NoteTile size={32} />} title="Saved notes" subtitle={demo ? "Preview · messages stay in this tab" : "Only you can see this"}
+      actions={<><button className={styles.headText} disabled={exporting || (!demo && !ready)} onClick={() => void exportChat()} type="button">{exporting ? "Exporting…" : "Export"}</button>{actions}</>} />
     <div aria-label="Personal chat history" className={styles.personalScroll} ref={scrollRef} tabIndex={0}>
       {nextCursor ? <button disabled={loading} onClick={() => void load(nextCursor)} type="button">{loading ? "Loading…" : "Load earlier messages"}</button> : null}
       {!ready && loading ? <p role="status">Loading your messages…</p> : null}
-      {ready && !messages.length ? <div className={styles.personalIntro}><h3>A place to think out loud.</h3><p>Keep a thought, a link or a reminder here. Only you can read this conversation.</p><p>Export it as Markdown whenever you want to take your notes with you.</p></div> : null}
+      {ready && !messages.length ? <div className={styles.personalIntro}><h3>Your saved notes.</h3><p>Keep a thought, a link or a reminder here. Only you can read it.</p><p>Export them as Markdown whenever you want to take them with you.</p></div> : null}
       <ol className={styles.personalMessages}>{messages.map((message) => <li key={message.id}><div><strong>You</strong><time dateTime={new Date(message.createdAt).toISOString()}>{dateLabel(message.createdAt)}</time>{message.editedAt ? <span>Edited</span> : null}</div>{message.body ? <p><MessageBody body={message.body} people={[]} selfId={actorId} /></p> : null}<PersonalMessageFiles files={message.attachments} demo={demo} /></li>)}</ol>
       {error ? <div className={styles.error} role="alert">{error}{!ready ? <button disabled={loading} onClick={() => void load()} type="button">Try again</button> : null}</div> : null}
       {attempt ? <div className={styles.sendStatus} role="status">{attempt.state === "sending" ? "Saving your message…" : <>This send is unconfirmed. Your message stays in the draft.<button onClick={() => void submit(true)} type="button">Check receipt, then retry</button></>}</div> : null}

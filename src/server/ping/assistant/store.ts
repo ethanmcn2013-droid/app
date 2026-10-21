@@ -1,6 +1,6 @@
 import { parsePlannerAttemptMetadata, type PlannerAttemptMetadata } from "./planner-attempt-metadata";
 import { createHash, randomUUID } from "node:crypto";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import type { db } from "@/server/db";
 import { assistantRuns, assistantSteps } from "@/server/db/schema";
 import {isAssistantInternalHref,type AssistantActionResult} from "@/lib/ping/assistant/contract";
@@ -254,14 +254,18 @@ export function createAssistantStore(database: AssistantDatabase, options: { now
       return parsePlannerAttemptMetadata(run.resultJson?JSON.parse(run.resultJson).plannerAttempt:null);
     },
     budget: {
-      async reserve(input: { runId: string; requestId: string; model: string; reservedMicroUsd: number; developmentCapMicroUsd: number; totalCapMicroUsd: number; rateCardId: string; attempt?:PlannerAttemptMetadata }) {
+      async reserve(input: { runId: string; requestId: string; model: string; reservedMicroUsd: number; developmentCapMicroUsd: number; totalCapMicroUsd: number; rateCardId: string; attempt?:PlannerAttemptMetadata; periodStartMs?: number }) {
         if (![input.reservedMicroUsd,input.developmentCapMicroUsd,input.totalCapMicroUsd].every(n => Number.isSafeInteger(n) && n > 0)) throw new AssistantStoreError("invalid_input");
+        if (input.periodStartMs !== undefined && !(Number.isSafeInteger(input.periodStartMs) && input.periodStartMs >= 0)) throw new AssistantStoreError("invalid_input");
         const attempt=input.attempt===undefined?undefined:parsePlannerAttemptMetadata(input.attempt);
         if(input.attempt!==undefined&&(!attempt||attempt.model!==input.model||attempt.revision!==0||attempt.logical!=="pending"||attempt.physical!=="pending"||attempt.dispatched||Object.values(attempt.stages).some(value=>value!==null)))throw new AssistantStoreError("invalid_input");
         return transaction(async tx => {
           const [run] = await tx.select().from(assistantRuns).where(eq(assistantRuns.id, input.runId)).limit(1);
           if (!run || run.cancelledAt !== null || run.budgetRequestId || run.planJson) return false;
-          const [total] = await tx.select({ value: sql<number>`COALESCE(SUM(${assistantRuns.reservedMicroUsd}),0)` }).from(assistantRuns);
+          // A monthly cap counts only this month's runs; without a period the cap is lifetime, as before.
+          const [total] = input.periodStartMs === undefined
+            ? await tx.select({ value: sql<number>`COALESCE(SUM(${assistantRuns.reservedMicroUsd}),0)` }).from(assistantRuns)
+            : await tx.select({ value: sql<number>`COALESCE(SUM(${assistantRuns.reservedMicroUsd}),0)` }).from(assistantRuns).where(gte(assistantRuns.createdAt, input.periodStartMs));
           if (Number(total.value) + input.reservedMicroUsd > Math.min(input.developmentCapMicroUsd,input.totalCapMicroUsd)) return false;
           await tx.update(assistantRuns).set({ budgetRequestId: assistantPayloadHash({runId:input.runId,requestId:input.requestId}), budgetModel: input.model, budgetRateCardId: input.rateCardId, reservedMicroUsd: input.reservedMicroUsd, usageState: "reserved", ...(attempt?{resultJson:json({...JSON.parse(run.resultJson??"{}"),plannerAttempt:attempt})}:{}), updatedAt: now() }).where(eq(assistantRuns.id, input.runId));
           return true;

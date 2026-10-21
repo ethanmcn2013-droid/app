@@ -26,3 +26,17 @@ test("configuration changes during authentication fail closed", async () => {
   const authenticate = createAssistantAuthentication({ target: () => assistantTarget(current), session: async () => ({ userId: "clerk-a", sessionId: "session" }), resolveActor: async () => { current = { ...current, PING_ASSISTANT_ACTOR_IDS: "actor-b" }; return "actor-a"; } });
   assert.equal(await authenticate(), null);
 });
+
+test("the explicit open-to-all switch admits any persisted actor; nothing else widens the list", async () => {
+  const open = { ...env, PING_ASSISTANT_OPEN_TO_ALL: "1", PING_ASSISTANT_ACTOR_IDS: undefined };
+  assert.equal(assistantActorEnabled(open, "actor-b"), true);
+  assert.equal(assistantActorEnabled(open, ""), false);
+  assert.equal(assistantTarget(open, true), null);
+  for (const value of ["true", "yes", " 1", "TRUE"]) assert.equal(assistantActorEnabled({ ...env, PING_ASSISTANT_OPEN_TO_ALL: value }, "actor-b"), false);
+  assert.equal(assistantTarget({ ...env, PING_ASSISTANT_ACTOR_IDS: "*" }), null);
+  // Opening never skips identity: the session and a persisted actor are still required.
+  const authenticate = createAssistantAuthentication({ target: () => assistantTarget(open), session: async () => ({ userId: "clerk-b", sessionId: "session" }), resolveActor: async () => null });
+  assert.equal(await authenticate(), null);
+  const admitted = createAssistantAuthentication({ target: () => assistantTarget(open), session: async () => ({ userId: "clerk-b", sessionId: "session" }), resolveActor: async () => "actor-b" });
+  assert.equal(await admitted(), "actor-b");
+});

@@ -22,6 +22,20 @@ test("explicit internal actor allowlist is distinct from Project authorization",
   }
 });
 
+test("the explicit open-to-all switch admits every authenticated member, only while chat is on", () => {
+  const open = resolveConversationControls({ SIGNAL_CONVERSATION_INTERNAL_ENABLED: "true", SIGNAL_CONVERSATION_SEND_ENABLED: "true", SIGNAL_CONVERSATION_OPEN_TO_ALL: "true" });
+  assert.deepEqual(conversationAvailability(open, "anyone"), { read: true, send: true, deliver: false });
+  assert.deepEqual(conversationAvailability(open, ""), { read: false, send: false, deliver: false });
+  const off = resolveConversationControls({ SIGNAL_CONVERSATION_OPEN_TO_ALL: "true" });
+  assert.deepEqual(conversationAvailability(off, "anyone"), { read: false, send: false, deliver: false });
+  for (const value of ["1", "TRUE", " true", "yes"]) {
+    const malformed = resolveConversationControls({ SIGNAL_CONVERSATION_INTERNAL_ENABLED: "true", SIGNAL_CONVERSATION_OPEN_TO_ALL: value });
+    assert.deepEqual(conversationAvailability(malformed, "anyone"), { read: false, send: false, deliver: false });
+  }
+  const star = resolveConversationControls({ SIGNAL_CONVERSATION_INTERNAL_ENABLED: "true", SIGNAL_CONVERSATION_INTERNAL_ACTOR_IDS: "*" });
+  assert.deepEqual(conversationAvailability(star, "anyone"), { read: false, send: false, deliver: false });
+});
+
 test("send rollback preserves history and separates external drain", () => {
   const controls = resolveConversationControls({
     SIGNAL_CONVERSATION_INTERNAL_ENABLED: "true", SIGNAL_CONVERSATION_SEND_ENABLED: "false",

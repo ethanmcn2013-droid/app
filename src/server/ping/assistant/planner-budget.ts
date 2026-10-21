@@ -3,11 +3,17 @@ import type { PlannerAttemptMetadata } from "./planner-attempt-metadata";
 
 export const PLANNER_RATE_CARD = "anthropic-standard-global-2026-10-18";
 export const PLANNER_DEVELOPMENT_CAP_MICRO_USD = 5_000_000;
-export const PLANNER_TOTAL_CAP_MICRO_USD = 100_000_000;
+/** Production spend: $100 a calendar month, UTC (founder decision, 21 Oct 2026). */
+export const PLANNER_MONTHLY_CAP_MICRO_USD = 100_000_000;
+export const PLANNER_TOTAL_CAP_MICRO_USD = PLANNER_MONTHLY_CAP_MICRO_USD;
+/** The start of the current UTC month: reservations before it no longer count. */
+export function plannerPeriodStart(nowMs: number) { const date = new Date(nowMs); return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1); }
 export type PlannerModel = "claude-haiku-5-5" | "claude-sonnet-5-5" | "claude-opus-5-5";
 export type PlannerBudgetReservation = Readonly<{
   runId: string; requestId: string; model: PlannerModel; reservedMicroUsd: number;
   developmentCapMicroUsd: number; totalCapMicroUsd: number; rateCardId: string; attempt?: PlannerAttemptMetadata;
+  /** Only reservations made at or after this time count toward the caps (the current month). */
+  periodStartMs?: number;
 }>;
 export type PlannerUsageRecord = Readonly<{
   runId: string; requestId: string; inputTokens: number | null; outputTokens: number | null;
@@ -46,10 +52,12 @@ export function estimatePlannerUsageMicroUsd(model: PlannerModel, value: {
 }
 export function plannerReservation(input: {
   runId: string; requestId: string; model: PlannerModel; inputTokenUpperBound: number; maxOutputTokens: number;
+  /** Production uses the monthly cap; every other environment keeps the $5 development cap. */
+  production?: boolean; nowMs?: number;
 }): PlannerBudgetReservation {
   for (const value of [input.runId, input.requestId]) if (!/^[A-Za-z0-9_-]{1,128}$/.test(value)) throw new Error("planner_identity_invalid");
   return Object.freeze({runId: input.runId, requestId: input.requestId, model: input.model,
     reservedMicroUsd: estimatePlannerMicroUsd(input.model, input.inputTokenUpperBound, input.maxOutputTokens),
-    developmentCapMicroUsd: PLANNER_DEVELOPMENT_CAP_MICRO_USD, totalCapMicroUsd: PLANNER_TOTAL_CAP_MICRO_USD,
-    rateCardId: PLANNER_RATE_CARD});
+    developmentCapMicroUsd: input.production ? PLANNER_MONTHLY_CAP_MICRO_USD : PLANNER_DEVELOPMENT_CAP_MICRO_USD, totalCapMicroUsd: PLANNER_TOTAL_CAP_MICRO_USD,
+    rateCardId: PLANNER_RATE_CARD, ...(input.production ? { periodStartMs: plannerPeriodStart(input.nowMs ?? Date.now()) } : {})});
 }
