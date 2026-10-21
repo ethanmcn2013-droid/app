@@ -5,6 +5,8 @@ import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "@/server/db/schema";
 import { createPingProofFixture, PROOF_PROJECT, seedProofTask } from "../proof-fixture";
 import { AssistantUndoConflict, executeAssistantUndo } from "./undo";
+import { createTaskDiscussionService } from "@/server/conversations/task-discussion";
+import { assistantConversationAdapter } from "./conversation-transaction";
 import type { AssistantReversal } from "@/lib/ping/assistant/release2";
 
 const snapshotKeys = ["id","workspaceId","seq","title","description","lane","priority","assignees","due","dueAt","estimate","tags","idleDays","blockedBy","recurrence","startDay","durationDays","position","parentTaskId","externalContactName","externalContactEmail","cents","sourceNoteId","sourceNoteExtractBody","sourceNoteExtractSha256","boardColumnKey","completedAt","isMilestone","archivedAt","createdAt","updatedAt"] as const;
@@ -78,6 +80,51 @@ test("Undo takes back a message through the canonical author and audience guards
     const row = await proof.client.execute({ sql: "SELECT body,revision,deleted_at FROM conversation_messages WHERE id=?", args: [sent.message.messageId] });
     assert.equal(row.rows[0].body, null);
     assert.equal(Number(row.rows[0].revision), sent.message.revision + 1);
+    assert.notEqual(row.rows[0].deleted_at, null);
+  } finally { proof.client.close(); }
+});
+
+test("Undo takes back a task comment only for its author at the current revision and audience", async () => {
+  const proof = await createPingProofFixture();
+  const database = drizzle(proof.client, { schema });
+  try {
+    await seedProofTask(proof.client, "comment-undo-task");
+    const sent = await database.transaction(async tx => {
+      const service = createTaskDiscussionService(assistantConversationAdapter(tx));
+      const opened = await service.openTaskDiscussion({ actorId: "alice", taskId: "comment-undo-task", limit: 1 });
+      assert.equal(opened.ok, true);
+      if (!opened.ok) throw new Error("discussion unavailable");
+      const result = await service.sendComment({ actorId: "alice", input: { taskId: "comment-undo-task", clientRequestId: "comment_send_undo_01",
+        expectedAudienceEpoch: opened.value.audienceEpoch, body: "Original synthetic comment", rootCommentId: null, mentionUserIds: [] } });
+      assert.equal(result.ok, true);
+      if (!result.ok) throw new Error("comment unavailable");
+      return { audienceEpoch: opened.value.audienceEpoch, receipt: result.value };
+    }, { behavior: "immediate" });
+    const original: AssistantReversal = { kind: "messages", projectId: PROOF_PROJECT, items: [{ kind: "task_discussion",
+      scopeId: "comment-undo-task", itemId: sent.receipt.commentId, revision: sent.receipt.revision, audienceEpoch: sent.audienceEpoch }] };
+    // Bob has Project access, but canonical discussion Undo still requires the comment author.
+    await assert.rejects(database.transaction(tx => executeAssistantUndo(tx, "bob", original), { behavior: "immediate" }), AssistantUndoConflict);
+    let row = await proof.client.execute({ sql: "SELECT body,revision,deleted_at FROM comments WHERE id=?", args: [sent.receipt.commentId] });
+    assert.equal(row.rows[0].body, "Original synthetic comment");
+
+    const edited = await database.transaction(async tx => {
+      const service = createTaskDiscussionService(assistantConversationAdapter(tx));
+      return service.editComment({ actorId: "alice", taskId: "comment-undo-task", commentId: sent.receipt.commentId,
+        clientRequestId: "comment_edit_undo_01", expectedRevision: sent.receipt.revision, expectedAudienceEpoch: sent.audienceEpoch,
+        body: "Updated synthetic comment", mentionUserIds: [] });
+    }, { behavior: "immediate" });
+    assert.equal(edited.ok, true);
+    await assert.rejects(database.transaction(tx => executeAssistantUndo(tx, "alice", original), { behavior: "immediate" }), AssistantUndoConflict);
+    row = await proof.client.execute({ sql: "SELECT body,revision,deleted_at FROM comments WHERE id=?", args: [sent.receipt.commentId] });
+    assert.equal(row.rows[0].body, "Updated synthetic comment");
+
+    const current: AssistantReversal = { kind: "messages", projectId: PROOF_PROJECT, items: [{ kind: "task_discussion",
+      scopeId: "comment-undo-task", itemId: sent.receipt.commentId, revision: sent.receipt.revision + 1, audienceEpoch: sent.audienceEpoch }] };
+    const undone = await database.transaction(tx => executeAssistantUndo(tx, "alice", current), { behavior: "immediate" });
+    assert.equal(undone.status, "reverted");
+    row = await proof.client.execute({ sql: "SELECT body,revision,deleted_at FROM comments WHERE id=?", args: [sent.receipt.commentId] });
+    assert.equal(row.rows[0].body, null);
+    assert.equal(Number(row.rows[0].revision), sent.receipt.revision + 2);
     assert.notEqual(row.rows[0].deleted_at, null);
   } finally { proof.client.close(); }
 });
