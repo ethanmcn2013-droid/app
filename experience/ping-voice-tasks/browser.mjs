@@ -164,7 +164,11 @@ try {
   });
   page.on('pageerror',error=>errors.push(error.message));
   const consoleErrors=[];page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
-  const failedRequests=[];page.on('requestfailed',request=>failedRequests.push({path:new URL(request.url()).pathname,error:request.failure()?.errorText}));
+  const failedRequests=[];page.on('requestfailed',request=>{
+    const failure=request.failure()?.errorText??'unknown';
+    const sanitizedError=String(failure).replace(/https?:\/\/\S+/g,'[url]').replace(/[\r\n\t]+/g,' ').slice(0,200);
+    failedRequests.push({method:request.method(),path:new URL(request.url()).pathname,error:sanitizedError});
+  });
   await page.route('**/*',async route=>{
     const request=route.request(),url=new URL(request.url());
     if(url.origin!==origin)return route.abort();
@@ -494,9 +498,11 @@ try {
   const accessibility=await new AxeBuilder({page}).include('[data-testid=project-ping-typed-panel]').analyze();assert.deepEqual(accessibility.violations.map(({id,impact,nodes})=>({id,impact,count:nodes.length})),[]);
   receipt.accessibility={scope:'typed and voice panels',violations:0};await captureShot('operating-controls-desktop.png');await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
   await captureShot('voice-tasks-phone.png');
+  receipt.expectedTransportDiagnostics={consoleErrors,failedRequests};
   assert.ok(consoleErrors.every(message=>/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED|status of (404|409|503)/.test(message)),'Unexpected browser console error');
-  assert.ok(failedRequests.every(request=>request.path==='/api/ping'&&/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED/.test(request.error)),'Unexpected failed browser request');
-  receipt.expectedTransportDiagnostics={consoleErrors,failedRequests};receipt.executeCalls=executeCalls;receipt.receiptCount=await countReceipts();receipt.httpActions=state.requests;
+  const unexpectedFailedRequests=failedRequests.filter(request=>!(request.path==='/api/ping'&&/ERR_EMPTY_RESPONSE|ERR_CONNECTION_CLOSED|ERR_FAILED/.test(request.error)));
+  assert.equal(unexpectedFailedRequests.length,0,`Unexpected failed browser request: ${JSON.stringify(unexpectedFailedRequests)}`);
+  receipt.executeCalls=executeCalls;receipt.receiptCount=await countReceipts();receipt.httpActions=state.requests;
   assert.ok(receipt.focusObservations.filter(item=>item.label.startsWith('after ')).every(item=>item.useful),'Completed keyboard transitions must leave useful connected focus');
   assert.equal(page.url(),origin+'/','Overlay does not navigate away from the existing Tasks fixture route');
   receipt.overlayNavigation={actualUrl:page.url(),expectedUrl:origin+'/',explicitTestReloadsOnly:true};
