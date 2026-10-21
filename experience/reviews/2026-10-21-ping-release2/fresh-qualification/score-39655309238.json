@@ -1,0 +1,1869 @@
+{
+  "reviewId": "independent-fresh-ping-release2-39655309238",
+  "reviewer": "/root/r2_independent_review",
+  "reviewDate": "2026-10-21",
+  "sourceRunId": "39655309238",
+  "rubric": "docs/projects/chat-ping-redesign/ping-eval.md existing rubric; approved current plan-first contract; no fixture/request/rubric changes",
+  "sourceFingerprintSha256": "d25a2e678a1b3899874f04d64cd7bc34aa37ae4d40aae06e407fa8c0cd9e907b",
+  "admissionSha256": "d4868dffc1394feee317a2d5ad082d1d4ceacbb323ac25db9479f55cddfe3cdc",
+  "fixedDenominator": 62,
+  "counts": {
+    "pass": 58,
+    "weak": 3,
+    "fail": 0,
+    "held": 1
+  },
+  "passOnlyPercent": 93.55,
+  "callAccounting": {
+    "fixedRequests": 62,
+    "fixedProviderCalls": 61,
+    "heldFixedNoCall": 1,
+    "separatePrerequisite": "B-SETUP-A2",
+    "prerequisiteProviderCalls": 1,
+    "totalProviderCalls": 62,
+    "estimatedSpendUsd": 2.715504,
+    "unknownUsage": false,
+    "inputTokens": 1261772,
+    "outputTokens": 19196,
+    "cacheTokens": 0,
+    "fixedRequestMedianWallMs": 2736.610632,
+    "fixedRequestP95NearestRankWallMs": 6256.254698
+  },
+  "dataSafety": {
+    "allSettledCallsHaveUnchangedTaskDigest": true,
+    "baselineTaskSha256": "86709fc5215ba8eff0d395c6005a34c81785eb9ca7c5606f010235912ad8b998",
+    "finalTaskSha256": "86709fc5215ba8eff0d395c6005a34c81785eb9ca7c5606f010235912ad8b998",
+    "appliesExecuted": 0,
+    "conclusion": "No task data changes in this cohort; action application and undo are not validated by this draft-only cohort."
+  },
+  "cases": [
+    {
+      "caseId": "A1",
+      "group": "A",
+      "prompt": "add a task for aoife to restock the bar fridge by saturday",
+      "expectation": "One task assigned to Aoife, due Saturday 18 July.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "create_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "tasks": [
+            {
+              "title": "Restock the bar fridge",
+              "description": "",
+              "assignees": [
+                {
+                  "kind": "name",
+                  "name": "Aoife Walsh"
+                }
+              ],
+              "dueDate": "saturday"
+            }
+          ]
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "A2",
+      "group": "A",
+      "prompt": "remind me to call the florist tomorrow at 10",
+      "expectation": "One task assigned to Orla, tomorrow at 10:00.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "create_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "tasks": [
+            {
+              "title": "Call the florist",
+              "description": "",
+              "assignees": [
+                {
+                  "kind": "self"
+                }
+              ],
+              "dueDate": "tomorrow",
+              "dueTime": "10:00",
+              "status": "todo"
+            }
+          ]
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "A3",
+      "group": "A",
+      "prompt": "make three tasks for the floor walk: print the seating plan, check the fire exits, count the high chairs",
+      "expectation": "One plan with three useful distinct task steps.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "create_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "tasks": [
+            {
+              "title": "Print the seating plan",
+              "description": "",
+              "assignees": [
+                {
+                  "kind": "self"
+                }
+              ]
+            },
+            {
+              "title": "Check the fire exits",
+              "description": "",
+              "assignees": [
+                {
+                  "kind": "self"
+                }
+              ]
+            },
+            {
+              "title": "Count the high chairs",
+              "description": "",
+              "assignees": [
+                {
+                  "kind": "self"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "A4",
+      "group": "A",
+      "prompt": "need dara to send the service notes by friday",
+      "expectation": "Dara task due Friday.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "create_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "tasks": [
+            {
+              "title": "Send the service notes",
+              "description": "",
+              "assignees": [
+                {
+                  "kind": "name",
+                  "name": "Dara Quinn"
+                }
+              ],
+              "dueDate": "friday",
+              "status": "todo"
+            }
+          ]
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "A5",
+      "group": "A",
+      "prompt": "set a reminder for 3pm",
+      "expectation": "Clarify what the reminder is for; create nothing.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Grounded clarification or honest limitation is appropriate where the request lacks a required detail or asks for an unsupported action.",
+      "actualReply": "Which day should the 3pm reminder be for, and what should it say or be about? I can set it up as a task with a 3pm due time once I know the day, for example today (2026-07-16) or another date.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "A6",
+      "group": "A",
+      "prompt": "create a task",
+      "expectation": "Ask for the missing task details.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Grounded clarification or honest limitation is appropriate where the request lacks a required detail or asks for an unsupported action.",
+      "actualReply": "What should the task be called? You can also tell me a due date or time, who it's for (it will be yours unless you name someone else), and any description.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "B7",
+      "group": "B",
+      "prompt": "make it 11 instead",
+      "expectation": "Edit the waiting A2 plan to tomorrow at 11; preserve its day.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "create_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "tasks": [
+            {
+              "title": "Call the florist",
+              "description": "",
+              "assignees": [
+                {
+                  "kind": "self"
+                }
+              ],
+              "dueDate": "tomorrow",
+              "dueTime": "11:00",
+              "status": "todo"
+            }
+          ]
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "B8",
+      "group": "B",
+      "prompt": "actually give it to niamh",
+      "expectation": "Change only the waiting task owner to Niamh.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "create_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "tasks": [
+            {
+              "title": "Call the florist",
+              "description": "",
+              "assignees": [
+                {
+                  "kind": "name",
+                  "name": "Niamh Kelly"
+                }
+              ],
+              "dueDate": "tomorrow",
+              "dueTime": "11:00",
+              "status": "todo"
+            }
+          ]
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "B9",
+      "group": "B",
+      "prompt": "what time is that for?",
+      "expectation": "Answer from the still-waiting plan: tomorrow at 11.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "\"That\" most likely refers to the waiting plan: the \"Call the florist\" task, which is set for tomorrow at 11:00 and assigned to Niamh Kelly. It is still unapplied, so press Apply plan to create it.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "B10",
+      "group": "B",
+      "prompt": "who's it for?",
+      "expectation": "Answer from the still-waiting plan: Niamh.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "The waiting plan's \"Call the florist\" task is assigned to Niamh Kelly, due tomorrow at 11:00. It is still unapplied, so press Apply plan to create it.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "B11",
+      "group": "B",
+      "prompt": "go ahead",
+      "expectation": "Must remain a draft; direct apply is never authorized by chat text.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Correctly preserves mandatory manual Apply; the older prototype example cannot authorize a server-side apply.",
+      "actualReply": "I can't treat \"go ahead\" as approval. The plan is still waiting and nothing has been applied: it creates the \"Call the florist\" task, assigned to Niamh Kelly, due tomorrow at 11:00. Press Apply plan to create it.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "B12",
+      "group": "B",
+      "prompt": "undo",
+      "expectation": "Do not claim any changes were applied or undone.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Nothing has been applied yet, so there is nothing to undo. The waiting plan would create the \"Call the florist\" task for Niamh Kelly, due tomorrow at 11:00. Do you want me to drop that step, or change something in it, such as the assignee or the time?",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "C13",
+      "group": "C",
+      "prompt": "Create tasks for the tasting on 1 August",
+      "expectation": "A tasting plan grounded to 1 August.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "tasting",
+          "kind": "create_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "tasks": [
+            {
+              "title": "Confirm tasting menu with the kitchen",
+              "description": "Agree the dishes and portions for Mara and Finn's menu tasting on 1 August.",
+              "assignees": [
+                {
+                  "kind": "self"
+                }
+              ],
+              "dueDate": "2026-07-27",
+              "status": "todo"
+            },
+            {
+              "title": "Get final dietary list for the tasting",
+              "description": "Make sure the final dietary list from the couple is in hand before the service notes are locked for the 1 August tasting.",
+              "assignees": [
+                {
+                  "kind": "self"
+                }
+              ],
+              "dueDate": "2026-07-20",
+              "status": "todo"
+            },
+            {
+              "title": "Lock service notes for the tasting",
+              "description": "Finalise the service notes for the 1 August tasting once the dietary list is in.",
+              "assignees": [
+                {
+                  "kind": "self"
+                }
+              ],
+              "dueDate": "2026-07-29",
+              "status": "todo"
+            },
+            {
+              "title": "Prepare tasting room and tableware",
+              "description": "Set up the space, tableware and glassware for the tasting on 1 August.",
+              "assignees": [
+                {
+                  "kind": "self"
+                }
+              ],
+              "dueDate": "2026-07-31",
+              "status": "todo"
+            },
+            {
+              "title": "Run the menu tasting",
+              "description": "Hold the menu tasting with Mara and Finn and note their feedback.",
+              "assignees": [
+                {
+                  "kind": "self"
+                }
+              ],
+              "dueDate": "2026-08-01",
+              "status": "todo"
+            },
+            {
+              "title": "Follow up on tasting feedback",
+              "description": "Send menu changes and decisions from the tasting to the kitchen and the couple.",
+              "assignees": [
+                {
+                  "kind": "self"
+                }
+              ],
+              "dueDate": "2026-08-03",
+              "status": "todo"
+            }
+          ]
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "C14",
+      "group": "C",
+      "prompt": "drop the invite one",
+      "expectation": "Remove only the invite step; keep other steps.",
+      "grade": "weak",
+      "points": 0,
+      "rationale": "It correctly refuses to remove a nonexistent invite step, but the follow-up asks which other task to drop instead of asking whether to add an invite step or choose a different step.",
+      "actualReply": "None of the tasks in the waiting plan mention an invite. The six tasks are: Confirm tasting menu with the kitchen, Get final dietary list for the tasting, Lock service notes for the tasting, Prepare tasting room and tableware, Run the menu tasting, and Follow up on tasting feedback. Which one should I drop?",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "C15",
+      "group": "C",
+      "prompt": "give the menu one to niamh",
+      "expectation": "Change only the menu task owner to Niamh.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Grounded clarification or honest limitation is appropriate where the request lacks a required detail or asks for an unsupported action.",
+      "actualReply": "Two tasks in the waiting plan mention the menu: \"Confirm tasting menu with the kitchen\" and \"Run the menu tasting\". Which one should I assign to Niamh Kelly?",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "C16",
+      "group": "C",
+      "prompt": "why the 31st?",
+      "expectation": "Answer about the waiting plan without changing it.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "In the waiting plan, 31 July (2026-07-31) is the due date for \"Prepare tasting room and tableware\". It falls one day before the tasting itself, which the plan sets for 1 August (\"Run the menu tasting\", due 2026-08-01). That gives a day to set up the space, tableware and glassware. The plan doesn't record any other reason for the 31st. Nothing has changed and the plan is still waiting. If you want a different date, tell me and I'll edit just that task.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "C17",
+      "group": "C",
+      "prompt": "ok go",
+      "expectation": "Must remain a draft; direct apply is never authorized by chat text.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Correctly preserves mandatory manual Apply; the older prototype example cannot authorize a server-side apply.",
+      "actualReply": "Nothing has been applied yet. \"ok go\" isn't approval, so please press Apply plan to create the six tasting tasks that are waiting in the plan: Confirm tasting menu with the kitchen, Get final dietary list for the tasting, Lock service notes for the tasting, Prepare tasting room and tableware, Run the menu tasting, and Follow up on tasting feedback. If you want any changes first, tell me and I'll edit the waiting plan.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "D18",
+      "group": "D",
+      "prompt": "move the run-sheet to tomorrow",
+      "expectation": "Plan only the run-sheet move from today to tomorrow.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "update_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "targets": {
+            "kind": "titles",
+            "titles": [
+              "Build the Saturday run-sheet"
+            ]
+          },
+          "changes": {
+            "dueDate": "tomorrow"
+          }
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "D19",
+      "group": "D",
+      "prompt": "push the floor walk back a week",
+      "expectation": "Fri 24 Jul to Fri 31 Jul.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "update_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "targets": {
+            "kind": "titles",
+            "titles": [
+              "Walk the floor with the front-of-house lead"
+            ]
+          },
+          "changes": {
+            "dueDate": "2026-07-31"
+          }
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "D20",
+      "group": "D",
+      "prompt": "give the marquee task to niamh",
+      "expectation": "Change only marquee task owner from Aoife to Niamh.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "update_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "targets": {
+            "kind": "titles",
+            "titles": [
+              "Confirm the marquee sides with the hire company"
+            ]
+          },
+          "changes": {
+            "assignees": [
+              {
+                "kind": "name",
+                "name": "Niamh Kelly"
+              }
+            ]
+          }
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "D21",
+      "group": "D",
+      "prompt": "can aoife take the olives off dara",
+      "expectation": "Change only olives task owner from Dara to Aoife.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "update_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "targets": {
+            "kind": "titles",
+            "titles": [
+              "Order tonic and the good olives"
+            ]
+          },
+          "changes": {
+            "assignees": [
+              {
+                "kind": "name",
+                "name": "Aoife Walsh"
+              }
+            ]
+          }
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "D22",
+      "group": "D",
+      "prompt": "mark the dietary list done",
+      "expectation": "Task completion plan with open checklist warning.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed. Some checklist items are still open. Marking their task done will leave those items open.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "update_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "targets": {
+            "kind": "titles",
+            "titles": [
+              "Collect Mara and Finn's final dietary list"
+            ]
+          },
+          "changes": {
+            "status": "done"
+          }
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "D23",
+      "group": "D",
+      "prompt": "tick off kitchen service times",
+      "expectation": "Tick only the named child checklist item.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "set_checklist_item",
+          "project": {
+            "kind": "current"
+          },
+          "parent": {
+            "kind": "titles",
+            "titles": [
+              "Build the Saturday run-sheet"
+            ]
+          },
+          "itemTitle": "Kitchen service times",
+          "completed": true
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "D24",
+      "group": "D",
+      "prompt": "move everything of dara's to monday",
+      "expectation": "Move Dara's tonic and olives tasks only to Monday 20 July.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "update_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "targets": {
+            "kind": "titles",
+            "titles": [
+              "Order tonic and the good olives"
+            ]
+          },
+          "changes": {
+            "dueDate": "2026-07-20"
+          }
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "D25",
+      "group": "D",
+      "prompt": "delete the floor walk",
+      "expectation": "Explain delete means archive and offer an archive plan.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "archive1",
+          "kind": "archive_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "targets": {
+            "kind": "titles",
+            "titles": [
+              "Walk the floor with the front-of-house lead"
+            ]
+          },
+          "archived": true
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "E26",
+      "group": "E",
+      "prompt": "nudge dara about the tonic",
+      "expectation": "Draft a nudge step to Dara; nothing sent before Apply.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "nudge1",
+          "kind": "nudge_tasks",
+          "project": {
+            "kind": "current"
+          },
+          "targets": {
+            "kind": "titles",
+            "titles": [
+              "Order tonic and the good olives"
+            ]
+          }
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "E27",
+      "group": "E",
+      "prompt": "tell aoife the bar's moving at 1",
+      "expectation": "Draft a private message to Aoife; editable; nothing sent before Apply.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "msg1",
+          "kind": "send_message",
+          "project": {
+            "kind": "current"
+          },
+          "body": "The bar's moving at 1.",
+          "recipient": {
+            "kind": "name",
+            "name": "Aoife Walsh"
+          }
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "E28",
+      "group": "E",
+      "prompt": "comment on the marquee task that we're going with full sides",
+      "expectation": "Draft one comment on the marquee task.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "step1",
+          "kind": "add_comment",
+          "project": {
+            "kind": "current"
+          },
+          "targets": {
+            "kind": "titles",
+            "titles": [
+              "Confirm the marquee sides with the hire company"
+            ]
+          },
+          "body": "We're going with full sides."
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "E29",
+      "group": "E",
+      "prompt": "invite niamh to the tasting",
+      "expectation": "Draft an invite or private message through a plan.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Draft prepared. No actions were executed.",
+      "plan": [
+        {
+          "id": "msg1",
+          "kind": "send_message",
+          "project": {
+            "kind": "current"
+          },
+          "recipient": {
+            "kind": "name",
+            "name": "Niamh Kelly"
+          },
+          "body": "Hi Niamh, you're invited to the Mara and Finn menu tasting on Saturday 1 August. Let me know if you can make it."
+        }
+      ],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "E30",
+      "group": "E",
+      "prompt": "message the couple that monday is fine",
+      "expectation": "Do not access guest chat in Release 2; explain limitation.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Grounded clarification or honest limitation is appropriate where the request lacks a required detail or asks for an unsupported action.",
+      "actualReply": "Which couple do you mean: Nora and Cian (wedding Saturday 18 July) or Mara and Finn (wedding Saturday 3 October, tasting 1 August)? Couples aren't Project members, and there is no private chat with either couple that I can see, so please tell me who should receive this and where it can be sent.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "E31",
+      "group": "E",
+      "prompt": "email ciaran the run sheet",
+      "expectation": "Say Ping cannot email/attach; Ciaran's request must be accepted first.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Grounded clarification or honest limitation is appropriate where the request lacks a required detail or asks for an unsupported action.",
+      "actualReply": "There is no member named Ciaran in The Orchard, events (members: Orla Byrne, Niamh Kelly, Aoife Walsh, Dara Quinn, Fixture Owner). I also can't send email or attach a file; I can only send a private message to an existing Project member. Who did you mean, and should I message them the run sheet details?",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F32",
+      "group": "F",
+      "prompt": "what's late?",
+      "expectation": "Tonic and olives are Dara's overdue tasks; say what's due today.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Based on the reference date of 2026-07-16, one top-level task is overdue: \"Order tonic and the good olives\" (Dara Quinn), which was due 2026-07-14. Two other tasks are due today, 2026-07-16, so they are not late yet: \"Build the Saturday run-sheet\" (Orla Byrne, doing) and \"Confirm the marquee sides with the hire company\" (Aoife Walsh, todo). The remaining top-level tasks are due 2026-07-20 and 2026-07-24. Checklist items have no due dates, so none of them are counted as late.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "task_source_3",
+          "quote": "Due date: 2026-07-14",
+          "href": "/app/tasks?task=tonic&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_1",
+          "quote": "Due date: 2026-07-16",
+          "href": "/app/tasks?task=runsheet&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_2",
+          "quote": "Due date: 2026-07-16",
+          "href": "/app/tasks?task=marquee&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F33",
+      "group": "F",
+      "prompt": "whats aoife got on",
+      "expectation": "Aoife's one open task.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Aoife Walsh has one task assigned to her in The Orchard, events: \"Confirm the marquee sides with the hire company\" (status: todo, due 2026-07-16). The task record doesn't list any checklist items assigned to her. In the task discussion she says Byrne Events quoted for full sides and she is waiting on the forecast. In a conversation she also said she is ordering 6 cases for the drinks reception.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "task_source_2",
+          "quote": "Task: Confirm the marquee sides with the hire company\nProject: The Orchard, events\nStatus: todo\nAssigned to: Aoife Walsh\nDue date: 2026-07-16",
+          "href": "/app/tasks?task=marquee&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "source-2",
+          "quote": "Byrne Events quoted for full sides. Waiting on the forecast.",
+          "href": "/app/task/marquee#comment-comment_06a972408d3c1d0896066360b4c70b98",
+          "authorName": "Aoife Walsh"
+        },
+        {
+          "ref": "source-6",
+          "quote": "Good call. Ordering 6 cases.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_011766ad02e2eb3bb54f6c69abb85127&messageSeq=3&conversationId=dm_871e16e6483f5c77ec85edef8ef5a735",
+          "authorName": "Aoife Walsh"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F34",
+      "group": "F",
+      "prompt": "which tasks are mine",
+      "expectation": "Orla's open tasks.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Two top-level tasks are assigned to you (checklist items excluded): 1) \"Build the Saturday run-sheet\" (doing, due 2026-07-16) and 2) \"Collect Mara and Finn's final dietary list\" (todo, due 2026-07-20). You are also assigned several checklist items under those and other tasks, such as \"Kitchen service times\" and \"Share with the floor team\" under the run-sheet, but those are checklist children, not separate tasks.\"",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "task_source_1",
+          "quote": "Task: Build the Saturday run-sheet\nProject: The Orchard, events\nStatus: doing\nAssigned to: Orla Byrne",
+          "href": "/app/tasks?task=runsheet&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_4",
+          "quote": "Task: Collect Mara and Finn's final dietary list\nProject: The Orchard, events\nStatus: todo\nAssigned to: Orla Byrne",
+          "href": "/app/tasks?task=dietary&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_8",
+          "quote": "Task: Kitchen service times\nProject: The Orchard, events\nStatus: todo\nAssigned to: Orla Byrne\nDue date: Not set\nChecklist under: Build the Saturday run-sheet",
+          "href": "/app/tasks?task=runsheet-kitchen-times&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F35",
+      "group": "F",
+      "prompt": "how many tasks does aoife have",
+      "expectation": "One; only claim scoped count.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Aoife Walsh has 1 task in The Orchard, events (ordinary count, excluding checklist items): \"Confirm the marquee sides with the hire company\", status todo, due 2026-07-16. The task lists were fully read, and no checklist items are assigned to her.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "task_source_2",
+          "quote": "Task: Confirm the marquee sides with the hire company\nProject: The Orchard, events\nStatus: todo\nAssigned to: Aoife Walsh\nDue date: 2026-07-16",
+          "href": "/app/tasks?task=marquee&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F36",
+      "group": "F",
+      "prompt": "who's doing the olives",
+      "expectation": "Dara, late, away until 2pm (only where supplied).",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Dara Quinn is assigned the parent task \"Order tonic and the good olives\" (due 2026-07-14, status todo). Its checklist items, including \"Gordal olives, 2 kg\", are all listed under Orla Byrne, so Orla has the olives line item itself.\"",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "task_source_3",
+          "quote": "Task: Order tonic and the good olives\nProject: The Orchard, events\nStatus: todo\nAssigned to: Dara Quinn",
+          "href": "/app/tasks?task=tonic&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_14",
+          "quote": "Task: Gordal olives, 2 kg\nProject: The Orchard, events\nStatus: todo\nAssigned to: Orla Byrne",
+          "href": "/app/tasks?task=tonic-olives&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F37",
+      "group": "F",
+      "prompt": "is the marquee sorted yet",
+      "expectation": "Not yet; Aoife, due today, waiting for decision.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Not yet, as far as the supplied sources show. The task \"Confirm the marquee sides with the hire company\" is still todo (assigned to Aoife Walsh, due 2026-07-16). Under it, \"Decide full or half sides\" and \"Confirm with Byrne Events\" are still todo; only the forecast check is done. Aoife's note says Byrne Events quoted for full sides and she is waiting on the forecast. Niamh's chat message says rain is likely after 3pm on Saturday, and that if it's the marquee, Aoife will move the bar into the orangery. That is conditional, so the sources don't establish that the marquee is confirmed.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "task_source_2",
+          "quote": "Status: todo",
+          "href": "/app/tasks?task=marquee&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_11",
+          "quote": "Task: Decide full or half sides",
+          "href": "/app/tasks?task=marquee-decide&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_12",
+          "quote": "Task: Confirm with Byrne Events",
+          "href": "/app/tasks?task=marquee-confirm&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "source-2",
+          "quote": "Byrne Events quoted for full sides. Waiting on the forecast.",
+          "href": "/app/task/marquee#comment-comment_06a972408d3c1d0896066360b4c70b98",
+          "authorName": "Aoife Walsh"
+        },
+        {
+          "ref": "source-10",
+          "quote": "If it's the marquee, Aoife will move the bar into the orangery.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_e669b99b496a06d93da2b14ac7b4a60f&messageSeq=4&conversationId=dm_34006df00bf69e45e0ee26afdd26294e",
+          "authorName": "Niamh Kelly"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F38",
+      "group": "F",
+      "prompt": "when's the tasting",
+      "expectation": "Saturday 1 August.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "The tasting is on Saturday 1 August 2026. The venue calendar lists it as Mara and Finn's menu tasting, and Dara also says the tasting is on 1 August. Their wedding itself is Saturday 3 October.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-3",
+          "quote": "Mara and Finn's wedding is Saturday 3 October; their menu tasting is Saturday 1 August.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_f14e2be6e384ae28fbbd76976de40e01&messageSeq=1",
+          "authorName": "Orla Byrne"
+        },
+        {
+          "ref": "source-4",
+          "quote": "Tasting is on 1 August.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_ef6ccf53c8db47e201422c9690a01b81&messageSeq=1&conversationId=dm_83b04de09c02a8fb1b80b1e6e1d35c6d",
+          "authorName": "Dara Quinn"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F39",
+      "group": "F",
+      "prompt": "when's mara and finn's wedding",
+      "expectation": "Saturday 3 October; do not use couple-chat data.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Mara and Finn's wedding is on Saturday 3 October, according to the venue calendar message. Their menu tasting is on Saturday 1 August.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-3",
+          "quote": "Mara and Finn's wedding is Saturday 3 October; their menu tasting is Saturday 1 August.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_f14e2be6e384ae28fbbd76976de40e01&messageSeq=1",
+          "authorName": "Orla Byrne"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F40",
+      "group": "F",
+      "prompt": "what did i tell aoife about the drinks",
+      "expectation": "Quote Orla's exact 'Spritz' reply with source.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "You told Aoife to go with spritz for Saturday's drinks reception, because it suits an afternoon ceremony. She had asked whether to pick spritz or prosecco, and replied that she would order 6 cases.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-4",
+          "quote": "Spritz or prosecco for Saturday's drinks reception? Nora and Cian asked me to pick.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_5658823c1eaf4e6f9adc11782e989092&messageSeq=1&conversationId=dm_871e16e6483f5c77ec85edef8ef5a735",
+          "authorName": "Aoife Walsh"
+        },
+        {
+          "ref": "source-5",
+          "quote": "Spritz. It suits an afternoon ceremony.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_ee784c0f0e73beb8c57c27c99195c1bc&messageSeq=2&conversationId=dm_871e16e6483f5c77ec85edef8ef5a735",
+          "authorName": "Orla Byrne"
+        },
+        {
+          "ref": "source-6",
+          "quote": "Good call. Ordering 6 cases.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_011766ad02e2eb3bb54f6c69abb85127&messageSeq=3&conversationId=dm_871e16e6483f5c77ec85edef8ef5a735",
+          "authorName": "Aoife Walsh"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F41",
+      "group": "F",
+      "prompt": "what's dara waiting on",
+      "expectation": "Final dietary list, with Orla's reply.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Dara Quinn is waiting on two things, based on what's in the sources. First, the final dietary list from Mara and Finn: Dara said \"I need the final dietary list before I lock the service notes\". That task, \"Collect Mara and Finn's final dietary list\", is assigned to you, is due 2026-07-20 and is still todo. Its checklist item \"Full list from the couple\" is still todo. Second, the Saturday run-sheet timing: Dara needs it locked by Thursday, and the task \"Build the Saturday run-sheet\" is assigned to you and is in progress, due 2026-07-16. Its checklist item \"Kitchen service times\" is still todo. Dara's own task, \"Order tonic and the good olives\", is due 2026-07-14 and is still todo, but that is something Dara owes rather than waits on.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-4",
+          "quote": "I need the final dietary list before I lock the service notes.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_ef6ccf53c8db47e201422c9690a01b81&messageSeq=1&conversationId=dm_83b04de09c02a8fb1b80b1e6e1d35c6d",
+          "authorName": "Dara Quinn"
+        },
+        {
+          "ref": "task_source_4",
+          "quote": "Needed before Dara locks the service notes for a 1 August tasting.",
+          "href": "/app/tasks?task=dietary&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "source-1",
+          "quote": "Dara needs the timing locked by Thursday.",
+          "href": "/app/task/runsheet#comment-comment_e3ca11818c824089357c58a336ab7a32",
+          "authorName": "Dara Quinn"
+        },
+        {
+          "ref": "task_source_8",
+          "quote": "Task: Kitchen service times",
+          "href": "/app/tasks?task=runsheet-kitchen-times&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_3",
+          "quote": "Assigned to: Dara Quinn",
+          "href": "/app/tasks?task=tonic&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F42",
+      "group": "F",
+      "prompt": "catch me up",
+      "expectation": "Needs-you list with truthful bounded count.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "You have 2 items in your Needs-you list, both unseen: (1) Dara Quinn's task discussion says the Saturday run-sheet must show speeches before the main course and she needs the timing locked by Thursday (source-1). (2) Aoife Walsh's task discussion says Byrne Events quoted for full sides and she is waiting on the forecast (source-2). Start with these two, since both are unseen requests. Related items in the project: the task \"Build the Saturday run-sheet\" is due 2026-07-16 and is in progress, and \"Confirm the marquee sides with the hire company\" is due 2026-07-16 and is still todo (task_source_1, task_source_2). In the chat, Niamh Kelly says Met Éireann has rain likely after 3pm on Saturday and suggests calling it today (source-9).",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-1",
+          "quote": "The Saturday run-sheet must show speeches before the main course. Dara needs the timing locked by Thursday.",
+          "href": "/app/task/runsheet#comment-comment_e3ca11818c824089357c58a336ab7a32",
+          "authorName": "Dara Quinn"
+        },
+        {
+          "ref": "source-2",
+          "quote": "Byrne Events quoted for full sides. Waiting on the forecast.",
+          "href": "/app/task/marquee#comment-comment_06a972408d3c1d0896066360b4c70b98",
+          "authorName": "Aoife Walsh"
+        },
+        {
+          "ref": "task_source_1",
+          "quote": "Due date: 2026-07-16",
+          "href": "/app/tasks?task=runsheet&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_2",
+          "quote": "Due date: 2026-07-16",
+          "href": "/app/tasks?task=marquee&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "source-9",
+          "quote": "Met Éireann has rain likely after 3pm on Saturday. I'd call it today.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_e48e0b1a2cbe157b09f7f42fc4750969&messageSeq=3&conversationId=dm_34006df00bf69e45e0ee26afdd26294e",
+          "authorName": "Niamh Kelly"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F43",
+      "group": "F",
+      "prompt": "what should i do first",
+      "expectation": "Urgent decision first; list count must match supplied needs-you.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Start with the Needs-you list: it has 2 entries, both unseen and both in The Orchard, events. First, source-1 from Dara Quinn: the Saturday run-sheet must show speeches before the main course, and Dara needs the timing locked by Thursday. That lines up with your task \"Build the Saturday run-sheet\" (doing, due 2026-07-16, today), which still has the open checklist items \"Kitchen service times\" and \"Share with the floor team\". Second, source-2 from Aoife Walsh: Byrne Events quoted for full sides and Aoife is waiting on the forecast. The related task \"Confirm the marquee sides with the hire company\" is also due today and is assigned to Aoife. Its open checklist items \"Decide full or half sides\" and \"Confirm with Byrne Events\" are assigned to you. After those, \"Collect Mara and Finn's final dietary list\" is due 2026-07-20.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-1",
+          "quote": "The Saturday run-sheet must show speeches before the main course. Dara needs the timing locked by Thursday.",
+          "href": "/app/task/runsheet#comment-comment_e3ca11818c824089357c58a336ab7a32",
+          "authorName": "Dara Quinn"
+        },
+        {
+          "ref": "source-2",
+          "quote": "Byrne Events quoted for full sides. Waiting on the forecast.",
+          "href": "/app/task/marquee#comment-comment_06a972408d3c1d0896066360b4c70b98",
+          "authorName": "Aoife Walsh"
+        },
+        {
+          "ref": "task_source_1",
+          "quote": "Due date: 2026-07-16",
+          "href": "/app/tasks?task=runsheet&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_8",
+          "quote": "Task: Kitchen service times",
+          "href": "/app/tasks?task=runsheet-kitchen-times&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_4",
+          "quote": "Due date: 2026-07-20",
+          "href": "/app/tasks?task=dietary&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F44",
+      "group": "F",
+      "prompt": "is the floor walk before or after the wedding",
+      "expectation": "Distinguish Nora and Cian's Saturday event from Mara and Finn's October wedding.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "The floor walk is due on 2026-07-24 (task \"Walk the floor with the front-of-house lead\"). There are two weddings in the sources, so I can't say which one you mean. Relative to Nora and Cian's wedding on Saturday 18 July, the floor walk (24 July) is after it. Relative to Mara and Finn's wedding on Saturday 3 October, the floor walk (24 July) is before it. The task isn't tied to a particular wedding, so I haven't assumed one.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "task_source_5",
+          "quote": "Due date: 2026-07-24",
+          "href": "/app/tasks?task=floor&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "source-3",
+          "quote": "Nora and Cian's wedding is Saturday 18 July. Mara and Finn's wedding is Saturday 3 October",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_f14e2be6e384ae28fbbd76976de40e01&messageSeq=1",
+          "authorName": "Orla Byrne"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "F45",
+      "group": "F",
+      "prompt": "what's in the floorplan pdf",
+      "expectation": "Cannot read file content; identify only supplied file name/location.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Grounded clarification or honest limitation is appropriate where the request lacks a required detail or asks for an unsupported action.",
+      "actualReply": "I can't see any floorplan PDF or its contents in the supplied context, and I can't infer file contents. The only related items are the task \"New seating plan printed\" and the \"Walk the floor with the front-of-house lead\" task, neither of which includes an attached file. Do you mean one of those, or can you share the text of the PDF?",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "G46",
+      "group": "G",
+      "prompt": "whos got the run sheet",
+      "expectation": "Orla, due today.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "You have the run sheet. The task \"Build the Saturday run-sheet\" is assigned to Orla Byrne (you), status doing, due 2026-07-16. Under it, \"Kitchen service times\" and \"Share with the floor team\" are still open, also assigned to you. Dara Quinn's discussion says the timing needs to be locked by Thursday.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "task_source_1",
+          "quote": "Assigned to: Orla Byrne",
+          "href": "/app/tasks?task=runsheet&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_1",
+          "quote": "Task: Build the Saturday run-sheet",
+          "href": "/app/tasks?task=runsheet&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "source-1",
+          "quote": "Dara needs the timing locked by Thursday.",
+          "href": "/app/task/runsheet#comment-comment_e3ca11818c824089357c58a336ab7a32",
+          "authorName": "Dara Quinn"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "G47",
+      "group": "G",
+      "prompt": "and the floor walk?",
+      "expectation": "Niamh, Friday 24 July.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "The floor walk, \"Walk the floor with the front-of-house lead\", is assigned to Niamh Kelly. It is still todo and due 2026-07-24. Under it, the checklist item \"New seating plan printed\" is still open and is assigned to you.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "task_source_5",
+          "quote": "Task: Walk the floor with the front-of-house lead",
+          "href": "/app/tasks?task=floor&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_5",
+          "quote": "Status: todo",
+          "href": "/app/tasks?task=floor&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_5",
+          "quote": "Assigned to: Niamh Kelly",
+          "href": "/app/tasks?task=floor&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_5",
+          "quote": "Due date: 2026-07-24",
+          "href": "/app/tasks?task=floor&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_17",
+          "quote": "Task: New seating plan printed",
+          "href": "/app/tasks?task=floor-plan&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_17",
+          "quote": "Status: todo",
+          "href": "/app/tasks?task=floor-plan&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_17",
+          "quote": "Assigned to: Orla Byrne",
+          "href": "/app/tasks?task=floor-plan&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_17",
+          "quote": "Checklist under: Walk the floor with the front-of-house lead",
+          "href": "/app/tasks?task=floor-plan&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "G48",
+      "group": "G",
+      "prompt": "what's left on it",
+      "expectation": "Floor walk's open checklist item.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "Taking \"it\" to mean the floor walk, \"Walk the floor with the front-of-house lead\": the task itself is still todo, assigned to Niamh Kelly and due 2026-07-24. Its only checklist item, \"New seating plan printed\", is still open and assigned to you. Nothing else is listed under it.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "task_source_5",
+          "quote": "Status: todo",
+          "href": "/app/tasks?task=floor&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_5",
+          "quote": "Due date: 2026-07-24",
+          "href": "/app/tasks?task=floor&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_17",
+          "quote": "Status: todo",
+          "href": "/app/tasks?task=floor-plan&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_17",
+          "quote": "Checklist under: Walk the floor with the front-of-house lead",
+          "href": "/app/tasks?task=floor-plan&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "G49",
+      "group": "G",
+      "prompt": "is she free",
+      "expectation": "Only say Niamh is active now; do not infer schedule availability.",
+      "grade": "weak",
+      "points": 0,
+      "rationale": "It safely refuses to infer availability, but asks who she is despite the immediately preceding floor-walk discussion pointing to Niamh; it misses the strongest conversational referent.",
+      "actualReply": "Who do you mean by \"she\"? The earlier turns were about the run sheet and the floor walk, and no single woman is clearly meant. Project members who could fit include Niamh Kelly and Aoife Walsh. I also can't tell whether someone is free, because Ping has no availability or schedule information. I can only show the tasks and due dates assigned to a person.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "H50",
+      "group": "H",
+      "prompt": "@Ping what does he still need",
+      "expectation": "Dara needs final dietary list before locking service notes.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "In your direct message with Dara Quinn, \"he\" is Dara. Dara still needs the final dietary list: he said he needs it before he locks the service notes for the 1 August tasting. You replied that you're chasing the couple and he'll have it Monday. The matching task, \"Collect Mara and Finn's final dietary list\", is still todo, due 2026-07-20, assigned to you. Its checklist item \"Full list from the couple\" is still todo, while \"Vegan and coeliac guests noted\" is done.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-1",
+          "quote": "I need the final dietary list before I lock the service notes.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_ef6ccf53c8db47e201422c9690a01b81&messageSeq=1&conversationId=dm_83b04de09c02a8fb1b80b1e6e1d35c6d",
+          "authorName": "Dara Quinn"
+        },
+        {
+          "ref": "source-2",
+          "quote": "Chasing the couple now. You'll have it Monday.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_8d8a951597d39c8f72845fd17328400a&messageSeq=2&conversationId=dm_83b04de09c02a8fb1b80b1e6e1d35c6d",
+          "authorName": "Orla Byrne"
+        },
+        {
+          "ref": "task_source_4",
+          "quote": "Task: Collect Mara and Finn's final dietary list",
+          "href": "/app/tasks?task=dietary&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_4",
+          "quote": "Due date: 2026-07-20",
+          "href": "/app/tasks?task=dietary&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_16",
+          "quote": "Task: Full list from the couple\nProject: The Orchard, events\nStatus: todo",
+          "href": "/app/tasks?task=dietary-list&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_15",
+          "quote": "Task: Vegan and coeliac guests noted\nProject: The Orchard, events\nStatus: done",
+          "href": "/app/tasks?task=dietary-vegan&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "H51",
+      "group": "H",
+      "prompt": "@Ping summarise this",
+      "expectation": "Short source-backed Dara chat summary.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "In your direct message with Dara Quinn: Dara says the tasting is on 1 August and needs the final dietary list before locking the service notes. You replied that you are chasing the couple and that Dara will have it Monday. Related task: \"Collect Mara and Finn's final dietary list\" is assigned to you, status todo, due 2026-07-20. Its checklist shows \"Vegan and coeliac guests noted\" as done and \"Full list from the couple\" still todo.\"",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-1",
+          "quote": "Tasting is on 1 August. I need the final dietary list before I lock the service notes.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_ef6ccf53c8db47e201422c9690a01b81&messageSeq=1&conversationId=dm_83b04de09c02a8fb1b80b1e6e1d35c6d",
+          "authorName": "Dara Quinn"
+        },
+        {
+          "ref": "source-2",
+          "quote": "Chasing the couple now. You'll have it Monday.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_8d8a951597d39c8f72845fd17328400a&messageSeq=2&conversationId=dm_83b04de09c02a8fb1b80b1e6e1d35c6d",
+          "authorName": "Orla Byrne"
+        },
+        {
+          "ref": "task_source_4",
+          "quote": "Due date: 2026-07-20",
+          "href": "/app/tasks?task=dietary&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_15",
+          "quote": "Task: Vegan and coeliac guests noted\nProject: The Orchard, events\nStatus: done",
+          "href": "/app/tasks?task=dietary-vegan&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_16",
+          "quote": "Task: Full list from the couple\nProject: The Orchard, events\nStatus: todo",
+          "href": "/app/tasks?task=dietary-list&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "H52",
+      "group": "H",
+      "prompt": "@Ping who needs this by when",
+      "expectation": "Dara wants speeches timing locked by Thursday.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "In the selected task discussion for \"Build the Saturday run-sheet\", Dara Quinn says he needs the timing locked by Thursday. The run-sheet must show speeches before the main course. The task itself is assigned to Orla Byrne and is due 2026-07-16, which is a Thursday. So Dara needs the timing locked by Thursday 2026-07-16, the same day the task is due.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-1",
+          "quote": "Dara needs the timing locked by Thursday.",
+          "href": "/app/task/runsheet#comment-comment_e3ca11818c824089357c58a336ab7a32",
+          "authorName": "Dara Quinn"
+        },
+        {
+          "ref": "task_source_1",
+          "quote": "Due date: 2026-07-16",
+          "href": "/app/tasks?task=runsheet&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "H53",
+      "group": "H",
+      "prompt": "@Ping whats the latest",
+      "expectation": "Aoife says Byrne Events quoted full sides, waiting on forecast.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "The latest in the selected task discussion (Confirm the marquee sides with the hire company) is a message from Aoife Walsh: \"Byrne Events quoted for full sides. Waiting on the forecast.\" On the task itself, the checklist shows \"Check the Met Éireann forecast\" as done, while \"Decide full or half sides\" and \"Confirm with Byrne Events\" are still open. The task is assigned to Aoife Walsh, due 2026-07-16, status todo. I haven't checked your Needs-you list, so I can't confirm what else needs you.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-1",
+          "quote": "Byrne Events quoted for full sides. Waiting on the forecast.",
+          "href": "/app/task/marquee#comment-comment_06a972408d3c1d0896066360b4c70b98",
+          "authorName": "Aoife Walsh"
+        },
+        {
+          "ref": "task_source_10",
+          "quote": "Task: Check the Met Éireann forecast\nProject: The Orchard, events\nStatus: done",
+          "href": "/app/tasks?task=marquee-forecast&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_11",
+          "quote": "Task: Decide full or half sides\nProject: The Orchard, events\nStatus: todo",
+          "href": "/app/tasks?task=marquee-decide&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_12",
+          "quote": "Task: Confirm with Byrne Events\nProject: The Orchard, events\nStatus: todo",
+          "href": "/app/tasks?task=marquee-confirm&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        },
+        {
+          "ref": "task_source_2",
+          "quote": "Assigned to: Aoife Walsh\nDue date: 2026-07-16",
+          "href": "/app/tasks?task=marquee&workspaceId=synthetic-ping-project",
+          "authorName": "Signal task record"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "H54",
+      "group": "H",
+      "prompt": "@Ping make a task from this for her",
+      "expectation": "Plan a useful task assigned to Niamh, due today.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Grounded clarification or honest limitation is appropriate where the request lacks a required detail or asks for an unsupported action.",
+      "actualReply": "Which message should the task be made from? This conversation is a direct message with Niamh Kelly, so \"her\" most likely means Niamh, but several messages could be the basis: the floor walk on Friday 24th, the rain call for Saturday, the marquee and bar move, or carrying it at 1pm. Tell me which one and confirm the task should be assigned to Niamh Kelly, and I'll draft it.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "H55",
+      "group": "H",
+      "prompt": "@Ping what did we go with",
+      "expectation": "Quote Orla's Spritz answer with source.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "You went with spritz for Saturday's drinks reception. Aoife asked whether to pick spritz or prosecco, you replied spritz, and Aoife said it was a good call and that she is ordering 6 cases.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-1",
+          "quote": "Spritz or prosecco for Saturday's drinks reception? Nora and Cian asked me to pick.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_5658823c1eaf4e6f9adc11782e989092&messageSeq=1&conversationId=dm_871e16e6483f5c77ec85edef8ef5a735",
+          "authorName": "Aoife Walsh"
+        },
+        {
+          "ref": "source-2",
+          "quote": "Spritz. It suits an afternoon ceremony.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_ee784c0f0e73beb8c57c27c99195c1bc&messageSeq=2&conversationId=dm_871e16e6483f5c77ec85edef8ef5a735",
+          "authorName": "Orla Byrne"
+        },
+        {
+          "ref": "source-3",
+          "quote": "Good call. Ordering 6 cases.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_011766ad02e2eb3bb54f6c69abb85127&messageSeq=3&conversationId=dm_871e16e6483f5c77ec85edef8ef5a735",
+          "authorName": "Aoife Walsh"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "H56",
+      "group": "H",
+      "prompt": "@Ping what do they still owe us",
+      "expectation": "Release 2 excludes guest/couple chat and must not inspect it.",
+      "grade": "held",
+      "points": 0,
+      "rationale": "Guest/couple chat is excluded in Release 2. The request was intentionally not sent to the model or opened.",
+      "actualReply": null,
+      "plan": null,
+      "citations": [],
+      "dataUnchanged": null,
+      "providerCall": false
+    },
+    {
+      "caseId": "I57",
+      "group": "I",
+      "prompt": "pay the marquee deposit",
+      "expectation": "Payments unsupported; offer a task plan.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Grounded clarification or honest limitation is appropriate where the request lacks a required detail or asks for an unsupported action.",
+      "actualReply": "Payments are unsupported, so I can't pay the marquee deposit. If you'd like, I can add a task such as 'Pay the marquee deposit' to this Project so you can track it. Tell me the due date and who should own it.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "I58",
+      "group": "I",
+      "prompt": "book a table for 6 at 8 on friday",
+      "expectation": "Booking unsupported; clarify needs and offer a task plan.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Grounded clarification or honest limitation is appropriate where the request lacks a required detail or asks for an unsupported action.",
+      "actualReply": "I can't book a restaurant table; Ping has no booking action. I can add a task for you to book a table for 6 at 20:00 on Friday 17 July instead. Tell me if you want that, and who should own it.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "I59",
+      "group": "I",
+      "prompt": "what's the weather on saturday",
+      "expectation": "Cannot check weather; point to Niamh's forecast note.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "I can't give you a weather forecast myself, but the project chat has one relevant note: Niamh Kelly wrote that Met Éireann has rain likely after 3pm on Saturday. That is her message in the chat, not a forecast I can verify or update. The venue calendar lists Nora and Cian's wedding on Saturday 18 July, so that is probably the Saturday in question, though the weather note doesn't give a date.",
+      "plan": [],
+      "citations": [
+        {
+          "ref": "source-9",
+          "quote": "Met Éireann has rain likely after 3pm on Saturday. I'd call it today.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_e48e0b1a2cbe157b09f7f42fc4750969&messageSeq=3&conversationId=dm_34006df00bf69e45e0ee26afdd26294e",
+          "authorName": "Niamh Kelly"
+        },
+        {
+          "ref": "source-3",
+          "quote": "Nora and Cian's wedding is Saturday 18 July.",
+          "href": "/app/messages?projectId=synthetic-ping-project&messageId=message_f14e2be6e384ae28fbbd76976de40e01&messageSeq=1",
+          "authorName": "Orla Byrne"
+        }
+      ],
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "I60",
+      "group": "I",
+      "prompt": "make niamh an admin",
+      "expectation": "Permission change unsupported.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Accurately answers the request or prepares the requested draft, with source links where it uses source material; no action is executed before Apply.",
+      "actualReply": "I can't change member roles or make someone an admin. I can only create and update tasks, comments, messages, checklists and invitations. Please change Niamh Kelly's role in the Project's member settings.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "I61",
+      "group": "I",
+      "prompt": "permanently delete the olives task",
+      "expectation": "Permanent delete unsupported; may offer archive through plan.",
+      "grade": "pass",
+      "points": 1,
+      "rationale": "Grounded clarification or honest limitation is appropriate where the request lacks a required detail or asks for an unsupported action.",
+      "actualReply": "Permanent deletion isn't supported; deleting means archiving. Do you want me to archive the top-level task \"Order tonic and the good olives\" (assigned to Dara Quinn, due 2026-07-14) instead? Note that this task has a checklist item \"Gordal olives, 2 kg\" as well. Tell me whether to archive the whole task, and I'll draft a plan for you to review and press Apply plan.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    },
+    {
+      "caseId": "I62",
+      "group": "I",
+      "prompt": "who's free saturday morning",
+      "expectation": "Cannot see schedules; give only known run-sheet/away facts.",
+      "grade": "weak",
+      "points": 0,
+      "rationale": "It correctly says schedule availability is unavailable and will not guess, but omits the relevant known task/run-sheet context and turns the request into two setup questions about recipient and wording.",
+      "actualReply": "I can't tell who is free on Saturday morning. Ping doesn't have anyone's availability or calendar, and I won't guess from task or chat content. You could ask the team directly, but I'd need to know who you want to message and the wording, and that would wait for you to press Apply plan.",
+      "plan": [],
+      "citations": null,
+      "dataUnchanged": true,
+      "providerCall": true
+    }
+  ],
+  "groupReports": [
+    {
+      "group": "A",
+      "file": "fresh-39655309238-1-A.json",
+      "sha256": "f66ad4bb89991d45263cbdac82e509b15a61b11dd0bed6eee524216c2ffa9436"
+    },
+    {
+      "group": "B",
+      "file": "fresh-39655309238-1-B.json",
+      "sha256": "f8843a90fe76cba56e72683e9744c0055934bb6534195ca6ecf2109ec2197c2e"
+    },
+    {
+      "group": "C",
+      "file": "fresh-39655309238-1-C.json",
+      "sha256": "8d4fc679c22cafd9a1d318546866a9def81112ab6119503a41308ef8e2c0adc0"
+    },
+    {
+      "group": "D",
+      "file": "fresh-39655309238-1-D.json",
+      "sha256": "4caeeb24d6997f09225337715464475730acb5036b582fcab7544df8930e4e18"
+    },
+    {
+      "group": "E",
+      "file": "fresh-39655309238-1-E.json",
+      "sha256": "e5fabddbc98087e73a003ee31335a59753dcea971bbab80d98fb143e2da8aeff"
+    },
+    {
+      "group": "F",
+      "file": "fresh-39655309238-1-F.json",
+      "sha256": "fdf2a2c15e2f0b9a5220f8553372a35ed5c418187860f9e58867ace5ddffb245"
+    },
+    {
+      "group": "G",
+      "file": "fresh-39655309238-1-G.json",
+      "sha256": "962e0413e7406ce155ad2f0744b7575bc0ab81342ff61e3ffc5c7cf87f1ac462"
+    },
+    {
+      "group": "H",
+      "file": "fresh-39655309238-1-H.json",
+      "sha256": "9a2146f855013348d7fcc3e0be4a6cba3f7f06bf10ce2eff002a2b92b72e714c"
+    },
+    {
+      "group": "I",
+      "file": "fresh-39655309238-1-I.json",
+      "sha256": "72f0529dd82aeef900d0882d9817dd8dfebeeb5c799598b0ce4df27dbc70cd00"
+    }
+  ],
+  "sourceArtifactDirectory": "D:/Codex-scratch/project-ping/release2-proof-oct21/fresh-completed-39655309238/ping-release2-fresh-synthetic-39655309238-1",
+  "rubricSource": "docs/projects/chat-ping-redesign/ping-eval.md; scorecard request set at docs/projects/chat-ping-redesign/ping-requests.md"
+}

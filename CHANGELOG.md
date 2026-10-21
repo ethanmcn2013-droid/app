@@ -6,7 +6,7 @@ Ping can prepare a plan from an authorized conversation or task discussion, quot
 
 Checklist items stay separate from their parent task. Individual saved steps can be taken back when their targets have not changed since Ping acted; messages and comments use the original conversation checks. Delivered emails cannot be recalled. Private in-chat requests stay visible only to the person who asked.
 
-The approved Chat design, recovery controls, access switches and spending limits remain in force. Live model evaluation and release receiving are still required; this entry records a candidate, not a deployment.
+The approved Chat design, recovery controls, access switches and spending limits remain in force. The independent fresh model evaluation passed 58 of 62 fixed requests (93.55%). Final interface qualification and production receiving are still required; this entry records a candidate, not a deployment.
 
 ## 2026-10-21 · Release · Home in three rows
 

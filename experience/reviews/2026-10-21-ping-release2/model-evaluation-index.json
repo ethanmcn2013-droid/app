@@ -87,5 +87,45 @@
     "experience/output/ping-release2-model-eval/live-2026-10-21-round3.json",
     "experience/output/ping-release2-model-eval/interruption-2026-10-21-round3.json",
     "experience/output/ping-release2-model-eval/latency-summary-2026-10-21-round3.json"
-  ]
+  ],
+  "latestQualification": {
+    "status": "Independent fixed-request model gate passed; final UI capture and production release pending",
+    "workflowRun": "https://github.com/ethanmcn2013-droid/app/actions/runs/39655309238",
+    "index": "experience/reviews/2026-10-21-ping-release2/fresh-qualification/qualification-index.json",
+    "grade": {
+      "fixedRequestDenominator": 62,
+      "pass": 58,
+      "weak": 3,
+      "fail": 0,
+      "held": 1,
+      "passOnlyPercent": 93.55,
+      "weakCaseIds": [
+        "C14",
+        "G49",
+        "I62"
+      ],
+      "heldCaseId": "H56",
+      "oldCohortScore": "40/62 preserved unchanged; separate cohort; not regraded"
+    },
+    "execution": {
+      "physicalProviderCalls": 62,
+      "fixedRequestCalls": 61,
+      "heldFixedRequestsNoCall": 1,
+      "separatePrerequisiteCall": "B-SETUP-A2",
+      "estimatedSpendUsd": 2.715504,
+      "unknownUsage": false,
+      "inputTokens": 1261772,
+      "outputTokens": 19196,
+      "cacheTokens": 0,
+      "fixedRequestMedianWallMs": 2736.610632,
+      "fixedRequestP95NearestRankWallMs": 6256.254698,
+      "baselineAndFinalTaskSha256": "86709fc5215ba8eff0d395c6005a34c81785eb9ca7c5606f010235912ad8b998",
+      "allSettledCallTaskDigestsUnchanged": true,
+      "appliesExecuted": 0
+    },
+    "runtimeSourcePin": "5c7ba65dc5a5bc18cc798e96e9a9cbcafbd8b27c",
+    "sourceFingerprintSha256": "d25a2e678a1b3899874f04d64cd7bc34aa37ae4d40aae06e407fa8c0cd9e907b",
+    "rubricInterpretation": "Recorded before fresh calls using existing broad rubric. Prior40/62 remains unchanged; difference is not attributed solely to code.",
+    "access": "Key disabled, workspace cap restored to$5, ephemeral secrets and activation variables removed."
+  }
 }

@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-10-21T18:56:16.670482+00:00",
+  "run": 39655309238,
+  "approval": "call_1a2ac0a2128545d781b49e271b904a7b",
+  "key": "ping-release2-fixed-eval-oct21 DISABLED (UIverified)",
+  "workspace": "Project Ping Synthetic; monthlyceiling5restored UIverified, observedmonthusage7.58",
+  "githubEnvironmentSecretNames": [],
+  "freshActivationVariableNames": [],
+  "estimatedNewUsageUsd": 2.715504,
+  "noPurchases": true,
+  "noProductionChanges": true,
+  "noFurtherCallsAuthorizedByThisCompletedCohort": true
+}

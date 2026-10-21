@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, assistantFollowUpRequest, sameAssistantSource, assistantPlanDescription } from "./ping-personal-assistant-client";
+import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, assistantFollowUpRequest, sameAssistantSource, assistantPlanDescription, mergeAssistantRun, assistantWaitingPlanAncestor } from "./ping-personal-assistant-client";
 import type { AssistantApiCommand, AssistantRunView } from "@/lib/ping/assistant/contract";
 import { createPingTelemetryRecorder, type PingTelemetryEvent } from "@/lib/ping/telemetry";
 const run: AssistantRunView = { id:"run_synthetic_123",requestId:"request_synthetic_123",text:"Create 100 tasks",scope:{kind:"project",projectId:"synthetic-project"},mode:"execute",status:"partial",createdAt:"2026-10-18T09:00:00.000Z",updatedAt:"2026-10-18T09:01:00.000Z",steps:[
@@ -101,6 +101,29 @@ test("a follow-up stays plan-first and carries memory only inside its exact sour
   assert.equal(sameAssistantSource(source,{kind:"conversation",conversationId:"conv-b",rootId:"message-root"}),false);
   assert.equal(sameAssistantSource(source,source),true);
   assert.equal(assistantFollowUpRequest({requestId:"request_followup_124",text:"question",scope:{kind:"project",projectId:"other-project"},latest:prior,source}).replyToRunId,undefined);
+});
+
+test("authoritative run readback replaces a stale ready card with the cancelled server state",()=>{
+  const waiting={...run,id:"waiting_run_123",requestId:"waiting_request_123",status:"ready" as const,mode:"draft" as const,createdAt:"2026-10-21T10:00:00.000Z"};
+  const replacement={...waiting,status:"cancelled" as const,updatedAt:"2026-10-21T10:01:00.000Z",message:"This plan was replaced by your follow-up. Nothing was applied."};
+  const next={...run,id:"new_run_123",requestId:"new_request_123",status:"ready" as const,mode:"draft" as const,replyToRunId:waiting.id,createdAt:"2026-10-21T10:01:00.000Z"};
+  const merged=mergeAssistantRun(mergeAssistantRun([waiting],next),replacement);
+  assert.deepEqual(merged.map(value=>value.id),[next.id,waiting.id]);
+  assert.equal(merged.find(value=>value.id===waiting.id)?.status,"cancelled");
+  assert.equal(merged.find(value=>value.id===waiting.id)?.message,replacement.message);
+  assert.equal(mergeAssistantRun(merged,replacement).length,2);
+});
+
+test("waiting-plan readback follows an answer turn to its same-scope and same-source ready ancestor",()=>{
+  const source={kind:"conversation" as const,conversationId:"conv-a",rootId:"root-a"};
+  const plannedAction={id:"create-florist",kind:"create_tasks" as const,project:{kind:"current" as const},tasks:[{title:"Call florist"}]};
+  const waiting:AssistantRunView={...run,id:"waiting_plan_123",requestId:"waiting_plan_req_123",status:"ready",mode:"draft",source,createdAt:"2026-10-21T10:00:00.000Z",steps:[{...run.steps[0],id:plannedAction.id,actionId:plannedAction.id,kind:"create_tasks",status:"queued",plan:plannedAction,result:null}]};
+  const answer:AssistantRunView={...run,id:"answer_turn_123",requestId:"answer_turn_req_123",status:"completed",mode:"draft",source,replyToRunId:waiting.id,createdAt:"2026-10-21T10:01:00.000Z",steps:[]};
+  const edit:AssistantRunView={...run,id:"owner_edit_123",requestId:"owner_edit_req_123",status:"ready",mode:"draft",source,replyToRunId:answer.id,createdAt:"2026-10-21T10:02:00.000Z",steps:[{...waiting.steps[0],plan:{...plannedAction,tasks:[{title:"Call florist",assignees:[{kind:"name" as const,name:"Bob"}]}]}}]};
+  assert.equal(assistantWaitingPlanAncestor([edit,answer,waiting],edit.replyToRunId,edit)?.id,waiting.id);
+  assert.equal(assistantWaitingPlanAncestor([edit,answer],edit.replyToRunId,edit),null);
+  assert.equal(assistantWaitingPlanAncestor([edit,answer,waiting],edit.replyToRunId,{...edit,scope:{kind:"project",projectId:"other-project"}}),null);
+  assert.equal(assistantWaitingPlanAncestor([edit,{...answer,source:{kind:"conversation",conversationId:"conv-a",rootId:"root-b"}},waiting],edit.replyToRunId,edit),null);
 });
 
 test("conversation recovery markers are isolated by conversation and reply thread",()=>{

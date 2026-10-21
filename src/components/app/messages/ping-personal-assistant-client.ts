@@ -61,6 +61,29 @@ export function parseAssistantApiResponse(value: unknown): AssistantApiResponse 
     (response.run === undefined || isAssistantRunView(response.run)) &&
     (response.runs === undefined || Array.isArray(response.runs) && response.runs.length <= 100 && response.runs.every(isAssistantRunView)) ? value as AssistantApiResponse : null;
 }
+/** Keep a specific server read authoritative in the rendered history without reordering messages. */
+export function mergeAssistantRun(runs: readonly AssistantRunView[], run: AssistantRunView): readonly AssistantRunView[] {
+  return [run, ...runs.filter(value => value.id !== run.id)].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+export function sameOptionalAssistantSource(a: AssistantSourceScope | undefined, b: AssistantSourceScope | undefined): boolean {
+  if (a === undefined) return b === undefined;
+  return b !== undefined && sameAssistantSource(a, b);
+}
+/** Find the live waiting plan through recent informational replies, within the server's eight-turn memory bound. */
+export function assistantWaitingPlanAncestor(runs: readonly AssistantRunView[], replyToRunId: string | undefined, next: Pick<AssistantRunView, "scope" | "source">, limit = 8): AssistantRunView | null {
+  const byId = new Map(runs.map(run => [run.id, run]));
+  const visited = new Set<string>();
+  let id = replyToRunId;
+  for (let depth = 0; id && depth < Math.min(Math.max(limit, 0), 8); depth++) {
+    if (visited.has(id)) return null;
+    visited.add(id);
+    const ancestor = byId.get(id);
+    if (!ancestor || !sameAssistantScope(ancestor.scope, next.scope) || !sameOptionalAssistantSource(ancestor.source, next.source)) return null;
+    if (ancestor.status === "ready" && ancestor.mode === "draft" && ancestor.steps.some(step => step.plan)) return ancestor;
+    id = ancestor.replyToRunId;
+  }
+  return null;
+}
 export const assistantIsWorking = (run: AssistantRunView) => run.status === "planning" || run.status === "running";
 export const assistantNeedsRecovery = (run: AssistantRunView) => run.status !== "cancelled" && (assistantIsWorking(run) || run.status === "unknown" || run.steps.some(step => step.status === "unknown" || step.status === "running"));
 export const assistantCanContinue = (run: AssistantRunView) => run.mode !== "draft" && !assistantNeedsRecovery(run) &&

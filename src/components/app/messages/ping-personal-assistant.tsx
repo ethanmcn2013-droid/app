@@ -10,7 +10,7 @@ import { createBrowserPingTelemetry, pingTelemetryBegin } from "@/lib/ping/telem
 import { invalidateTaskSnapshotEpoch } from "@/lib/tasks/task-snapshot-epoch";
 import { ChatHeader, Composer } from "./chat-ui";
 import { PingTile } from "./chat-marks";
-import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, assistantPlanDescription, assistantFollowUpRequest, sameAssistantSource, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
+import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, assistantPlanDescription, assistantFollowUpRequest, sameAssistantSource, sameOptionalAssistantSource, sameAssistantScope, assistantWaitingPlanAncestor, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, mergeAssistantRun, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
 import styles from "./ping-personal-assistant.module.css";
 function readEventTime() { return performance.now(); }
 const queryFor = (pending: PendingAssistantRequest) => pending.runId ? `?runId=${encodeURIComponent(pending.runId)}` : `?clientRequestId=${encodeURIComponent(pending.requestId)}`;
@@ -57,7 +57,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
       if(source&&!sameAssistantSource(run.source,source))return response;
       const created = assistantCreatedProjects(run);
       if (created.length) { setCreatedProjects(previous => [...previous.filter(project => !created.some(value => value.id === project.id)), ...created]); if (created.length === 1) setScope(previous => previous || created[0].id); }
-      setRuns(previous => [run, ...previous.filter(value => value.id !== run.id)].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      setRuns(previous => mergeAssistantRun(previous, run));
       if (pendingRef.current?.requestId === run.requestId) {
         keepPending(assistantNeedsRecovery(run) ? { version: 1, requestId: run.requestId, runId: run.id } : null);
         setAbsent(false); setReentering(false);
@@ -155,7 +155,22 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
       keepPending({ version: 1, requestId: request.requestId });
       original.current = request; setHasOriginal(true);
       const response = await assistantRequest("", { operation: "submit", request }, undefined, timing);
-      if (mounted.current && epoch === generation.current) { receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "submit", response, invalidate: invalidateTaskSnapshotEpoch }); openCommandResult("submit", response); }
+      if (mounted.current && epoch === generation.current) {
+        receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "submit", response, invalidate: invalidateTaskSnapshotEpoch }); openCommandResult("submit", response);
+        const waitingPlan=response.ok&&response.run?.status==="ready"?assistantWaitingPlanAncestor(runs,response.run.replyToRunId,response.run):null;
+        if(waitingPlan){
+          const recovery={version:1 as const,requestId:waitingPlan.requestId,runId:waitingPlan.id};
+          try{
+            keepPending(recovery);
+            const reconciled=await assistantRequest(`?runId=${encodeURIComponent(waitingPlan.id)}`);
+            if(!reconciled.ok||!reconciled.run||reconciled.run.id!==waitingPlan.id||!sameAssistantScope(reconciled.run.scope,waitingPlan.scope)||
+              !sameOptionalAssistantSource(reconciled.run.source,waitingPlan.source))throw new Error("The previous plan could not be verified.");
+            if(mounted.current&&epoch===generation.current)receive(reconciled);
+          }catch{
+            if(mounted.current&&epoch===generation.current){try{keepPending(recovery);}catch{pendingRef.current=recovery;setPending(recovery);}setError("The previous plan's status isn't confirmed. Check status before acting on it.");}
+          }
+        }
+      }
     } catch (failure) {
       finishAssistantTiming(timing, pendingRef.current ? "unknown" : "not_invoked");
       if (mounted.current && epoch === generation.current) setError(pendingRef.current ? "The result is not confirmed. Check status before trying again. Your original request will not be sent again automatically." : failure instanceof Error ? failure.message : "This browser could not keep a recovery note. No request was sent.");
@@ -237,7 +252,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
               {plan ? <span className={styles.hint}>Nothing changes until you apply</span> : null}
               {["planning", "ready", "running", "partial", "unknown"].includes(run.status) ? <button type="button" className={styles.secondary} disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("cancel", run)}>{plan ? "Cancel" : "Cancel remaining work"}</button> : null}
               {assistantCanContinue(run) ? <button type="button" className={styles.secondary} disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("resume", run)}>{run.status === "partial" ? "Retry private preview" : "Continue remaining work"}</button> : null}
-              {plan ? <button type="button" className={styles.primary} disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("apply", run)}>Apply plan</button> : null}
+              {plan ? <button type="button" className={styles.primary} disabled={busy || !!pending} onClick={() => void operate("apply", run)}>Apply plan</button> : null}
             </div>
           </div> : null}
         </div></div>
