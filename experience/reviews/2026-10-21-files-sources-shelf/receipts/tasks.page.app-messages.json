@@ -4,7 +4,7 @@
   "source": "tasks/src/app/app/messages/page.tsx",
   "materialityHash": "dacfebb578dd8234",
   "reviewedAt": "2026-10-21",
-  "reviewer": "",
+  "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
   "playwrightEvidence": {
     "attestationPath": "experience/evidence-runs/tasks-playwright-0e5b99e3a971996d51daa39f-336c75640ae7655a.json",
     "attestationSha256": "4d75c225cd2c59cad63564188871c706aef0256c429305d7327222cc1412cf16",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim. PENDING Ethan's review: reviewer and decision are unsigned.",
-  "decision": ""
+  "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+  "decision": "accepted"
 }
