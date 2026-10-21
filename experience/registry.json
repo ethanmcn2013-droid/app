@@ -416,7 +416,7 @@
       "materialityReview": {
         "materialityHash": "3fcba4d3b2bb4dcf",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.page.app-settings.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-settings.json"
       }
     },
     {
@@ -1422,7 +1422,7 @@
       "materialityReview": {
         "materialityHash": "56f4c16d02cbcebb",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.page.welcome.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.welcome.json"
       }
     },
     {
@@ -2136,7 +2136,7 @@
       "materialityReview": {
         "materialityHash": "795236cc4236a32a",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.page.app-project.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-project.json"
       }
     },
     {
@@ -2184,7 +2184,7 @@
       "materialityReview": {
         "materialityHash": "50734606e8cded67",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.state.app-project-loading.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-project-loading.json"
       }
     },
     {
@@ -3006,11 +3006,11 @@
       "lastReviewedAt": "2026-10-21",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "8aa2429810042ef8",
+      "materialityHash": "30c075ecd9482d61",
       "materialityReview": {
-        "materialityHash": "8aa2429810042ef8",
+        "materialityHash": "30c075ecd9482d61",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.state.app-home-loading.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-home-loading.json"
       }
     },
     {
@@ -3057,7 +3057,7 @@
       "materialityReview": {
         "materialityHash": "f0e4960b366e6091",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.state.app-home-error.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-home-error.json"
       }
     },
     {
@@ -3237,7 +3237,7 @@
       "materialityReview": {
         "materialityHash": "12140b4bae611a58",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.state.app-tasks-loading.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-tasks-loading.json"
       }
     },
     {
@@ -3478,7 +3478,7 @@
       "materialityReview": {
         "materialityHash": "19f85eac6f784ffa",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.resources.drive-upload.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.resources.drive-upload.json"
       }
     },
     {
@@ -3927,7 +3927,7 @@
       "materialityReview": {
         "materialityHash": "d89f2a4abd38ee57",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.page.app-analytics.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-analytics.json"
       }
     },
     {
@@ -3974,7 +3974,7 @@
       "materialityReview": {
         "materialityHash": "9a83f9e97a750b1b",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.state.app-analytics-loading.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-analytics-loading.json"
       }
     },
     {
@@ -4021,7 +4021,7 @@
       "materialityReview": {
         "materialityHash": "16a0888ed7b367ab",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.state.app-analytics-error.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-analytics-error.json"
       }
     },
     {
@@ -4251,7 +4251,7 @@
       "materialityReview": {
         "materialityHash": "4a1b05486b44306f",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.page.app-tools-by-slug.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-tools-by-slug.json"
       }
     },
     {
@@ -4299,7 +4299,7 @@
       "materialityReview": {
         "materialityHash": "45e0fc19aaf3ca48",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.state.app-tools-loading.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-tools-loading.json"
       }
     },
     {
@@ -4355,7 +4355,7 @@
       "materialityReview": {
         "materialityHash": "63e7924b683e8c06",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.page.app-concepts.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-concepts.json"
       }
     },
     {
@@ -4462,7 +4462,7 @@
       "materialityReview": {
         "materialityHash": "08771bc864af3e7b",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.page.app-files.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-files.json"
       }
     },
     {
@@ -4509,7 +4509,7 @@
       "materialityReview": {
         "materialityHash": "9beac142f8f04cb2",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.state.app-files-loading.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-files-loading.json"
       }
     },
     {
@@ -4556,7 +4556,7 @@
       "materialityReview": {
         "materialityHash": "83d088f7615c6a6b",
         "reviewedAt": "2026-10-21",
-        "evidence": "experience/reviews/2026-10-21-home-start-cards-first/receipts/tasks.state.app-files-error.json"
+        "evidence": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-files-error.json"
       }
     },
     {
