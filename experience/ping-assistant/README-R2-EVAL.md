@@ -17,6 +17,20 @@ Repeat for the next letter, always using the preceding report and the exact same
 
 The synthetic world is Orla Byrne in **The Orchard, events**, with Niamh Kelly, Aoife Walsh and Dara Quinn. It is based on the fixed prototype data and dated Thursday 16 July 2026. Direct conversations are accepted synthetic pairs and chat evidence is written through the canonical services. Task conversations are canonical task discussions. The project conversation includes the venue-calendar facts needed by F39/F44, serialized from the approved prototype's member-visible `EVENTS` data and adjacent venue run-sheet/task records (`docs/projects/chat-ping-redesign/prototype/signal-chat.html:675-686`); the dates are the prototype's Thursday 16 July 2026 reference plus its stated offsets. This is project-context data, not a couple conversation. No guest workspace or couple chat is created, and no guest-only messages are copied. Request H56 is held as unsupported and remains in the score denominator; it is not sent to a model.
 
+### One reviewed A3 recovery
+
+The preserved grouped-A interruption is a separate case from the round-3 F33 event. Its original report and database backup remain immutable. A3 is recorded as a provider-side HTTP 499/client disconnect with 19,049 input tokens, zero output, an estimated $0.038098 charge, no returned model answer, and zero quality credit. It is never retried. A reviewed recovery creates a byte-for-byte clone of the pinned backup, reconciles A3 on that clone through the canonical store as failed with observed usage, checks the task snapshot is unchanged, then sends only A4–A6. The resulting A report has its own recovery lineage; it does not rewrite or relabel the original two-call partial report.
+
+This narrow path fails closed unless the original report, seed backup, source snapshot, provider observation, review, approved scope, exact template, frozen runner, and same-workflow Linux/Node 22 action-check receipt all match their pinned SHA-256 bindings. It also verifies the 39 non-runner inputs still match the historical snapshot, checks the exact pending A3 record in the cloned database, and consumes a single claim keyed to the original A3 report/run so another output name cannot repeat it. The provider key is read only after these checks and the A3 reconciliation succeed. It is not a general-purpose retry or recovery mechanism.
+
+The provider-free checks for the recovery guard are:
+
+```powershell
+pnpm exec tsx experience/ping-assistant/release2-partial-recovery.test.ts
+```
+
+The released workflow supplies the reviewed files with `--resume-a3 --resume-approval ... --resume-runtime-proof ... --resume-db ... --resume-report ... --resume-inputs ... --resume-observation ... --resume-review ...`, along with the ordinary approved scope, private key and unique output paths. Do not invoke this path outside that pinned Linux workflow. A failed or interrupted attempt keeps its claim and clone for investigation; it is not restarted with a new output path.
+
 ## Dry run
 
 From the repository root, make a new output name each time:

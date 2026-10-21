@@ -1,12 +1,13 @@
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, realpath, rename, stat, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, realpath, rename, stat, writeFile } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "../../src/server/db/schema";
-import { assistantDatabaseTransaction, createAssistantStore, type AssistantDatabase } from "../../src/server/ping/assistant/store";
+import { assistantDatabaseTransaction, assistantPayloadHash, createAssistantStore, type AssistantDatabase } from "../../src/server/ping/assistant/store";
 import { createAssistantService } from "../../src/server/ping/assistant/service";
 import { createPingAssistantPlanner } from "../../src/server/ping/assistant/claude-planner";
 import { assistantConversationAdapter } from "../../src/server/ping/assistant/conversation-transaction";
@@ -21,8 +22,10 @@ import { assistantConversationPlannerContext } from "../../src/server/ping/assis
 import type { AssistantRequest, AssistantPlannerContext } from "../../src/lib/ping/assistant/contract";
 import type { AssistantSource } from "../../src/lib/ping/assistant/release2";
 import { estimatePlannerMicroUsd } from "../../src/server/ping/assistant/planner-budget";
+import { ATTEMPT_STAGES, type PlannerAttemptMetadata } from "../../src/server/ping/assistant/planner-attempt-metadata";
 import type { PlannerModel } from "../../src/server/ping/assistant/planner-budget";
 import { EVAL_WORLD, RELEASE2_EVAL_CASES, RELEASE2_EVAL_PREREQUISITE, createRelease2SyntheticWorld, type EvalCase, type EvalSource } from "./release2-model-fixture";
+import { A3_RECOVERY_BINDINGS, claimRecoveryOnce, recoveryClaimPath, sha256, validateRecoveryApproval, validateRecoveredA3Rows } from "./release2-partial-recovery";
 
 const ACTOR = EVAL_WORLD.actorId;
 const PROJECT = EVAL_WORLD.projectId;
@@ -41,14 +44,14 @@ type Continuation = Readonly<{ version: 1; group: string; groups: readonly strin
   previous: Readonly<{ path: string; sha256: string }> | null }>;
 type Row = { caseId: string; group: string; prompt: string; expectation: string; held?: string; status: string;
   requestId?: string; runId?: string; modelPlan?: unknown; runView?: unknown; sourceCoverage?: string; timing?: unknown; providerAttempt?: unknown;
-  usage?: unknown; durableEffectDiff?: unknown; failure?: string };
+  usage?: unknown; durableEffectDiff?: unknown; failure?: string; providerAttemptProvenance?: string };
 
 function flags(argv: readonly string[]) {
   const values = new Map<string,string>();
   for(let index=0;index<argv.length;index++) {
     const key=argv[index];
     if(!key.startsWith("--"))throw new Error("invalid_cli_argument");
-    if(key==="--dry-run"||key==="--action-check"){values.set(key,"true");continue;}
+    if(key==="--dry-run"||key==="--action-check"||key==="--resume-a3"){values.set(key,"true");continue;}
     const value=argv[++index];if(!value||value.startsWith("--"))throw new Error("invalid_cli_argument");
     values.set(key,value);
   }
@@ -92,6 +95,7 @@ function caseSequence(){
 
 const GROUPS=[...new Set(RELEASE2_EVAL_CASES.map(item=>item.group))];
 const EVALUATION_SOURCE_FILES=["experience/ping-assistant/release2-model-eval.ts","experience/ping-assistant/release2-model-fixture.ts",
+  "experience/ping-assistant/release2-partial-recovery.ts","experience/ping-assistant/release2-partial-recovery.test.ts",
   "src/server/ping/proof-fixture.ts","src/server/ping/assistant/store.ts","src/server/ping/assistant/service.ts","src/server/ping/assistant/claude-planner.ts",
   "src/server/ping/assistant/planner-budget.ts","src/server/ping/assistant/planner-attempt-metadata.ts","src/server/ping/assistant/conversation-memory.ts",
   "src/server/ping/assistant/task-snapshot.ts","src/server/ping/assistant/task-batch.ts","src/server/ping/assistant/task-update-batch.ts","src/server/ping/assistant/calendar-time.ts",
@@ -119,6 +123,58 @@ async function evaluationFingerprint(){
   const digest=createHash("sha256");
   for(const file of [...EVALUATION_SOURCE_FILES].sort())digest.update(file).update("\0").update(await readFile(resolve(file))).update("\0");
   return digest.digest("hex");
+}
+
+async function normalizedFileSha(path:string){return sha256((await readFile(path,"utf8")).replace(/\r\n?/g,"\n"));}
+async function recoveryCodeSha(){
+  const files=["experience/ping-assistant/release2-partial-recovery.test.ts","experience/ping-assistant/release2-partial-recovery.ts"];
+  const digest=createHash("sha256");
+  for(const file of files)digest.update(file).update("\0").update((await readFile(resolve(file),"utf8")).replace(/\r\n?/g,"\n")).update("\0");
+  return digest.digest("hex");
+}
+
+async function verifyA3RecoveryEvidence(args:Map<string,string>,admissionSha256:string){
+  const paths={approval:args.get("--resume-approval"),report:args.get("--resume-report"),db:args.get("--resume-db"),inputs:args.get("--resume-inputs"),
+    observation:args.get("--resume-observation"),review:args.get("--resume-review"),runtime:args.get("--resume-runtime-proof")};
+  if(Object.values(paths).some(path=>!path))throw new Error("a3_recovery_evidence_paths_required");
+  const [approvalBytes,reportBytes,dbBytes,inputsBytes,observationBytes,reviewBytes,runtimeBytes]=await Promise.all([
+    readFile(paths.approval!),readFile(paths.report!),readFile(paths.db!),readFile(paths.inputs!),readFile(paths.observation!),readFile(paths.review!),readFile(paths.runtime!)
+  ]);
+  const actualHashes={partialReportSha256:sha256(reportBytes),backupDbSha256:sha256(dbBytes),originalInputsSha256:sha256(inputsBytes),
+    providerObservationSha256:sha256(observationBytes),independentReviewSha256:sha256(reviewBytes)};
+  const pinned=A3_RECOVERY_BINDINGS;
+  if(actualHashes.partialReportSha256!==pinned.partialReportSha256||actualHashes.backupDbSha256!==pinned.backupDbSha256||
+    actualHashes.originalInputsSha256!==pinned.originalInputsSha256||actualHashes.providerObservationSha256!==pinned.providerObservationSha256||
+    actualHashes.independentReviewSha256!==pinned.independentReviewSha256||admissionSha256!==pinned.admissionSha256)
+    throw new Error("a3_recovery_evidence_hash_mismatch");
+  const snapshot=safeRecord(JSON.parse(inputsBytes.toString("utf8"))),sourceRows=Array.isArray(snapshot.inputs)?snapshot.inputs.map(safeRecord):[];
+  if(snapshot.evaluationFingerprint!=="5a9b8f0339197ee290e5ef15c9d73a69ebd5180dec49778db23f3a967606a1fa"||
+    snapshot.partialReportSha256!==A3_RECOVERY_BINDINGS.partialReportSha256||sourceRows.length!==40||
+    sourceRows.some(row=>typeof row.path!=="string"||typeof row.sha256!=="string"))throw new Error("a3_recovery_original_source_snapshot_invalid");
+  for(const row of sourceRows){
+    if(row.path==="experience/ping-assistant/release2-model-eval.ts")continue;
+    if(await sha256(await readFile(resolve(row.path as string)))!==row.sha256)throw new Error("a3_recovery_source_drift");
+  }
+  const report=safeRecord(JSON.parse(reportBytes.toString("utf8"))),rows=Array.isArray(report.records)?report.records.map(safeRecord):[],pending=safeRecord(report.pendingAttempt);
+  if(report.mode!=="live-synthetic"||report.finishedAt||report.providerCalls!==2||report.observedEstimatedMicroUsd!==80430||report.heldMicroUsd!==0||
+    pending.runId!==pinned.a3RunId||pending.requestId!==pinned.a3RequestId||rows.length!==2||rows[0].caseId!=="A1"||rows[1].caseId!=="A2")
+    throw new Error("a3_recovery_original_report_state_invalid");
+  const observation=safeRecord(JSON.parse(observationBytes.toString("utf8")));
+  if(observation.candidateRun!==pinned.a3RunId||observation.providerRequestId!==pinned.a3ProviderRequestId||observation.status!==499||
+    observation.inputUncachedTokens!==pinned.inputTokens||observation.outputTokens!==pinned.outputTokens||observation.furtherCallsAllowed!==false)
+    throw new Error("a3_recovery_provider_observation_invalid");
+  const runtime=safeRecord(JSON.parse(runtimeBytes.toString("utf8"))),approval=validateRecoveryApproval(JSON.parse(approvalBytes.toString("utf8")),{
+    ...actualHashes,admissionSha256,currentRunnerSha256:await normalizedFileSha("experience/ping-assistant/release2-model-eval.ts"),
+    templateSha256:A3_RECOVERY_BINDINGS.templateSha256,reviewedRecoverySha256:await recoveryCodeSha(),platform:process.platform,nodeMajor:Number(process.versions.node.split(".")[0]),
+    physicalAttempts:3,accountedMicroUsd:pinned.priorEstimatedMicroUsd
+  });
+  const actionEvidence=safeRecord(runtime.evidence);
+  const currentWorkflowRun=process.env.GITHUB_SERVER_URL&&process.env.GITHUB_REPOSITORY&&process.env.GITHUB_RUN_ID?
+    `${process.env.GITHUB_SERVER_URL.replace(/\/$/,"")}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`:"";
+  if(sha256(runtimeBytes)!==approval.offlineRuntimeProof.sha256||runtime.mode!=="synthetic-action-check"||runtime.providerCalls!==0||actionEvidence.restoredToBaseline!==true||
+    process.platform!=="linux"||Number(process.versions.node.split(".")[0])!==22||!currentWorkflowRun||currentWorkflowRun!==approval.offlineRuntimeProof.workflowRun)
+    throw new Error("a3_recovery_offline_runtime_proof_invalid");
+  return {approval,report,rows,runtime,paths};
 }
 
 /** Verify a prior group chain from its final artifact back to A; never trust counters alone. */
@@ -151,6 +207,11 @@ async function readCompletedPrefix(rawPath:string,expectedAdmissionSha256?:strin
     if(row.group!==expected.group||row.prompt!==expected.prompt||row.expectation!==expected.expectation||(row.held??null)!==(expected.held??null))
       throw new Error("prior_group_prompt_inventory_mismatch");
   }
+  const recoveryLineage=safeRecord(document.recoveryLineage);
+  if(recoveryLineage.kind==="a3-provider-failure-reconciled-v1"&&group!=="A")throw new Error("prior_group_a3_recovery_lineage_invalid");
+  if((group==="A"&&records[2]?.status==="provider_failed_no_answer_no_quality_credit"||recoveryLineage.kind==="a3-provider-failure-reconciled-v1")&&
+    !validateRecoveredA3Rows(records as unknown as readonly Record<string,unknown>[],recoveryLineage))
+    throw new Error("prior_group_a3_recovery_lineage_invalid");
   let ownAttempts=0,ownCost=0;
   for(let i=0;i<records.length;i++){
     const expected=groupInventory(group)[i];
@@ -255,14 +316,17 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
   await ensureOutputUnused(output);
   const dryRun=args.has("--dry-run");
   const actionCheck=args.has("--action-check");
+  const resumeA3=args.has("--resume-a3");
   const requestedGroup=args.get("--group");
   const rawPriorResults=args.get("--prior-results");
   if(rawPriorResults&&!requestedGroup)throw new Error("prior_results_require_group");
   if(requestedGroup&&!actionCheck){
     if(!GROUPS.includes(requestedGroup))throw new Error("eval_group_invalid");
-    if(requestedGroup==="A"&&rawPriorResults)throw new Error("group_a_must_start_fresh");
+    if(requestedGroup==="A"&&rawPriorResults&&!resumeA3)throw new Error("group_a_must_start_fresh");
+    if(requestedGroup==="A"&&resumeA3&&rawPriorResults)throw new Error("a3_recovery_uses_pinned_partial_report");
     if(requestedGroup!=="A"&&!rawPriorResults)throw new Error("prior_group_results_required");
   }
+  if(resumeA3&&(!requestedGroup||requestedGroup!=="A"||actionCheck))throw new Error("a3_recovery_requires_group_a_mode");
   if(!dryRun&&!actionCheck&&!requestedGroup)throw new Error("live_eval_requires_one_group_per_process");
   const sourceFingerprintSha256=await evaluationFingerprint();
   let priorContinuation:Continuation|undefined;
@@ -273,6 +337,7 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
     priorContinuation=await readCompletedPrefix(priorResultPath,undefined,sourceFingerprintSha256);
     if(GROUPS.indexOf(priorContinuation.group)!==GROUPS.indexOf(requestedGroup)-1)throw new Error("prior_group_is_not_exact_predecessor");
   }
+  if(resumeA3&&priorContinuation)throw new Error("a3_recovery_cannot_use_prior_group_chain");
   if(requestedGroup){
     const projectedCalls=(priorContinuation?.physicalAttempts??0)+expectedCalls(groupInventory(requestedGroup));
     if(projectedCalls>MAX_PROVIDER_ATTEMPTS)throw new Error("provider_attempt_cap_exceeded_by_group_chain");
@@ -284,15 +349,90 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
   let fixture:Awaited<ReturnType<typeof createRelease2SyntheticWorld>>|undefined;
   const records:Row[]=[];
   try{
-    fixture=await createRelease2SyntheticWorld();
+    let recovery:Awaited<ReturnType<typeof verifyA3RecoveryEvidence>>|undefined;
+    let previousAttempts=priorContinuation?.physicalAttempts??0,previousCost=priorContinuation?.observedMicroUsd??0,recoveryLineage:Record<string,unknown>|undefined;
+    let inventory=requestedGroup?groupInventory(requestedGroup):caseSequence();
+    if(resumeA3){
+      if(!dryRun&&process.env.PING_RELEASE2_MODEL_EVAL_AUTHORIZED!=="1")throw new Error("provider_eval_not_authorized");
+      if(process.env.VERCEL==="1"||process.env.VERCEL_ENV==="production"||process.env.NODE_ENV==="production")throw new Error("production_environment_refused");
+      const scopeFile=args.get("--scope-file"),keyFile=args.get("--key-file");
+      if(!scopeFile||!keyFile||!isAbsolute(keyFile))throw new Error("explicit_scope_and_key_file_required");
+      await readAdmission(resolve(scopeFile));
+      const admissionSha=createHash("sha256").update(await readFile(resolve(scopeFile))).digest("hex");
+      recovery=await verifyA3RecoveryEvidence(args,admissionSha);
+      const clonePath=resolve(`${output}.a3-clone.db`);
+      await copyFile(recovery.paths.db!,clonePath,fsConstants.COPYFILE_EXCL);
+      if(sha256(await readFile(clonePath))!==recovery.approval.backupDbSha256)throw new Error("a3_recovery_clone_hash_mismatch");
+      const client=createClient({url:`file:${clonePath.replaceAll("\\","/")}`});
+      fixture={client,databasePath:clonePath,conversationIds:{}} as Awaited<ReturnType<typeof createRelease2SyntheticWorld>>;
+      const database=drizzle(client,{schema}) as AssistantDatabase;
+      const store=createAssistantStore(database,{now:()=>Date.parse(`${EVAL_WORLD.referenceDate}T09:12:00.000+01:00`)});
+      const raw=await client.execute({sql:"SELECT id,actor_id,request_id,status,plan_json,cancelled_at,budget_request_id,budget_model,reserved_micro_usd,input_tokens,output_tokens,estimated_micro_usd,usage_state FROM assistant_runs WHERE id=?",args:[A3_RECOVERY_BINDINGS.a3RunId]});
+      const run=raw.rows[0];
+      const budgetHash=assistantPayloadHash({runId:A3_RECOVERY_BINDINGS.a3RunId,requestId:A3_RECOVERY_BINDINGS.a3RequestId});
+      const initialAttempt=await store.getPlannerAttempt(ACTOR,A3_RECOVERY_BINDINGS.a3RunId);
+      if(!run||run.actor_id!==ACTOR||run.request_id!==A3_RECOVERY_BINDINGS.a3RequestId||run.status!=="planning"||run.plan_json!==null||run.cancelled_at!==null||
+        run.budget_request_id!==budgetHash||run.budget_model!=="claude-sonnet-5-5"||Number(run.reserved_micro_usd)!==2_040_960||run.usage_state!=="reserved"||
+        run.input_tokens!==null||run.output_tokens!==null||run.estimated_micro_usd!==null||!initialAttempt||initialAttempt.revision!==0||initialAttempt.dispatched||
+        initialAttempt.logical!=="pending"||initialAttempt.physical!=="pending"||await client.execute({sql:"SELECT id FROM assistant_steps WHERE run_id=? LIMIT 1",args:[A3_RECOVERY_BINDINGS.a3RunId]}).then(value=>value.rows.length!==0))
+        throw new Error("a3_recovery_clone_initial_state_invalid");
+      const preTask=await taskDigest(client),snapshotBaseline=safeRecord(recovery.report.baseline);
+      if(preTask.count!==snapshotBaseline.taskCount||preTask.sha256!==snapshotBaseline.taskSha256)throw new Error("a3_recovery_clone_task_baseline_mismatch");
+      if(!dryRun)await claimRecoveryOnce(recoveryClaimPath(OUTPUT_ROOT),recovery.approval.partialReportSha256);
+      const failedAttempt:PlannerAttemptMetadata={...initialAttempt,revision:initialAttempt.revision+1,logical:"failed",physical:"settled",dispatched:true,
+        httpStatus:499,providerRequestId:A3_RECOVERY_BINDINGS.a3ProviderRequestId,stopReason:null,failureCode:"provider",
+        cacheReadTokens:0,cacheWriteTokens:0,cacheWrite5mTokens:0,cacheWrite1hTokens:0,
+        stages:Object.fromEntries(ATTEMPT_STAGES.map(stage=>[stage,initialAttempt.stages[stage]])) as PlannerAttemptMetadata["stages"]};
+      await store.budget.recordAttempt({runId:A3_RECOVERY_BINDINGS.a3RunId,requestId:A3_RECOVERY_BINDINGS.a3RequestId,attempt:failedAttempt});
+      await store.budget.recordUsage({runId:A3_RECOVERY_BINDINGS.a3RunId,requestId:A3_RECOVERY_BINDINGS.a3RequestId,inputTokens:A3_RECOVERY_BINDINGS.inputTokens,
+        outputTokens:A3_RECOVERY_BINDINGS.outputTokens,estimatedMicroUsd:A3_RECOVERY_BINDINGS.estimatedMicroUsd,state:"usage_observed"});
+      await store.finishRun(ACTOR,A3_RECOVERY_BINDINGS.a3RunId,"failed",{failureCode:"provider",message:"Provider request ended before a model answer was returned; no quality score is assigned."});
+      const afterA3=await client.execute({sql:"SELECT status,plan_json,reserved_micro_usd,input_tokens,output_tokens,estimated_micro_usd,usage_state FROM assistant_runs WHERE id=?",args:[A3_RECOVERY_BINDINGS.a3RunId]});
+      const reconciled=afterA3.rows[0],afterTask=await taskDigest(client),settledAttempt=await store.getPlannerAttempt(ACTOR,A3_RECOVERY_BINDINGS.a3RunId);
+      if(!reconciled||reconciled.status!=="failed"||reconciled.plan_json!==null||Number(reconciled.reserved_micro_usd)!==A3_RECOVERY_BINDINGS.estimatedMicroUsd||
+        Number(reconciled.input_tokens)!==A3_RECOVERY_BINDINGS.inputTokens||Number(reconciled.output_tokens)!==0||Number(reconciled.estimated_micro_usd)!==A3_RECOVERY_BINDINGS.estimatedMicroUsd||
+        reconciled.usage_state!=="usage_observed"||!settledAttempt||settledAttempt.logical!=="failed"||settledAttempt.physical!=="settled"||
+        settledAttempt.providerRequestId!==A3_RECOVERY_BINDINGS.a3ProviderRequestId||settledAttempt.httpStatus!==499||
+        preTask.allRowsSha256!==afterTask.allRowsSha256)throw new Error("a3_recovery_clone_reconciliation_invalid");
+      const projectChat=await client.execute({sql:"SELECT id FROM conversations WHERE workspace_id=? AND kind='project'",args:[PROJECT]});
+      fixture.conversationIds={project:String(projectChat.rows[0]?.id??"")};
+      if(!fixture.conversationIds.project)throw new Error("a3_recovery_project_conversation_missing");
+      const oldRows=recovery.rows.map(value=>value as unknown as Row);
+      const a3row:Row={caseId:"A3",group:"A",prompt:RELEASE2_EVAL_CASES.find(item=>item.id==="A3")!.prompt,
+        expectation:RELEASE2_EVAL_CASES.find(item=>item.id==="A3")!.expectation,status:"provider_failed_no_answer_no_quality_credit",
+        requestId:A3_RECOVERY_BINDINGS.a3RequestId,runId:A3_RECOVERY_BINDINGS.a3RunId,providerAttempt:settledAttempt,
+        usage:{inputTokens:A3_RECOVERY_BINDINGS.inputTokens,outputTokens:0,estimatedCostMicrousd:A3_RECOVERY_BINDINGS.estimatedMicroUsd,qualityCredit:0},
+        providerAttemptProvenance:"Reconciled from provider Logs UI; the original local client did not receive or persist this response.",
+        failure:"provider_client_disconnect_http_499_no_model_answer"};
+      records.push(...oldRows,a3row);previousAttempts=A3_RECOVERY_BINDINGS.priorPhysicalAttempts;previousCost=A3_RECOVERY_BINDINGS.priorEstimatedMicroUsd;
+      inventory=groupInventory("A").slice(3);
+      recoveryLineage={kind:"a3-provider-failure-reconciled-v1",originalReportSha256:recovery.approval.partialReportSha256,
+        originalBackupDbSha256:recovery.approval.backupDbSha256,originalInputsSha256:recovery.approval.originalInputsSha256,
+        providerObservationSha256:recovery.approval.providerObservationSha256,independentReviewSha256:recovery.approval.independentReviewSha256,
+        providerAttemptProvenance:"Provider Logs UI reconciliation; the original client did not receive or persist a response.",
+        approvalSha256:sha256(await readFile(recovery.paths.approval!)),recoveryClonePath:clonePath,a3QualityCredit:0,attemptsCarried:3,estimatedMicroUsdCarried:118528,
+        onlyCasesDispatched:inventory.map(item=>item.id)};
+    }else fixture=await createRelease2SyntheticWorld();
     const before=await taskDigest(fixture.client);
-    const inventory=requestedGroup?groupInventory(requestedGroup):caseSequence();
+    if(resumeA3&&recovery){
+      const originalBaseline=safeRecord(recovery.report.baseline);
+      if(before.count!==originalBaseline.taskCount||before.sha256!==originalBaseline.taskSha256)throw new Error("a3_recovery_final_baseline_invalid");
+    }
     const preflight:Record<string,unknown>={required:62,selectedGroup:requestedGroup??null,groupRequired:requestedGroup?inventory.length:null,
       groupExpectedCalls:requestedGroup?expectedCalls(inventory):null,expectedPhysicalCalls:expectedCalls(inventory),maximumChainPhysicalCalls:MAX_PROVIDER_ATTEMPTS,
       evaluationSpendCapMicroUsd:MAX_EVAL_MICRO_USD,workspaceMonthlyCapMicroUsd:MAX_WORKSPACE_MICRO_USD,
       databasePath:fixture.databasePath,providerEndpointAllowlist:[PROVIDER_URL],apiCallsEnabled:false,
       prompts:inventory.map(item=>({id:item.id,group:item.group,prerequisite:item.prerequisite===true,held:item.held??null,source:item.source??null}))};
     if(dryRun){
+      if(resumeA3&&recovery){
+        records.push(...inventory.map(item=>({caseId:item.id,group:item.group,prompt:item.prompt,expectation:item.expectation,held:item.held,status:"not_run"})));
+        await persist(output,{version:"ping.release2.eval.v1",mode:"a3-recovery-preflight",startedAt,finishedAt:new Date().toISOString(),sourceFingerprintSha256,
+          recoveryLineage,world:{actorId:ACTOR,projectId:PROJECT,name:EVAL_WORLD.projectName,referenceDate:EVAL_WORLD.referenceDate,timeZone:EVAL_WORLD.timeZone,
+            syntheticOnly:true,guestOrCoupleDataSeeded:false},preflight:{...preflight,apiCallsEnabled:false},baseline:{taskCount:before.count,taskSha256:before.sha256},
+          records,finalTaskState:{taskCount:before.count,taskSha256:before.sha256},providerCalls:0,carriedPhysicalAttempts:previousAttempts,carriedEstimatedMicroUsd:previousCost,spendUsd:0,
+          note:"A3 usage was reconciled only in the copied database. No API key was read and no model call was sent."});
+        return {output,providerCalls:0,cases:records.length,dryRun:true,group:"A",recoveryChecked:true};
+      }
       await persist(output,{version:"ping.release2.eval.v1",mode:"dry-run",startedAt,finishedAt:new Date().toISOString(),world:{actorId:ACTOR,projectId:PROJECT,name:EVAL_WORLD.projectName,
         referenceDate:EVAL_WORLD.referenceDate,timeZone:EVAL_WORLD.timeZone,syntheticOnly:true,guestOrCoupleDataSeeded:false},preflight,
         sourceFingerprintSha256,continuationPreflight:priorContinuation?{lastCompletedGroup:priorContinuation.group,cumulativePhysicalAttempts:priorContinuation.physicalAttempts,cumulativeObservedMicroUsd:priorContinuation.observedMicroUsd,
@@ -338,7 +478,6 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
     const admission=await readAdmission(resolve(rawScope));
     const admissionSha256=createHash("sha256").update(await readFile(resolve(rawScope))).digest("hex");
     if(priorContinuation&&priorContinuation.admissionSha256!==admissionSha256)throw new Error("prior_group_admission_hash_mismatch");
-    const previousAttempts=priorContinuation?.physicalAttempts??0,previousCost=priorContinuation?.observedMicroUsd??0;
     const effectiveCap=Math.min(admission.maxAccountedMicroUsd,admission.keyWorkspaceMonthlyCapMicroUsd,MAX_EVAL_MICRO_USD,MAX_WORKSPACE_MICRO_USD);
     // The planner reserves its worst-case full 1M input-token ceiling before dispatch.
     const singleCallReservation=estimatePlannerMicroUsd("claude-sonnet-5-5" as PlannerModel,1_000_000,16_384);
@@ -435,9 +574,10 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
       if(!settled)throw new Error("eval_stopped_unsettled_or_unconfirmed_attempt");
     }
     const after=await taskDigest(fixture.client);
-    if(records.length!==inventory.length||attempts.length!==expectedCalls(inventory)||heldMicroUsd!==0||before.allRowsSha256!==after.allRowsSha256)
+    if(records.length!==(resumeA3?groupInventory("A").length:inventory.length)||attempts.length!==expectedCalls(inventory)||heldMicroUsd!==0||before.allRowsSha256!==after.allRowsSha256)
       throw new Error("eval_group_not_complete_or_draft_state_changed");
-    const ownCost=records.reduce((sum,row)=>sum+(row.status==="held_no_call_guest_boundary"?0:settledCost(row)),0);
+    const currentRows=resumeA3?records.slice(3):records;
+    const ownCost=currentRows.reduce((sum,row)=>sum+(row.status==="held_no_call_guest_boundary"?0:settledCost(row)),0);
     if(accountedMicroUsd!==previousCost+ownCost||previousAttempts+attempts.length>MAX_PROVIDER_ATTEMPTS||accountedMicroUsd>effectiveCap)
       throw new Error("eval_group_cumulative_accounting_mismatch");
     if(priorResultPath&&priorResultSha256){
@@ -446,10 +586,10 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
     }
     if(await evaluationFingerprint()!==sourceFingerprintSha256)throw new Error("evaluation_source_changed_during_run");
     const continuation:Continuation={version:1,group:requestedGroup!,groups:[...(priorContinuation?.groups??[]),requestedGroup!],
-      caseIds:inventory.map(item=>item.id),physicalAttempts:previousAttempts+attempts.length,observedMicroUsd:accountedMicroUsd,unknownUsage:false,
+      caseIds:groupInventory(requestedGroup!).map(item=>item.id),physicalAttempts:previousAttempts+attempts.length,observedMicroUsd:accountedMicroUsd,unknownUsage:false,
       admissionSha256,actorId:ACTOR,projectId:PROJECT,model:"claude-sonnet-5-5",evaluationFingerprintSha256:sourceFingerprintSha256,
       previous:priorResultPath&&priorResultSha256?{path:storedOutputPath(priorResultPath),sha256:priorResultSha256}:null};
-    await persist(output,{version:"ping.release2.eval.v1",mode:"live-synthetic",startedAt,finishedAt:new Date().toISOString(),sourceFingerprintSha256,world:{actorId:ACTOR,projectId:PROJECT,
+    await persist(output,{version:"ping.release2.eval.v1",mode:"live-synthetic",...(recoveryLineage?{recoveryLineage}:{}),startedAt,finishedAt:new Date().toISOString(),sourceFingerprintSha256,world:{actorId:ACTOR,projectId:PROJECT,
       name:EVAL_WORLD.projectName,referenceDate:EVAL_WORLD.referenceDate,timeZone:EVAL_WORLD.timeZone,syntheticOnly:true,guestOrCoupleDataSeeded:false},preflight,
       baseline:{taskCount:before.count,taskSha256:before.sha256},records,continuation,finalTaskState:{taskCount:after.count,taskSha256:after.sha256},
       providerCalls:continuation.physicalAttempts,spendUsd:continuation.observedMicroUsd/1_000_000});
