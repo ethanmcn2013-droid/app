@@ -30,7 +30,7 @@ The product/recovery files below were read in the worktree at base commit `5e0f0
 | `.github/workflows/ping-release2-synthetic-eval.yml` | `df43c3aff404aaadfe521db02659e8e01452bfa1a9c384330b5d6f259488ac85` |
 | `D:/Codex-scratch/project-ping/release2-private-oct21/setup-linux-eval.py` | `b740f486b329ab2e94bb8f84220f70e04bc2f92f483756e267c74ac8eacecc72` |
 
-## Workflow addendum â€” final pinned candidate
+## Workflow addendum — final pinned candidate
 
 Reviewed after the recovery source commit `1658de713f1d059984a4f01ae7652b3b7e4b9273`. The final workflow candidate SHA-256 is `696b3ee7ea272db2892433738dc8a2dab5e0cb333a78496f94e93e4bed87b881`.
 
@@ -41,3 +41,12 @@ The owner separately reported a provider-free canonical accounting proof (`offli
 ## Line-ending normalization note
 
 The earlier workflow hash `696b3ee7ea272db2892433738dc8a2dab5e0cb333a78496f94e93e4bed87b881` identifies the raw working copy. Converting only CRLF to LF gives the Git-stable workflow hash `f6661a898a1c21f68dcf580e624dbcf48ad8eec6b1f25008a8c6ac3b5ccb9959`. The reviewer confirmed this formatting change does not alter workflow logic.
+
+
+## Seed-pin correction addendum — 21 October 2026
+
+Reviewed the corrected pin-only recovery delta at source commit 75088b0f43c1fe016250d8cf54f16681b0d0cff1. The Git-stable workflow candidate SHA-256 is 48a490df4d1219f1c91649aea7fe5f7b2ff9b193448e5ac9327e2629e6c7bb76. The prior failed Linux run 39630428565 is retained as failed; the owner reports it stopped at seed verification before the key-bearing step, with zero provider calls. It is not relabeled or counted as a model attempt.
+
+The prior seed bundle SHA remains 20f6f722e427e398e5f09b26369f54b25a53971dfb8ba387efcc18d474e45da3. I independently hashed the embedded provider-review.md entry: 1,990 bytes, SHA-256 c696caaed356820792cceb6d412b677d71a5f745f44ef8e3b1aed5c7df9e05f8. The corrected approval template hashes to 9f6619d1946c8a23de8ecd3461186c3cac9f032bd03d67231847f2d5b3852073; both match the updated bindings. Guard tests now reject malformed SHA lengths and assert the actual template/review bytes. No seed, review, report, database, source, or fixture evidence was rewritten. The original three physical attempts and estimated $0.118528 remain unchanged.
+
+The scoped source comparison from 1658de713f1d059984a4f01ae7652b3b7e4b9273 to 75088b0f43c1fe016250d8cf54f16681b0d0cff1 shows no diff in Ping server/client, conversations, app/messages, package or lockfile inputs. Removing only the duplicate Ping/conversation suites from this temporary provider-free workflow is acceptable against the reported passing Linux run for 1658; the recovery guard, dry-run/action checks, clone reconciliation, and normal merged-PR gates remain. No blocker found; workflow has not been executed by this reviewer and no key or provider call was used.

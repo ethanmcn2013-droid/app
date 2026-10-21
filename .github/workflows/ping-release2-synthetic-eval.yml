@@ -22,13 +22,13 @@ jobs:
       - name: Check out the reviewed release 2 source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: 1658de713f1d059984a4f01ae7652b3b7e4b9273
+          ref: 75088b0f43c1fe016250d8cf54f16681b0d0cff1
           persist-credentials: false
 
       - name: Require the reviewed source revision
         shell: bash
         run: |
-          test "$(git rev-parse HEAD)" = "1658de713f1d059984a4f01ae7652b3b7e4b9273"
+          test "$(git rev-parse HEAD)" = "75088b0f43c1fe016250d8cf54f16681b0d0cff1"
 
       - name: Set up pnpm
         uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
@@ -43,11 +43,6 @@ jobs:
 
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Run the owning Ping and conversation suites
-        run: |
-          pnpm test:ping-assistant
-          pnpm test:conversations
 
       - name: Run reviewed partial-recovery guard tests
         run: node --import tsx --import ./src/test/register-server-only.mjs --test experience/ping-assistant/release2-partial-recovery.test.ts
@@ -185,7 +180,7 @@ jobs:
               'original-evaluation-inputs.json': 'a81975c2f1d7232346bf20e0c040e1372bbc13a2fb6bcad42aff2690b7986eb6',
               'original-A.json': '1cd9d108389315a9184f434f1ae9318b0938f362fb9b886852e5ec7e9833b8f4',
               'provider-observation.json': '89733f769f00d370b6636d1289fa56118d790bbdac775f36c9891655f117aaa4',
-              'provider-review.md': 'c696caaed356820792cc0ebd6c412b677d71a5f745f44ef8e3b1aed5c7df9e05f8',
+              'provider-review.md': 'c696caaed356820792cceb6d412b677d71a5f745f44ef8e3b1aed5c7df9e05f8',
               'admission.json': '685b6b6ffa3f1ee98f71f105d8ee0ea66a4d5ffa48b1c302c9be53cb00d8352b',
           }
           destination = pathlib.Path(os.environ['RUNNER_TEMP']) / 'ping-r2-seed'
