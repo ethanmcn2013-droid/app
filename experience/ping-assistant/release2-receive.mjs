@@ -7,11 +7,14 @@ import {chromium} from '@playwright/test';
 const output=path.resolve(process.argv[2]);
 const ready=JSON.parse(await fs.readFile(path.join(output,'ready.json'),'utf8'));
 const root=process.cwd(),browser=await chromium.launch({headless:true});
-const evidence={version:'ping.release2.synthetic-receiver.v1',startedAt:new Date().toISOString(),ready,exactInputs:[],checks:[],screenshots:[],errors:[],httpErrors:[],networkFailures:[],expectedNavigationAborts:[]};
+const evidence={version:'ping.release2.synthetic-receiver.v1',startedAt:new Date().toISOString(),ready,exactInputs:[],checks:[],screenshots:[],errors:[],httpErrors:[],networkFailures:[],navigationTransitions:[],expectedNavigationAborts:[]};
 async function snapshot(){const r=await fetch(ready.url+'/fixture/snapshot');assert.equal(r.status,200);return r.json();}
 async function shot(page,id){const file=path.join(output,id+'.png');await page.screenshot({path:file,fullPage:true});const bytes=await fs.readFile(file);evidence.screenshots.push({id,path:file,sha256:createHash('sha256').update(bytes).digest('hex'),bytes:bytes.length});}
-async function openPing(page,pathName='/assistant'){await page.goto(ready.url+pathName);await page.getByRole('textbox',{name:'Request for Ping'}).waitFor();}
-async function openConversation(page,pathName='/conversation',query=''){await page.goto(ready.url+pathName+query);await page.getByRole('textbox',{name:'Message Synthetic launch'}).waitFor();await page.getByText('We decided the welcome drink will be Spritz.').waitFor();}
+let controlledNavigation=null;
+function beginControlledNavigation(page,target){const transition={from:new URL(page.url()).pathname,to:new URL(target,ready.url).pathname,startedAt:new Date().toISOString(),completedAt:null};evidence.navigationTransitions.push(transition);controlledNavigation=transition;return transition;}
+function finishControlledNavigation(transition){transition.completedAt=new Date().toISOString();setTimeout(()=>{if(controlledNavigation===transition)controlledNavigation=null;},1500);}
+async function openPing(page,pathName='/assistant'){const transition=beginControlledNavigation(page,pathName);await page.goto(ready.url+pathName);await page.getByRole('textbox',{name:'Request for Ping'}).waitFor();finishControlledNavigation(transition);}
+async function openConversation(page,pathName='/conversation',query=''){const target=pathName+query,transition=beginControlledNavigation(page,target);await page.goto(ready.url+target);await page.getByRole('textbox',{name:'Message Synthetic launch'}).waitFor();await page.getByText('We decided the welcome drink will be Spritz.').waitFor();finishControlledNavigation(transition);}
 async function send(page,text){evidence.exactInputs.push({text,viewport:page.viewportSize(),path:new URL(page.url()).pathname});await page.getByRole('textbox',{name:'Request for Ping'}).fill(text);await page.getByRole('button',{name:'Send message',exact:true}).click();await page.waitForFunction(()=>{const e=document.querySelector('textarea[aria-label="Request for Ping"]');return !!e&&!e.disabled&&e.value==='';},null,{timeout:15000});}
 async function applyLatest(page){const buttons=page.getByRole('button',{name:'Apply plan',exact:true});assert.ok(await buttons.count());await buttons.last().click();await page.waitForFunction(()=>{const e=document.querySelector('textarea[aria-label="Request for Ping"]');return !!e&&!e.disabled&&e.value==='';},null,{timeout:20000});}
 async function check(name,details={}){evidence.checks.push({name,ok:true,...details});}
@@ -19,12 +22,11 @@ try{
   const viewport=process.argv[3]||'1440x960';
   const [width,height]=viewport.split('x').map(Number);assert.ok(width&&height,'Use widthxheight');
   const context=await browser.newContext({viewport:{width,height},reducedMotion:'reduce'}),page=await context.newPage();
-  let explicitReloadInProgress=false;
   page.on('pageerror',error=>evidence.errors.push({kind:'pageerror',message:error.message}));
   page.on('console',message=>{if(message.type()==='error')evidence.errors.push({kind:'console',message:message.text()});});
   page.on('response',response=>{if(response.status()>=400)evidence.httpErrors.push({status:response.status(),url:response.url()});});
   page.on('requestfailed',request=>{const failure={url:request.url(),method:request.method(),error:request.failure()?.errorText};
-    if(explicitReloadInProgress&&request.method()==='GET'&&new URL(request.url()).pathname==='/api/ping/assistant'&&failure.error==='net::ERR_ABORTED')evidence.expectedNavigationAborts.push(failure);
+    if(controlledNavigation&&request.method()==='GET'&&new URL(request.url()).pathname==='/api/ping/assistant'&&failure.error==='net::ERR_ABORTED')evidence.expectedNavigationAborts.push({...failure,at:new Date().toISOString(),transition:controlledNavigation});
     else evidence.networkFailures.push(failure);
   });
   await openPing(page,'/assistant-source');await shot(page,`${viewport}-source-empty`);
@@ -112,10 +114,9 @@ try{
   assert.equal(afterPrivate.messages.length,beforePrivate.messages.length,'the request does not create shared or private messages before Apply');
   await shot(page,`${viewport}-at-ping-private-draft`);await check('desktop @Ping Enter routes once to a private plan, with no pre-Apply domain write');
   const privateCount=afterPrivate.requests.filter(r=>r.operation==='submit').length;
-  explicitReloadInProgress=true;await page.reload();await page.getByRole('textbox',{name:'Message Synthetic launch'}).waitFor();await page.getByText('We decided the welcome drink will be Spritz.').waitFor();
+  const reloadTransition=beginControlledNavigation(page,page.url());await page.reload();await page.getByRole('textbox',{name:'Message Synthetic launch'}).waitFor();await page.getByText('We decided the welcome drink will be Spritz.').waitFor();finishControlledNavigation(reloadTransition);
   assert.equal((await snapshot()).requests.filter(r=>r.operation==='submit').length,privateCount,'reload does not auto-replay the forwarded command');
   const afterReload=await snapshot();assert.equal(afterReload.tasks.length,beforePrivate.tasks.length);assert.equal(afterReload.messages.length,beforePrivate.messages.length);
-  explicitReloadInProgress=false;
   await check('reload does not replay the forwarded @Ping request');
   const beforeOrdinary=afterReload.conversationRequests.filter(r=>r.method==='POST'&&r.action==='send').length;
   await page.getByRole('textbox',{name:'Message Synthetic launch'}).fill('Ordinary shared message.');await page.getByRole('button',{name:'Send',exact:true}).click();
