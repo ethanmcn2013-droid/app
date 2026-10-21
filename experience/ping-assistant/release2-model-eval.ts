@@ -17,6 +17,7 @@ import { executeAssistantAction } from "../../src/server/ping/assistant/actions"
 import { executeAssistantUndo } from "../../src/server/ping/assistant/undo";
 import { assertAssistantActor, authorizeAssistantProject, resolveAssistantProjectName } from "../../src/server/ping/assistant/context";
 import { bindAssistantPlanTargets } from "../../src/server/ping/assistant/plan-targets";
+import { assistantConversationPlannerContext } from "../../src/server/ping/assistant/planner-context";
 import type { AssistantRequest, AssistantPlannerContext } from "../../src/lib/ping/assistant/contract";
 import type { AssistantSource } from "../../src/lib/ping/assistant/release2";
 import { estimatePlannerMicroUsd } from "../../src/server/ping/assistant/planner-budget";
@@ -162,7 +163,7 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
     fixture=await createRelease2SyntheticWorld();
     const before=await taskDigest(fixture.client);
     const inventory=caseSequence();
-    const preflight:Record<string,unknown>={required:62,admittedAccountedCapMicroUsd:4_000_000,keyWorkspaceMonthlyCapMicroUsd:5_000_000,
+    const preflight:Record<string,unknown>={required:62,databasePath:fixture.databasePath,admittedAccountedCapMicroUsd:4_000_000,keyWorkspaceMonthlyCapMicroUsd:5_000_000,
       providerEndpointAllowlist:[PROVIDER_URL],apiCallsEnabled:false,
       prompts:inventory.map(item=>({id:item.id,group:item.group,prerequisite:item.prerequisite===true,held:item.held??null,source:item.source??null}))};
     if(dryRun){
@@ -219,9 +220,16 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
       return {output,providerCalls:0,cases:inventory.length,dryRun:false,blocked:true};
     }
     if(admission.maxPhysicalAttempts!==MAX_PROVIDER_ATTEMPTS)throw new Error("provider_attempt_cap_mismatch");
+    // Reject malformed fixture context before reading a key or paying for any model attempt.
+    const database=drizzle(fixture.client,{schema}) as AssistantDatabase;
+    for(const item of inventory){
+      if(item.held?.includes("Unsupported guest-chat"))continue;
+      const source=caseSource(item,fixture.conversationIds);
+      assistantConversationPlannerContext(await contextFor(database,ACTOR,{requestId:'r2eval_preflight',text:item.prompt,
+        scope:{kind:'project',projectId:PROJECT},mode:'draft',...(source?{source}:{})}));
+    }
     const apiKey=(await readFile(resolve(keyFile),"utf8")).trim();
     if(apiKey.length<20||/[\r\n\0]/.test(apiKey))throw new Error("explicit_key_file_invalid");
-    const database=drizzle(fixture.client,{schema}) as AssistantDatabase;
     const store=createAssistantStore(database,{now:()=>Date.parse(`${EVAL_WORLD.referenceDate}T09:12:00.000+01:00`)});
     let heldMicroUsd=0,accountedMicroUsd=0;
     const holds=new Map<string,number>();
@@ -246,6 +254,12 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
     }});
     const planner={plan:async(...input:Parameters<typeof canonicalPlanner.plan>)=>{
       plannerFailure=undefined;
+      // Persist custody before dispatch. An abrupt native-process exit must leave the
+      // exact run/database discoverable; pending is never proof of no call or free usage.
+      await persist(output,{version:'ping.release2.eval.v1',mode:'live-synthetic',startedAt,updatedAt:new Date().toISOString(),preflight,
+        baseline:{taskCount:before.count,taskSha256:before.sha256},records,
+        pendingAttempt:{runId:input[0].runId,requestId:input[0].requestId,dispatchAndUsage:'unconfirmed_until_durable_receipt'},
+        providerCalls:attempts.length,observedEstimatedMicroUsd:accountedMicroUsd,heldMicroUsd});
       try{return await canonicalPlanner.plan(...input);}
       catch(error){plannerFailure=error instanceof Error&&/^planner_[a-z_]+$/.test(error.message)?error.message:'planner_unclassified_failure';throw error;}
     }};

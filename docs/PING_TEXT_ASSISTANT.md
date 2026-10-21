@@ -49,6 +49,8 @@ In a member conversation, a leading `@Ping` command opens a private request rath
 
 Follow-ups name an earlier actor-owned request in the same scope and source. Up to eight earlier turns and the unapplied plan form the memory. Editing replaces that waiting plan atomically; the old plan cannot be applied afterward. A time-only edit retains the day; an edit naming one task in a bulk creation leaves its siblings unchanged. All changes still wait for Apply plan. Cancelled plans remain history rather than instructions to execute.
 
+If an earlier source changes or becomes inaccessible, Ping leaves out the inherited conversation chain and uses fresh authorized context. It does not carry forward replies derived from that older source. Existing plans still require their original source and target checks before Apply or Undo. A plan to finish a task warns when its checklist still has open items; finishing the task leaves those items open.
+
 Step Undo restores captured task state only if it still matches what Ping saved. Ping-created tasks are archived. Messages and comments are taken back through their original author, audience and revision checks. The reversal and its receipt share one transaction; repeat requests read that receipt. Later edits cause a conflict rather than being overwritten. Delivered emails and accepted invitations cannot be recalled; those steps are not presented as reversible.
 
 Date-only tasks keep the existing calendar-day convention. Explicit clock times retain a local clock label and a time-zone-correct instant. Ambiguous or nonexistent daylight-saving times are refused for clarification.

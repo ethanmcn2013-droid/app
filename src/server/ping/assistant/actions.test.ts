@@ -444,3 +444,19 @@ test('an earlier step cannot exempt its source task from later collaborator chan
   assert.equal(await f.database.transaction(tx=>validateAssistantTaskPostImages(tx,'alice',sources,[{...changed,undoResult:{status:'reverted',summary:'Restored',affectedCount:1}}])),false);
  }finally{f.client.close();}
 });
+
+test('completing a parent warns about open checklist items without completing or reassigning them',async()=>{
+ const f=await fixture();try{
+  const made=await f.run({id:'seed_parent_warning',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Dietary list'}]});
+  const parentId=made.createdTaskIds![0];
+  await seedProofTask(f.client,'open-dietary-child',{projectId:PROOF_PROJECT});
+  await f.client.execute({sql:"UPDATE tasks SET parent_task_id=?,title='Full list from the couple' WHERE id='open-dietary-child'",args:[parentId]});
+  const action:AssistantAction={id:'finish_parent_warning',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Dietary list']},changes:{status:'done'}};
+  const bound=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[action]},currentProjectId:PROOF_PROJECT}));
+  assert.equal(bound.finish_parent_warning.hasOpenChecklist,true);
+  assert.equal((await f.client.execute({sql:'SELECT lane FROM tasks WHERE id=?',args:[parentId]})).rows[0].lane,'todo');
+  await f.run(action,{boundTaskTargets:bound});
+  const child=(await f.client.execute("SELECT lane,completed_at,assignees FROM tasks WHERE id='open-dietary-child'")).rows[0];
+  assert.equal(child.lane,'todo');assert.equal(child.completed_at,null);assert.deepEqual(JSON.parse(String(child.assignees)),['bob']);
+ }finally{f.client.close();}
+});

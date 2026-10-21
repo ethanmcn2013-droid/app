@@ -44,6 +44,18 @@ test('an inaccessible older ancestor clears newer derived turns; foreign rooms a
  }finally{await f.close();}
 });
 
+test('a completion draft shows its canonical open-checklist warning before Apply without exposing bound identities',async()=>{
+ const f=await assistantFixture();let writes=0;try{
+  const action={id:'finish',kind:'update_tasks' as const,project:{kind:'current' as const},targets:{kind:'titles' as const,titles:['Dietary list']},changes:{status:'done' as const}};
+  const service=createAssistantService({store:f.store,requireApproval:true,context:async()=>context,planner:{plan:async()=>({plan:{...plan,actions:[action]}})},
+   bindTargets:async()=>({finish:{projectId:'synthetic',taskIds:['private_parent_id'],taskHashes:{private_parent_id:'0'.repeat(64)},priorActionIds:[],hasOpenChecklist:true}}),
+   execute:async()=>{writes++;throw Error('must not write before Apply');}});
+  const draft=await service.submit('alice',request);assert.equal(draft.status,'ready');assert.equal(writes,0);
+  assert.match(draft.message??'',/checklist items are still open/);assert.doesNotMatch(JSON.stringify(draft),/private_parent_id|taskHashes/);
+  assert.match((await service.view('alice',draft.id)).message??'',/leave those items open/);
+ }finally{await f.close();}
+});
+
 test('public endpoint forces a waiting plan even when caller forges execute; only Apply writes',async()=>{
  const f=await assistantFixture();let writes=0;try{
   const service=createAssistantService({store:f.store,context:async()=>context,planner:{plan:async()=>({plan})},execute:input=>input.commitStep(input.stepId,input.fence,async()=>{writes++;return {stepId:input.stepId,kind:input.step.kind,status:'completed',summary:'Created',affectedCount:1};})});

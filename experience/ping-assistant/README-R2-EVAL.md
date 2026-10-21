@@ -26,6 +26,8 @@ The planner reserves a maximum of $2.16384 before each attempt (up to 1,000,000 
 
 Each row records exact prompt and expected behavior, request/run identifiers, sanitized planner attempt telemetry, model plan, service view, source coverage, timing, observed usage and before/after durable task-state hashes. Raw API credentials, unrelated environment values and provider error bodies are never written. A whole-run baseline/final task digest must match because all model requests remain drafts. Partial output is atomically replaced after each completed live case so an interruption does not lose completed evidence. There are 62 fixed cases in the scoring denominator; H56 and safety-held cases are visible as held rows, never silently deleted. The independent reviewer—not the runner—assigns pass/weak/fail from `docs/projects/chat-ping-redesign/ping-eval.md` and the Ping scorecard.
 
+Before any key is read, the runner validates every seeded context against the production projection. Before each planner attempt it checkpoints the database path and exact pending run identity. If the process exits without a settled receipt, preserve that database and its reservation; a pending or missing dispatch observation does not establish that no request was sent or billed. Do not restart the full evaluation or replay the unconfirmed request. Reconcile observed usage and unknown reservations against the original admission before any separately authorized continuation.
+
 An isolated action adapter check can run separately without a model/provider call:
 
 ```powershell

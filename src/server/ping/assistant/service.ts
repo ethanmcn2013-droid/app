@@ -6,7 +6,7 @@ import { loadAssistantMemory, editAssistantPlan } from './conversation-memory';
 export type AssistantPlanner = {
   plan(input: { runId: string; requestId: string; text: string; context: AssistantPlannerContext; mode?:"execute"|"draft" }, signal?: AbortSignal): Promise<{ plan: AssistantPlan; model?: string; usage?: { estimatedMicroUsd: number } | null }>;
 };
-export type AssistantBoundTaskTargets=Readonly<Record<string,Readonly<{projectId:string;taskIds:readonly string[];taskHashes:Readonly<Record<string,string>>;priorActionIds:readonly string[];checklistItemId?:string}>>>;
+export type AssistantBoundTaskTargets=Readonly<Record<string,Readonly<{projectId:string;taskIds:readonly string[];taskHashes:Readonly<Record<string,string>>;priorActionIds:readonly string[];checklistItemId?:string;hasOpenChecklist?:boolean}>>>;
 export type AssistantExecuteInput = {
   actorId: string; runId: string; step: AssistantAction; stepId: string; fence: number;
   commitStep: (stepId: string, fence: number, callback: (tx: AssistantTransaction) => Promise<AssistantActionResult>) => Promise<AssistantActionResult>;
@@ -206,7 +206,9 @@ export function createAssistantService(deps: {
         await store.bindPlan(actorId,runId,{plan,referenceDate,timeZone,authorizationProjects,authorizationSources,...(boundTaskTargets?{boundTaskTargets}:{}),...(priorTaskResult?{priorTaskResult}:{})},plan.actions.map(step=>({key:step.id,payload:step})),supersedes);
         await store.finishRun(actorId,runId,"ready",{authorizationProjects,planSources:authorizationSources,model:planned.model,timing:{planningMs:now()-started}});
         if(request.mode==="draft"||plan.mode==='draft'){
-          await store.finishRun(actorId,runId,"ready",{message:"Draft prepared. No actions were executed.",model:planned.model,timing:{planningMs:now()-started}});return view(actorId,runId);
+          const checklistWarning=Object.values(boundTaskTargets??{}).some(target=>target.hasOpenChecklist)
+            ?' Some checklist items are still open. Marking their task done will leave those items open.':'';
+          await store.finishRun(actorId,runId,"ready",{message:`Draft prepared. No actions were executed.${checklistWarning}`,model:planned.model,timing:{planningMs:now()-started}});return view(actorId,runId);
         }
         return executeRun(actorId,runId);
       }catch(error){
