@@ -18,6 +18,21 @@ async function openConversation(page,pathName='/conversation',query=''){const ta
 async function send(page,text){evidence.exactInputs.push({text,viewport:page.viewportSize(),path:new URL(page.url()).pathname});await page.getByRole('textbox',{name:'Request for Ping'}).fill(text);await page.getByRole('button',{name:'Send message',exact:true}).click();await page.waitForFunction(()=>{const e=document.querySelector('textarea[aria-label="Request for Ping"]');return !!e&&!e.disabled&&e.value==='';},null,{timeout:15000});}
 async function applyLatest(page){const buttons=page.getByRole('button',{name:'Apply plan',exact:true});assert.ok(await buttons.count());await buttons.last().click();await page.waitForFunction(()=>{const e=document.querySelector('textarea[aria-label="Request for Ping"]');return !!e&&!e.disabled&&e.value==='';},null,{timeout:20000});}
 async function check(name,details={}){evidence.checks.push({name,ok:true,...details});}
+async function inspectPersonAvatar(page,theme){return page.evaluate(theme=>{
+  document.documentElement.dataset.theme=theme;
+  const avatar=[...document.querySelectorAll('[aria-hidden="true"][data-tone]')].find(node=>node.textContent?.trim()==='B');
+  if(!avatar)throw new Error('The rendered Bob DM has no person avatar');
+  const parse=value=>{const m=value.match(/rgba?\((\d+)\D+(\d+)\D+(\d+)/);if(m)return[+m[1],+m[2],+m[3]];const h=value.match(/^#([0-9a-f]{6})$/i);return h?[parseInt(h[1].slice(0,2),16),parseInt(h[1].slice(2,4),16),parseInt(h[1].slice(4,6),16)]:null;};
+  const foreground=getComputedStyle(avatar).color,background=getComputedStyle(avatar).backgroundColor;
+  const accentToken=getComputedStyle(document.documentElement).getPropertyValue('--v3-accent').trim();
+  const probe=document.createElement('span');probe.style.color='var(--v3-accent)';document.body.append(probe);const accent=getComputedStyle(probe).color;probe.remove();
+  const luminance=rgb=>rgb.map(value=>value/255).map(value=>value<=.04045?value/12.92:((value+.055)/1.055)**2.4).reduce((sum,value,index)=>sum+value*[.2126,.7152,.0722][index],0);
+  const fg=parse(foreground),bg=parse(background),ac=parse(accent);
+  if(!fg||!bg||!ac)throw new Error(`Could not parse computed avatar colors: ${foreground} / ${background} / ${accent}`);
+  const contrast=(Math.max(luminance(fg),luminance(bg))+.05)/(Math.min(luminance(fg),luminance(bg))+.05);
+  const accentDistance=Math.hypot(bg[0]-ac[0],bg[1]-ac[1],bg[2]-ac[2]);
+  return{theme,foreground,background,accent,accentToken,contrast,accentDistance};
+},theme);}
 try{
   const viewport=process.argv[3]||'1440x960';
   const [width,height]=viewport.split('x').map(Number);assert.ok(width&&height,'Use widthxheight');
@@ -96,6 +111,9 @@ try{
   const messageGet= (await snapshot()).conversationRequests.filter(r=>r.method==='GET'&&r.action==='messages'&&r.conversationId===ready.privateConversationId);
   assert.ok(messageGet.length>0,'exact private message target should load its canonical message page');
   assert.equal(new URL(page.url()).pathname,'/app/messages');assert.equal(new URL(page.url()).searchParams.get('conversationId'),ready.privateConversationId);
+  const avatarColors=[];for(const theme of ['dark','light']){const colors=await inspectPersonAvatar(page,theme);assert.ok(colors.accentDistance>80,`${theme} person avatar fill must remain visually distinct from Signal indigo`);assert.ok(colors.contrast>=4.5,`${theme} person avatar initials need at least 4.5:1 contrast`);avatarColors.push(colors);if(theme==='light')await shot(page,`${viewport}-exact-private-message-navigation-light`);}
+  await page.evaluate(()=>{document.documentElement.dataset.theme='dark';});
+  await check('rendered DM person avatar stays outside Signal indigo and keeps readable initials in light and dark themes',{avatarColors});
   await shot(page,`${viewport}-exact-private-message-navigation`);await check('private source link opens the exact existing DM and canonical message, without Project fallback',{href:dmHref,messageId:ready.privateSourceMessageId,conversationId:ready.privateConversationId});
 
   await openConversation(page);
