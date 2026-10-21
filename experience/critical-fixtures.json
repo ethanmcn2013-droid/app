@@ -2062,7 +2062,7 @@
     "src/components/app/messages/demo-messages-model.test.ts": "4fb264576bc195d1177c4b72942474478887eec1f94f2a6f257aa7792c1ea05a",
     "src/components/app/messages/demo-messages-model.ts": "ea4c9238a87ef2128ca905d5496c16fa13e0a484e4954849960a42969dd685a0",
     "src/components/app/messages/direct-message-directory.tsx": "b296426ef3db4064f80220a7340a7587fa00000b0c580813e6de3685dcb6b266",
-    "src/components/app/messages/floating-chat-root.tsx": "bc0f9ad251814445e8a8b35e28ad314f97bc81a1fa6859b3d49a176d2a9269e6",
+    "src/components/app/messages/floating-chat-root.tsx": "b479c2a4cda79ecf9ba123d3659f1bbec5cfafdd0a2cecff2dd75212e9f42cc6",
     "src/components/app/messages/floating-chat.module.css": "4bc690edd077bb9732b58b5fd13c9bac2a5610f6bddbd9dd42e0e5382d457dd5",
     "src/components/app/messages/hidden-conversations.test.ts": "7f9a4846046cd07f85e9e45e5fde26616cbb958e5dbf104a236e776f0803639c",
     "src/components/app/messages/hidden-conversations.ts": "e3aff212cf4d957f76e300ed44feb4c0f5fb785911f81910713e4fcc696e157c",

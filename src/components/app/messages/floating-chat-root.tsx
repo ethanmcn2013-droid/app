@@ -72,7 +72,8 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
   const registerPage = useCallback((node: HTMLDivElement | null, next?: RequestedConversation, unavailable?: boolean) => {
     setPage(node);
     setPageCatalogUnavailable(!!node && !!unavailable);
-    if (node) { setStarted(true); setOpen(true); if (next && Object.values(next).some((value) => value !== undefined)) { setRequested(next); setNavigationVersion((version) => version + 1); setView("project"); } }
+    // Full view opens on the conversation; the list is one step back.
+    if (node) { setStarted(true); setOpen(true); setView((current) => current === "home" ? "project" : current); if (next && Object.values(next).some((value) => value !== undefined)) { setRequested(next); setNavigationVersion((version) => version + 1); setView("project"); } }
   }, []);
   const [context] = useState(() => ({ registerPage }));
   useLayoutEffect(() => {
