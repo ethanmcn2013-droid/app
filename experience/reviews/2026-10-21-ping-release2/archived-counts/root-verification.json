@@ -1,0 +1,32 @@
+{
+  "recordedAt": "2026-10-21T21:51:45.4574647+00:00",
+  "source": "481c7da111cbe8fcda3b98f1d4f3dbe335e17696",
+  "focusedTests": {
+    "failed": 0,
+    "sha256": "ce34c89484bea908ac407a7630460c30cfc71f894ae4c9949c7cd143cbed7e67",
+    "exitCode": 0,
+    "command": "node --import tsx --import ./src/test/register-server-only.mjs --test --test-concurrency=1 src/server/projects/catalog.test.ts src/server/projects/resolve.test.ts",
+    "log": "root-count-tests-server-context.log",
+    "passed": 32
+  },
+  "rootTypecheck": {
+    "exitCode": 0,
+    "sha256": "e0eddf17f5c613cde38a9ee4d152820b9e76a65a14199b38dd83048194ff40a5",
+    "log": "D:/Codex-scratch/project-ping/ping-release2-undo-production-proof-oct21/counts-typecheck.log"
+  },
+  "earlierWrongCommand": {
+    "status": "failed-before-tests: omitted maintained server-only test registration",
+    "regraded": false,
+    "log": "root-count-tests.log"
+  },
+  "renderedFixtures": 39,
+  "registryExperiences": 111,
+  "freshCapture": "39681847273 running",
+  "rawFileHashes": {
+    "src/server/projects/resolve.ts": "701b75593892fd791c1c7b0afb829e3b448c812ca1c23ccdbbf1d020d130107f",
+    "src/server/projects/catalog.test.ts": "8c9037bd4e5d170b23d65db57b2d861bbc1bf111b1c4e5edca8386e2b2d0e650",
+    "src/server/projects/resolve.test.ts": "a0b84702bc793d116896fe96b10d273d0755d913d1cb3ada6c79fec6f67e84b1",
+    "src/server/projects/catalog.ts": "d615b736fedff96cea17d3ce02be4ffccfe7f19a268f773fbe548d0bf41d4506"
+  },
+  "providerCalls": 0
+}

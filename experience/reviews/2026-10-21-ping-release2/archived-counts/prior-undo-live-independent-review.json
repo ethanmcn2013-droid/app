@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-21",
+  "reviewer": "/root/r2_independent_review",
+  "decision": "bounded_board_undo_canary_passed_scoped_acceptance_ci_pending",
+  "liveReceipt": {
+    "path": "live-receiving.json",
+    "sha256": "10d9f6071edf11bfded9f9dc2b6b0f5d38fc8b49bc229c81203cb87e6bbb129b",
+    "allListedArtifactHashesIndependentlyMatched": true
+  },
+  "source": {
+    "candidate": "c1391a10015c339d0c581385a588914cf5760d93",
+    "mergedCommit": "ab0650d2dbbd7a72db4482cc208298b18c931c5e",
+    "tree": "de19f32312a7cb7fa678f066d36c9ac2b06b39de",
+    "candidateIsAncestorOfMerge": true,
+    "providerFiles": 5027,
+    "providerSourceHashesMatched": true
+  },
+  "deployment": {
+    "id": "dpl_6tV8qgDffHLJ9SWfKmSzvJLpqnKo",
+    "state": "READY",
+    "target": "production",
+    "alias": "app.signalstudio.ie",
+    "aliasMapsToDeployment": true
+  },
+  "canary": {
+    "authenticated": true,
+    "planningSubmissions": 1,
+    "applyClicks": 1,
+    "undoClicks": 1,
+    "taskCounts": {
+      "baseline": 2,
+      "afterDraft": 2,
+      "afterApply": 3,
+      "afterUndoWithoutReload": 2,
+      "afterReload": 2
+    },
+    "originalTasksUnchanged": true,
+    "oneTaskCreated": true,
+    "undoRemovedVisibleCardWithoutReload": true,
+    "externalMessagesOrTimelinePublication": false
+  },
+  "knownSeparateIssue": {
+    "surface": "project sidebar open-task count",
+    "observedBaseline": 3,
+    "boardBaseline": 2,
+    "afterApply": 4,
+    "afterUndo": 4,
+    "boardAfterUndo": 2,
+    "cause": "unverified",
+    "mustBeTrackedSeparately": true,
+    "blocksScopedBoardUndoCanary": false,
+    "blocksBlanketProductAcceptance": true
+  },
+  "postMergeCI": {
+    "verifyRun": "39680157864",
+    "designQualityRun": "39680157811",
+    "status": "in_progress",
+    "finalCloseoutRequiresSuccess": true
+  },
+  "syntheticReceiver": "failed_overall",
+  "claimsExcluded": [
+    "blanket Ping/product acceptance",
+    "project-wide sidebar count accuracy",
+    "live latency",
+    "physical model-call count"
+  ],
+  "reviewerMadeCodeDeploymentOrProductionChanges": false
+}

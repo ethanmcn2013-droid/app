@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-21",
+  "reviewer": "/root/r2_independent_review",
+  "baseCommit": "ab0650d2dbbd7a72db4482cc208298b18c931c5e",
+  "verdict": "no_code_or_authorization_blocker",
+  "scope": "Read-only review of archived project open-task counts",
+  "actualTrackedDiffFiles": [
+    "src/server/projects/catalog.ts",
+    "src/server/projects/catalog.test.ts",
+    "src/server/projects/resolve.ts",
+    "src/server/projects/resolve.test.ts",
+    "CHANGELOG.md",
+    "experience/critical-fixtures.json",
+    ".github/workflows/experience-candidate-capture.yml"
+  ],
+  "workingFileSha256": {
+    "catalog": "d615b736fedff96cea17d3ce02be4ffccfe7f19a268f773fbe548d0bf41d4506",
+    "catalogTest": "8c9037bd4e5d170b23d65db57b2d861bbc1bf111b1c4e5edca8386e2b2d0e650",
+    "resolve": "701b75593892fd791c1c7b0afb829e3b448c812ca1c23ccdbbf1d020d130107f",
+    "resolveTest": "a0b84702bc793d116896fe96b10d273d0755d913d1cb3ada6c79fec6f67e84b1",
+    "changelog": "05d085e2142f6eb64f64d792480abd94ef3dfdc9c105acd034d10124de5be2be",
+    "fixtureManifest": "a5b1f72a6423d4c30fa297ab5f87f1c8a2a7b4a7eea1227f7d8cdca206b927f5",
+    "captureWorkflow": "bed0d41eb2a3503e9127f13d79216ccd30e17eb29ca64e47167bb2246a622a63"
+  },
+  "queryCorrectness": {
+    "workspaceScoped": true,
+    "membershipFirst": true,
+    "parentTaskIsNull": true,
+    "doneLaneExcluded": true,
+    "archivedAtIsNull": true,
+    "catalogResolverSemanticsAligned": true
+  },
+  "tests": {
+    "archivedNonDoneRootFixtureAdded": true,
+    "expectedOpenRootCountPreserved": true,
+    "reportedFocusedTests": "32/32",
+    "reportedScopedLintExitCode": 0,
+    "reviewerReranTests": false
+  },
+  "frozenEvaluation": {
+    "inputCount": 42,
+    "modifiedInputOverlap": 0,
+    "previousReportFingerprint": "d25a2e678a1b3899874f04d64cd7bc34aa37ae4d40aae06e407fa8c0cd9e907b",
+    "scoreChange": false
+  },
+  "validationGates": {
+    "freshCaptureRequired": true,
+    "normalCIRequired": true,
+    "fixturePinChanges": 4,
+    "hashOnlyWaiverApproved": false
+  },
+  "reviewerMadeRepoOrProviderChanges": false
+}
