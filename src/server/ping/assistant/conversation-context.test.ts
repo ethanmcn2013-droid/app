@@ -106,6 +106,28 @@ test("account Ping can search recent authorized project chat without an unread a
   } finally { f.client.close(); }
 });
 
+test('Catch up and first-action context match canonical Needs-you order, count and observed state',async()=>{
+ const f=await fixture();try{
+  const room=await f.conversation.ensureProjectConversation({actorId:'ping_ctx_alice',projectId});
+  if(!room.ok)assert.fail('project conversation unavailable');
+  const sent=[];
+  for(let index=0;index<3;index++)sent.push(await say(f,'ping_ctx_bob',room.value.conversationId,`Decision ${index+1}: please confirm the service detail.`,`ping_needs_parity_${index}`));
+  const assertParity=async(text:string)=>{
+   const canonical=await f.attention.listDirected({actorId:'ping_ctx_alice',limit:50});if(!canonical.ok)assert.fail('attention unavailable');
+   const loaded=await f.context.load('ping_ctx_alice',{...request(),text});
+   const resolved=loaded.needsYou.map(item=>{const source=loaded.sources.find(source=>source.ref===item.ref);assert.ok(source);return {id:source.itemId,unseen:item.unseen};});
+   assert.deepEqual(resolved,canonical.value.map(item=>({id:item.itemId,unseen:item.seenAt===null})));
+   assert.equal(loaded.needsYouTotal,canonical.value.length);assert.equal(loaded.needsYouComplete,true);
+   return resolved;
+  };
+  const catchUp=await assertParity('Catch me up');assert.equal(catchUp.length,3);assert.ok(catchUp.every(item=>item.unseen));
+  assert.deepEqual(await assertParity('What should I do first?'),catchUp);
+  const observed=await f.attention.observe({actorId:'ping_ctx_alice',items:[{kind:'conversation',scopeId:room.value.conversationId,itemId:sent[0].id}]});assert.equal(observed.ok,true);
+  const after=await assertParity('What should I do first?');assert.equal(after.filter(item=>item.unseen).length,2);
+  assert.equal(after.at(-1)?.id,sent[0].id);assert.equal(after.at(-1)?.unseen,false);
+ }finally{f.client.close();}
+});
+
 test("task discussion context is project-bound and does not create a discussion as a side effect", async () => {
   const f = await fixture();
   try {

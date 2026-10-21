@@ -53,9 +53,12 @@ export const ChatIcon = {
 
 /* ── Identity ───────────────────────────────────────────────────────── */
 
+// Reference-design people tones: clay, slate, teal, green, rose and olive.
+// Project colours include Signal-like indigo and must never colour a person.
+const PERSON_TONES = ["#9a3412", "#475569", "#0f766e", "#166534", "#be185d", "#4d5a12"] as const;
+
 export function Avatar({ id, name, size = 36 }: { id: string; name: string; size?: number }) {
-  // The same hue a person has in the sidebar, so they look alike everywhere.
-  return <span aria-hidden="true" className={styles.avatar} data-solid="" data-tone={toneOf(id)} style={{ "--size": `${size}px`, "--solid": projectColor(id) } as React.CSSProperties}>{initialsOf(name)}</span>;
+  return <span aria-hidden="true" className={styles.avatar} data-tone={toneOf(id)} style={{ "--size": `${size}px`, "--tone": PERSON_TONES[toneOf(id)] } as React.CSSProperties}>{initialsOf(name)}</span>;
 }
 
 export function ProjectTile({ id, name, size = 36 }: { id: string; name: string; size?: number }) {
