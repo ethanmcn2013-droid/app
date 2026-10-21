@@ -14,7 +14,7 @@
     },
     {
       "path": "/api/timeline/reminders",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 9 * * *"
     }
   ]
 }

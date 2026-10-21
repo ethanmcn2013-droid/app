@@ -389,9 +389,13 @@ its production state can change independently.
 ## 5. Cron
 
 `vercel.json` declares the daily digest cron (`0 9 * * *` against
-`/api/cron/digest?send=1`) and the shared Project Drive repair cron
-(`15 3 * * *` against `/api/cron/project-drive-grant-repair`). Confirm both
-appear in Vercel → Settings → Cron Jobs after the first deploy. The analytics
+`/api/cron/digest?send=1`), the shared Project Drive repair cron
+(`15 3 * * *` against `/api/cron/project-drive-grant-repair`) and the Timeline
+guest reminder dispatch (`0 9 * * *` against `/api/timeline/reminders`).
+Confirm all three appear in Vercel → Settings → Cron Jobs after the first
+deploy. The Hobby plan allows only daily jobs, so reminders run once a day and
+each run delivers at most 20; return them to `*/5 * * * *` only after moving
+the team to a plan that allows it (founder decision, 21 October 2026). The analytics
 snapshot cron was retired with the Full Briefing on 20 October 2026.
 
 The Project Drive route is count-only in its response and logs: it never emits
