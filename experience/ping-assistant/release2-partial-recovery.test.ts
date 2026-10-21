@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { A3_RECOVERY_BINDINGS, claimRecoveryOnce, recoveryClaimPath, sha256, validateRecoveryApproval, validateRecoveredA3Rows } from "./release2-partial-recovery";
+import { A3_FORMATTING_MIGRATION, matchesHistoricalEvaluationInput, A3_RECOVERY_BINDINGS, claimRecoveryOnce, recoveryClaimPath, sha256, validateRecoveryApproval, validateRecoveredA3Rows } from "./release2-partial-recovery";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -22,6 +22,15 @@ const actual = () => ({ admissionSha256: b.admissionSha256, originalInputsSha256
   physicalAttempts: 3, accountedMicroUsd: 118528 });
 
 async function main() {
+const currentSource=await readFile(A3_FORMATTING_MIGRATION.path);
+const canonicalSource=Buffer.from(currentSource.toString("utf8").replace(/\r\n/g,"\n"));
+assert.match(A3_FORMATTING_MIGRATION.historicalRawSha256,/^[a-f0-9]{64}$/);
+assert.equal(sha256(canonicalSource),A3_FORMATTING_MIGRATION.canonicalLfSha256);
+assert.equal(matchesHistoricalEvaluationInput(A3_FORMATTING_MIGRATION.path,sha256(currentSource),currentSource),true);
+assert.equal(matchesHistoricalEvaluationInput(A3_FORMATTING_MIGRATION.path,A3_FORMATTING_MIGRATION.historicalRawSha256,canonicalSource),true);
+assert.equal(matchesHistoricalEvaluationInput("other.ts",A3_FORMATTING_MIGRATION.historicalRawSha256,canonicalSource),false);
+assert.equal(matchesHistoricalEvaluationInput(A3_FORMATTING_MIGRATION.path,A3_FORMATTING_MIGRATION.historicalRawSha256,Buffer.concat([canonicalSource,Buffer.from("changed")])),false);
+
 for (const [name, value] of Object.entries(b)) if (name.endsWith("Sha256")) assert.match(String(value), /^[a-f0-9]{64}$/, name);
 assert.equal(sha256(await readFile("experience/ping-assistant/release2-recovery-approval.template.json")), b.templateSha256);
 assert.equal(sha256(await readFile("experience/reviews/2026-10-21-ping-release2/grouped-A3-reconciliation-review.md")), b.independentReviewSha256);

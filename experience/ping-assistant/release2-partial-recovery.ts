@@ -21,6 +21,19 @@ export const A3_RECOVERY_BINDINGS = Object.freeze({
   maxAccountedMicroUsd: 5_000_000,
 });
 
+export const A3_FORMATTING_MIGRATION = Object.freeze({
+  path: "src/server/ping/assistant/task-context.ts",
+  historicalRawSha256: "8eaeb0c9de2c067f8897430d67bbd3f25b55901965174905fee21388fe0f0a94",
+  canonicalLfSha256: "54b351fa66f10a561d09bcc16b026ed7c5e9deae6fafdb1cc9bfeeafded89cfb",
+  reason: "Four CRLF line endings normalized by Git; source text and prompt logic are unchanged.",
+});
+
+export function matchesHistoricalEvaluationInput(path: string, expectedSha256: string, bytes: Uint8Array): boolean {
+  const actual = sha256(bytes);
+  return actual === expectedSha256 || path === A3_FORMATTING_MIGRATION.path &&
+    expectedSha256 === A3_FORMATTING_MIGRATION.historicalRawSha256 && actual === A3_FORMATTING_MIGRATION.canonicalLfSha256;
+}
+
 export type RecoveryApproval = Readonly<{
   version: 1;
   status: "approved";

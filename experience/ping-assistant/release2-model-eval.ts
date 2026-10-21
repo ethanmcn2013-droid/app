@@ -25,7 +25,7 @@ import { estimatePlannerMicroUsd } from "../../src/server/ping/assistant/planner
 import { ATTEMPT_STAGES, type PlannerAttemptMetadata } from "../../src/server/ping/assistant/planner-attempt-metadata";
 import type { PlannerModel } from "../../src/server/ping/assistant/planner-budget";
 import { EVAL_WORLD, RELEASE2_EVAL_CASES, RELEASE2_EVAL_PREREQUISITE, createRelease2SyntheticWorld, type EvalCase, type EvalSource } from "./release2-model-fixture";
-import { A3_RECOVERY_BINDINGS, claimRecoveryOnce, recoveryClaimPath, sha256, validateRecoveryApproval, validateRecoveredA3Rows } from "./release2-partial-recovery";
+import { A3_FORMATTING_MIGRATION, matchesHistoricalEvaluationInput, A3_RECOVERY_BINDINGS, claimRecoveryOnce, recoveryClaimPath, sha256, validateRecoveryApproval, validateRecoveredA3Rows } from "./release2-partial-recovery";
 
 const ACTOR = EVAL_WORLD.actorId;
 const PROJECT = EVAL_WORLD.projectId;
@@ -151,9 +151,12 @@ async function verifyA3RecoveryEvidence(args:Map<string,string>,admissionSha256:
   if(snapshot.evaluationFingerprint!=="5a9b8f0339197ee290e5ef15c9d73a69ebd5180dec49778db23f3a967606a1fa"||
     snapshot.partialReportSha256!==A3_RECOVERY_BINDINGS.partialReportSha256||sourceRows.length!==40||
     sourceRows.some(row=>typeof row.path!=="string"||typeof row.sha256!=="string"))throw new Error("a3_recovery_original_source_snapshot_invalid");
+  const formattingMigrations:Array<typeof A3_FORMATTING_MIGRATION>=[];
   for(const row of sourceRows){
     if(row.path==="experience/ping-assistant/release2-model-eval.ts")continue;
-    if(await sha256(await readFile(resolve(row.path as string)))!==row.sha256)throw new Error("a3_recovery_source_drift");
+    const sourceBytes=await readFile(resolve(row.path as string));
+    if(!matchesHistoricalEvaluationInput(row.path as string,row.sha256 as string,sourceBytes))throw new Error("a3_recovery_source_drift");
+    if(sha256(sourceBytes)!==row.sha256)formattingMigrations.push(A3_FORMATTING_MIGRATION);
   }
   const report=safeRecord(JSON.parse(reportBytes.toString("utf8"))),rows=Array.isArray(report.records)?report.records.map(safeRecord):[],pending=safeRecord(report.pendingAttempt);
   if(report.mode!=="live-synthetic"||report.finishedAt||report.providerCalls!==2||report.observedEstimatedMicroUsd!==80430||report.heldMicroUsd!==0||
@@ -174,7 +177,7 @@ async function verifyA3RecoveryEvidence(args:Map<string,string>,admissionSha256:
   if(sha256(runtimeBytes)!==approval.offlineRuntimeProof.sha256||runtime.mode!=="synthetic-action-check"||runtime.providerCalls!==0||actionEvidence.restoredToBaseline!==true||
     process.platform!=="linux"||Number(process.versions.node.split(".")[0])!==22||!currentWorkflowRun||currentWorkflowRun!==approval.offlineRuntimeProof.workflowRun)
     throw new Error("a3_recovery_offline_runtime_proof_invalid");
-  return {approval,report,rows,runtime,paths};
+  return {approval,report,rows,runtime,paths,formattingMigrations};
 }
 
 /** Verify a prior group chain from its final artifact back to A; never trust counters alone. */
@@ -410,7 +413,7 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
         originalBackupDbSha256:recovery.approval.backupDbSha256,originalInputsSha256:recovery.approval.originalInputsSha256,
         providerObservationSha256:recovery.approval.providerObservationSha256,independentReviewSha256:recovery.approval.independentReviewSha256,
         providerAttemptProvenance:"Provider Logs UI reconciliation; the original client did not receive or persist a response.",
-        approvalSha256:sha256(await readFile(recovery.paths.approval!)),recoveryClonePath:clonePath,a3QualityCredit:0,attemptsCarried:3,estimatedMicroUsdCarried:118528,
+        approvalSha256:sha256(await readFile(recovery.paths.approval!)),recoveryClonePath:clonePath,formattingMigrations:recovery.formattingMigrations,a3QualityCredit:0,attemptsCarried:3,estimatedMicroUsdCarried:118528,
         onlyCasesDispatched:inventory.map(item=>item.id)};
     }else fixture=await createRelease2SyntheticWorld();
     const before=await taskDigest(fixture.client);
