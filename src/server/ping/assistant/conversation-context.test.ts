@@ -134,7 +134,7 @@ test("account Ping can search recent authorized project chat without an unread a
     const loaded = await f.context.load("ping_ctx_alice", accountRequest);
     assert.equal(loaded.needsYou?.length ?? 0, 0);
     assert.ok(loaded.sources.some(source => source.itemId === sent.value.messageId && source.body.includes("meet at seven")));
-    assert.match(loaded.coverage, /recent messages from 1 of up to 1 authorized active projects/);
+    assert.match(loaded.coverage, /selected 1 of up to 1 authorized active projects as candidates; source limits may stop before all selected projects are read/);
   } finally { f.client.close(); }
 });
 
