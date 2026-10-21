@@ -16,8 +16,8 @@ export type AssistantExecuteInput = {
 /** A task changed by an earlier committed step is no longer compared with its pre-plan revision.
  * Its Project permission and the step's own domain guards still apply. Chat sources never get this exemption.
  */
-export function assistantUnchangedSources(sources:readonly AssistantSource[],results:readonly AssistantActionResult[]){
-  const changed=new Set(results.filter(result=>result.status==='completed'&&result.undoResult?.status!=='reverted'&&result.reversal?.kind==='tasks').flatMap(result=>result.reversal?.kind==='tasks'?result.reversal.rows.map(row=>row.id):[]));
+export function assistantUnchangedSources(sources:readonly AssistantSource[],results:readonly AssistantActionResult[],forDisplay=false){
+  const changed=new Set(results.filter(result=>result.status==='completed'&&(forDisplay||result.undoResult?.status!=='reverted')&&result.reversal?.kind==='tasks').flatMap(result=>result.reversal?.kind==='tasks'?result.reversal.rows.map(row=>row.id):[]));
   return sources.filter(source=>source.kind!=='task'||!changed.has(source.itemId));
 }
 export function createAssistantService(deps: {
@@ -61,7 +61,9 @@ export function createAssistantService(deps: {
       createdAt: new Date(run.createdAt).toISOString(), updatedAt: new Date(run.updatedAt).toISOString() };
     const authorizationProjects=metadata.authorizationProjects??(run.planJson?JSON.parse(run.planJson).authorizationProjects:undefined);
     const planSources:AssistantSource[]=metadata.planSources??(run.planJson?JSON.parse(run.planJson).authorizationSources:undefined)??[];
-    const currentSources=assistantUnchangedSources(planSources,rows.flatMap(row=>row.resultJson?[JSON.parse(row.resultJson) as AssistantActionResult]:[]));
+    // Display the saved/undone receipt after this run changed its own source task.
+    // New effects use the stricter default in runtime's transaction-bound guard.
+    const currentSources=assistantUnchangedSources(planSources,rows.flatMap(row=>row.resultJson?[JSON.parse(row.resultJson) as AssistantActionResult]:[]),true);
     const sources=[...(metadata.sources??[]),...currentSources];
     if(deps.authorizeView&&!await deps.authorizeView(actorId,visible,authorizationProjects)||sources.length&&(!deps.validateSources||!await deps.validateSources(actorId,sources)))return {...visible,accessUnavailable:true,message:'Access changed. Result details are unavailable.',citations:[],steps:visible.steps.map(step=>({...step,result:null,plan:undefined,canUndo:false}))};
     return visible;

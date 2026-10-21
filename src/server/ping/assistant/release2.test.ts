@@ -150,4 +150,5 @@ test('only a task snapshot changed by this run is exempt from its own pre-plan r
  assert.deepEqual(assistantUnchangedSources([source,task,untouched],[result]),[source,untouched]);
  assert.deepEqual(assistantUnchangedSources([source,task,untouched],[{...result,status:'blocked'}]),[source,task,untouched]);
  assert.deepEqual(assistantUnchangedSources([source,task,untouched],[{...result,undoResult:{status:'reverted',summary:'Restored',affectedCount:1}}]),[source,task,untouched]);
+ assert.deepEqual(assistantUnchangedSources([source,task,untouched],[{...result,undoResult:{status:'reverted',summary:'Restored',affectedCount:1}}],true),[source,untouched]);
 });
