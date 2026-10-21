@@ -45,7 +45,7 @@ export type AssistantAction =
   | ProjectStep & Readonly<{ kind: "read_chat"; limit?: number }>
   | ProjectStep & Readonly<{ kind: "list_tasks"; status?: AssistantStatus; limit?: number }>;
 export type AssistantPlan = Readonly<{ version: typeof ASSISTANT_VERSION; outcome: "plan"; mode: "execute" | "draft"; actions: readonly AssistantAction[] }> |
-  Readonly<{ version: typeof ASSISTANT_VERSION; outcome: 'answer'; message: string; citations: readonly AssistantCitation[] }> |
+  Readonly<{ version: typeof ASSISTANT_VERSION; outcome: 'answer'; message: string; citations: readonly AssistantCitation[];basis?:Readonly<{kind:'waiting_plan';stepIds:readonly string[]}> }> |
   Readonly<{ version: typeof ASSISTANT_VERSION; outcome: 'edit'; edits: readonly AssistantPlanEdit[] }> |
   Readonly<{ version: typeof ASSISTANT_VERSION; outcome: "clarification" | "unsupported"; message: string }>;
 export type AssistantPlannerContext = Readonly<{
@@ -127,7 +127,7 @@ export const ASSISTANT_ACTION_SCHEMA: Schema = either(
 );
 export const ASSISTANT_PLAN_SCHEMA: Schema = either(
   object({ version: literal(ASSISTANT_VERSION), outcome: literal("plan"), mode: enumeration("execute", "draft"), actions: array(ASSISTANT_ACTION_SCHEMA, 20, 1) }),
-  object({version:literal(ASSISTANT_VERSION),outcome:literal('answer'),message:string(5000),citations:array(object({ref:string(80),quote:string(2000)}),12)}),
+  object({version:literal(ASSISTANT_VERSION),outcome:literal('answer'),message:string(5000),citations:array(object({ref:string(80),quote:string(2000)}),12),basis:object({kind:literal('waiting_plan'),stepIds:array(string(80),20,1)})},['version','outcome','message','citations']),
   object({version:literal(ASSISTANT_VERSION),outcome:literal('edit'),edits:array(either(object({kind:literal('drop'),stepId,taskTitle:string()},['kind','stepId']),object({kind:literal('task_fields'),stepId,taskTitle:string(),changes:object(fields,[])},['kind','stepId','changes'])),20,1)}),
   object({ version: literal(ASSISTANT_VERSION), outcome: enumeration("clarification", "unsupported"), message: string(1000) }),
 );

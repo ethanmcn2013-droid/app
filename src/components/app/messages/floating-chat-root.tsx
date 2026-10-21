@@ -30,11 +30,11 @@ const subscribeMobile = (notify: () => void) => { const media = window.matchMedi
 export function FloatingChatPage(props: RequestedConversation & { catalogUnavailable?: boolean }) {
   const context = useContext(Context);
   const node = useRef<HTMLDivElement>(null);
-  const { projectId, projectName, rootId, messageId, messageSeq, demoId, catalogUnavailable } = props;
+  const { projectId, projectName, conversationId, rootId, messageId, messageSeq, demoId, catalogUnavailable } = props;
   useLayoutEffect(() => {
-    context?.registerPage(node.current, { projectId, projectName, rootId, messageId, messageSeq, demoId }, catalogUnavailable);
+    context?.registerPage(node.current, { projectId, projectName, conversationId, rootId, messageId, messageSeq, demoId }, catalogUnavailable);
     return () => context?.registerPage(null);
-  }, [context, projectId, projectName, rootId, messageId, messageSeq, demoId, catalogUnavailable]);
+  }, [context, projectId, projectName, conversationId, rootId, messageId, messageSeq, demoId, catalogUnavailable]);
   return <div className={styles.pageAnchor} ref={node}><h1 className={styles.srOnly}>Chat</h1>{!context ? <p>Chat is unavailable. Reload to try again.</p> : null}</div>;
 }
 
@@ -89,7 +89,7 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
 
   const show = useCallback((next?: RequestedConversation) => {
     trigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    if (next) { setRequested(next); if (Object.values(next).some((value) => value !== undefined)) { setNavigationVersion((version) => version + 1); setView("project"); } }
+    if (next) { setRequested(next); setAssistantSource(null); if (Object.values(next).some((value) => value !== undefined)) { setNavigationVersion((version) => version + 1); setView("project"); } }
     setStarted(true); setOpen(true);
     requestAnimationFrame(() => panel.current?.querySelector<HTMLElement>("button, textarea")?.focus());
   }, []);
@@ -116,12 +116,13 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
       // A Project outside the current authorized catalog follows the server
       // route, which can authorize archived history or refuse it explicitly.
       if (target.projectId && !projects.some((project) => project.id === target.projectId)) return;
+      if (target.conversationId && !directMessagesEnabled) return;
       event.preventDefault();
       show(target);
     };
     document.addEventListener("click", intercept, true);
     return () => document.removeEventListener("click", intercept, true);
-  }, [show, projects]);
+  }, [show, projects, directMessagesEnabled]);
 
   useEffect(() => {
     const element = document.documentElement;
@@ -179,7 +180,7 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
       <div className={styles.body} hidden={activeTab !== "project"} inert={activeTab !== "project"}>{demoSnapshot
         ? <div className={styles.stack}><ChatHeader panel onBack={goHome} backLabel="All chats" title="Team chat" subtitle="Preview · nothing here is saved" actions={panelActions} /><DemoMessagesApp embedded requestedConversationId={requested.demoId} snapshot={demoSnapshot} visible={visible && activeTab === "project"} /></div>
         : catalogUnavailable || pageCatalogUnavailable ? <ChatCatalogUnavailable className={styles.personalIntro} retrying={catalogRetrying} onRetry={() => startCatalogRetry(() => router.refresh())} />
-        : <ConversationWorkspace actorId={actorId} privatePingEnabled={assistantEnabled} directMessagesEnabled={directMessagesEnabled} initialProjectId={requested.projectId} initialRootId={requested.rootId} initialMessageId={requested.messageId} initialMessageSeq={requested.messageSeq} navigationVersion={navigationVersion} projects={availableProjects} visible={visible && activeTab === "project"} stacked onBack={goHome} headerActions={panelActions} />}</div>
+        : <ConversationWorkspace actorId={actorId} privatePingEnabled={assistantEnabled} directMessagesEnabled={directMessagesEnabled} initialProjectId={requested.projectId} initialConversationId={requested.conversationId} initialRootId={requested.rootId} initialMessageId={requested.messageId} initialMessageSeq={requested.messageSeq} navigationVersion={navigationVersion} projects={availableProjects} visible={visible && activeTab === "project"} stacked onBack={goHome} headerActions={panelActions} />}</div>
       {assistantEnabled && assistantStarted ? <div className={styles.body} hidden={activeTab !== "ping"} inert={activeTab !== "ping"}><PingPersonalAssistant key={`${actorId}:${assistantSource?assistantSource.kind+":"+(assistantSource.kind==="conversation"?`${assistantSource.conversationId}:${assistantSource.rootId??"root"}`:assistantSource.taskId):"account"}`} actorId={actorId} projects={availableProjects} visible={visible && activeTab === "ping"} source={assistantSource??undefined} initialProjectId={assistantSource?requested.projectId:undefined} onBack={assistantSource?close:goHome} backLabel={assistantSource?"Back to discussion":"All chats"} actions={panelActions} /></div> : null}
       <div className={styles.body} hidden={activeTab !== "self"} inert={activeTab !== "self"}><PersonalChat actorId={actorId} actorName={actorName} demo={!!demoSnapshot} visible={visible && activeTab === "self"} onBack={goHome} actions={panelActions} /></div>
     </div> : null}

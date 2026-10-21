@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import type { AssistantAction, AssistantActionResult, AssistantProjectRef, AssistantResultItem, AssistantTaskFields, AssistantTaskSelector } from "@/lib/ping/assistant/contract";
 import type { AssistantReversal } from "@/lib/ping/assistant/release2";
+import type {BoundAssistantTaskTarget} from './plan-targets';
 import { isAssistantInternalHref, resolveAssistantDate } from "@/lib/ping/assistant/contract";
 import { activities, pendingInvites, tasks, workspaceEvents } from "@/server/db/schema";
 import { prepareCanonicalTaskCreate } from "@/server/tasks/create-task-core";
@@ -29,6 +30,8 @@ export type AssistantActionInput = Readonly<{
   /** Only completed results returned by the store for this actor and run, keyed by plan action ID. */
   results: Readonly<Record<string, AssistantActionResult>>;
   currentProjectId?: string | null; selectedTaskIds?: readonly string[]; referenceDate: string; timeZone?:string; directMessagesEnabled?:boolean;
+  /** Server-bound canonical targets keyed by contract action ID. Missing existing targets fail closed in production. */
+  boundTaskTargets?:Readonly<Record<string,BoundAssistantTaskTarget>>;
   now?: () => number;
   delivery?: AssistantDeliveryPort;
   dispatch?: AssistantDispatcher;
@@ -59,8 +62,13 @@ async function projectFor(tx: AssistantActionTransaction, input: AssistantAction
 
 async function targetsFor(tx: AssistantActionTransaction, input: AssistantActionInput, projectId: string,
   selector: AssistantTaskSelector, includeArchived = false, ordinaryOnly = true) {
+  const binding=input.boundTaskTargets?.[input.step.id];
   let ids: readonly string[];
-  if (selector.kind === "selected") ids = input.selectedTaskIds ?? [];
+  if(binding){
+    if(binding.projectId!==projectId)throw new AssistantActionRefusal('unavailable');
+    ids=binding.taskIds;
+  }else if(input.boundTaskTargets!==undefined&&selector.kind!=='created')throw new AssistantActionRefusal('stale');
+  else if (selector.kind === "selected") ids = input.selectedTaskIds ?? [];
   else if (selector.kind === "created" || selector.kind === "previous") {
     const result = selector.kind === "created" ? input.results[selector.stepId] : input.results.__previous;
     if (!result || result.status !== "completed" || result.projectId !== projectId) throw new AssistantActionRefusal("unavailable");
@@ -205,9 +213,13 @@ export async function executeAssistantAction(input: AssistantActionInput): Promi
       const parents = await targetsFor(tx, input, projectId, step.parent);
       if (parents.length !== 1) throw new AssistantActionRefusal(parents.length > 1 ? "ambiguous" : "unavailable");
       const parent = parents[0];
-      const children = await tx.select().from(tasks).where(and(eq(tasks.workspaceId, projectId), eq(tasks.parentTaskId, parent.id)));
+      const binding=input.boundTaskTargets?.[step.id];
+      if(input.boundTaskTargets!==undefined&&binding&&!binding.checklistItemId)throw new AssistantActionRefusal('stale');
+      const children = binding?.checklistItemId
+        ? await assistantTasksByIds(tx,input.actorId,projectId,[binding.checklistItemId])
+        : await tx.select().from(tasks).where(and(eq(tasks.workspaceId, projectId), eq(tasks.parentTaskId, parent.id)));
       const normalized = step.itemTitle.normalize("NFKC").trim().toLocaleLowerCase("en-US");
-      const matches = children.filter(row => row.archivedAt === null && row.title.normalize("NFKC").trim().toLocaleLowerCase("en-US") === normalized);
+      const matches = children.filter(row => row.parentTaskId===parent.id&&row.archivedAt === null && row.title.normalize("NFKC").trim().toLocaleLowerCase("en-US") === normalized);
       if (matches.length !== 1) throw new AssistantActionRefusal(matches.length > 1 ? "ambiguous" : "unavailable");
       const item = matches[0];
       const before = [item];

@@ -6,10 +6,11 @@ import { loadAssistantMemory, editAssistantPlan } from './conversation-memory';
 export type AssistantPlanner = {
   plan(input: { runId: string; requestId: string; text: string; context: AssistantPlannerContext; mode?:"execute"|"draft" }, signal?: AbortSignal): Promise<{ plan: AssistantPlan; model?: string; usage?: { estimatedMicroUsd: number } | null }>;
 };
+export type AssistantBoundTaskTargets=Readonly<Record<string,Readonly<{projectId:string;taskIds:readonly string[];checklistItemId?:string}>>>;
 export type AssistantExecuteInput = {
   actorId: string; runId: string; step: AssistantAction; stepId: string; fence: number;
   commitStep: (stepId: string, fence: number, callback: (tx: AssistantTransaction) => Promise<AssistantActionResult>) => Promise<AssistantActionResult>;
-  results: Record<string, AssistantActionResult>; currentProjectId?: string; selectedTaskIds?: readonly string[]; referenceDate: string; timeZone?:string; directMessagesEnabled?:boolean; authorizationProjects?:readonly string[]; authorizationSources?:readonly AssistantSource[];
+  results: Record<string, AssistantActionResult>; currentProjectId?: string; selectedTaskIds?: readonly string[]; referenceDate: string; timeZone?:string; directMessagesEnabled?:boolean; authorizationProjects?:readonly string[]; authorizationSources?:readonly AssistantSource[]; boundTaskTargets?:AssistantBoundTaskTargets;
   delivery?:AssistantDeliveryPort;
   settleTimelineResult?:AssistantStore['settleTimelineResult'];
 };
@@ -26,6 +27,7 @@ export function createAssistantService(deps: {
   execute: (input: AssistantExecuteInput) => Promise<AssistantActionResult>;
   authorizeView?: (actorId:string,run:AssistantRunView,authorizationProjects?:readonly string[])=>Promise<boolean>;
   authorizePlan?: (actorId:string,request:AssistantRequest,plan:Extract<AssistantPlan,{outcome:'plan'}>)=>Promise<readonly string[]>;
+  bindTargets?:(actorId:string,request:AssistantRequest,plan:Extract<AssistantPlan,{outcome:'plan'}>,priorTaskResult?:AssistantActionResult)=>Promise<AssistantBoundTaskTargets>;
   priorTaskResult?: (actorId:string,request:AssistantRequest)=>Promise<AssistantActionResult|null>;
   validateSources?: (actorId:string,sources:readonly AssistantSource[])=>Promise<boolean>;
   undo?: (tx:AssistantTransaction,actorId:string,result:AssistantActionResult)=>Promise<AssistantUndoResult>;
@@ -72,7 +74,7 @@ export function createAssistantService(deps: {
     const run = await store.getRun(actorId, runId);
     if (!run.requestJson || !run.planJson) return view(actorId, runId);
     const request = parseAssistantRequest(JSON.parse(run.requestJson));
-    const bound = JSON.parse(run.planJson) as {plan: AssistantPlan; referenceDate: string; timeZone?:string; authorizationProjects?:readonly string[];authorizationSources?:readonly AssistantSource[];priorTaskResult?:AssistantActionResult};
+    const bound = JSON.parse(run.planJson) as {plan: AssistantPlan; referenceDate: string; timeZone?:string; authorizationProjects?:readonly string[];authorizationSources?:readonly AssistantSource[];boundTaskTargets?:AssistantBoundTaskTargets;priorTaskResult?:AssistantActionResult};
     if (!request || !parseAssistantPlan(bound.plan)) throw new AssistantStoreError("unavailable");
     if ((deps.requireApproval===true||request.mode === "draft" || bound.plan.outcome==='plan'&&bound.plan.mode==='draft') && run.executionAuthorizedAt === null || run.cancelledAt !== null || ["completed","failed","clarification","partial","unknown","uncertain"].includes(run.status)) return view(actorId, runId);
     if (bound.plan.outcome !== "plan") return view(actorId, runId);
@@ -100,7 +102,7 @@ export function createAssistantService(deps: {
       const step = JSON.parse(row.payloadJson) as AssistantAction;
       try {
         const result = await deps.execute({actorId,runId,step,stepId:row.id,fence,commitStep:store.commitStep,
-          results:{...(bound.priorTaskResult?{__previous:bound.priorTaskResult}:{}),...await store.getStepResults<AssistantActionResult>(actorId,runId)},referenceDate:bound.referenceDate,timeZone:bound.timeZone??'UTC',authorizationProjects:bound.authorizationProjects,authorizationSources:bound.authorizationSources,
+          results:{...(bound.priorTaskResult?{__previous:bound.priorTaskResult}:{}),...await store.getStepResults<AssistantActionResult>(actorId,runId)},referenceDate:bound.referenceDate,timeZone:bound.timeZone??'UTC',authorizationProjects:bound.authorizationProjects,authorizationSources:bound.authorizationSources,boundTaskTargets:bound.boundTaskTargets,
           ...(request.scope.kind === "project" ? {currentProjectId:request.scope.projectId} : {}),selectedTaskIds:request.selectedTaskIds,delivery:store,settleTimelineResult:store.settleTimelineResult});
         if (result.status !== "completed") {
           await store.finishRun(actorId,runId,result.status === "unknown" ? "unknown" : "partial",{message:result.summary});return view(actorId,runId);
@@ -175,7 +177,13 @@ export function createAssistantService(deps: {
           timeZone=memory.waiting.timeZone;
         }
         if(plan.outcome==='answer'){
-          if(!plan.citations.length&&!memory.waiting)throw new AssistantStoreError('invalid_input');
+          if(plan.basis){
+            const ids=plan.basis.stepIds;
+            if(!memory.waiting||new Set(ids).size!==ids.length||!ids.every(id=>memory.waiting!.plan.actions.some(action=>action.id===id)))throw new AssistantStoreError('invalid_input');
+            const waiting=await store.getRun(actorId,memory.waiting.runId);
+            if(waiting.revision!==memory.waiting.revision||waiting.status!=='ready'||waiting.executionAuthorizedAt!==null||waiting.cancelledAt!==null)throw new AssistantStoreError('request_conflict');
+          }
+          if(!plan.citations.length&&!plan.basis)throw new AssistantStoreError('invalid_input');
           const sources=context.sources??[];
           const citations=plan.citations.map(citation=>{
             const source=sources.find(value=>value.ref===citation.ref);
@@ -194,7 +202,8 @@ export function createAssistantService(deps: {
         const authorizationProjects=[...new Set([...(await deps.authorizePlan?.(actorId,request,plan)??[]),...(context.sources??[]).map(source=>source.projectId)])];
         const authorizationSources=context.sources??[];
         if(authorizationSources.length&&(!deps.validateSources||!await deps.validateSources(actorId,authorizationSources)))throw new AssistantStoreError('unavailable');
-        await store.bindPlan(actorId,runId,{plan,referenceDate,timeZone,authorizationProjects,authorizationSources,...(priorTaskResult?{priorTaskResult}:{})},plan.actions.map(step=>({key:step.id,payload:step})),supersedes);
+        const boundTaskTargets=await deps.bindTargets?.(actorId,request,plan,priorTaskResult);
+        await store.bindPlan(actorId,runId,{plan,referenceDate,timeZone,authorizationProjects,authorizationSources,...(boundTaskTargets?{boundTaskTargets}:{}),...(priorTaskResult?{priorTaskResult}:{})},plan.actions.map(step=>({key:step.id,payload:step})),supersedes);
         await store.finishRun(actorId,runId,"ready",{authorizationProjects,planSources:authorizationSources,model:planned.model,timing:{planningMs:now()-started}});
         if(request.mode==="draft"||plan.mode==='draft'){
           await store.finishRun(actorId,runId,"ready",{message:"Draft prepared. No actions were executed.",model:planned.model,timing:{planningMs:now()-started}});return view(actorId,runId);
@@ -209,12 +218,12 @@ export function createAssistantService(deps: {
       const run=await store.expirePlanning(actorId,runId);
       if(run.requestJson&&run.planJson&&run.cancelledAt===null){
         if((await view(actorId,runId)).accessUnavailable)throw new AssistantStoreError('unavailable');
-        const request=parseAssistantRequest(JSON.parse(run.requestJson)),bound=JSON.parse(run.planJson) as {referenceDate:string;timeZone?:string;authorizationProjects?:readonly string[];authorizationSources?:readonly AssistantSource[];priorTaskResult?:AssistantActionResult};
+        const request=parseAssistantRequest(JSON.parse(run.requestJson)),bound=JSON.parse(run.planJson) as {referenceDate:string;timeZone?:string;authorizationProjects?:readonly string[];authorizationSources?:readonly AssistantSource[];boundTaskTargets?:AssistantBoundTaskTargets;priorTaskResult?:AssistantActionResult};
         for(const row of await store.getSteps(actorId,runId)){
           const prior=row.resultJson?JSON.parse(row.resultJson) as AssistantActionResult:null;
           if(!request||prior?.code!=='timeline_pending'||!['preview_timeline','read_timeline'].includes(prior.kind)||row.status!=='completed')continue;
           const result=await deps.execute({actorId,runId,step:JSON.parse(row.payloadJson),stepId:row.id,fence:row.fence,commitStep:store.commitStep,
-            results:{...(bound.priorTaskResult?{__previous:bound.priorTaskResult}:{}),...await store.getStepResults<AssistantActionResult>(actorId,runId)},referenceDate:bound.referenceDate,timeZone:bound.timeZone??'UTC',authorizationProjects:bound.authorizationProjects,authorizationSources:bound.authorizationSources,delivery:store,settleTimelineResult:store.settleTimelineResult,
+            results:{...(bound.priorTaskResult?{__previous:bound.priorTaskResult}:{}),...await store.getStepResults<AssistantActionResult>(actorId,runId)},referenceDate:bound.referenceDate,timeZone:bound.timeZone??'UTC',authorizationProjects:bound.authorizationProjects,authorizationSources:bound.authorizationSources,boundTaskTargets:bound.boundTaskTargets,delivery:store,settleTimelineResult:store.settleTimelineResult,
             ...(request.scope.kind==='project'?{currentProjectId:request.scope.projectId}:{}),selectedTaskIds:request.selectedTaskIds});
           if(result.status!=='completed')return view(actorId,runId);
           await store.finishRun(actorId,runId,'ready',{message:'Timeline is ready.'});

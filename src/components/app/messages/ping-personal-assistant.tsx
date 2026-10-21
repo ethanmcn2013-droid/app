@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { ASSISTANT_LIMITS, type AssistantApiResponse, type AssistantRequest, type AssistantRunView, isAssistantInternalHref } from "@/lib/ping/assistant/contract";
 import type { AssistantSourceScope } from "@/lib/ping/assistant/release2";
+import { claimPrivatePingForwardOnce, privatePingForwardKey, type PrivatePingForwardedRequest } from "./private-ping-command-router";
 import { createBrowserPingTelemetry, pingTelemetryBegin } from "@/lib/ping/telemetry-client";
 import { invalidateTaskSnapshotEpoch } from "@/lib/tasks/task-snapshot-epoch";
 import { ChatHeader, Composer } from "./chat-ui";
@@ -14,7 +15,7 @@ import styles from "./ping-personal-assistant.module.css";
 function readEventTime() { return performance.now(); }
 const queryFor = (pending: PendingAssistantRequest) => pending.runId ? `?runId=${encodeURIComponent(pending.runId)}` : `?clientRequestId=${encodeURIComponent(pending.requestId)}`;
 /** Actor-keyed by the chat shell. A recovery note stores identifiers, never request text or results. */
-export function PingPersonalAssistant({ actorId, projects, visible, onBack, backLabel="All chats", actions, source, initialProjectId }: { actorId: string; projects: readonly { id: string; name: string }[]; visible: boolean; onBack?: () => void; backLabel?:string; actions?: ReactNode; source?:AssistantSourceScope; initialProjectId?:string }) {
+export function PingPersonalAssistant({ actorId, projects, visible, onBack, backLabel="All chats", actions, source, initialProjectId, forwardedRequest }: { actorId: string; projects: readonly { id: string; name: string }[]; visible: boolean; onBack?: () => void; backLabel?:string; actions?: ReactNode; source?:AssistantSourceScope; initialProjectId?:string; forwardedRequest?:PrivatePingForwardedRequest }) {
   const router = useRouter();
   const [runs, setRuns] = useState<readonly AssistantRunView[]>([]);
   const [draft, setDraft] = useState("");
@@ -37,6 +38,8 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
   const latch = useRef(false);
   const visibleTiming = useRef<AssistantVisibleTiming | null>(null);
   const lookupAbort = useRef<AbortController | null>(null);
+  const forwardedHandled=useRef<string|null>(null);
+  const submitForwardedRef=useRef<(request:PrivatePingForwardedRequest)=>Promise<void>>(async()=>{});
   const taskRefresh = useRef<AssistantTaskRefreshState>({ actorId, receipts: new Set() });
   const historyRef = useRef<HTMLDivElement>(null);
   const pendingKey = pendingAssistantKey(actorId,source);
@@ -139,10 +142,10 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
       catch { setError("Your work is saved. Open the result below."); }
     }
   }
-  async function submit(retry = false) {
+  async function submit(retry = false, forwarded?:PrivatePingForwardedRequest) {
     if (latch.current || !ready || !available || (!retry && pendingRef.current && !reentering)) return;
-    const request = retry ? original.current : assistantFollowUpRequest({requestId:reentering ? assistantReentryId(pendingRef.current, absent)! : `ping_${crypto.randomUUID().replaceAll("-", "")}`,
-      text:draft.trim(),scope:scope ? {kind:"project" as const,projectId:scope} : {kind:"account" as const},latest:source?runs.find(run=>sameAssistantSource(run.source,source)):runs[0],source});
+    const request = retry ? original.current : assistantFollowUpRequest({requestId:!reentering&&forwarded?forwarded.requestId:reentering ? assistantReentryId(pendingRef.current, absent)! : `ping_${crypto.randomUUID().replaceAll("-", "")}`,
+      text:!reentering&&forwarded?forwarded.text:draft.trim(),scope:scope ? {kind:"project" as const,projectId:scope} : {kind:"account" as const},latest:source?runs.find(run=>sameAssistantSource(run.source,source)):runs[0],source});
     if (reentering && (!absent || !pendingRef.current)) return;
     if (!request || !request.text || request.text.length > ASSISTANT_LIMITS.text) return;
     latch.current = true; setBusy(true); setError(null); setAbsent(false);
@@ -158,6 +161,21 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
       if (mounted.current && epoch === generation.current) setError(pendingRef.current ? "The result is not confirmed. Check status before trying again. Your original request will not be sent again automatically." : failure instanceof Error ? failure.message : "This browser could not keep a recovery note. No request was sent.");
     } finally { if (epoch === generation.current) { latch.current = false; if (mounted.current) setBusy(false); } }
   }
+  useLayoutEffect(()=>{submitForwardedRef.current=async request=>{await submit(false,request);};});
+  useEffect(()=>{
+    if(!visible||!forwardedRequest||!ready||!available||forwardedHandled.current===forwardedRequest.requestId)return;
+    const timer=window.setTimeout(()=>{
+      if(!mounted.current||forwardedHandled.current===forwardedRequest.requestId)return;
+      forwardedHandled.current=forwardedRequest.requestId;
+      setDraft(forwardedRequest.text);
+      if(runs.some(run=>run.requestId===forwardedRequest.requestId))return;
+      if(pendingRef.current){setError("Ping is still checking an earlier request. Your @Ping command was kept in the shared draft and was not sent there. Check status before trying again.");return;}
+      let claimed=false;try{claimed=claimPrivatePingForwardOnce(window.sessionStorage,privatePingForwardKey(actorId,forwardedRequest.requestId));}catch{/* Storage unavailable: keep the draft and require an explicit Send. */}
+      if(!claimed){setError("This command could not be forwarded safely. It was not sent again automatically; check its status below before sending.");return;}
+      void submitForwardedRef.current(forwardedRequest);
+    },0);
+    return()=>window.clearTimeout(timer);
+  },[forwardedRequest,ready,available,runs,actorId,visible]);
   async function operate(operation: "resume" | "cancel" | "apply", run: AssistantRunView) {
     if (latch.current || pendingRef.current && pendingRef.current.requestId !== run.requestId) return;
     latch.current = true; setBusy(true); setError(null);

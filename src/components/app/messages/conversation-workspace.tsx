@@ -26,6 +26,7 @@ import { Avatar, ChatHeader, ChatIcon, ProjectTile } from "./chat-ui";
 import { PingTile } from "./chat-marks";
 import { PingPersonalAssistant } from "./ping-personal-assistant";
 import type { AssistantSourceScope } from "@/lib/ping/assistant/release2";
+import { routePrivatePingCommand, type PrivatePingForwardedRequest } from "./private-ping-command-router";
 
 type ProjectOption = Readonly<{ id: ProjectId; name: string }>;
 type ConversationScope = Readonly<{ conversationId: string; projectId: ProjectId; kind: "project"; audienceEpoch: number; lifecycle: "active" | "archived" }> | DirectMessageScope;
@@ -39,7 +40,7 @@ type GeneratedAction =
   | Readonly<{ type: "refused"; failure: ConversationFailure; requestId?: string }>
   | Readonly<{ type: "offline" }>;
 
-export type ConversationWorkspaceProps = Readonly<{ actorId: string; projects: readonly ProjectOption[]; initialProjectId?: ProjectId; initialRootId?: string; initialMessageId?: string; initialMessageSeq?: number; fixtureActor?: string; directMessagesEnabled?: boolean; privatePingEnabled?: boolean; visible?: boolean; navigationVersion?: number;
+export type ConversationWorkspaceProps = Readonly<{ actorId: string; projects: readonly ProjectOption[]; initialProjectId?: ProjectId; initialConversationId?:string; initialRootId?: string; initialMessageId?: string; initialMessageSeq?: number; fixtureActor?: string; directMessagesEnabled?: boolean; privatePingEnabled?: boolean; visible?: boolean; navigationVersion?: number;
   /** The floating panel: one view at a time, with a way back to the chat list. */
   stacked?: boolean; onBack?: () => void; headerActions?: ReactNode }>;
 
@@ -70,7 +71,7 @@ export function ConversationWorkspace(props: ConversationWorkspaceProps) {
   return <ConversationWorkspaceActor key={props.actorId} {...props} />;
 }
 
-function ConversationWorkspaceActor({ actorId, projects, initialProjectId, initialRootId, initialMessageId, initialMessageSeq, fixtureActor, directMessagesEnabled = Boolean(fixtureActor), privatePingEnabled = false, visible = true, navigationVersion = 0, stacked = false, onBack, headerActions }: ConversationWorkspaceProps) {
+function ConversationWorkspaceActor({ actorId, projects, initialProjectId, initialConversationId, initialRootId, initialMessageId, initialMessageSeq, fixtureActor, directMessagesEnabled = Boolean(fixtureActor), privatePingEnabled = false, visible = true, navigationVersion = 0, stacked = false, onBack, headerActions }: ConversationWorkspaceProps) {
   const initial = projects.some((project) => project.id === initialProjectId) ? initialProjectId! : projects[0]?.id;
   const [projectId, setProjectId] = useState<ProjectId | undefined>(initial);
   const [view, setView] = useState<"full" | "context">("full");
@@ -79,13 +80,13 @@ function ConversationWorkspaceActor({ actorId, projects, initialProjectId, initi
   const [direct, setDirect] = useState<DirectMessageScope | null>(null);
   const [savedScope, setSavedScope] = useState<SavedConversationScope | null>(null);
   const hidden = useHiddenConversations(actorId);
-  const requestKey = chatNavigationKey(navigationVersion, { projectId: initialProjectId, rootId: initialRootId, messageId: initialMessageId, messageSeq: initialMessageSeq });
+  const requestKey = chatNavigationKey(navigationVersion, { projectId: initialProjectId, conversationId:initialConversationId, rootId: initialRootId, messageId: initialMessageId, messageSeq: initialMessageSeq });
   const [followedRequest, setFollowedRequest] = useState(requestKey);
   if (requestKey !== followedRequest) { setFollowedRequest(requestKey); setPane("conversation"); if (initialProjectId) { setProjectId(initialProjectId); setDirect(null); setSavedScope(null); } }
   const { drafts: draftCache, scroll: scrollCache, outgoing: outgoingCache } = useConversationCaches(actorId);
   if (!projectId || projects.length === 0) return <section className={styles.noProjects}>{stacked ? <ChatHeader panel onBack={onBack} backLabel="All chats" title="Project conversations" actions={headerActions} /> : <h1>Chat</h1>}<p>Add a Project before starting a Project conversation.</p></section>;
   const selected = projects.find((project) => project.id === projectId) ?? { id: projectId, name: "Project" };
-  const directId = directMessagesEnabled ? (savedScope?.kind === "dm" ? savedScope.conversationId : direct?.conversationId) : undefined;
+  const directId = directMessagesEnabled && initialConversationId && initialProjectId === selected.id ? initialConversationId : directMessagesEnabled ? (savedScope?.kind === "dm" ? savedScope.conversationId : direct?.conversationId) : undefined;
   const openSavedScope = (next: SavedConversationScope) => { if (next.kind === "dm" && !directMessagesEnabled) return; setDirect(null); setProjectId(next.projectId); setSavedScope(next); };
   return <section className={styles.workspace} data-view={view} data-stacked={stacked ? "" : undefined} data-pane={stacked ? pane : undefined}>
     <aside className={styles.projectList}>
@@ -129,6 +130,8 @@ type ProjectConversationSessionProps = Readonly<{
 function ProjectConversationSession({ actorId, project, projects, fixtureActor, directId, rootId = null, initialRootId, initialMessageId, initialMessageSeq, onOpenSavedScope, onCloseThread, draftCache, outgoingCache, scrollCache, view, onToggleView, visible = true, navigationRequestKey = "", stacked = false, onBack, onOpenDirectory, headerActions, privatePingEnabled=false }: ProjectConversationSessionProps) {
   const [state, dispatch] = useReducer(conversationReducer, undefined, () => emptyConversationState(actorId, `${project.id}:pending`, 1));
   const [privatePingSource,setPrivatePingSource]=useState<AssistantSourceScope|null>(null);
+  const [privatePingForwarded,setPrivatePingForwarded]=useState<PrivatePingForwardedRequest|null>(null);
+  const [privatePingNotice,setPrivatePingNotice]=useState<string|null>(null);
   const privatePingTriggerRef=useRef<HTMLButtonElement>(null);
   const draftMentionUserIds = state.draftMentionUserIds;
   const setDraftMentionUserIds = (ids: readonly string[]) => {
@@ -515,6 +518,17 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     scrollAnchorRef.current = { top: 0, bottomDistance: 0, mode: "live" }; dispatch({ type: "submit", input }); rememberDraft(draftCache, scopeCacheKey(scope), ""); await resolveSend(next.pending[next.pending.length - 1]);
   }
 
+  function sendOrRoutePrivatePing(){
+    const commandScope=scope;if(!commandScope)return;
+    setPrivatePingNotice(null);
+    routePrivatePingCommand({draft:state.draft,enabled:privatePingEnabled,
+      canOpen:state.status==="ready"&&audienceReady&&!removedRoot&&commandScope.lifecycle==="active"&&(commandScope.kind!=="dm"||commandScope.canRead),
+      sendShared:()=>{void send();},
+      blocked:()=>setPrivatePingNotice("Ping isn’t available for this conversation right now. Your draft was kept here and wasn’t sent to the shared chat."),
+      openPrivate:({text})=>{setPrivatePingForwarded(text?{requestId:`ping_${crypto.randomUUID().replaceAll("-","")}`,text}:null);setPrivatePingSource({kind:"conversation",conversationId:commandScope.conversationId,...(rootId?{rootId}:{})});},
+    });
+  }
+
   async function mutate(action: "edit" | "tombstone", message: MessageRecord, body?: string) {
     const audienceReady = audience !== null && audience.audienceEpoch === state.audienceEpoch;
     if (!scope || (scope.kind === "dm" && !scope.canWrite) || !audienceReady || state.audienceEpoch === null || sendsOff || scope.lifecycle === "archived") return;
@@ -560,7 +574,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   if (state.status === "unavailable") return <ConversationStatus header={statusHeader} title={title} message="This conversation is unavailable. It may have been removed or you may no longer have access." />;
   if (scope === undefined) return <ConversationStatus header={statusHeader} action={startFailure ? retryBootstrap : undefined} actionLabel="Retry" error={startFailure && startFailure !== "temporarily_unavailable" ? failureCopy[startFailure] : null} title={title} message={state.status === "offline" ? "Conversation history is offline. Your draft stays here; nothing will send automatically." : "Loading conversation…"} />;
   if (scope === null) return <ConversationStatus header={statusHeader} action={startConversation} actionLabel="Start conversation" error={startFailure ? failureCopy[startFailure] : null} title={title} message="No Project conversation has been started yet." />;
-  if(privatePingSource&&privatePingEnabled)return <PingPersonalAssistant actorId={actorId} projects={projects} visible={visible} source={privatePingSource} initialProjectId={project.id} onBack={()=>{setPrivatePingSource(null);requestAnimationFrame(()=>privatePingTriggerRef.current?.focus());}} backLabel="Back to conversation" actions={headerActions} />;
+  if(privatePingSource&&privatePingEnabled)return <PingPersonalAssistant actorId={actorId} projects={projects} visible={visible} source={privatePingSource} initialProjectId={project.id} forwardedRequest={privatePingForwarded??undefined} onBack={()=>{setPrivatePingSource(null);setPrivatePingForwarded(null);requestAnimationFrame(()=>privatePingTriggerRef.current?.focus());}} backLabel="Back to conversation" actions={headerActions} />;
 
   return <SessionContainer className={styles.main} data-thread={rootId ? "true" : undefined}>
     {onCloseThread ? <button autoFocus className={styles.closeThread} onClick={onCloseThread} type="button">← Back to conversation</button> : null}
@@ -575,6 +589,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     {audienceNeedsReview && (scope.kind !== "dm" || scope.canWrite) ? <div className={styles.notice}><strong>{audienceReady ? "Audience changed" : "Checking audience"}</strong><span>{audienceReady ? "Review the current members before sending this draft." : "Sending is paused until the current Project membership is available."}</span>{audienceReady ? <button onClick={() => dispatch({ type: "review_audience", audienceEpoch: audience.audienceEpoch })} type="button">Review audience</button> : null}</div> : null}
     {scope.lifecycle === "archived" && (scope.kind !== "dm" || scope.canRead) ? <div className={styles.notice}><strong>Read-only history</strong><span>Restore the Project before sending or changing messages.</span></div> : null}
     {sendsOff ? <div className={styles.notice}><strong>Sends are off</strong><span>Existing history remains available.</span></div> : null}
+    {privatePingNotice ? <p role="status" className={styles.notice}>{privatePingNotice}</p>:null}
     {mutationError ? <div className={styles.errorNotice} role="alert">{mutationError}</div> : null}
     <div aria-label="Message reading area" role="region" tabIndex={0} className={styles.feedScroller} onScroll={() => rememberScroll(scope)} ref={feedRef}><ol aria-label="Conversation history" className={styles.feed}>
       {hasOlder ? <li className={styles.olderHistory}><button disabled={loadingOlder} onClick={() => void loadOlder()} type="button">{loadingOlder ? "Loading earlier messages…" : "Load earlier messages"}</button></li> : null}
@@ -583,18 +598,18 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
       {state.pending.map((pending) => <li className={styles.pendingMessage} key={pending.input.clientRequestId}><strong>You</strong><p>{pending.input.body}</p><span>{pending.state === "pending" ? "Sending…" : pending.state === "uncertain" ? "Checking whether this sent" : `Not sent · ${pending.error ? failureCopy[pending.error] : "try again"}`}</span>{pending.state !== "pending" ? <button onClick={() => void resolveSend(pending)} type="button">Check receipt, then retry</button> : null}</li>)}
       {state.recoveredDrafts.map((draft) => <li className={styles.pendingMessage} key={`recovered:${draft.requestId}`}><strong>Earlier message was not sent</strong><p>{draft.body}</p><span>{state.draft || draftMentionUserIds.length ? "Your current draft is kept. Send or save it before restoring this text." : "Restore this text to review it with the current audience."}</span><button disabled={state.draft !== "" || draftMentionUserIds.length > 0} onClick={() => dispatch({ type: "restore_recovered", requestId: draft.requestId })} type="button">Restore draft</button><button onClick={() => dispatch({ type: "discard_recovered", requestId: draft.requestId })} type="button">Discard earlier draft</button></li>)}
     </ol></div>
-    {privatePingEnabled && state.status === "ready" && audienceReady && !removedRoot && (scope.kind !== "dm" || scope.canRead) ? <div className={styles.privatePingSlot}><button ref={privatePingTriggerRef} className={styles.askPingPrivately} onClick={()=>setPrivatePingSource({kind:"conversation",conversationId:scope.conversationId,...(rootId?{rootId}:{})})} type="button"><PingTile size={18} />Ask Ping privately</button><span>Only you will see the reply</span></div>:null}
+    {privatePingEnabled && state.status === "ready" && audienceReady && !removedRoot && (scope.kind !== "dm" || scope.canRead) ? <div className={styles.privatePingSlot}><button ref={privatePingTriggerRef} className={styles.askPingPrivately} onClick={()=>{setPrivatePingForwarded(null);setPrivatePingNotice(null);setPrivatePingSource({kind:"conversation",conversationId:scope.conversationId,...(rootId?{rootId}:{})});}} type="button"><PingTile size={18} />Ask Ping privately</button><span>Only you will see the reply</span></div>:null}
     <section aria-label="Message composer" className={styles.composer}>{state.status === "offline" ? <p>Offline. Your draft stays here; nothing will send automatically.</p> : removedRoot || scope.lifecycle === "archived" || sendsOff || (scope.kind === "dm" && !scope.canWrite) ? <p>{scope.kind === "dm" && !scope.canRead && scope.pairState !== "pending" ? "Messages are unavailable to you." : removedRoot ? "The original message was removed. Existing replies remain available." : scope.lifecycle === "archived" ? "This conversation is read only." : scope.kind === "dm" && !scope.canWrite ? "Messages are paused until both people can participate." : "Sending is currently turned off."}</p> : <>
       {draftLimitReached || !hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope)) ? <SavedDraftsPanel entries={listSavedDrafts(actorId, draftCache, outgoingCache).filter((entry) => entry.key !== scopeCacheKey(scope))} onOpen={onOpenSavedScope} onDiscard={(key) => {
         const saved = outgoingCache.get(key);
         if (saved?.pending.length || saved?.recoveredDrafts.length) return;
         draftCache.delete(key); outgoingCache.delete(key); setDraftLimitReached(false); dispatch({ type: "draft", value: state.draft });
       }} /> : null}
-      <textarea disabled={!hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope))} aria-label={rootId ? "Write a reply" : `Message ${title}`} maxLength={CONVERSATION_LIMITS.bodyCharacters} onChange={(event) => updateDraft(event.target.value)} onKeyDown={(event) => { const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches; if (shouldSendComposerKey({ key: event.key, shiftKey: event.shiftKey, composing: event.nativeEvent.isComposing, mobileReturn })) { event.preventDefault(); void send(); } }} placeholder={rootId ? "Write a reply" : `Message ${title}`} rows={3} value={state.draft} />
+      <textarea disabled={!hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope))} aria-label={rootId ? "Write a reply" : `Message ${title}`} maxLength={CONVERSATION_LIMITS.bodyCharacters} onChange={(event) => updateDraft(event.target.value)} onKeyDown={(event) => { const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches; if (shouldSendComposerKey({ key: event.key, shiftKey: event.shiftKey, composing: event.nativeEvent.isComposing, mobileReturn })) { event.preventDefault(); sendOrRoutePrivatePing(); } }} placeholder={rootId ? "Write a reply" : `Message ${title}`} rows={3} value={state.draft} />
       {unavailableMention ? <p>A selected person is no longer available. Remove them from Notify people before sending.</p> : null}
       {audienceReady ? <MemberMentionPicker actorId={actorId} members={members} selected={draftMentionUserIds} onChange={setDraftMentionUserIds} /> : null}
       <ChatDictationTools active={visible && !openedRoot && !audienceNeedsReview && !unavailableMention} contextKey={`${actorId}:${scope.conversationId}:${rootId ?? "root"}`} append={(text) => { const next = appendDictatedText(stateRef.current.draft, text); if (next === null) return false; stateRef.current = { ...stateRef.current, draft: next }; updateDraft(next); return true; }} />
-      <div><ChatDraftCounter value={state.draft} /><button disabled={!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes || audienceNeedsReview || unavailableMention} onClick={() => void send()} type="button">Send</button></div>
+      <div><ChatDraftCounter value={state.draft} /><button data-chat-send="true" disabled={!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes || audienceNeedsReview || unavailableMention} onClick={sendOrRoutePrivatePing} type="button">Send</button></div>
     </>}</section>
     {openedRoot && !rootId ? <ThreadFrame visible={visible} onClose={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }}><ProjectConversationSession privatePingEnabled={privatePingEnabled} navigationRequestKey={navigationRequestKey} visible={visible} key={openedRoot} rootId={openedRoot} initialMessageId={initialMessageId} initialMessageSeq={initialMessageSeq} onOpenSavedScope={onOpenSavedScope} onCloseThread={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }} directId={directId} actorId={actorId} project={project} projects={projects} fixtureActor={fixtureActor} draftCache={draftCache} outgoingCache={outgoingCache} scrollCache={scrollCache} view="context" onToggleView={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }} /></ThreadFrame> : null}
     {taskSource ? <TaskOutcomeForm open actorId={actorId} fixture={Boolean(fixtureActor)} source={taskSource} projects={projects} onClose={closeTaskOutcome} loadDestination={(destinationId, signal) => apiResult(apiUrl("task-destination", destinationId), fixtureActor, { signal })} submit={submitTask} onCreated={(result) => { if (result.taskAvailable !== false) setCreatedTasks((current) => ({ ...current, [taskSource.messageId]: result.taskId })); }} /> : null}

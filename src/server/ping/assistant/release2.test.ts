@@ -69,7 +69,7 @@ test('follow-up remembers only its explicit scope, replaces waiting plan atomica
    calls++;if(calls===1)return {plan};
    assert.equal(input.context.memory?.[0].user,request.text);assert.equal(input.context.waitingPlan?.[0].id,'call');
    if(calls===2)return {plan:{version:'ping.assistant.v1',outcome:'edit',edits:[{kind:'task_fields',stepId:'call',changes:{dueTime:'11:00'}}]}};
-   return {plan:{version:'ping.assistant.v1',outcome:'answer',message:'Tomorrow at 11:00. The plan is still waiting.',citations:[]}};
+   return {plan:{version:'ping.assistant.v1',outcome:'answer',message:'Tomorrow at 11:00. The plan is still waiting.',citations:[],basis:{kind:'waiting_plan',stepIds:['call']}}};
   }},execute:async()=>{writes++;throw Error('must not write');}});
   const original=await service.submit('alice',request);
   const edited=await service.submit('alice',{...request,requestId:'request_r20002',text:'make it 11 instead',replyToRunId:original.id});
@@ -151,4 +151,27 @@ test('only a task snapshot changed by this run is exempt from its own pre-plan r
  assert.deepEqual(assistantUnchangedSources([source,task,untouched],[{...result,status:'blocked'}]),[source,task,untouched]);
  assert.deepEqual(assistantUnchangedSources([source,task,untouched],[{...result,undoResult:{status:'reverted',summary:'Restored',affectedCount:1}}]),[source,task,untouched]);
  assert.deepEqual(assistantUnchangedSources([source,task,untouched],[{...result,undoResult:{status:'reverted',summary:'Restored',affectedCount:1}}],true),[source,untouched]);
+});
+
+test('a waiting plan does not waive citations for unrelated answers or forged plan step references',async()=>{
+ const f=await assistantFixture();let calls=0;try{
+  const service=createAssistantService({store:f.store,context:async()=>({...context,sources:[source]}),validateSources:async()=>true,
+   planner:{plan:async()=>{calls++;return {plan:calls===1?plan:{version:'ping.assistant.v1',outcome:'answer',message:'An unrelated unsupported fact.',citations:[],...(calls===3?{basis:{kind:'waiting_plan',stepIds:['not-in-plan']}}:{})}};}},execute:async()=>{throw Error('no writes');}});
+  const waiting=await service.submit('alice',request);assert.equal(waiting.status,'ready');
+  for(const id of ['request_r20100','request_r20101']){
+   const result=await service.submit('alice',{...request,requestId:id,text:'What did Aoife say about drinks?',replyToRunId:waiting.id});
+   assert.equal(result.status,'failed');assert.doesNotMatch(JSON.stringify(result),/unrelated unsupported fact/);
+  }
+  assert.equal((await service.view('alice',waiting.id)).status,'ready');
+ }finally{await f.close();}
+});
+
+test('canonical target bindings stay private and survive Apply and receipt recovery',async()=>{
+ const f=await assistantFixture();let binds=0,writes=0;const targets={update:{projectId:'synthetic',taskIds:['canonical_private_task']}};try{
+  const update:Extract<AssistantPlan,{outcome:'plan'}>={...plan,actions:[{id:'update',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Original task']},changes:{dueDate:'tomorrow'}}]};
+  const service=createAssistantService({requireApproval:true,store:f.store,context:async()=>context,planner:{plan:async()=>({plan:update})},bindTargets:async()=>{binds++;return targets;},
+   execute:input=>{assert.deepEqual(input.boundTaskTargets,targets);return input.commitStep(input.stepId,input.fence,async()=>{writes++;return {stepId:input.stepId,kind:input.step.kind,status:'completed',summary:'Updated',affectedCount:1};});}});
+  const draft=await service.submit('alice',request);assert.equal(binds,1);assert.equal(writes,0);assert.doesNotMatch(JSON.stringify(draft),/canonical_private_task/);
+  const applied=await service.apply('alice',draft.id);await service.resume('alice',draft.id);assert.equal(applied.status,'completed');assert.equal(binds,1);assert.equal(writes,1);
+ }finally{await f.close();}
 });

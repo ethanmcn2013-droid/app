@@ -25,6 +25,7 @@ import {sameAssistantRoom} from './conversation-memory';
 import { guardAssistantCommitStep } from "./runtime-admission";
 import { resolveConversationControls } from '@/lib/conversations/flags';
 import { loadAssistantTaskContext, validateAssistantTaskSources } from './task-context';
+import { bindAssistantPlanTargets } from './plan-targets';
 
 type Target = NonNullable<ReturnType<typeof assistantTarget>>;
 const currentTarget = () => assistantTarget(process.env, isDemoMode());
@@ -119,6 +120,8 @@ function createInstance(target: Target) {
       }
       return [...ids];
     }),
+    bindTargets:(actorId,request,plan,priorTaskResult)=>transact(tx=>bindAssistantPlanTargets(tx,{actorId,plan,
+      currentProjectId:request.scope.kind==='project'?request.scope.projectId:undefined,selectedTaskIds:request.selectedTaskIds,priorTaskResult})),
     authorizeView: (actorId, run,authorizationProjects=[]) => transact(async tx => {
       try {
         await assertAssistantActor(tx, actorId);
@@ -131,6 +134,8 @@ function createInstance(target: Target) {
     }),
     execute: input => pingTelemetrySpan("execute", () => executeAssistantAction({ ...input,directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled,
       commitStep:guardAssistantCommitStep(input.commitStep,stillCurrent,async tx=>{
+        const selector='targets' in input.step?input.step.targets:'parent' in input.step?input.step.parent:undefined;
+        if(selector&&selector.kind!=='created'&&'project' in input.step&&input.step.project.kind!=='created'&&!input.boundTaskTargets?.[input.step.id])throw new AssistantActionRefusal('stale');
         for(const projectId of input.authorizationProjects??[])await authorizeAssistantProject(tx,input.actorId,projectId);
         const sources=assistantUnchangedSources(input.authorizationSources??[],Object.values(input.results));
         if(sources.length&&!await validateSources(tx,input.actorId,sources))throw new AssistantActionRefusal('stale');

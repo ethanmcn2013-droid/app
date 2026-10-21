@@ -3,13 +3,14 @@ import test from "node:test";
 import { drizzle } from "drizzle-orm/libsql";
 import { sql } from "drizzle-orm";
 import * as schema from "@/server/db/schema";
-import { createPingProofFixture, PROOF_PROJECT } from "../proof-fixture";
+import { createPingProofFixture, PROOF_PROJECT, seedProofTask } from "../proof-fixture";
 import { executeAssistantAction, type AssistantActionInput } from "./actions";
 import type { AssistantAction, AssistantActionResult } from "@/lib/ping/assistant/contract";
 import { getAssistantContext } from "./context";
 import type { AssistantDeliveryPort } from "./delivery";
 import { assertProjectId } from "@/lib/projects/project-ref";
 import { createConversationService } from "@/server/conversations/service";
+import {bindAssistantPlanTargets} from './plan-targets';
 
 async function fixture() {
   const proof = await createPingProofFixture();
@@ -349,4 +350,56 @@ test("invitations require owner capability and only fake accepted transport reco
     assert.equal(JSON.stringify(accepted).includes("@"), false);
     assert.equal(JSON.stringify(accepted).includes("synthetic-provider-receipt"), false);
   } finally { f.client.close(); }
+});
+
+test('bound selectors keep the same canonical task through rename and a replacement title inserted before the next step',async()=>{
+ const f=await fixture();try{
+  const original=await f.run({id:'seed',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Stable title'}]});
+  const originalId=original.createdTaskIds![0];
+  const rename:AssistantAction={id:'rename',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Stable title']},changes:{title:'Renamed title'}};
+  const follow:AssistantAction={id:'follow',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Stable title']},changes:{description:'same original row'}};
+  const plan={version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[rename,follow]} as const;
+  const bound=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan,currentProjectId:PROOF_PROJECT}));
+  assert.deepEqual(bound.rename.taskIds,[originalId]);assert.deepEqual(bound.follow.taskIds,[originalId]);
+  await f.run(rename,{boundTaskTargets:bound});
+  await seedProofTask(f.client,'replacement-title',{projectId:PROOF_PROJECT});
+  await f.client.execute({sql:"UPDATE tasks SET title='Stable title' WHERE id='replacement-title'"});
+  await f.run(follow,{boundTaskTargets:bound});
+  const rows=await f.client.execute({sql:"SELECT id,title,description FROM tasks WHERE id IN (?,?) ORDER BY id",args:[originalId,'replacement-title']});
+  assert.deepEqual(rows.rows.map(row=>[row.id,row.title,row.description]),[
+    [originalId,'Renamed title','same original row'],['replacement-title','Stable title',null],
+  ].sort((a,b)=>String(a[0]).localeCompare(String(b[0]))));
+ }finally{f.client.close();}
+});
+
+test('checklist binding never switches to a same-title replacement child',async()=>{
+ const f=await fixture();try{
+  const parent=await f.run({id:'parent',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Checklist target'}]});
+  const parentId=parent.createdTaskIds![0];
+  await seedProofTask(f.client,'original-checklist-child',{projectId:PROOF_PROJECT});
+  await f.client.execute({sql:"UPDATE tasks SET title='Catering',parent_task_id=? WHERE id='original-checklist-child'",args:[parentId]});
+  const tick:AssistantAction={id:'tick',kind:'set_checklist_item',project:{kind:'current'},parent:{kind:'titles',titles:['Checklist target']},itemTitle:'Catering',completed:true};
+  const plan={version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[tick]} as const;
+  const bound=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan,currentProjectId:PROOF_PROJECT}));
+  assert.equal(bound.tick.checklistItemId,'original-checklist-child');
+  await f.client.execute({sql:"UPDATE tasks SET archived_at=1 WHERE id='original-checklist-child'"});
+  await seedProofTask(f.client,'replacement-checklist-child',{projectId:PROOF_PROJECT});
+  await f.client.execute({sql:"UPDATE tasks SET title='Catering',parent_task_id=? WHERE id='replacement-checklist-child'",args:[parentId]});
+  await assert.rejects(()=>f.run(tick,{boundTaskTargets:bound}),/unavailable/);
+  const rows=await f.client.execute({sql:"SELECT id,lane,completed_at FROM tasks WHERE id IN ('original-checklist-child','replacement-checklist-child') ORDER BY id"});
+  assert.deepEqual(rows.rows.map(row=>[row.id,row.lane,row.completed_at]),[
+    ['original-checklist-child','todo',null],['replacement-checklist-child','todo',null],
+  ]);
+ }finally{f.client.close();}
+});
+
+test('bound target IDs cannot be replayed against another Project or a foreign task ID',async()=>{
+ const f=await fixture();try{
+  await f.run({id:'seed',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Authorized target'}]});
+  await seedProofTask(f.client,'foreign-target',{projectId:'synthetic-foreign-project'});
+  const action:AssistantAction={id:'update',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Authorized target']},changes:{description:'must not run'}};
+  await assert.rejects(()=>f.run(action,{boundTaskTargets:{update:{projectId:'synthetic-foreign-project',taskIds:['foreign-target']}}}),/unavailable/);
+  await assert.rejects(()=>f.run(action,{boundTaskTargets:{update:{projectId:PROOF_PROJECT,taskIds:['foreign-target']}}}),/stale/);
+  assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM tasks WHERE description='must not run'")).rows[0].n),0);
+ }finally{f.client.close();}
 });
