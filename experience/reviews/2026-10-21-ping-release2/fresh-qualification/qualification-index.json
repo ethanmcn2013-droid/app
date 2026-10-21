@@ -4,14 +4,78 @@
   "runId": 39655309238,
   "reviewer": "/root/r2_independent_review",
   "reviewDate": "2026-10-21",
-  "grade": { "fixedRequestDenominator": 62, "pass": 58, "weak": 3, "fail": 0, "held": 1, "passOnlyPercent": 93.55, "weakCaseIds": ["C14", "G49", "I62"], "heldCaseId": "H56", "oldCohortScore": "40/62 preserved unchanged; separate cohort; not regraded" },
-  "execution": { "physicalProviderCalls": 62, "fixedRequestCalls": 61, "heldFixedRequestsNoCall": 1, "separatePrerequisiteCall": "B-SETUP-A2", "estimatedSpendUsd": 2.715504, "unknownUsage": false, "inputTokens": 1261772, "outputTokens": 19196, "cacheTokens": 0, "fixedRequestMedianWallMs": 2736.610632, "fixedRequestP95NearestRankWallMs": 6256.254698, "baselineAndFinalTaskSha256": "86709fc5215ba8eff0d395c6005a34c81785eb9ca7c5606f010235912ad8b998", "allSettledCallTaskDigestsUnchanged": true, "appliesExecuted": 0 },
-  "qualification": { "sourceFingerprintSha256": "d25a2e678a1b3899874f04d64cd7bc34aa37ae4d40aae06e407fa8c0cd9e907b", "runtimeSourcePin": "5c7ba65dc5a5bc18cc798e96e9a9cbcafbd8b27c", "admissionScopeSha256": "d4868dffc1394feee317a2d5ad082d1d4ceacbb323ac25db9479f55cddfe3cdc", "grading": "Preregistered interpretation used the unchanged ping-eval.md rubric and approved plan-first contract. No fixture, request, or rubric changes. This is a draft-response cohort result only.", "releaseStatus": "Does not establish action execution, undo, guest chat, production behavior, or overall release acceptance.", "uiEvidence": "Earlier 17-source receiving/UI proof is separate and is not included in the model score. A new canonical 188-case capture after the UI repair remains a separate pending gate.", "privacy": "Copied score JSON contains only the approved invented synthetic evaluation cases and generated responses; scan found no API key, bearer token, or credential value." },
+  "grade": {
+    "fixedRequestDenominator": 62,
+    "pass": 58,
+    "weak": 3,
+    "fail": 0,
+    "held": 1,
+    "passOnlyPercent": 93.55,
+    "weakCaseIds": [
+      "C14",
+      "G49",
+      "I62"
+    ],
+    "heldCaseId": "H56",
+    "oldCohortScore": "40/62 preserved unchanged; separate cohort; not regraded"
+  },
+  "execution": {
+    "physicalProviderCalls": 62,
+    "fixedRequestCalls": 61,
+    "heldFixedRequestsNoCall": 1,
+    "separatePrerequisiteCall": "B-SETUP-A2",
+    "estimatedSpendUsd": 2.715504,
+    "unknownUsage": false,
+    "inputTokens": 1261772,
+    "outputTokens": 19196,
+    "cacheTokens": 0,
+    "fixedRequestMedianWallMs": 2736.610632,
+    "fixedRequestP95NearestRankWallMs": 6256.254698,
+    "baselineAndFinalTaskSha256": "86709fc5215ba8eff0d395c6005a34c81785eb9ca7c5606f010235912ad8b998",
+    "allSettledCallTaskDigestsUnchanged": true,
+    "appliesExecuted": 0
+  },
+  "qualification": {
+    "sourceFingerprintSha256": "d25a2e678a1b3899874f04d64cd7bc34aa37ae4d40aae06e407fa8c0cd9e907b",
+    "runtimeSourcePin": "5c7ba65dc5a5bc18cc798e96e9a9cbcafbd8b27c",
+    "admissionScopeSha256": "d4868dffc1394feee317a2d5ad082d1d4ceacbb323ac25db9479f55cddfe3cdc",
+    "grading": "Preregistered interpretation used the unchanged ping-eval.md rubric and approved plan-first contract. No fixture, request, or rubric changes. This is a draft-response cohort result only.",
+    "releaseStatus": "Does not establish action execution, undo, guest chat, production behavior, or overall release acceptance.",
+    "uiEvidence": "Earlier 17-source receiving/UI proof is separate and is not included in the model score. A new canonical 188-case capture after the UI repair remains a separate pending gate.",
+    "privacy": "Copied score JSON contains only the approved invented synthetic evaluation cases and generated responses; scan found no API key, bearer token, or credential value."
+  },
   "files": [
-    { "path": "independent-review.md", "sha256": "39c75738ab7dd285dc3974e051d6c7c7bc2a8a87264c9ef0557ec7c2acc70ca4", "source": "fresh-independent-review-39655309238/independent-review.md" },
-    { "path": "score-39655309238.json", "sha256": "67cb8ff7d8cd8e2efeb929d268465b21fae6f154d1aaa4d14fc0ec01e13172cb", "source": "fresh-independent-review-39655309238/fresh-independent-score-39655309238.json" },
-    { "path": "root-integrity-telemetry-summary.json", "sha256": "f75c609c22a9a268dc1c4a8460168a2628af5c04d4cd8ad607aac46a4bab82d8", "source": "fresh-completed-39655309238/root-integrity-telemetry-summary.json" },
-    { "path": "cleanup-receipt.json", "sha256": "b052c07cd8d182019d79735a150fa9039a9b84c5d507e54d4654214e80df81c2", "source": "fresh-completed-39655309238/cleanup-receipt.json" }
+    {
+      "path": "independent-review.md",
+      "sha256": "7b2ea55ee524cf7ed4557196a52d91579d848a2c72d9d68d67e332550227e07d",
+      "source": "fresh-independent-review-39655309238/independent-review.md",
+      "sourceRawSha256": "39c75738ab7dd285dc3974e051d6c7c7bc2a8a87264c9ef0557ec7c2acc70ca4",
+      "repositoryNormalization": "Git normalizes CRLF to LF; original raw digest retained; words and scores unchanged."
+    },
+    {
+      "path": "score-39655309238.json",
+      "sha256": "a01044ff94f9589204059c92241635eacc1d507ed33da67d1945228d4511f963",
+      "source": "fresh-independent-review-39655309238/fresh-independent-score-39655309238.json",
+      "sourceRawSha256": "67cb8ff7d8cd8e2efeb929d268465b21fae6f154d1aaa4d14fc0ec01e13172cb",
+      "repositoryNormalization": "Git normalizes CRLF to LF; original raw digest retained; words and scores unchanged."
+    },
+    {
+      "path": "root-integrity-telemetry-summary.json",
+      "sha256": "f75c609c22a9a268dc1c4a8460168a2628af5c04d4cd8ad607aac46a4bab82d8",
+      "source": "fresh-completed-39655309238/root-integrity-telemetry-summary.json",
+      "sourceRawSha256": "f75c609c22a9a268dc1c4a8460168a2628af5c04d4cd8ad607aac46a4bab82d8",
+      "repositoryNormalization": "Git normalizes CRLF to LF; original raw digest retained; words and scores unchanged."
+    },
+    {
+      "path": "cleanup-receipt.json",
+      "sha256": "b052c07cd8d182019d79735a150fa9039a9b84c5d507e54d4654214e80df81c2",
+      "source": "fresh-completed-39655309238/cleanup-receipt.json",
+      "sourceRawSha256": "b052c07cd8d182019d79735a150fa9039a9b84c5d507e54d4654214e80df81c2",
+      "repositoryNormalization": "Git normalizes CRLF to LF; original raw digest retained; words and scores unchanged."
+    }
   ],
-  "integrity": { "copiedVerbatim": true, "sensitivePatternScan": "passed common API-key and bearer-token patterns" }
+  "integrity": {
+    "copiedVerbatim": "Original local copies verbatim; canonical repository copies normalize line endings to LF. Both digests recorded.",
+    "sensitivePatternScan": "passed common API-key and bearer-token patterns"
+  }
 }

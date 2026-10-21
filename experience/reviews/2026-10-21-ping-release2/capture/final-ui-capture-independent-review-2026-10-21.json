@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "signal-ping-receipt-refresh-independent-review/1",
+  "reviewer": "/root/r2_independent_review",
+  "reviewDate": "2026-10-21",
+  "decision": "approved_mechanical_rebind_only",
+  "candidateCommit": "57eb0f7357aac1121e60eab37fe3c702e9bdcbb3",
+  "matrix": {
+    "path": "D:/Codex-scratch/project-ping/release2-proof-oct21/final-ui-capture-39659015863/receipt-refresh-matrix-preparation.json",
+    "sha256": "c732e9af6b231ca07c0b254826e8a6644b57096d0212babd2b723a3d7efd4b74"
+  },
+  "freshCapture": {
+    "runId": "tasks-playwright-c6537cbffc6ef298a77fc233",
+    "candidateCommit": "57eb0f7357aac1121e60eab37fe3c702e9bdcbb3",
+    "attestationSha256": "d7ede46272b3a9e81961786cb603eb88a1131f5c52f832f08b4288a5dfb50cb1",
+    "canonicalEvidenceSha256": "c6537cbffc6ef298a77fc233bf2c10de1e71e45d987d913de54f17f010b9426d",
+    "rawArtifactSha256": "ff3fd9856899deb53fae314db5eb8ace91ca0e9535f237e9a5daf72486169915",
+    "fixtureManifestSha256": "f75650f443ea33104c9b44a9d30e2c137ada1547bbb9645aa7fe4ebf2cb5329a",
+    "outcomes": "188/188 passed; 0 unexpected"
+  },
+  "comparison": {
+    "receiptCount": 18,
+    "receiptSet": "17 Home three-rows receipts and the app-messages Ping receipt, derived from the current registry",
+    "titleProjectTuples": 72,
+    "viewportProjects": ["mobile", "tablet", "desktop", "wide"],
+    "allPriorAndCurrentTuplesEqual": true,
+    "all18SourceHashesEqualBaselineAndCurrentRegistry": true,
+    "all18MaterialityHashesMatchCurrentRegistry": true,
+    "allPriorReceiptAttestationsRehashedAndMatched": true,
+    "allExistingReceiptIdentityAndCaseBindingsMatched": true,
+    "candidateRegistrySha256": "573e6eb1ba16788f10878777cdffb39a77b0517a85d71b7d4da959661c9d95b8",
+    "matrixClaimsReceiptFilesChanged": false,
+    "verifiedReceiptsAndRegistryRemainUnmodified": true,
+    "preservedFieldMismatches": 0
+  },
+  "approvedUpdateScope": {
+    "onlyFieldsPerReceipt": [
+      "playwrightEvidence.attestationPath",
+      "playwrightEvidence.attestationSha256",
+      "playwrightEvidence.runId",
+      "playwrightEvidence.canonicalEvidenceSha256",
+      "playwrightEvidence.rawArtifactSha256"
+    ],
+    "allOtherReceiptFields": "Preserve byte-for-byte, including reviewer identity, reviewedAt, reviewedChange, decision, experience and source identity, materiality hash, artifactPath, fixtureId, caseName, and project list.",
+    "coverage": "Preserve absent coverage fields and existing no-coverage registry status; no coverage grant or design score is approved.",
+    "pingWorkspace": "The source-contract record tasks.workspace.ping-personal-assistant is not one of the 18 receipts. Keep its historical lastReviewedAt 2026-10-18 and its screenshot/accessibility/fixture coverage none. This is not a fresh Ping materiality review."
+  },
+  "limits": {
+    "visualReview": "This decision is about exact evidence binding and unchanged rendered case outcomes, not a new independent visual inspection or new design acceptance.",
+    "releaseAcceptance": false,
+    "modelQualityAcceptance": false,
+    "registryChangedByReviewer": false,
+    "receiptsChangedByReviewer": false,
+    "filesChangedOutsideAssignedNewReviewFiles": false
+  }
+}
