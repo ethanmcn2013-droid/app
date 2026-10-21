@@ -98,7 +98,7 @@ export async function createRelease2SyntheticWorld() {
       ["floor","Walk the floor with the front-of-house lead","bob","2026-07-24"],
     ] as const;
     for (const [id,title,owner,due] of [runSheet,marquee,tonic,dietary,floor]) {
-      await seedProofTask(client,id,{assignees:[owner],due,dueAt:Date.parse(`${due}T09:00:00.000Z`),lane:id==="runsheet"?"doing":"todo"});
+      await seedProofTask(client,id,{assignees:[owner],due,dueAt:Math.floor(Date.parse(`${due}T09:00:00.000Z`)/1000),lane:id==="runsheet"?"doing":"todo"});
       await client.execute({sql:"UPDATE tasks SET title=?,description=? WHERE id=?",args:[title,id==="dietary"?"Needed before Dara locks the service notes for a 1 August tasting.":title,id]});
     }
     const checklist=[

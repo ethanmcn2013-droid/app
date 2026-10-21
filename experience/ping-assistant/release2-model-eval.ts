@@ -238,11 +238,17 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
           heldMicroUsd=Math.max(0,heldMicroUsd-(holds.get(value.requestId)??0));holds.delete(value.requestId);accountedMicroUsd+=value.estimatedMicroUsd;
         }
       }};
-    const planner=createPingAssistantPlanner({apiKey,budget,deadlineMs:60_000,fetch:async(input,init)=>{
+    let plannerFailure:string|undefined;
+    const canonicalPlanner=createPingAssistantPlanner({apiKey,budget,deadlineMs:60_000,fetch:async(input,init)=>{
       const target=new URL(typeof input==="string"?input:input instanceof URL?input.href:input.url);
       if(target.href!==PROVIDER_URL||init?.method!=="POST")throw new Error("provider_endpoint_refused");
       return fetch(input,{...init,redirect:"error"});
     }});
+    const planner={plan:async(...input:Parameters<typeof canonicalPlanner.plan>)=>{
+      plannerFailure=undefined;
+      try{return await canonicalPlanner.plan(...input);}
+      catch(error){plannerFailure=error instanceof Error&&/^planner_[a-z_]+$/.test(error.message)?error.message:'planner_unclassified_failure';throw error;}
+    }};
     const service=createAssistantService({store,planner,requireApproval:true,...planAuthorizationFor(database),execute:input=>executeAssistantAction({...input,directMessagesEnabled:true,now:()=>Date.parse(`${EVAL_WORLD.referenceDate}T09:12:00.000+01:00`)}),
       context:contextFor.bind(null,database),validateSources:(actorId,sources)=>validateSourcesFor(database,actorId,sources),undo:(tx,actorId,result)=>executeAssistantUndo(tx,actorId,result.reversal!)});
     let priorRunId:string|undefined,priorGroup="";
@@ -268,6 +274,7 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
       records.push({caseId:item.id,group:item.group,prompt:item.prompt,expectation:item.expectation,held:item.held,status:view.status,
         requestId,runId:view.id,modelPlan,runView:view,sourceCoverage:context.coverage,
         timing:{wallMs:elapsedMs,...view.timing},providerAttempt,usage:{estimatedCostMicrousd:view.estimatedCostMicrousd??null},
+        ...(plannerFailure?{failure:plannerFailure}:{}),
         durableEffectDiff:{beforeActiveSha256:beforeCase.sha256,afterActiveSha256:afterCase.sha256,beforeAllRowsSha256:beforeCase.allRowsSha256,
           afterAllRowsSha256:afterCase.allRowsSha256,unchanged:beforeCase.allRowsSha256===afterCase.allRowsSha256}});
       if(attempts.length>MAX_PROVIDER_ATTEMPTS)throw new Error("physical_attempt_cap_exceeded");
