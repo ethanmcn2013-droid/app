@@ -1910,7 +1910,7 @@
     "src/app/invite/[token]/page.tsx": "9f228082d6081c05a152aad3cc732c25e294a0ad7057daa9fd95276619e444b6",
     "src/app/lab/project-conversation/discussion/page.tsx": "6fdcf5b8391031662b073d305970ee122d16c0521fae79473183dd0ac6b63328",
     "src/app/lab/project-conversation/layout.tsx": "f7c6906d1cb62822b66e36ec7c52865b68aab0dff517a94b4a549cf41c9824ee",
-    "src/app/lab/project-conversation/live/page.tsx": "29fc579fbef48c99ba2a0052ae3a5349c746c31bee995579e601a74291a7e91d",
+    "src/app/lab/project-conversation/live/page.tsx": "555cf75c7e834cfb892a29365a23d2c4c4d75ff7f94ae83913edd8091eb891e7",
     "src/app/lab/project-conversation/page.tsx": "0a52162386d8a5abebc661f7a1f3bfd580de4fdfe59f249c853596483f008c0d",
     "src/app/lab/timeline-a/page.tsx": "ee4abfe9819eb1936c0ba792ca324efa1bd4637cdf828cc281da5bc456a8eb54",
     "src/app/lab/timeline-b/page.tsx": "9488dbeca745ca7446b8e4e412f4d957728bb87ce8eba55acfad610309577a64",
