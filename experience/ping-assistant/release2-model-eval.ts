@@ -15,6 +15,8 @@ import { getAssistantContext } from "../../src/server/ping/assistant/context";
 import { loadAssistantTaskContext, validateAssistantTaskSources } from "../../src/server/ping/assistant/task-context";
 import { executeAssistantAction } from "../../src/server/ping/assistant/actions";
 import { executeAssistantUndo } from "../../src/server/ping/assistant/undo";
+import { assertAssistantActor, authorizeAssistantProject, resolveAssistantProjectName } from "../../src/server/ping/assistant/context";
+import { bindAssistantPlanTargets } from "../../src/server/ping/assistant/plan-targets";
 import type { AssistantRequest, AssistantPlannerContext } from "../../src/lib/ping/assistant/contract";
 import type { AssistantSource } from "../../src/lib/ping/assistant/release2";
 import { estimatePlannerMicroUsd } from "../../src/server/ping/assistant/planner-budget";
@@ -113,6 +115,26 @@ async function validateSourcesFor(database:AssistantDatabase,actorId:string,sour
   });
 }
 
+/** Use the same canonical authorization and immutable target binding as production. */
+function planAuthorizationFor(database:AssistantDatabase):Pick<Parameters<typeof createAssistantService>[0],"authorizePlan"|"bindTargets">{
+  return {
+    authorizePlan:(actorId,request,plan)=>assistantDatabaseTransaction(database,async tx=>{
+      await assertAssistantActor(tx,actorId);
+      const ids=new Set<string>();
+      for(const action of plan.actions){
+        if(!('project'in action)||action.project.kind==='created')continue;
+        if(action.project.kind==='current'){
+          if(request.scope.kind!=='project')throw new Error('assistant_project_unavailable');
+          await authorizeAssistantProject(tx,actorId,request.scope.projectId);ids.add(request.scope.projectId);
+        }else ids.add((await resolveAssistantProjectName(tx,actorId,action.project.name)).id);
+      }
+      return [...ids];
+    }),
+    bindTargets:(actorId,request,plan,priorTaskResult)=>assistantDatabaseTransaction(database,tx=>bindAssistantPlanTargets(tx,{actorId,plan,
+      currentProjectId:request.scope.kind==='project'?request.scope.projectId:undefined,selectedTaskIds:request.selectedTaskIds,priorTaskResult})),
+  };
+}
+
 async function ensureOutputUnused(output:string){
   await mkdir(dirname(output),{recursive:true});
   const root=await realpath(OUTPUT_ROOT);
@@ -156,7 +178,7 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
       const planner={plan:async()=>({model:"synthetic-action-check",requestId:"r2eval_actioncheck1",usage:null,plan:{version:"ping.assistant.v1" as const,
         outcome:"plan" as const,mode:"draft" as const,actions:[{id:"step_action_check",kind:"create_tasks" as const,project:{kind:"current" as const},tasks:[{
           title:"Synthetic action adapter proof",description:"Local action-check fixture only.",assignees:[{kind:"self" as const}],dueDate:null}]}]}})};
-      const service=createAssistantService({store,planner,requireApproval:true,context:contextFor.bind(null,database),
+      const service=createAssistantService({store,planner,requireApproval:true,...planAuthorizationFor(database),context:contextFor.bind(null,database),
         validateSources:(actorId,sources)=>validateSourcesFor(database,actorId,sources),
         execute:input=>executeAssistantAction({...input,directMessagesEnabled:true,now:()=>Date.parse(`${EVAL_WORLD.referenceDate}T09:12:00.000+01:00`)}),
         undo:(tx,actorId,result)=>executeAssistantUndo(tx,actorId,result.reversal!)});
@@ -221,7 +243,7 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
       if(target.href!==PROVIDER_URL||init?.method!=="POST")throw new Error("provider_endpoint_refused");
       return fetch(input,{...init,redirect:"error"});
     }});
-    const service=createAssistantService({store,planner,requireApproval:true,execute:input=>executeAssistantAction({...input,directMessagesEnabled:true,now:()=>Date.parse(`${EVAL_WORLD.referenceDate}T09:12:00.000+01:00`)}),
+    const service=createAssistantService({store,planner,requireApproval:true,...planAuthorizationFor(database),execute:input=>executeAssistantAction({...input,directMessagesEnabled:true,now:()=>Date.parse(`${EVAL_WORLD.referenceDate}T09:12:00.000+01:00`)}),
       context:contextFor.bind(null,database),validateSources:(actorId,sources)=>validateSourcesFor(database,actorId,sources),undo:(tx,actorId,result)=>executeAssistantUndo(tx,actorId,result.reversal!)});
     let priorRunId:string|undefined,priorGroup="";
     const attempts:number[]=[];
