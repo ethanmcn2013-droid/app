@@ -79,4 +79,3 @@ This matrix distinguishes the current synthetic code/receiving evidence from mod
 | 20 | No unsupported facts | Not established across the fixed set; model acceptance remains open and H56 remains held without guest access. |
 
 The matrix is a candid gate review, not a normalized score: the fixed model score is preserved as 23/7/2, and untested criteria stay unverified rather than becoming passes through code presence alone. The final canonical browser capture and scoped receiver prove useful execution paths but do not replace the independent model gate or full scorecard review.
-
