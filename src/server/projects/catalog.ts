@@ -571,6 +571,7 @@ export async function listProjectCatalogPage(
         SELECT COUNT(*) FROM tasks counted
         WHERE counted.workspace_id = ${workspaces.id}
           AND counted.parent_task_id IS NULL
+          AND counted.archived_at IS NULL
           AND counted.lane <> 'done'
       )`,
     })
