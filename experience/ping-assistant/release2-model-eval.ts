@@ -28,7 +28,7 @@ const MAX_PROVIDER_ATTEMPTS = 63; // 63 prompts including B setup; one guest-onl
 const PROVIDER_URL = "https://api.anthropic.com/v1/messages";
 
 type Admission = Readonly<{ version: 1; scope: "synthetic"; purpose: "synthetic-ping-release2-eval"; model: "claude-sonnet-5-5"; actorId: "alice";
-  projectId: typeof PROJECT; projectName: "The Orchard, events"; maxPhysicalAttempts: 63; maxAccountedMicroUsd: 5_000_000; keyWorkspaceMonthlyCapMicroUsd: 5_000_000;
+  projectId: typeof PROJECT; projectName: "The Orchard, events"; maxPhysicalAttempts: 63; maxAccountedMicroUsd: 4_000_000; keyWorkspaceMonthlyCapMicroUsd: 5_000_000;
   externalDelivery: false; timelinePublish: false; expiresAt: string }>;
 type Row = { caseId: string; group: string; prompt: string; expectation: string; held?: string; status: string;
   requestId?: string; runId?: string; modelPlan?: unknown; runView?: unknown; sourceCoverage?: string; timing?: unknown; providerAttempt?: unknown;
@@ -55,7 +55,7 @@ function assertUniqueOutputPath(raw:string) {
 async function readAdmission(path:string):Promise<Admission>{
   const raw=JSON.parse(await readFile(path,"utf8")) as Partial<Admission>;
   if(raw.version!==1||raw.scope!=="synthetic"||raw.purpose!=="synthetic-ping-release2-eval"||raw.model!=="claude-sonnet-5-5"||raw.actorId!==ACTOR||
-    raw.projectId!==PROJECT||raw.projectName!==EVAL_WORLD.projectName||raw.maxPhysicalAttempts!==MAX_PROVIDER_ATTEMPTS||raw.maxAccountedMicroUsd!==5_000_000||
+    raw.projectId!==PROJECT||raw.projectName!==EVAL_WORLD.projectName||raw.maxPhysicalAttempts!==MAX_PROVIDER_ATTEMPTS||raw.maxAccountedMicroUsd!==4_000_000||
     raw.keyWorkspaceMonthlyCapMicroUsd!==5_000_000||
     raw.externalDelivery!==false||raw.timelinePublish!==false||typeof raw.expiresAt!=="string"||Date.parse(raw.expiresAt)<=Date.now())throw new Error("scope_admission_invalid");
   return raw as Admission;
@@ -140,7 +140,7 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
     fixture=await createRelease2SyntheticWorld();
     const before=await taskDigest(fixture.client);
     const inventory=caseSequence();
-    const preflight:Record<string,unknown>={required:62,admittedAccountedCapMicroUsd:5_000_000,keyWorkspaceMonthlyCapMicroUsd:5_000_000,
+    const preflight:Record<string,unknown>={required:62,admittedAccountedCapMicroUsd:4_000_000,keyWorkspaceMonthlyCapMicroUsd:5_000_000,
       providerEndpointAllowlist:[PROVIDER_URL],apiCallsEnabled:false,
       prompts:inventory.map(item=>({id:item.id,group:item.group,prerequisite:item.prerequisite===true,held:item.held??null,source:item.source??null}))};
     if(dryRun){
