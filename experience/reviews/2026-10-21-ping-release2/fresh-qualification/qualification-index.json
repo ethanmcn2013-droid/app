@@ -41,7 +41,7 @@
     "admissionScopeSha256": "d4868dffc1394feee317a2d5ad082d1d4ceacbb323ac25db9479f55cddfe3cdc",
     "grading": "Preregistered interpretation used the unchanged ping-eval.md rubric and approved plan-first contract. No fixture, request, or rubric changes. This is a draft-response cohort result only.",
     "releaseStatus": "Does not establish action execution, undo, guest chat, production behavior, or overall release acceptance.",
-    "uiEvidence": "Earlier 17-source receiving/UI proof is separate and is not included in the model score. A new canonical 188-case capture after the UI repair remains a separate pending gate.",
+    "uiEvidence": "Separate functional receiving passed17/17checks with22screenshots before an equivalent optional-source helper extraction. Final canonical capture39659015863 passed188/188 at57eb0f73, and independent18receipt/72tuple receiving plus mechanicalrebind completed atfe35c694. These remain separate from the model score and live production acceptance.",
     "privacy": "Copied score JSON contains only the approved invented synthetic evaluation cases and generated responses; scan found no API key, bearer token, or credential value."
   },
   "files": [
