@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "status": "approved",
+  "purpose": "ping-release2-group-a3-recovery",
+  "noRetryA3": true,
+  "qualityCreditA3": false,
+  "continueOnly": ["A4", "A5", "A6"],
+  "approvedBy": "root acting under Ethan's bounded evaluation authority; independently reviewed",
+  "admissionSha256": "685b6b6ffa3f1ee98f71f105d8ee0ea66a4d5ffa48b1c302c9be53cb00d8352b",
+  "originalInputsSha256": "a81975c2f1d7232346bf20e0c040e1372bbc13a2fb6bcad42aff2690b7986eb6",
+  "partialReportSha256": "1cd9d108389315a9184f434f1ae9318b0938f362fb9b886852e5ec7e9833b8f4",
+  "backupDbSha256": "89e7d4c5f13777a0bbcbc2bc584d53757031d8279620d471ebf2ea2815cecc66",
+  "providerObservationSha256": "89733f769f00d370b6636d1289fa56118d790bbdac775f36c9891655f117aaa4",
+  "independentReviewSha256": "c696caaed356820792cceb6d412b677d71a5f745f44ef8e3b1aed5c7df9e05f8",
+  "currentRunnerSha256": "<computed-at-runtime>",
+  "offlineRuntimeProof": {
+    "sha256": "<computed-at-runtime>",
+    "platform": "linux",
+    "nodeMajor": 22,
+    "workflowRun": "<computed-at-runtime>"
+  },
+  "templateSha256": "<computed-at-runtime>",
+  "reviewedRecoverySha256": "<computed-at-runtime>",
+  "approvedAt": "<computed-at-runtime>"
+}

@@ -1,0 +1,54 @@
+{
+  "schema": "signal.ping.release2.independent-review.v1",
+  "reviewerId": "/root/r2_undo",
+  "reviewedAt": "2026-10-21",
+  "baseCommit": "b1360418df424825d888798e688f7f41d2cc38cf",
+  "verdict": "accept",
+  "reviewedFiles": [
+    {
+      "path": "src/components/app/messages/ping-personal-assistant.tsx",
+      "rawSha256": "a0a027f9e8233e3a74e82fc89f97c3a0a5eeed576c345ba03d453bfa9623e145",
+      "canonicalLfSha256": "440401ebff7ab9b0e07691d1b4678eada025a04448755396b83640f89a6d4db2",
+      "rawEqualsCanonicalLf": false
+    },
+    {
+      "path": "src/components/app/messages/ping-personal-assistant-client.ts",
+      "rawSha256": "5065e9a0f7e10752bf7be63a59786c29b6cfd52dd9eace306bfd0541bd205bed",
+      "canonicalLfSha256": "5065e9a0f7e10752bf7be63a59786c29b6cfd52dd9eace306bfd0541bd205bed",
+      "rawEqualsCanonicalLf": true
+    },
+    {
+      "path": "src/components/app/messages/ping-personal-assistant-client.test.ts",
+      "rawSha256": "24809b96574f6b3ce724636909ce4da307a1efb6ce734a51994e6fbd1764f591",
+      "canonicalLfSha256": "24809b96574f6b3ce724636909ce4da307a1efb6ce734a51994e6fbd1764f591",
+      "rawEqualsCanonicalLf": true
+    },
+    {
+      "path": "experience/ping-assistant/release2-receive.mjs",
+      "rawSha256": "59f17e8c7968dc0e6a72f1f9afb1e960e6e5c01aac9bb36a06a4c1d8d5271ba5",
+      "canonicalLfSha256": "406f65d6e0d6a0f58a5ba13f39cbfec0fe7ddce5ce8b8ed203c8864285d0b7e8",
+      "rawEqualsCanonicalLf": false
+    }
+  ],
+  "facts": [
+    "Ancestor lookup follows only replyToRunId, bounded to eight turns, and stops at missing or repeated IDs and scope/source mismatches.",
+    "The reconciliation request is a read-only exact-run GET; it does not resubmit planner input or invoke actions.",
+    "Authoritative readback is merged into the existing run history; if it fails or mismatches, the ancestor recovery marker is retained and Apply is disabled while recovery is pending.",
+    "Apply is disabled globally while a pending recovery marker exists; the existing Check status and no-automatic-replay recovery copy remains.",
+    "A ready ancestor may remain independently applicable after an unrelated follow-up; the UI accepts the authoritative server status rather than assuming every descendant replaces its ancestor.",
+    "The receiving fixture covers an answer turn between a waiting plan and a follow-up edit and checks that the superseded plan has no Apply or Cancel controls."
+  ],
+  "limits": {
+    "testsRunByReviewer": [],
+    "diffCheck": "passed",
+    "noProductEdits": true,
+    "reviewScope": "Focused read-only review of the four listed worktree files and the approved README/CODEX-HANDOFF contract plus relevant server submit/bindPlan behavior.",
+    "noIndependentClaimOfSuppliedSuiteResults": true
+  },
+  "deltaReview": {
+    "verdict": "accept",
+    "summary": "Reviewed the explicit optional-source helper that resolves the prior TypeScript narrowing errors. It is behaviorally equivalent to the preceding inline condition: both undefined sources match; exactly one undefined does not; two defined sources use sameAssistantSource.",
+    "priorBrowserProof": "The 17-screen proof is behaviorally relevant to this helper-only correction, but its earlier byte hashes do not bind the current files. Root should retain a fresh exact-revision capture for final receiving proof.",
+    "additionalActionableFindings": []
+  }
+}

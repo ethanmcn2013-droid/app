@@ -1,0 +1,51 @@
+{
+  "reviewer": "/root/r2_independent_review",
+  "reviewDate": "2026-10-21",
+  "decision": "approve-mechanical-five-field-rebind-only",
+  "matrixPath": "receipt-refresh-matrix-final.json",
+  "matrixSha256": "dbae098fbefc5833d58e1ff6b0e997e1e5e799070b8ad7559cc975752d6bd18a",
+  "candidateCommit": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+  "candidateTree": "70ad843c8d75fc75487959872b26adf57a7d0948",
+  "captureRun": "tasks-playwright-0d8727521d9c156849242415",
+  "attestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+  "rawArtifactSha256": "92c985ae241e4c11de6a7f5a8738b9b35cd87d529b9104f0cf6ee91ad40e93c9",
+  "canonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+  "capture": {
+    "tests": 188,
+    "unexpected": 0,
+    "passed": 188
+  },
+  "receipts": {
+    "receiptOrRegistryMutationBeforeDecision": false,
+    "cases": 18,
+    "count": 18,
+    "independentOutcomeComparisonMismatches": 0,
+    "sourceAndMaterialityBindingsMatched": true,
+    "matchedCurrentRegistryPaths": true,
+    "coverageAbsencePreserved": true,
+    "projectTuples": 72,
+    "reviewerDateDecisionPreserved": true,
+    "previousAttestationHashesMatched": true
+  },
+  "approvedFields": [
+    "playwrightEvidence.attestationPath",
+    "playwrightEvidence.attestationSha256",
+    "playwrightEvidence.runId",
+    "playwrightEvidence.canonicalEvidenceSha256",
+    "playwrightEvidence.rawArtifactSha256"
+  ],
+  "mustRemainUnchanged": [
+    "all other receipt fields",
+    "reviewer",
+    "reviewedAt",
+    "reviewedChange",
+    "decision",
+    "coverage presence or absence",
+    "registry materiality/source fields",
+    "fixtureId",
+    "caseName",
+    "projects",
+    "artifactPath"
+  ],
+  "limits": "This is an evidence-binding decision only. It does not approve or score the Files dedicated-operator evidence; that remains separate. It is not model evaluation, production receiving, or release acceptance."
+}

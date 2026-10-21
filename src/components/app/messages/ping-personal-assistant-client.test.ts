@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming } from "./ping-personal-assistant-client";
+import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, parseAssistantApiResponse, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, assistantFollowUpRequest, sameAssistantSource, assistantPlanDescription, mergeAssistantRun, assistantWaitingPlanAncestor } from "./ping-personal-assistant-client";
 import type { AssistantApiCommand, AssistantRunView } from "@/lib/ping/assistant/contract";
 import { createPingTelemetryRecorder, type PingTelemetryEvent } from "@/lib/ping/telemetry";
 const run: AssistantRunView = { id:"run_synthetic_123",requestId:"request_synthetic_123",text:"Create 100 tasks",scope:{kind:"project",projectId:"synthetic-project"},mode:"execute",status:"partial",createdAt:"2026-10-18T09:00:00.000Z",updatedAt:"2026-10-18T09:01:00.000Z",steps:[
@@ -90,6 +90,76 @@ test("follow-up scope uses explicit authorized created Project fields only", () 
   assert.deepEqual(assistantCreatedProjects(projectRun), [{id:"new-project",name:"New launch"}]);
   assert.deepEqual(assistantCreatedProjects({...projectRun,status:"running"}), []);
   assert.deepEqual(assistantCreatedProjects(run), []);
+});
+
+test("a follow-up stays plan-first and carries memory only inside its exact source and scope",()=>{
+  const source={kind:"conversation" as const,conversationId:"conv-a",rootId:"message-root"};
+  const prior={...run,status:"ready" as const,mode:"draft" as const,source};
+  const request=assistantFollowUpRequest({requestId:"request_followup_123",text:"make it 11 instead",scope:{kind:"project",projectId:"synthetic-project"},latest:prior,source});
+  assert.deepEqual(request,{requestId:"request_followup_123",text:"make it 11 instead",scope:{kind:"project",projectId:"synthetic-project"},mode:"draft",replyToRunId:prior.id,source});
+  assert.equal(sameAssistantSource(source,{kind:"conversation",conversationId:"conv-a",rootId:"different-root"}),false);
+  assert.equal(sameAssistantSource(source,{kind:"conversation",conversationId:"conv-b",rootId:"message-root"}),false);
+  assert.equal(sameAssistantSource(source,source),true);
+  assert.equal(assistantFollowUpRequest({requestId:"request_followup_124",text:"question",scope:{kind:"project",projectId:"other-project"},latest:prior,source}).replyToRunId,undefined);
+});
+
+test("authoritative run readback replaces a stale ready card with the cancelled server state",()=>{
+  const waiting={...run,id:"waiting_run_123",requestId:"waiting_request_123",status:"ready" as const,mode:"draft" as const,createdAt:"2026-10-21T10:00:00.000Z"};
+  const replacement={...waiting,status:"cancelled" as const,updatedAt:"2026-10-21T10:01:00.000Z",message:"This plan was replaced by your follow-up. Nothing was applied."};
+  const next={...run,id:"new_run_123",requestId:"new_request_123",status:"ready" as const,mode:"draft" as const,replyToRunId:waiting.id,createdAt:"2026-10-21T10:01:00.000Z"};
+  const merged=mergeAssistantRun(mergeAssistantRun([waiting],next),replacement);
+  assert.deepEqual(merged.map(value=>value.id),[next.id,waiting.id]);
+  assert.equal(merged.find(value=>value.id===waiting.id)?.status,"cancelled");
+  assert.equal(merged.find(value=>value.id===waiting.id)?.message,replacement.message);
+  assert.equal(mergeAssistantRun(merged,replacement).length,2);
+});
+
+test("waiting-plan readback follows an answer turn to its same-scope and same-source ready ancestor",()=>{
+  const source={kind:"conversation" as const,conversationId:"conv-a",rootId:"root-a"};
+  const plannedAction={id:"create-florist",kind:"create_tasks" as const,project:{kind:"current" as const},tasks:[{title:"Call florist"}]};
+  const waiting:AssistantRunView={...run,id:"waiting_plan_123",requestId:"waiting_plan_req_123",status:"ready",mode:"draft",source,createdAt:"2026-10-21T10:00:00.000Z",steps:[{...run.steps[0],id:plannedAction.id,actionId:plannedAction.id,kind:"create_tasks",status:"queued",plan:plannedAction,result:null}]};
+  const answer:AssistantRunView={...run,id:"answer_turn_123",requestId:"answer_turn_req_123",status:"completed",mode:"draft",source,replyToRunId:waiting.id,createdAt:"2026-10-21T10:01:00.000Z",steps:[]};
+  const edit:AssistantRunView={...run,id:"owner_edit_123",requestId:"owner_edit_req_123",status:"ready",mode:"draft",source,replyToRunId:answer.id,createdAt:"2026-10-21T10:02:00.000Z",steps:[{...waiting.steps[0],plan:{...plannedAction,tasks:[{title:"Call florist",assignees:[{kind:"name" as const,name:"Bob"}]}]}}]};
+  assert.equal(assistantWaitingPlanAncestor([edit,answer,waiting],edit.replyToRunId,edit)?.id,waiting.id);
+  assert.equal(assistantWaitingPlanAncestor([edit,answer],edit.replyToRunId,edit),null);
+  assert.equal(assistantWaitingPlanAncestor([edit,answer,waiting],edit.replyToRunId,{...edit,scope:{kind:"project",projectId:"other-project"}}),null);
+  assert.equal(assistantWaitingPlanAncestor([edit,{...answer,source:{kind:"conversation",conversationId:"conv-a",rootId:"root-b"}},waiting],edit.replyToRunId,edit),null);
+});
+
+test("conversation recovery markers are isolated by conversation and reply thread",()=>{
+  const a={kind:"conversation" as const,conversationId:"conv-a",rootId:"root-a"};
+  const b={kind:"conversation" as const,conversationId:"conv-a",rootId:"root-b"};
+  assert.notEqual(pendingAssistantKey("actor-a",a),pendingAssistantKey("actor-a",b));
+  assert.notEqual(pendingAssistantKey("actor-a",a),pendingAssistantKey("actor-a",{kind:"conversation",conversationId:"conv-b"}));
+  assert.equal(pendingAssistantKey("actor-a"),"signal.ping.assistant.pending.v1:actor-a");
+});
+
+test("task editing stays server-authoritative and message plans show the exact recipient",()=>{
+  assert.equal(assistantPlanDescription({id:"message",kind:"send_message",project:{kind:"current"},body:"The tasting is Saturday"}),"Send in this Project chat: “The tasting is Saturday”");
+  assert.equal(assistantPlanDescription({id:"private-message",kind:"send_message",project:{kind:"current"},body:"Please call me",recipient:{kind:"name",name:"Niamh"}}),"Send a private message to Niamh: “Please call me”");
+});
+
+test("new server response details are bounded and citation links stay internal",()=>{
+  const action={id:"step_tasks",kind:"create_tasks" as const,project:{kind:"current" as const},tasks:[{title:"Call florist"}]};
+  const enhanced={...run,status:"ready" as const,mode:"draft" as const,source:{kind:"conversation" as const,conversationId:"conv-a"},planRevision:2,
+    citations:[{ref:"source1",quote:"The tasting is Saturday",href:"/app/messages?projectId=synthetic-project",authorName:"Aoife"}],
+    steps:[{...run.steps[0],kind:"create_tasks" as const,actionId:action.id,plan:action,canUndo:false}]};
+  assert.notEqual(parseAssistantApiResponse({version:"ping.assistant.v1",ok:true,available:true,run:enhanced}),null);
+  assert.equal(parseAssistantApiResponse({version:"ping.assistant.v1",ok:true,available:true,run:{...enhanced,citations:[{...enhanced.citations[0],href:"https://example.invalid"}]}}),null);
+  assert.equal(parseAssistantApiResponse({version:"ping.assistant.v1",ok:true,available:true,run:{...enhanced,steps:[{...enhanced.steps[0],canUndo:"yes"}]}}),null);
+});
+
+test("plan DTO validates dependent Project and task steps as one ordered plan",()=>{
+  const createProject={id:"project-step",kind:"create_project" as const,name:"Launch"};
+  const createTasks={id:"tasks-step",kind:"create_tasks" as const,project:{kind:"created" as const,stepId:"project-step"},tasks:[{title:"Brief the team"}]};
+  const steps=[
+    {...run.steps[0],id:"view-project-step",kind:"create_project",actionId:createProject.id,plan:createProject},
+    {...run.steps[0],id:"view-tasks-step",kind:"create_tasks",actionId:createTasks.id,plan:createTasks},
+  ];
+  const response={version:"ping.assistant.v1",ok:true,available:true,run:{...run,status:"ready",mode:"draft",steps}};
+  assert.notEqual(parseAssistantApiResponse(response),null);
+  const invalid={...createTasks,unexpected:"must be rejected"};
+  assert.equal(parseAssistantApiResponse({...response,run:{...response.run,steps:[steps[0],{...steps[1],plan:invalid}]} }),null);
 });
 
 const tick = () => new Promise<void>(resolve => setImmediate(resolve));
@@ -264,6 +334,14 @@ test("pending replies refresh completed effects once while history, errors and p
   const saved={...response,run:{...run,status:"running" as const,steps:[run.steps[0],{...run.steps[0],id:"archive",kind:"archive_tasks" as const,result:{...run.steps[0].result!,kind:"archive_tasks" as const}}]}};
   assert.equal(invoke(saved,run.requestId),true); assert.equal(calls,1);
   assert.equal(invoke(saved,run.requestId),false); assert.equal(calls,1);
+});
+test("undo invalidates the Tasks snapshot again and checklist item writes refresh it",()=>{
+  const state:AssistantTaskRefreshState={actorId:null,receipts:new Set()};let calls=0;
+  const checklist={...run.steps[0],kind:"set_checklist_item" as const,status:"completed" as const,result:{...run.steps[0].result!,kind:"set_checklist_item" as const,status:"completed" as const,affectedCount:1}};
+  const applied={...run,status:"completed" as const,steps:[checklist]};
+  assert.equal(refreshAssistantTasks({state,actorId:"a",operation:"apply",response:{version:"ping.assistant.v1",ok:true,available:true,run:applied},invalidate:()=>{calls++;}}),true);
+  assert.equal(refreshAssistantTasks({state,actorId:"a",operation:"undo",response:{version:"ping.assistant.v1",ok:true,available:true,run:{...applied,steps:[{...checklist,undoResult:{status:"reverted",summary:"Restored",affectedCount:1}}]}},invalidate:()=>{calls++;}}),true);
+  assert.equal(calls,2);
 });
 test("freshness failure cannot fail the mutation reply and leaves its receipt retryable",()=>{
   const state:AssistantTaskRefreshState={actorId:null,receipts:new Set()};

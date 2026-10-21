@@ -3,11 +3,15 @@ import test from "node:test";
 import { drizzle } from "drizzle-orm/libsql";
 import { sql } from "drizzle-orm";
 import * as schema from "@/server/db/schema";
-import { createPingProofFixture, PROOF_PROJECT } from "../proof-fixture";
+import { createPingProofFixture, PROOF_PROJECT, seedProofTask } from "../proof-fixture";
 import { executeAssistantAction, type AssistantActionInput } from "./actions";
+import { validateAssistantTaskPostImages } from './task-snapshot';
 import type { AssistantAction, AssistantActionResult } from "@/lib/ping/assistant/contract";
 import { getAssistantContext } from "./context";
 import type { AssistantDeliveryPort } from "./delivery";
+import { assertProjectId } from "@/lib/projects/project-ref";
+import { createConversationService } from "@/server/conversations/service";
+import {bindAssistantPlanTargets} from './plan-targets';
 
 async function fixture() {
   const proof = await createPingProofFixture();
@@ -89,6 +93,80 @@ test("Undo restores the exact changed IDs and preserves previously archived chil
   } finally { f.client.close(); }
 });
 
+test("checklist actions create child items and complete exactly one matching item", async () => {
+  const f = await fixture();
+  try {
+    const parent = await f.run({ id:"parent",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Run of show"}] });
+    const parentId=parent.createdTaskIds![0];
+    const made=await f.run({ id:"items",kind:"create_checklist_items",project:{kind:"current"},parent:{kind:"titles",titles:["Run of show"]},items:["Confirm kitchen timings","Print run sheet"] });
+    assert.equal(made.createdTaskIds?.length,2); assert.equal(made.reversal?.kind,"tasks");
+    const children=await f.client.execute({sql:"SELECT id,title,parent_task_id,lane FROM tasks WHERE parent_task_id=? ORDER BY title",args:[parentId]});
+    assert.equal(children.rows.length,2); assert.ok(children.rows.every(row=>row.parent_task_id===parentId));
+    const one=await f.run({id:"tick",kind:"set_checklist_item",project:{kind:"current"},parent:{kind:"titles",titles:["Run of show"]},itemTitle:"  CONFIRM kitchen timings ",completed:true});
+    assert.equal(one.affectedCount,1); assert.equal(one.taskIds?.length,1);
+    const state=await f.client.execute({sql:"SELECT title,lane,completed_at FROM tasks WHERE parent_task_id=? ORDER BY title",args:[parentId]});
+    const kitchen=state.rows.find(row=>row.title==="Confirm kitchen timings")!;
+    const print=state.rows.find(row=>row.title==="Print run sheet")!;
+    assert.equal(kitchen.lane,"done"); assert.notEqual(kitchen.completed_at,null); assert.equal(print.lane,"todo"); assert.equal(print.completed_at,null);
+    assert.equal(Number((await f.client.execute({sql:"SELECT lane='todo' AS todo FROM tasks WHERE id=?",args:[parentId]})).rows[0].todo),1);
+  } finally { f.client.close(); }
+});
+
+test("checklist item selection refuses ambiguous labels and leaves siblings untouched", async () => {
+  const f=await fixture();
+  try {
+    const parent=await f.run({id:"parent",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Checklist parent"}]});
+    const parentId=parent.createdTaskIds![0];
+    await f.client.execute({sql:"INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees,parent_task_id) VALUES('sub-a',?,'Confirm lights','todo','p2','[]',?),('sub-b',?,'Confirm lights','todo','p2','[]',?)",args:[PROOF_PROJECT,parentId,PROOF_PROJECT,parentId]});
+    await assert.rejects(()=>f.run({id:"tick",kind:"set_checklist_item",project:{kind:"current"},parent:{kind:"titles",titles:["Checklist parent"]},itemTitle:"Confirm lights",completed:true}));
+    assert.equal(Number((await f.client.execute({sql:"SELECT COUNT(*) n FROM tasks WHERE parent_task_id=? AND lane='todo'",args:[parentId]})).rows[0].n),2);
+  } finally { f.client.close(); }
+});
+
+test("time-only task updates retain each task's existing calendar day", async () => {
+  const f=await fixture();
+  try {
+    const created=await f.run({id:"timed",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Timed item",dueDate:"2026-10-22"}]});
+    const id=created.createdTaskIds![0];
+    const updated=await f.run({id:"time",kind:"update_tasks",project:{kind:"current"},targets:{kind:"selected"},changes:{dueTime:"14:35"}},{selectedTaskIds:[id]});
+    assert.equal(updated.affectedCount,1);
+    const row=await f.client.execute({sql:"SELECT due,due_at FROM tasks WHERE id=?",args:[id]});
+    assert.equal(row.rows[0].due,"2026-10-22 14:35"); assert.equal(new Date(Number(row.rows[0].due_at)*1000).toISOString(),"2026-10-22T14:35:00.000Z");
+    assert.equal(updated.reversal?.kind,"tasks");
+  } finally { f.client.close(); }
+});
+
+test("date-only keeps the 09:00Z sentinel while explicit Project time stores a local clock label",async()=>{
+ const f=await fixture();try{
+  const dayOnly=await f.run({id:"day",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Date only",dueDate:"2026-10-22"}]});
+  const timed=await f.run({id:"timed",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Explicit time",dueDate:"2026-10-22",dueTime:"10:00"}]},{timeZone:"Europe/Dublin"});
+  const rows=await f.client.execute({sql:"SELECT id,due,due_at FROM tasks WHERE id IN (?,?)",args:[dayOnly.createdTaskIds![0],timed.createdTaskIds![0]]});
+  const day=rows.rows.find(row=>row.id===dayOnly.createdTaskIds![0])!,clock=rows.rows.find(row=>row.id===timed.createdTaskIds![0])!;
+  assert.equal(day.due,"2026-10-22");assert.equal(new Date(Number(day.due_at)*1000).toISOString(),"2026-10-22T09:00:00.000Z");
+  assert.equal(clock.due,"2026-10-22 10:00");assert.equal(new Date(Number(clock.due_at)*1000).toISOString(),"2026-10-22T09:00:00.000Z");
+ }finally{f.client.close();}
+});
+
+test("clearing an explicit time restores date-only storage and its 09:00Z sentinel",async()=>{
+ const f=await fixture();try{
+  const created=await f.run({id:"timed",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Timed item",dueDate:"2026-10-22",dueTime:"14:35"}]});
+  const id=created.createdTaskIds![0];
+  await f.run({id:"clear-time",kind:"update_tasks",project:{kind:"current"},targets:{kind:"selected"},changes:{dueTime:null}},{selectedTaskIds:[id],timeZone:"Europe/Dublin"});
+  const row=await f.client.execute({sql:"SELECT due,due_at FROM tasks WHERE id=?",args:[id]});
+  assert.equal(row.rows[0].due,"2026-10-22");assert.equal(new Date(Number(row.rows[0].due_at)*1000).toISOString(),"2026-10-22T09:00:00.000Z");
+ }finally{f.client.close();}
+});
+
+test("a date-only move keeps an existing explicit clock time across the DST boundary",async()=>{
+ const f=await fixture();try{
+  const created=await f.run({id:'clock',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Time-specific task',dueDate:'2026-10-22',dueTime:'10:00'}]},{timeZone:'Europe/Dublin'});
+  const id=created.createdTaskIds![0];
+  await f.run({id:'move-day',kind:'update_tasks',project:{kind:'current'},targets:{kind:'selected'},changes:{dueDate:'2026-10-26'}},{selectedTaskIds:[id],timeZone:'Europe/Dublin'});
+  const row=(await f.client.execute({sql:'SELECT due,due_at FROM tasks WHERE id=?',args:[id]})).rows[0];
+  assert.equal(row.due,'2026-10-26 10:00');assert.equal(new Date(Number(row.due_at)*1000).toISOString(),'2026-10-26T10:00:00.000Z');
+ }finally{f.client.close();}
+});
+
 test("Timeline preparation occurs after a durable pending intent; recovery never repeats task writes", async () => {
   const f = await fixture();
   try {
@@ -154,6 +232,19 @@ test("cross-Project selection, ambiguous titles and stale created references can
   } finally { f.client.close(); }
 });
 
+test("previous tasks selects only the explicit earlier-turn receipt, never new tasks in this run",async()=>{
+ const f=await fixture();try{
+  const earlier=await f.run({id:'earlier',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Earlier turn task'}]});
+  const current=await f.run({id:'current',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Current turn task'}]});
+  await assert.rejects(f.run({id:'missing',kind:'archive_tasks',project:{kind:'current'},targets:{kind:'previous'},archived:true}),/unavailable/);
+  const archived=await f.run({id:'explicit',kind:'archive_tasks',project:{kind:'current'},targets:{kind:'previous'},archived:true},{results:{current,__previous:earlier}});
+  assert.deepEqual(archived.undo?.taskIds,earlier.createdTaskIds);
+  const rows=await f.client.execute('SELECT title,archived_at FROM tasks ORDER BY title');
+  assert.equal(rows.rows.find(row=>row.title==='Current turn task')?.archived_at,null);
+  assert.ok(rows.rows.find(row=>row.title==='Earlier turn task')?.archived_at);
+ }finally{f.client.close();}
+});
+
 test("late batch write failure rolls back tasks, activities and completion receipt", async () => {
   const f = await fixture();
   try {
@@ -195,6 +286,33 @@ test("canonical task comments and Project chat keep original receipts on replay"
   } finally { f.client.close(); }
 });
 
+test("recipient message uses only an already-consented exact direct conversation",async()=>{
+ const f=await fixture();try{
+  const service=createConversationService(f.adapter,{directMessagesEnabled:true}),projectId=assertProjectId(PROOF_PROJECT);
+  const request=await service.requestDirectMessage({actorId:"alice",projectId,recipientId:"bob",clientRequestId:"ping_dm_request_01"});
+  assert.equal(request.ok,true);if(!request.ok)return;
+  const id=request.value.scope.conversationId,bobScope=await service.getDirectMessage({actorId:"bob",projectId,conversationId:id});
+  assert.equal(bobScope.ok,true);if(!bobScope.ok)return;
+  const accepted=await service.transitionDirectMessage({actorId:"bob",projectId,conversationId:id,operation:"accept",clientRequestId:"ping_dm_accept_01",expectedAudienceEpoch:bobScope.value.audienceEpoch});
+  assert.equal(accepted.ok,true);
+  const result=await f.run({id:"private",kind:"send_message",project:{kind:"current"},recipient:{kind:"name",name:"bob"},body:"Private note to Bob"},{directMessagesEnabled:true});
+  assert.equal(result.status,"completed");assert.equal(new URL(result.href!,'https://app.signalstudio.ie').searchParams.get('conversationId'),id);
+  const dmRows=await f.client.execute({sql:"SELECT m.body,m.conversation_id FROM conversation_messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.kind='dm'"});
+  assert.equal(dmRows.rows.length,1);assert.equal(dmRows.rows[0].body,"Private note to Bob");assert.equal(dmRows.rows[0].conversation_id,id);
+  assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM conversations WHERE kind='project'")).rows[0].n),0);
+ }finally{f.client.close();}
+});
+
+test("recipient message refuses pending consent and never falls back to Project chat",async()=>{
+ const f=await fixture();try{
+  const service=createConversationService(f.adapter,{directMessagesEnabled:true}),projectId=assertProjectId(PROOF_PROJECT);
+  await service.requestDirectMessage({actorId:"alice",projectId,recipientId:"bob",clientRequestId:"ping_dm_pending_01"});
+  await assert.rejects(()=>f.run({id:"private",kind:"send_message",project:{kind:"current"},recipient:{kind:"name",name:"bob"},body:"Must wait for consent"},{directMessagesEnabled:true}),/unavailable/);
+  assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM conversation_messages")).rows[0].n),0);
+  assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM conversations WHERE kind='project'")).rows[0].n),0);
+ }finally{f.client.close();}
+});
+
 test("nudges honor mute and cooldown; uncertain fake delivery is never retried", async () => {
   const f = await fixture();
   try {
@@ -233,4 +351,112 @@ test("invitations require owner capability and only fake accepted transport reco
     assert.equal(JSON.stringify(accepted).includes("@"), false);
     assert.equal(JSON.stringify(accepted).includes("synthetic-provider-receipt"), false);
   } finally { f.client.close(); }
+});
+
+test('bound selectors keep the same canonical task through rename and a replacement title inserted before the next step',async()=>{
+ const f=await fixture();try{
+  const original=await f.run({id:'seed',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Stable title'}]});
+  const originalId=original.createdTaskIds![0];
+  const rename:AssistantAction={id:'rename',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Stable title']},changes:{title:'Renamed title'}};
+  const follow:AssistantAction={id:'follow',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Stable title']},changes:{description:'same original row'}};
+  const plan={version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[rename,follow]} as const;
+  const bound=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan,currentProjectId:PROOF_PROJECT}));
+  assert.deepEqual(bound.rename.taskIds,[originalId]);assert.deepEqual(bound.follow.taskIds,[originalId]);
+  await f.run(rename,{boundTaskTargets:bound});
+  await seedProofTask(f.client,'replacement-title',{projectId:PROOF_PROJECT});
+  await f.client.execute({sql:"UPDATE tasks SET title='Stable title' WHERE id='replacement-title'"});
+  await f.run(follow,{boundTaskTargets:bound});
+  const rows=await f.client.execute({sql:"SELECT id,title,description FROM tasks WHERE id IN (?,?) ORDER BY id",args:[originalId,'replacement-title']});
+  assert.deepEqual(rows.rows.map(row=>[row.id,row.title,row.description]),[
+    [originalId,'Renamed title','same original row'],['replacement-title','Stable title',null],
+  ].sort((a,b)=>String(a[0]).localeCompare(String(b[0]))));
+ }finally{f.client.close();}
+});
+
+test('checklist binding never switches to a same-title replacement child',async()=>{
+ const f=await fixture();try{
+  const parent=await f.run({id:'parent',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Checklist target'}]});
+  const parentId=parent.createdTaskIds![0];
+  await seedProofTask(f.client,'original-checklist-child',{projectId:PROOF_PROJECT});
+  await f.client.execute({sql:"UPDATE tasks SET title='Catering',parent_task_id=? WHERE id='original-checklist-child'",args:[parentId]});
+  const tick:AssistantAction={id:'tick',kind:'set_checklist_item',project:{kind:'current'},parent:{kind:'titles',titles:['Checklist target']},itemTitle:'Catering',completed:true};
+  const plan={version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[tick]} as const;
+  const bound=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan,currentProjectId:PROOF_PROJECT}));
+  assert.equal(bound.tick.checklistItemId,'original-checklist-child');
+  await f.client.execute({sql:"UPDATE tasks SET archived_at=1 WHERE id='original-checklist-child'"});
+  await seedProofTask(f.client,'replacement-checklist-child',{projectId:PROOF_PROJECT});
+  await f.client.execute({sql:"UPDATE tasks SET title='Catering',parent_task_id=? WHERE id='replacement-checklist-child'",args:[parentId]});
+  await assert.rejects(()=>f.run(tick,{boundTaskTargets:bound}),/unavailable|stale/);
+  const rows=await f.client.execute({sql:"SELECT id,lane,completed_at FROM tasks WHERE id IN ('original-checklist-child','replacement-checklist-child') ORDER BY id"});
+  assert.deepEqual(rows.rows.map(row=>[row.id,row.lane,row.completed_at]),[
+    ['original-checklist-child','todo',null],['replacement-checklist-child','todo',null],
+  ]);
+ }finally{f.client.close();}
+});
+
+test('bound target IDs cannot be replayed against another Project or a foreign task ID',async()=>{
+ const f=await fixture();try{
+  await f.run({id:'seed',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Authorized target'}]});
+  await seedProofTask(f.client,'foreign-target',{projectId:'synthetic-foreign-project'});
+  const action:AssistantAction={id:'update',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Authorized target']},changes:{description:'must not run'}};
+  await assert.rejects(()=>f.run(action,{boundTaskTargets:{update:{projectId:'synthetic-foreign-project',taskIds:['foreign-target'],taskHashes:{},priorActionIds:[]}}}),/unavailable/);
+  await assert.rejects(()=>f.run(action,{boundTaskTargets:{update:{projectId:PROOF_PROJECT,taskIds:['foreign-target'],taskHashes:{},priorActionIds:[]}}}),/stale/);
+  assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM tasks WHERE description='must not run'")).rows[0].n),0);
+ }finally{f.client.close();}
+});
+
+test('a task moved out of the approved status invalidates the whole bound batch before any archive',async()=>{
+ const f=await fixture();try{
+  const made=await f.run({id:'seed',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'First to do'},{title:'Second to do'}]});
+  const archive:AssistantAction={id:'archive',kind:'archive_tasks',project:{kind:'current'},targets:{kind:'all',status:'todo'},archived:true};
+  const bound=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[archive]},currentProjectId:PROOF_PROJECT}));
+  // Deliberately retain updated_at: full state, rather than a coarse timestamp, must detect the change.
+  await f.client.execute({sql:"UPDATE tasks SET lane='done',board_column_key='done',completed_at=1 WHERE id=?",args:[made.createdTaskIds![1]]});
+  await assert.rejects(f.run(archive,{boundTaskTargets:bound}),/stale/);
+  assert.equal(Number((await f.client.execute('SELECT COUNT(*) n FROM tasks WHERE archived_at IS NOT NULL')).rows[0].n),0);
+ }finally{f.client.close();}
+});
+
+test('bound state follows committed step order even for numeric action IDs and refuses a later collaborator edit',async()=>{
+ const f=await fixture();try{
+  const made=await f.run({id:'seed',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Ordered task'}]});
+  const first:AssistantAction={id:'10',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Ordered task']},changes:{title:'Renamed ordered task'}};
+  const second:AssistantAction={id:'2',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Ordered task']},changes:{dueDate:'tomorrow'}};
+  const last:AssistantAction={id:'last',kind:'archive_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Ordered task']},archived:true};
+  const bound=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[first,second,last]},currentProjectId:PROOF_PROJECT}));
+  await f.run(first,{boundTaskTargets:bound});await f.run(second,{boundTaskTargets:bound});
+  await f.client.execute({sql:'UPDATE tasks SET description=? WHERE id=?',args:['Collaborator changed this after the second step',made.createdTaskIds![0]]});
+  await assert.rejects(f.run(last,{boundTaskTargets:bound}),/stale/);
+  await f.client.execute({sql:'UPDATE tasks SET description=NULL WHERE id=?',args:[made.createdTaskIds![0]]});
+  const result=await f.run(last,{boundTaskTargets:bound});assert.equal(result.affectedCount,1);
+ }finally{f.client.close();}
+});
+
+test('an earlier step cannot exempt its source task from later collaborator changes before another action',async()=>{
+ const f=await fixture();try{
+  const made=await f.run({id:'seed',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Source decision'}]});
+  const id=made.createdTaskIds![0];
+  const changed=await f.run({id:'change',kind:'update_tasks',project:{kind:'current'},targets:{kind:'created',stepId:'seed'},changes:{status:'done'}});
+  const sources=[{ref:'task_source_1',kind:'task' as const,projectId:PROOF_PROJECT,scopeId:id,itemId:id,revision:1,audienceEpoch:1,body:'Earlier source',authorName:'Task',createdAt:'2026-10-21T00:00:00Z',href:'/app/tasks'}];
+  assert.equal(await f.database.transaction(tx=>validateAssistantTaskPostImages(tx,'alice',sources,[changed])),true);
+  await f.client.execute({sql:'UPDATE tasks SET description=? WHERE id=?',args:['A later collaborator edit',id]});
+  assert.equal(await f.database.transaction(tx=>validateAssistantTaskPostImages(tx,'alice',sources,[changed])),false);
+  assert.equal(await f.database.transaction(tx=>validateAssistantTaskPostImages(tx,'alice',sources,[{...changed,undoResult:{status:'reverted',summary:'Restored',affectedCount:1}}])),false);
+ }finally{f.client.close();}
+});
+
+test('completing a parent warns about open checklist items without completing or reassigning them',async()=>{
+ const f=await fixture();try{
+  const made=await f.run({id:'seed_parent_warning',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Dietary list'}]});
+  const parentId=made.createdTaskIds![0];
+  await seedProofTask(f.client,'open-dietary-child',{projectId:PROOF_PROJECT});
+  await f.client.execute({sql:"UPDATE tasks SET parent_task_id=?,title='Full list from the couple' WHERE id='open-dietary-child'",args:[parentId]});
+  const action:AssistantAction={id:'finish_parent_warning',kind:'update_tasks',project:{kind:'current'},targets:{kind:'titles',titles:['Dietary list']},changes:{status:'done'}};
+  const bound=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[action]},currentProjectId:PROOF_PROJECT}));
+  assert.equal(bound.finish_parent_warning.hasOpenChecklist,true);
+  assert.equal((await f.client.execute({sql:'SELECT lane FROM tasks WHERE id=?',args:[parentId]})).rows[0].lane,'todo');
+  await f.run(action,{boundTaskTargets:bound});
+  const child=(await f.client.execute("SELECT lane,completed_at,assignees FROM tasks WHERE id='open-dietary-child'")).rows[0];
+  assert.equal(child.lane,'todo');assert.equal(child.completed_at,null);assert.deepEqual(JSON.parse(String(child.assignees)),['bob']);
+ }finally{f.client.close();}
 });

@@ -46,9 +46,9 @@ const stable = (value: unknown): string => Array.isArray(value) ? `[${value.map(
   ? `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${stable((value as Record<string, unknown>)[k])}`).join(",")}}` : JSON.stringify(value);
 export const assistantPayloadHash = (value: unknown) => createHash("sha256").update(stable(value)).digest("hex");
 export const assistantStepId = (runId: string, stepKey: string) => createHash("sha256").update(`${runId}\0${stepKey}`).digest("hex");
-function json(value: unknown): string {
+function json(value: unknown,limit=256_000): string {
   const serialized = JSON.stringify(value);
-  if (!serialized || Buffer.byteLength(serialized) > 256_000) throw new AssistantStoreError("invalid_input");
+  if (!serialized || Buffer.byteLength(serialized) > limit) throw new AssistantStoreError("invalid_input");
   return serialized;
 }
 const exactHash = (value: string) => /^[a-f0-9]{64}$/.test(value);
@@ -141,13 +141,21 @@ export function createAssistantStore(database: AssistantDatabase, options: { now
       const steps=await store.getSteps(actorId,runId),step=steps.find(value=>value.id===stepId);
       if(!step)throw new AssistantStoreError('unavailable');return assistantDeliverySummary(step.deliveryJson?JSON.parse(step.deliveryJson):{});
     },
-    async bindPlan(actorId: string, runId: string, plan: unknown, steps: readonly { key: string; payload: unknown }[]) {
+    async bindPlan(actorId: string, runId: string, plan: unknown, steps: readonly { key: string; payload: unknown }[], supersedes?:{runId:string;revision:number}) {
       if (!steps.length || steps.length > 100 || new Set(steps.map(s => s.key)).size !== steps.length || steps.some(s => !validId(s.key))) throw new AssistantStoreError("invalid_input");
       return transaction(async tx => {
         const run = await ownRun(tx, actorId, runId);
         if (run.cancelledAt !== null) throw new AssistantStoreError("cancelled");
         if(run.status==='unknown'||run.status==='uncertain')throw new AssistantStoreError('uncertain');
         if (run.planJson) { if (assistantPayloadHash(JSON.parse(run.planJson)) !== assistantPayloadHash(plan)) throw new AssistantStoreError("request_conflict"); return run; }
+        if(supersedes){
+          const previous=await ownRun(tx,actorId,supersedes.runId);
+          if(previous.revision!==supersedes.revision||previous.status!=='ready'||previous.executionAuthorizedAt!==null||previous.cancelledAt!==null)throw new AssistantStoreError('request_conflict');
+          const previousSteps=await tx.select().from(assistantSteps).where(eq(assistantSteps.runId,previous.id));
+          if(previousSteps.some(step=>step.status!=='pending'||step.resultJson))throw new AssistantStoreError('request_conflict');
+          await tx.update(assistantRuns).set({status:'cancelled',cancelledAt:now(),revision:previous.revision+1,updatedAt:now(),resultJson:json({...JSON.parse(previous.resultJson??'{}'),message:'This plan was replaced by your follow-up. Nothing was applied.'})}).where(eq(assistantRuns.id,previous.id));
+          await tx.update(assistantSteps).set({status:'cancelled',fence:sql`${assistantSteps.fence}+1`,updatedAt:now()}).where(eq(assistantSteps.runId,previous.id));
+        }
         for (const [ordinal, step] of steps.entries()) await tx.insert(assistantSteps).values({ id: assistantStepId(runId, step.key), runId, ordinal, stepKey: step.key, payloadJson: json(step.payload), payloadHash: assistantPayloadHash(step.payload), createdAt: now(), updatedAt: now() });
         const [bound] = await tx.update(assistantRuns).set({ planJson: json(plan), status: "ready", revision: run.revision + 1, updatedAt: now() }).where(eq(assistantRuns.id, runId)).returning();
         return bound;
@@ -179,7 +187,7 @@ export function createAssistantStore(database: AssistantDatabase, options: { now
         if ((step.leaseUntil ?? 0) <= now()) throw new AssistantStoreError("lease_lost");
         const outcome = result && typeof result === "object" && "status" in result ? String(result.status) : "completed";
         const status = ["completed","blocked","failed","cancelled"].includes(outcome) ? outcome : outcome === "unknown" ? "uncertain" : "completed";
-        await tx.update(assistantSteps).set({ status, resultJson: json(result), leaseUntil: null, updatedAt: now() }).where(and(eq(assistantSteps.id, stepId), eq(assistantSteps.fence, fence)));
+        await tx.update(assistantSteps).set({ status, resultJson: json(result,2_000_000), leaseUntil: null, updatedAt: now() }).where(and(eq(assistantSteps.id, stepId), eq(assistantSteps.fence, fence)));
         return result;
       });
     },
@@ -200,14 +208,31 @@ export function createAssistantStore(database: AssistantDatabase, options: { now
         await tx.update(assistantRuns).set({ status: run.cancelledAt !== null ? "cancelled" : status, resultJson: json(next), updatedAt: now() }).where(eq(assistantRuns.id, runId));
       });
     },
-    async authorizeDraft(actorId:string,runId:string) {
+    async undoStep(actorId:string,runId:string,stepId:string,operation:(tx:AssistantTransaction,result:AssistantActionResult)=>Promise<import('@/lib/ping/assistant/release2').AssistantUndoResult>){
+      return transaction(async tx=>{
+        const run=await ownRun(tx,actorId,runId);
+        const [step]=await tx.select().from(assistantSteps).where(and(eq(assistantSteps.runId,runId),eq(assistantSteps.id,stepId))).limit(1);
+        if(!step||step.status!=='completed'||!step.resultJson)throw new AssistantStoreError('unavailable');
+        const result=JSON.parse(step.resultJson) as AssistantActionResult;
+        if(result.undoResult?.status==='reverted')return result.undoResult;
+        if(!result.reversal||result.status!=='completed')throw new AssistantStoreError('unavailable');
+        const undone=await operation(tx,result);
+        if(undone.status!=='reverted')throw new AssistantStoreError('request_conflict');
+        await tx.update(assistantSteps).set({resultJson:json({...result,undoResult:undone},2_000_000),updatedAt:now()}).where(eq(assistantSteps.id,stepId));
+        const remaining=await tx.select().from(assistantSteps).where(eq(assistantSteps.runId,runId));
+        const reverted=remaining.filter(row=>row.resultJson&&JSON.parse(row.resultJson).undoResult?.status==='reverted').length;
+        await tx.update(assistantRuns).set({updatedAt:now(),resultJson:json({...JSON.parse(run.resultJson??'{}'),message:`${reverted} of ${remaining.length} steps taken back. Other saved steps remain as shown.`})}).where(eq(assistantRuns.id,runId));
+        return undone;
+      });
+    },
+    async authorizeDraft(actorId:string,runId:string,allowLegacyPlan=false) {
       return transaction(async tx=>{
         const run=await ownRun(tx,actorId,runId);
         if(run.cancelledAt!==null)throw new AssistantStoreError("cancelled");
         if(run.executionAuthorizedAt!==null)return run;
         if(run.status!=="ready"||!run.requestJson||!run.planJson)throw new AssistantStoreError("request_conflict");
         const request=JSON.parse(run.requestJson),bound=JSON.parse(run.planJson);
-        if(request.mode!=="draft"&&bound.plan?.mode!=="draft")throw new AssistantStoreError("request_conflict");
+        if(!allowLegacyPlan&&request.mode!=="draft"&&bound.plan?.mode!=="draft")throw new AssistantStoreError("request_conflict");
         const [updated]=await tx.update(assistantRuns).set({executionAuthorizedAt:now(),revision:run.revision+1,updatedAt:now()}).where(eq(assistantRuns.id,runId)).returning();return updated;
       });
     },

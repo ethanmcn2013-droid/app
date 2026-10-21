@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "signal-ping-release2-model-evidence/1",
+  "recordedAt": "2026-10-21T16:31:56.272650+00:00",
+  "status": "incomplete, preserved historical run before corrections",
+  "fixedDenominator": 62,
+  "completedFixedCases": 32,
+  "separateSetupCases": 1,
+  "independentScore": {
+    "fail": 2,
+    "weak": 7,
+    "sha256": "398f6d8037d83f798268703bf1e1a59a0fd6f437f81a658cd6bf55ec637d7d93",
+    "pass": 23,
+    "review": "experience/reviews/2026-10-21-ping-release2/model-round3-independent-review.md",
+    "sourceReviewRawSha256": "e774122df389051d996eeb3f7dec1f50713915d2ce37736d469cbb6c5916a1b9",
+    "copyNormalization": "Repository copy uses LF and one final newline; the original raw review hash is retained separately. Words and scores are unchanged."
+  },
+  "observedProviderCalls": 33,
+  "maximumIncludingUnconfirmed": 34,
+  "observedEstimatedMicroUsd": 1343020,
+  "unconfirmedReservationMicroUsd": 2040960,
+  "unconfirmedCase": "F33",
+  "retryAllowed": false,
+  "wallLatencyMs": {
+    "includesSeparateSetup": true,
+    "p50": 3048.72,
+    "p95": 9570.04,
+    "sampleCount": 33,
+    "max": 10211.8
+  },
+  "billing": "Rate-card estimate from observed usage, not a provider invoice. Reservation is not confirmed spend.",
+  "newEvaluation": {
+    "approval": "Explicit Ethan approval of one fresh corrected evaluation, max63 attempts/$5 new estimated usage/$10 isolated workspace ceiling; no purchases.",
+    "status": "Full A-I technical execution completed; independent40pass/8weak/13fail/1held of62, below90%gate. Follow-up fixes not yet model-qualified.",
+    "completedFixedCases": 60,
+    "observedEstimatedMicroUsd": 2547592,
+    "pendingCase": null,
+    "databaseReservationMicroUsd": 2040960,
+    "externalProviderObservation": {
+      "requestId": "req_011CgFbJWStQAwMjsVBtUtA3",
+      "status": 499,
+      "inputTokens": 19049,
+      "outputTokens": 0,
+      "rateCardEstimateMicroUsd": 38098,
+      "association": "Independent reviewer accepts unique chronological association with high confidence, not invoice proof."
+    },
+    "keyState": "Disabled after completed run",
+    "workspaceCap": "Restored to $5; provider UI displayed $4.87 month-to-date including other cohorts",
+    "replayAllowed": false,
+    "artifacts": [
+      "experience/output/ping-release2-model-eval/grouped-qualified-oct21-A.json",
+      "experience/output/ping-release2-model-eval/grouped-interruption-oct21-A.json",
+      "experience/output/ping-release2-model-eval/grouped-A3-provider-observation-oct21.json"
+    ],
+    "review": "experience/reviews/2026-10-21-ping-release2/grouped-A3-reconciliation-review.md",
+    "physicalAttempts": 62,
+    "heldNoCallFixedCases": 1,
+    "infrastructureNoAnswerFixedCases": 1,
+    "separateSetupCases": 1,
+    "unknownUsage": false,
+    "workflowRun": "https://github.com/ethanmcn2013-droid/app/actions/runs/39634042526",
+    "sourceCommit": "3dfaee21820ab3a3edf245877e647924d325cdfa",
+    "workflowCommit": "7724168d4be2203b7de62d60fa928387aaaed05c",
+    "telemetry": "experience/reviews/2026-10-21-ping-release2/grouped-evaluation-telemetry.json",
+    "artifactDirectory": "D:/Codex-scratch/project-ping/release2-proof-oct21/linux-completed-39634042526",
+    "draftTaskMutations": 0,
+    "ephemeralSecretsRemaining": 0,
+    "executionGate": "Successful infrastructure execution is not independent semantic acceptance.",
+    "historicalInterruptedCase": "A3 original immutable report/backup preserved; provider499 reconciled on clone only, no answer and no retry.",
+    "independentScore": {
+      "denominator": 62,
+      "pass": 40,
+      "weak": 8,
+      "fail": 13,
+      "heldZeroCredit": 1,
+      "passOnlyPercent": 64.52,
+      "illustrativeHalfCreditPercent": 70.97,
+      "thresholdPercent": 90,
+      "thresholdMet": false,
+      "note": "Fixed request contract does not define a numeric weak weight; half-credit is illustrative. Raw labels are authoritative.",
+      "review": "experience/reviews/2026-10-21-ping-release2/grouped-model-independent-review.md",
+      "reviewSha256": "341a847b65f7558a0bac9dbccc19b00ef7ed15c5d4c8ebbc1df7110b551b8629",
+      "matrix": "experience/reviews/2026-10-21-ping-release2/grouped-model-independent-review.json",
+      "matrixSha256": "8196f23a855cb4b17e860a2aa47283b5be697c156c30bf242d345f038fa92afc"
+    }
+  },
+  "artifacts": [
+    "experience/output/ping-release2-model-eval/live-2026-10-21-round3.json",
+    "experience/output/ping-release2-model-eval/interruption-2026-10-21-round3.json",
+    "experience/output/ping-release2-model-eval/latency-summary-2026-10-21-round3.json"
+  ],
+  "latestQualification": {
+    "status": "Independent fixed-request model gate passed; final UI capture and production release pending",
+    "workflowRun": "https://github.com/ethanmcn2013-droid/app/actions/runs/39655309238",
+    "index": "experience/reviews/2026-10-21-ping-release2/fresh-qualification/qualification-index.json",
+    "grade": {
+      "fixedRequestDenominator": 62,
+      "pass": 58,
+      "weak": 3,
+      "fail": 0,
+      "held": 1,
+      "passOnlyPercent": 93.55,
+      "weakCaseIds": [
+        "C14",
+        "G49",
+        "I62"
+      ],
+      "heldCaseId": "H56",
+      "oldCohortScore": "40/62 preserved unchanged; separate cohort; not regraded"
+    },
+    "execution": {
+      "physicalProviderCalls": 62,
+      "fixedRequestCalls": 61,
+      "heldFixedRequestsNoCall": 1,
+      "separatePrerequisiteCall": "B-SETUP-A2",
+      "estimatedSpendUsd": 2.715504,
+      "unknownUsage": false,
+      "inputTokens": 1261772,
+      "outputTokens": 19196,
+      "cacheTokens": 0,
+      "fixedRequestMedianWallMs": 2736.610632,
+      "fixedRequestP95NearestRankWallMs": 6256.254698,
+      "baselineAndFinalTaskSha256": "86709fc5215ba8eff0d395c6005a34c81785eb9ca7c5606f010235912ad8b998",
+      "allSettledCallTaskDigestsUnchanged": true,
+      "appliesExecuted": 0
+    },
+    "runtimeSourcePin": "5c7ba65dc5a5bc18cc798e96e9a9cbcafbd8b27c",
+    "sourceFingerprintSha256": "d25a2e678a1b3899874f04d64cd7bc34aa37ae4d40aae06e407fa8c0cd9e907b",
+    "rubricInterpretation": "Recorded before fresh calls using existing broad rubric. Prior40/62 remains unchanged; difference is not attributed solely to code.",
+    "access": "Key disabled, workspace cap restored to$5, ephemeral secrets and activation variables removed."
+  }
+}

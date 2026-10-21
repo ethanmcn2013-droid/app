@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "signal-ping-release2-fresh-workflow-review/1",
+  "sourceCommit": "5c7ba65dc5a5bc18cc798e96e9a9cbcafbd8b27c",
+  "sourceChangeFrom85": "One obsolete test assertion corrected; product inputs and critical manifest unchanged.",
+  "workflowPath": ".github/workflows/ping-release2-synthetic-eval.yml",
+  "workflowRawSha256": "42241b6f7fa3cf3f4b4d4ec004e6bf05d1c249b209e8c7bcef938e4e4b58d9e8",
+  "workflowGitLfSha256": "42241b6f7fa3cf3f4b4d4ec004e6bf05d1c249b209e8c7bcef938e4e4b58d9e8",
+  "independentReviewer": "r2_independent_review",
+  "verdict": "No blocker in frozen preparation; separate human admission required before paid activation.",
+  "guardrails": [
+    "Exact source and workflow-trigger revisions",
+    "First workflow attempt only; later commits cannot replay",
+    "Exact hashed admission and strict synthetic scope",
+    "Maximum63attempts and$5estimated newusage; workspaceceiling$10",
+    "Expiry no later than2026-10-22T12:00Z",
+    "No external delivery, publication, purchases or production changes",
+    "Provider-free checks before secret-bearing execution",
+    "Temporary file cleanup and credential-free evidence artifacts"
+  ],
+  "observedFreeChecks": {
+    "fullConversationContextTest": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "exitCode": 0,
+      "execSession": 81416
+    },
+    "ciWorkflowContract": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "exitCode": 0
+    }
+  },
+  "humanAdmission": "Pending; previous approved cohort complete. Keydisabled/cap5/temporarysecretsabsent.",
+  "modelQualification": "Not run on repaired source; prior cohort64.52% unchanged."
+}

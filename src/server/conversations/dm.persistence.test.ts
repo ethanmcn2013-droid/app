@@ -5,11 +5,11 @@ import { join, resolve } from "node:path";
 import test from "node:test";
 import { createClient, type Client } from "@libsql/client";
 import { assertProjectId } from "@/lib/projects/project-ref";
-import { createLocalConversationDatabaseAdapter } from "./database";
+import { createLocalConversationDatabaseAdapter, type ConversationSqlStatement } from "./database";
 import { createConversationService } from "./service";
 
 const projectId = assertProjectId("dm_project");
-async function fixture() {
+async function fixture(onQuery?:(statement:ConversationSqlStatement|string)=>void) {
   const root=resolve(process.env.PC10_WORK_DIR ?? tmpdir()); await mkdir(root,{recursive:true});
   const directory=await mkdtemp(join(root,"signal-pc10-"));
   const client=createClient({url:`file:${join(directory,"tasks.db").replaceAll("\\","/")}`});
@@ -22,7 +22,9 @@ async function fixture() {
   await client.execute({sql:"INSERT INTO workspaces(id,slug,name,owner_user_id,context_type,created_at,updated_at) VALUES(?,'dm-project','DM Project','alice','project',?,?)",args:[projectId,now,now]});
   for(const [id,role] of [["alice","owner"],["bob","member"],["mallory","member"]])
     await client.execute({sql:"INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES(?,?,?,?)",args:[projectId,id,role,now]});
-  const adapter=createLocalConversationDatabaseAdapter({client});
+  const adapter=createLocalConversationDatabaseAdapter({client:{execute:(statement:ConversationSqlStatement|string)=>{
+    onQuery?.(statement);return client.execute(typeof statement==="string"?statement:{sql:statement.sql,args:[...(statement.args??[])]});
+  }}});
   return {client,service:createConversationService(adapter,{directMessagesEnabled:true}),adapter};
 }
 const request=(service:ReturnType<typeof createConversationService>,actorId="alice",recipientId="bob",clientRequestId="dm_request_0000001") =>
@@ -46,6 +48,31 @@ async function transition(service:ReturnType<typeof createConversationService>,a
   return service.transitionDirectMessage({actorId,projectId,conversationId,operation,clientRequestId,expectedAudienceEpoch:scope.value.audienceEpoch});
 }
 async function scalar(client:Client,sql:string,args:(string|number|null)[]=[]){const row=(await client.execute({sql,args})).rows[0];return row?.value ?? row?.n;}
+
+test("DM listing applies a parameterized candidate limit before per-thread authorization while default remains complete",async()=>{
+  const queries:Array<ConversationSqlStatement|string>=[],f=await fixture(statement=>queries.push(statement));
+  try {
+    for(let index=0;index<12;index++){
+      const id=`dm_user_${String(index).padStart(2,"0")}`;
+      await f.client.execute({sql:"INSERT INTO users(id,clerk_id,name,color,initials) VALUES(?,?,?,?,?)",args:[id,`clerk_${id}`,`DM User ${index}`,"#111","DU"]});
+      await f.client.execute({sql:"INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES(?,?,'member',?)",args:[projectId,id,Date.now()]});
+      const created=await request(f.service,"alice",id,`dm_bounded_request_${String(index).padStart(3,"0")}`);
+      assert.equal(created.ok,true);
+    }
+    queries.length=0;
+    const bounded=await f.service.listDirectMessages({actorId:"alice",projectId,limit:5});
+    assert.equal(bounded.ok,true);if(!bounded.ok)return;
+    assert.ok(bounded.value.length<=5);
+    const listQuery=queries.find(statement=>typeof statement!=="string"&&statement.sql.includes("ORDER BY created_at DESC,id LIMIT ?"));
+    assert.ok(listQuery&&typeof listQuery!=="string");
+    assert.deepEqual(listQuery.args,[projectId,"alice",5]);
+
+    for(const limit of [0,-1,1.5,51,Number.MAX_SAFE_INTEGER+1])
+      assert.deepEqual(await f.service.listDirectMessages({actorId:"alice",projectId,limit}),{ok:false,code:"invalid_input"});
+    const all=await f.service.listDirectMessages({actorId:"alice",projectId});
+    assert.equal(all.ok,true);assert.equal(all.ok&&all.value.length,12,"omitting limit retains the existing full-list behavior");
+  } finally {f.client.close();}
+});
 
 test("one sorted Project pair requires recipient consent and decline never creates another request",async()=>{
   const f=await fixture(); try {

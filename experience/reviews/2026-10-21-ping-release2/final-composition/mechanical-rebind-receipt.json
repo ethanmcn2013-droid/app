@@ -1,0 +1,124 @@
+{
+  "source": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+  "matrixSha256": "dbae098fbefc5833d58e1ff6b0e997e1e5e799070b8ad7559cc975752d6bd18a",
+  "independentReviewSha256": "b3cef6d06c05b06ed05dda35feab2c9958808419ce255eb2c849a00a5967918f",
+  "updatedFields": [
+    "attestationPath",
+    "attestationSha256",
+    "runId",
+    "canonicalEvidenceSha256",
+    "rawArtifactSha256"
+  ],
+  "receiptCount": 18,
+  "nonbindingFieldsPreserved": true,
+  "rows": [
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-analytics.json",
+      "beforeSha256": "32cdb332d1de11da117c4cf92072ee7c4e7b6e4aeeeedaa280a8c010cbc9be03",
+      "afterSha256": "650f1bd5852bc0a5457a7480cd377b1ac65d7c88675638becaefc138d72a47aa",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-concepts.json",
+      "beforeSha256": "ebfc5493e52a780b95c337f5f8654d0abefa12a21a13e34ca04c3b9e18e7c293",
+      "afterSha256": "0cd86178ed79f0404c3bec261a58764ad46c74f9939a6e72482cefcf0bdca7f5",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-files.json",
+      "beforeSha256": "93da2f3659ba5bf5ce26fad1e9518b3bf938c85e2bef3799f00c9ff7981658fc",
+      "afterSha256": "7903fbd302fb95ffee768baf184e39f8f7a7b8b1811c7ed901c3e617112c6480",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-ping-release2/receipts/tasks.page.app-messages.json",
+      "beforeSha256": "ee0c9ff78ae8732b138e32f5f85d55269f1b1582c233bb0e4a7dc17c5720294a",
+      "afterSha256": "822fdad08d052b09e58c3cf458f223a1aac0827de2a2823beb7f31947395a573",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-project.json",
+      "beforeSha256": "cdfe1ec20f6771028ef4dedf3519837b32e63e92d7550045b3438d1d54342ade",
+      "afterSha256": "18595d1fc87976c80009fa5ff720d6d02487af5379822c9876fe931ca6bfbd1a",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-settings.json",
+      "beforeSha256": "1d69cfeb0d75dad48317f0ce51a200f9a05bdb9313c91bf2b014f631c32e1661",
+      "afterSha256": "a61de908029e6bf86499d93c074e4a04e58aef0b074ad0bba6d8d81fd95fa0b1",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-tools-by-slug.json",
+      "beforeSha256": "f0d7787f23909ee4406c20dff8ff7ae234dead44422301377df6a7a3ab0e6664",
+      "afterSha256": "68cf0031e672bfcee1d2a2274740d531542c92ef980cd1db835491f7c53e1976",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.welcome.json",
+      "beforeSha256": "9e54df5984f200507df20340310db6c4ecb7b8a02660c560d2c0442f5e6212cc",
+      "afterSha256": "ae7d0e24601030e7f6addcd3ee0075d4ec1c9605c7fb8e5c38ab4188e1fd2ec9",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.resources.drive-upload.json",
+      "beforeSha256": "2dd92f40ab7bdc8e29ae19069a711be93112174d5808087d8e6fefaeba8235bb",
+      "afterSha256": "4e0772a2e1ed5d3563f68ed01450e9894dba754573d3b311816e3e69731b0aba",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-analytics-error.json",
+      "beforeSha256": "6d13f5fe8a7cf5d841bd2f0f31a4992d70c0377196f42ceea4e003461c0b7072",
+      "afterSha256": "81636df1cf7b0a5f7fa89aae94487a919c73cfd654ea572dd840c597cff47369",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-analytics-loading.json",
+      "beforeSha256": "7e16051417847425964d1b53c730e2304d491aced650c3aedcd40d1e24d4405f",
+      "afterSha256": "90830b3221b51dee87ead3055b15a3f8a7474807f7c02e66aa39a2dc4bc9ea7c",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-files-error.json",
+      "beforeSha256": "b0c49c2ff9448568e94d1c5479c69cc25e2b47a38d49fd0344b1f74774686ad0",
+      "afterSha256": "7e19277adb6a07126e00e0da08c1c61257f4162d7e1cb539c7e1972ba77e7009",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-files-loading.json",
+      "beforeSha256": "883f9165c8cca20e751e3148243d0770ac79b285f696b2671827b8cba529e44f",
+      "afterSha256": "568ad58adc19c05c47dade361f82f97277e0b243c145afa1544e17c73bbd0ea9",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-home-error.json",
+      "beforeSha256": "0fdd1b9acd7fc118b79d022c0d9652b941208ddf7a9c8530acbe0515be13b7c8",
+      "afterSha256": "5946155bef1d6a1112ed73271bcd24ecfd123bda07c70b2299acf0b425129228",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-home-loading.json",
+      "beforeSha256": "bf3b839043dbde8fb93714426bf4721ee25575ed99c47097465c4b0ad336a4df",
+      "afterSha256": "3ede8b9f83d81d610cad77b44dc9c80131ecc561a3b3853dadf8ac8e85a4f35d",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-project-loading.json",
+      "beforeSha256": "f00e173d4790b2104900f72b695e834cf3e801eb1ee2b77d22e421ec98961b26",
+      "afterSha256": "88aa062b37a66649b8a18009bcd67293d1c3dacf259155c798f921bd7f219cc6",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-tasks-loading.json",
+      "beforeSha256": "45cd04612cc2dbabc420019ae90d30f2d8c259089e18ebe195052d82d3e74c8e",
+      "afterSha256": "4dad0be2168b9a256ae88f9d299db51d3bcf2c2d810c924908eb79da1e132cd2",
+      "nonbindingFieldsEqual": true
+    },
+    {
+      "path": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-tools-loading.json",
+      "beforeSha256": "f260a86f2e7819ec9cecb01389c89b4d07b9732bcaa8c3e85b70b209d9ae487d",
+      "afterSha256": "cab093a862aa144043f660c661330259e250aaed4454cb9b605b1c11ef8191b0",
+      "nonbindingFieldsEqual": true
+    }
+  ]
+}

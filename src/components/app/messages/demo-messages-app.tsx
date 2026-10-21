@@ -14,7 +14,7 @@ import { AvatarStack } from "@/components/app/presence/avatar-stack";
 import { openPalette } from "@/components/shell/app-shell";
 import { publishChatDirectory, publishMessagesUnread } from "./messages-unread";
 import { chatHref, demoChatDirectory } from "./chat-directory";
-import { listTimeLabel, matchesQuery, previewText, type ChatMessage, type ChatPerson } from "./chat-view-model";
+import { listTimeLabel, matchesQuery, personToneColor, previewText, type ChatMessage, type ChatPerson } from "./chat-view-model";
 import { conversationAttention, demoReducer, initDemoState, rootMessages, threadReplies, unreadTotal, type DemoConversation, type DemoMessagesSnapshot, type DemoState } from "./demo-messages-model";
 import { useBottomAnchor, JumpToLatest, Avatar, CenterState, ChatIcon, ChatList, Composer, ConversationIntro, DetailsBlock, Dot, MessageStream, PeopleList, Pill, ProjectTile, SidePanel, StatusGlyph, TaskTile, chatStyles as styles, type ChatListItem, type ChatListSection, type MessageActions } from "./chat-ui";
 import { useHiddenConversations } from "./use-hidden-conversations";
@@ -249,7 +249,7 @@ export function DemoMessagesApp({ snapshot, embedded = false, requestedConversat
   if (conversation.kind === "project") {
     leading = <ProjectTile id={snapshot.project.id} name={conversation.title} size={24} />;
     subtitle = <>Project conversation<Dot />{members.length} members</>;
-    headerActions = <AvatarStack className={styles.headerStack} members={members} onClick={() => detailsOpen ? closeSide() : openSide({ kind: "details" })} pressed={detailsOpen} />;
+    headerActions = <AvatarStack className={styles.headerStack} members={members.map(person=>({...person,colour:personToneColor(person.id)}))} onClick={() => detailsOpen ? closeSide() : openSide({ kind: "details" })} pressed={detailsOpen} />;
     intro = <ConversationIntro actions={<><button className={styles.introButton} onClick={() => openSide({ kind: "details" })} type="button"><ChatIcon.panel />See members and details</button><Link className={styles.cuCard} href="/app/timeline"><span aria-hidden="true" className={styles.cuCardArt}><i /><i /><i /></span><span className={styles.cuCardText}><strong>Open the timeline</strong><span>See the dates and milestones for {snapshot.project.name}</span></span></Link></>} mark={null} text={<>Everyone in {conversation.title} can read this channel and reply. Messages stay inside this Project.</>} title={<>This is the start of #{conversation.title}</>} />;
   } else if (conversation.kind === "dm") {
     leading = <Avatar id={conversation.otherId ?? conversation.id} name={conversation.title} size={24} />;

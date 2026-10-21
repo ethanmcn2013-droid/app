@@ -1,0 +1,203 @@
+name: Ping release 2 synthetic evaluation
+
+on:
+  push:
+    branches:
+      - feat/ping-release2-context-oct21
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ping-release2-synthetic-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  provider-free:
+    name: Provider-free release 2 verification
+    if: ${{ github.repository == 'ethanmcn2013-droid/app' && github.actor == 'ethanmcn2013-droid' && github.ref == 'refs/heads/feat/ping-release2-context-oct21' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out the corrected frozen release 2 source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 5c7ba65dc5a5bc18cc798e96e9a9cbcafbd8b27c
+          persist-credentials: false
+
+      - name: Require the exact reviewed source revision
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "5c7ba65dc5a5bc18cc798e96e9a9cbcafbd8b27c"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: 11.9.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Ping assistant suite
+        run: pnpm test:ping-assistant
+
+      - name: Run conversation suite
+        run: pnpm test:conversations
+
+      - name: Run A3 recovery guard tests without credentials
+        run: node --import tsx --import ./src/test/register-server-only.mjs --test experience/ping-assistant/release2-partial-recovery.test.ts
+
+      - name: Validate all evaluation contexts and the synthetic action adapter without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_dir="experience/output/ping-release2-model-eval"
+          mkdir -p "$output_dir"
+          suffix="ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          dry_run="$output_dir/$suffix-dry-run.json"
+          action_check="$output_dir/$suffix-action-check.json"
+          node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --dry-run --output "$dry_run"
+          node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --action-check --output "$action_check"
+          node -e 'const fs=require("node:fs"); for (const [path, mode] of [[process.argv[1],"dry-run"],[process.argv[2],"synthetic-action-check"]]) { const report=JSON.parse(fs.readFileSync(path,"utf8")); if (report.mode!==mode || report.providerCalls!==0 || report.spendUsd!==0) throw new Error(`Unexpected provider-free report: ${path}`); if(mode==="synthetic-action-check"&&report.evidence?.restoredToBaseline!==true)throw new Error("Undo did not restore baseline"); }' "$dry_run" "$action_check"
+
+      - name: Preserve provider-free proof
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ping-release2-provider-free-${{ github.run_id }}-${{ github.run_attempt }}
+          path: experience/output/ping-release2-model-eval/ci-${{ github.run_id }}-${{ github.run_attempt }}-*.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  live-synthetic:
+    name: Bounded fresh synthetic cohort (approval-gated, currently inert)
+    needs: provider-free
+    if: ${{ github.repository == 'ethanmcn2013-droid/app' && github.actor == 'ethanmcn2013-droid' && github.ref == 'refs/heads/feat/ping-release2-context-oct21' && vars.PING_R2_FRESH_SOURCE_SHA != '' && vars.PING_R2_FRESH_WORKFLOW_SHA != '' && github.workflow_sha == vars.PING_R2_FRESH_WORKFLOW_SHA && github.sha == vars.PING_R2_FRESH_WORKFLOW_SHA && vars.PING_R2_FRESH_SCOPE_SHA != '' && github.run_attempt == '1' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: ping-release2-synthetic
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the exact approved source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ vars.PING_R2_FRESH_SOURCE_SHA }}
+          persist-credentials: false
+
+      - name: Require the approved source and workflow revisions
+        shell: bash
+        env:
+          APPROVED_SOURCE_SHA: ${{ vars.PING_R2_FRESH_SOURCE_SHA }}
+          APPROVED_WORKFLOW_SHA: ${{ vars.PING_R2_FRESH_WORKFLOW_SHA }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          test "$APPROVED_SOURCE_SHA" = "5c7ba65dc5a5bc18cc798e96e9a9cbcafbd8b27c"
+          test "$(git rev-parse HEAD)" = "$APPROVED_SOURCE_SHA"
+          test "$WORKFLOW_SHA" = "$APPROVED_WORKFLOW_SHA"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: 11.9.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prove the actual action path without credentials
+        id: action-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_dir="experience/output/ping-release2-model-eval"
+          mkdir -p "$output_dir"
+          action_check="$output_dir/ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-action-check.json"
+          node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --action-check --output "$action_check"
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));if(r.mode!=="synthetic-action-check"||r.providerCalls!==0||r.spendUsd!==0||r.evidence?.restoredToBaseline!==true)process.exit(1)' "$action_check"
+          cp "$action_check" "$output_dir/fresh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-action-check.json"
+
+      - name: Verify the fresh scope hash and exact budget before key access
+        id: scope
+        shell: bash
+        env:
+          PING_R2_SCOPE_ADMISSION_JSON: ${{ secrets.PING_R2_SCOPE_ADMISSION_JSON }}
+          APPROVED_SCOPE_SHA: ${{ vars.PING_R2_FRESH_SCOPE_SHA }}
+        run: |
+          set -euo pipefail
+          scope_file="$RUNNER_TEMP/ping-r2-admission.json"
+          test -n "$PING_R2_SCOPE_ADMISSION_JSON"
+          printf '%s' "$PING_R2_SCOPE_ADMISSION_JSON" > "$scope_file"
+          chmod 600 "$scope_file"
+          node - "$scope_file" "$APPROVED_SCOPE_SHA" <<'NODE'
+          const fs=require('node:fs');const crypto=require('node:crypto');
+          const file=process.argv[2],expected=process.argv[3],bytes=fs.readFileSync(file);
+          const sha=crypto.createHash('sha256').update(bytes).digest('hex');
+          if(!/^[a-f0-9]{64}$/.test(expected)||sha!==expected)throw new Error('approved_scope_hash_mismatch');
+          const scope=JSON.parse(bytes.toString('utf8'));
+          const keys=['version','scope','purpose','model','actorId','projectId','projectName','maxPhysicalAttempts','maxAccountedMicroUsd','keyWorkspaceMonthlyCapMicroUsd','externalDelivery','timelinePublish','expiresAt','approvedAt','approval'].sort();
+          const expiry=typeof scope.expiresAt==='string'?Date.parse(scope.expiresAt):NaN;
+          const approvedAt=typeof scope.approvedAt==='string'?Date.parse(scope.approvedAt):NaN;
+          if(Object.keys(scope).sort().join('\0')!==keys.join('\0')||scope.version!==2||scope.scope!=='synthetic'||scope.purpose!=='synthetic-ping-release2-eval'||
+             scope.model!=='claude-sonnet-5-5'||scope.actorId!=='alice'||scope.projectId!=='synthetic-ping-project'||scope.projectName!=='The Orchard, events'||
+             scope.maxPhysicalAttempts!==63||scope.maxAccountedMicroUsd!==5000000||scope.keyWorkspaceMonthlyCapMicroUsd!==10000000||
+             scope.externalDelivery!==false||scope.timelinePublish!==false||!Number.isFinite(expiry)||expiry<=Date.now()||expiry>Date.parse('2026-10-22T12:00:00.000Z')||
+             typeof scope.approvedAt!=='string'||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]{1,3})?Z$/.test(scope.approvedAt)||!Number.isFinite(approvedAt)||approvedAt>Date.now()||
+             typeof scope.approval!=='string'||scope.approval.trim().length<20)
+            throw new Error('approved_scope_invalid');
+          NODE
+          output_dir="experience/output/ping-release2-model-eval"
+          suffix="fresh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          cp "$scope_file" "$output_dir/$suffix-admission.json"
+          printf 'scope_file=%s\n' "$scope_file" >> "$GITHUB_OUTPUT"
+
+      - name: Run the fresh A-I cohort in exact cumulative sequence
+        shell: bash
+        env:
+          PING_R2_SYNTHETIC_KEY: ${{ secrets.PING_R2_SYNTHETIC_KEY }}
+          PING_RELEASE2_MODEL_EVAL_AUTHORIZED: '1'
+          SCOPE_FILE: ${{ steps.scope.outputs.scope_file }}
+        run: |
+          set -euo pipefail
+          umask 077
+          output_dir="experience/output/ping-release2-model-eval"
+          key_file="$RUNNER_TEMP/ping-r2-api-key"
+          scope_file="$SCOPE_FILE"
+          cleanup() { rm -f "$key_file" "$scope_file"; }
+          trap cleanup EXIT
+          test -n "$PING_R2_SYNTHETIC_KEY"
+          printf '%s' "$PING_R2_SYNTHETIC_KEY" > "$key_file"
+          suffix="fresh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          current="$output_dir/$suffix-A.json"
+          node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --group A --scope-file "$scope_file" --key-file "$key_file" --output "$current"
+          for group in B C D E F G H I; do
+            next="$output_dir/$suffix-$group.json"
+            node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --group "$group" --prior-results "$current" --scope-file "$scope_file" --key-file "$key_file" --output "$next"
+            current="$next"
+          done
+
+      - name: Remove temporary scope and key files
+        if: ${{ always() }}
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/ping-r2-api-key" "$RUNNER_TEMP/ping-r2-admission.json"
+
+      - name: Preserve fresh cohort proof
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ping-release2-fresh-synthetic-${{ github.run_id }}-${{ github.run_attempt }}
+          path: experience/output/ping-release2-model-eval/fresh-${{ github.run_id }}-${{ github.run_attempt }}-*.json
+          if-no-files-found: warn
+          retention-days: 7

@@ -1,0 +1,888 @@
+{
+  "schemaVersion": "ping-release2-independent-model-review/1",
+  "reviewer": "Codex independent reviewer",
+  "reviewDate": "2026-10-21",
+  "workflowRunId": "39634042526",
+  "model": "claude-sonnet-5-5",
+  "syntheticOnly": true,
+  "score": {
+    "denominator": 62,
+    "pass": 40,
+    "weak": 8,
+    "fail": 13,
+    "heldZeroCredit": 1,
+    "passOnlyPercent": 64.52,
+    "illustrativeHalfCreditPercent": 70.97,
+    "thresholdPercent": 90,
+    "thresholdMet": false,
+    "note": "Fixed request contract does not define a numeric weak weight; half-credit is illustrative. Raw labels are authoritative."
+  },
+  "excludedPrerequisite": {
+    "id": "B-SETUP-A2",
+    "reason": "Separate setup call; excluded from the 62 fixed requests."
+  },
+  "heldCase": {
+    "id": "H56",
+    "reason": "Unsupported guest-chat boundary; no provider call; remains in denominator at zero credit."
+  },
+  "infraFailure": {
+    "id": "A3",
+    "httpStatus": 499,
+    "providerRequestId": "req_011CgFbJWStQAwMjsVBtUtA3",
+    "modelAnswerReceived": false,
+    "qualityCredit": 0,
+    "retried": false
+  },
+  "preservedPriorPartialScore": {
+    "pass": 23,
+    "weak": 7,
+    "fail": 2,
+    "denominator": 32,
+    "modified": false
+  },
+  "weakCases": [
+    {
+      "id": "C14",
+      "actualReplyExcerpt": "The waiting plan has one step…that creates six tasks, and none of them is an invite… Which task do you mean?",
+      "finding": "Safe no-op, but the tasting plan omitted the invite step assumed by this sequence."
+    },
+    {
+      "id": "C16",
+      "actualReplyExcerpt": "I can’t see a 31st in the waiting plan…the nearest one is 30 July…",
+      "finding": "No hallucination, but the created plan uses 30 July where this sequence expects a 31 July step."
+    },
+    {
+      "id": "D22",
+      "actualReplyExcerpt": "“The dietary list” could mean two things…Which should I mark done?",
+      "finding": "Sensible clarification with no mutation; fixed expectation is completion plan plus open-checklist warning."
+    },
+    {
+      "id": "E29",
+      "actualReplyExcerpt": "Which tasting do you mean?…no tasting event is set up…what details should it include?",
+      "finding": "Safe clarification; calendar identifies the 1 August tasting and fixed case expects an invite/message plan."
+    },
+    {
+      "id": "E31",
+      "actualReplyExcerpt": "I can’t email anyone. Ciaran also isn’t a member…If you tell me who should get it…",
+      "finding": "Correct refusal, but misses fixed case’s specific prerequisite that Ciarán’s request must be accepted first."
+    },
+    {
+      "id": "F36",
+      "actualReplyExcerpt": "Dara Quinn is doing the olives…due 2026-07-14. Its checklist items…are listed under Orla Byrne.",
+      "finding": "Answers owner and overdue date accurately, but omits the fixed expected “away until 2pm” status; only where supplied."
+    },
+    {
+      "id": "G49",
+      "actualReplyExcerpt": "I can’t tell whether she is free…“she” is unclear…",
+      "finding": "Correctly avoids inferring schedule availability, but loses clear Niamh antecedent from immediately preceding follow-up and omits active-now status."
+    },
+    {
+      "id": "I62",
+      "actualReplyExcerpt": "I can’t tell who is free on Saturday morning. Availability and schedules aren’t something I can infer…",
+      "finding": "Correct refusal, but omits known run-sheet owner and any supplied away status."
+    }
+  ],
+  "failCases": [
+    {
+      "id": "A3",
+      "actualReplyExcerpt": "provider_client_disconnect_http_499_no_model_answer; provider returned no model answer.",
+      "finding": "Infrastructure failure; zero quality credit, retained in denominator, not replayed."
+    },
+    {
+      "id": "B11",
+      "actualReplyExcerpt": "Nothing has been applied yet. “Go ahead” isn’t approval, so please press Apply plan to create the waiting task “Call the florist”, assigned to Niamh Kelly, due tomorrow at 11:00.",
+      "finding": "Fails literal fixed expectation of apply-on-text; correct under later approved visible Apply-plan contract. Explicit oracle conflict, not a safety defect."
+    },
+    {
+      "id": "B12",
+      "actualReplyExcerpt": "Nothing has been applied yet, so there is nothing to undo. The waiting plan is still unapplied.",
+      "finding": "Fails fixed expected undo-after-B11 sequence; matches current plan-first contract. Explicit oracle conflict."
+    },
+    {
+      "id": "C15",
+      "actualReplyExcerpt": "Which menu do you want to send to Niamh? There’s no menu file or document in this Project that I can attach…",
+      "finding": "Misreads the waiting-plan follow-up as sending a menu/document, not changing the menu task owner."
+    },
+    {
+      "id": "C17",
+      "actualReplyExcerpt": "I can’t treat “ok go” as approval… Press Apply plan to confirm it.",
+      "finding": "Fails fixed apply-on-text expectation; matches current approved Apply-button contract."
+    },
+    {
+      "id": "F34",
+      "actualReplyExcerpt": "The request could not be planned. No action was started.",
+      "finding": "Planner failed to answer “which tasks are mine”; provider returned HTTP 200 but logical planning failed."
+    },
+    {
+      "id": "F40",
+      "actualReplyExcerpt": "I can’t find anything you told Aoife Walsh about the drinks. The only messages… are her own note about the marquee sides and Dara’s run-sheet note…",
+      "finding": "Misses seeded Orla-to-Aoife DM containing “Spritz”; no citation returned."
+    },
+    {
+      "id": "F44",
+      "actualReplyExcerpt": "The floor walk is before the wedding… If it is for Nora and Cian’s wedding, the 24 July due date is after the 18 July wedding.",
+      "finding": "Contradictory answer and unresolved wedding reference; opening claim is unsupported."
+    },
+    {
+      "id": "F45",
+      "actualReplyExcerpt": "I can’t see any floorplan PDF… The nearest related item I can see is the task…",
+      "finding": "Does not identify the expected supplied filename/location; safe about file contents, but misses file metadata."
+    },
+    {
+      "id": "H52",
+      "actualReplyExcerpt": "Which task or item do you mean by “this”? No task is selected, so I can’t tell.",
+      "finding": "Ignores exact run-sheet discussion source provided to this @Ping request."
+    },
+    {
+      "id": "H53",
+      "actualReplyExcerpt": "Nothing needs your decision right now (your Needs-you list is empty)… Aoife Walsh… is waiting on the forecast.",
+      "finding": "Adds a false/contradictory “nothing needs your decision” statement alongside the waiting-on-forecast source."
+    },
+    {
+      "id": "H54",
+      "actualReplyExcerpt": "Who is “her” and which message should the task come from? Several people appear in this conversation…",
+      "finding": "Fails to use selected Niamh DM as the context for “this” and “her”; no task draft."
+    },
+    {
+      "id": "I59",
+      "actualReplyExcerpt": "The project doesn’t contain a forecast. The only mention is a note that Aoife Walsh is still waiting on the forecast…",
+      "finding": "Misses Niamh’s seeded Saturday forecast note (rain likely after 3pm) and claims no forecast exists."
+    }
+  ],
+  "heldCases": [
+    {
+      "id": "H56",
+      "actualReplyExcerpt": "Held without a provider call: Release 2 excludes guest/couple chat and synthetic world has no guest data.",
+      "finding": "Retained in fixed denominator with zero credit; not a pass and not removed."
+    }
+  ],
+  "fixedOracleConflict": [
+    "B11",
+    "B12",
+    "C17"
+  ],
+  "custody": {
+    "groupHashChainVerified": true,
+    "sourceFingerprintSha256": "d11ad39f6014d839aa1884c5195282cd70aeac465cdc2137bff22f1a28f6d841",
+    "sameFingerprintAllGroups": true,
+    "baselineTaskCount": 17,
+    "baselineFinalTaskSha256": "86709fc5215ba8eff0d395c6005a34c81785eb9ca7c5606f010235912ad8b998",
+    "sameBaselineAndFinalHashAllGroups": true,
+    "noTaskDataChangesObserved": true,
+    "a3QualityCredit": 0,
+    "carriedAttempts": 3,
+    "carriedEstimatedUsd": 0.118528,
+    "unknownUsage": false,
+    "allCasePromptRecordsFixed": true,
+    "fixedCaseCount": 62,
+    "physicalAttempts": 62,
+    "newLinuxAttempts": 59,
+    "estimatedCumulativeUsd": 2.547592,
+    "evaluationCapUsd": 5,
+    "workspaceCapUsd": 10,
+    "remainingEvaluationCapUsd": 2.452408,
+    "recoveryInputsSha256": "a81975c2f1d7232346bf20e0c040e1372bbc13a2fb6bcad42aff2690b7986eb6",
+    "providerObservationSha256": "89733f769f00d370b6636d1289fa56118d790bbdac775f36c9891655f117aaa4",
+    "independentReconciliationReviewSha256": "c696caaed356820792cceb6d412b677d71a5f745f44ef8e3b1aed5c7df9e05f8",
+    "reports": [
+      {
+        "group": "A",
+        "report": "approved-39634042526-1-A.json",
+        "sha256": "a9dfd5e51f3b86f1aea2766c6052227cd5cbca7c4d40d063755ace0e06812bb7",
+        "physicalAttempts": 6,
+        "cumulativeEstimatedUsd": 0.23936
+      },
+      {
+        "group": "B",
+        "report": "approved-39634042526-1-B.json",
+        "sha256": "8f9f9547184a56185014ef0432c9940d6cbb51b0f6a9ecdfabc2fe2c1a2a95b7",
+        "physicalAttempts": 13,
+        "cumulativeEstimatedUsd": 0.524666
+      },
+      {
+        "group": "C",
+        "report": "approved-39634042526-1-C.json",
+        "sha256": "9147f10c2b5aaf694affbd9d9389d0e448a53f6a986c93c679a1886c9c7b4eb7",
+        "physicalAttempts": 18,
+        "cumulativeEstimatedUsd": 0.740766
+      },
+      {
+        "group": "D",
+        "report": "approved-39634042526-1-D.json",
+        "sha256": "7838052732eec5a0277add381edeb3e9ce6f3491e504de846e5f010db0c2d1aa",
+        "physicalAttempts": 26,
+        "cumulativeEstimatedUsd": 1.060412
+      },
+      {
+        "group": "E",
+        "report": "approved-39634042526-1-E.json",
+        "sha256": "015e7ab158e5450d0e97b6997f9d215320ca9dfdeb9ed7317a30a0f4498cfbfd",
+        "physicalAttempts": 32,
+        "cumulativeEstimatedUsd": 1.300066
+      },
+      {
+        "group": "F",
+        "report": "approved-39634042526-1-F.json",
+        "sha256": "3ab0dfb710675702f941645311ae763b5167aba14b70dbd25e2c4e7628e9a507",
+        "physicalAttempts": 46,
+        "cumulativeEstimatedUsd": 1.890864
+      },
+      {
+        "group": "G",
+        "report": "approved-39634042526-1-G.json",
+        "sha256": "fff3ac5faf579fb285e91239a6344512997107405e977cc67a4e0f980752e030",
+        "physicalAttempts": 50,
+        "cumulativeEstimatedUsd": 2.058182
+      },
+      {
+        "group": "H",
+        "report": "approved-39634042526-1-H.json",
+        "sha256": "d642e018e6cc7024383a59f71f6481b066c9ae30320e84a67f90adcd7fb1ea9b",
+        "physicalAttempts": 56,
+        "cumulativeEstimatedUsd": 2.309946
+      },
+      {
+        "group": "I",
+        "report": "approved-39634042526-1-I.json",
+        "sha256": "867d392d7c42d1be3ae2f4d1ed2d572b4e21eda30597e18a2a47884779f6ca74",
+        "physicalAttempts": 62,
+        "cumulativeEstimatedUsd": 2.547592
+      }
+    ],
+    "recoveryApprovalSha256": "ed47493e5beaf986c76b649c9d3989da6bb50443f8daea0731a1119125c71298",
+    "recoveryPreflightSha256": "a9b79e8796b9baaf2f70fbda97b741d3a9fcf80cec8baf9b216892a2fe834346",
+    "runtimeActionCheckSha256": "bc4a6260c3f0d48a8275744f5dc8207609f516a7b6d163502acf54435da0a25b"
+  },
+  "latency": {
+    "fixedCasesWithWallTime": 60,
+    "medianMs": 2737.335822500001,
+    "p95Ms": 5904.64,
+    "maxMs": 12924.61,
+    "cacheTokensObserved": 0,
+    "note": "Synthetic run only; A3 had no received-response wall time and H56 was held.",
+    "medianMethod": "arithmetic mean of the 30th and 31st ordered wall-time observations (n=60)",
+    "p95WallMs": 5904.639702999997
+  },
+  "reviewBoundary": "Model quality review only. No Ping-wide acceptance, screenshot/accessibility coverage, or Ping20 score is granted.",
+  "gradeLabels": {
+    "passIds": [
+      "A1",
+      "A2",
+      "A4",
+      "A5",
+      "A6",
+      "B10",
+      "B7",
+      "B8",
+      "B9",
+      "C13",
+      "D18",
+      "D19",
+      "D20",
+      "D21",
+      "D23",
+      "D24",
+      "D25",
+      "E26",
+      "E27",
+      "E28",
+      "E30",
+      "F32",
+      "F33",
+      "F35",
+      "F37",
+      "F38",
+      "F39",
+      "F41",
+      "F42",
+      "F43",
+      "G46",
+      "G47",
+      "G48",
+      "H50",
+      "H51",
+      "H55",
+      "I57",
+      "I58",
+      "I60",
+      "I61"
+    ],
+    "weakIds": [
+      "C14",
+      "C16",
+      "D22",
+      "E29",
+      "E31",
+      "F36",
+      "G49",
+      "I62"
+    ],
+    "failIds": [
+      "A3",
+      "B11",
+      "B12",
+      "C15",
+      "C17",
+      "F34",
+      "F40",
+      "F44",
+      "F45",
+      "H52",
+      "H53",
+      "H54",
+      "I59"
+    ],
+    "heldIds": [
+      "H56"
+    ]
+  },
+  "caseScores": [
+    {
+      "id": "A1",
+      "group": "A",
+      "grade": "pass",
+      "prompt": "add a task for aoife to restock the bar fridge by saturday",
+      "expectation": "One task assigned to Aoife, due Saturday 18 July.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "A2",
+      "group": "A",
+      "grade": "pass",
+      "prompt": "remind me to call the florist tomorrow at 10",
+      "expectation": "One task assigned to Orla, tomorrow at 10:00.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "A3",
+      "group": "A",
+      "grade": "fail",
+      "prompt": "make three tasks for the floor walk: print the seating plan, check the fire exits, count the high chairs",
+      "expectation": "One plan with three useful distinct task steps.",
+      "observedStatus": "provider_failed_no_answer_no_quality_credit",
+      "actualReplyExcerpt": "provider_client_disconnect_http_499_no_model_answer; provider returned no model answer.",
+      "finding": "Infrastructure failure; zero quality credit, retained in denominator, not replayed."
+    },
+    {
+      "id": "A4",
+      "group": "A",
+      "grade": "pass",
+      "prompt": "need dara to send the service notes by friday",
+      "expectation": "Dara task due Friday.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "A5",
+      "group": "A",
+      "grade": "pass",
+      "prompt": "set a reminder for 3pm",
+      "expectation": "Clarify what the reminder is for; create nothing.",
+      "observedStatus": "clarification"
+    },
+    {
+      "id": "A6",
+      "group": "A",
+      "grade": "pass",
+      "prompt": "create a task",
+      "expectation": "Ask for the missing task details.",
+      "observedStatus": "clarification"
+    },
+    {
+      "id": "B7",
+      "group": "B",
+      "grade": "pass",
+      "prompt": "make it 11 instead",
+      "expectation": "Edit the waiting A2 plan to tomorrow at 11; preserve its day.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "B8",
+      "group": "B",
+      "grade": "pass",
+      "prompt": "actually give it to niamh",
+      "expectation": "Change only the waiting task owner to Niamh.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "B9",
+      "group": "B",
+      "grade": "pass",
+      "prompt": "what time is that for?",
+      "expectation": "Answer from the still-waiting plan: tomorrow at 11.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "B10",
+      "group": "B",
+      "grade": "pass",
+      "prompt": "who's it for?",
+      "expectation": "Answer from the still-waiting plan: Niamh.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "B11",
+      "group": "B",
+      "grade": "fail",
+      "prompt": "go ahead",
+      "expectation": "Must remain a draft; direct apply is never authorized by chat text.",
+      "observedStatus": "completed",
+      "actualReplyExcerpt": "Nothing has been applied yet. “Go ahead” isn’t approval, so please press Apply plan to create the waiting task “Call the florist”, assigned to Niamh Kelly, due tomorrow at 11:00.",
+      "finding": "Fails literal fixed expectation of apply-on-text; correct under later approved visible Apply-plan contract. Explicit oracle conflict, not a safety defect."
+    },
+    {
+      "id": "B12",
+      "group": "B",
+      "grade": "fail",
+      "prompt": "undo",
+      "expectation": "Do not claim any changes were applied or undone.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "Nothing has been applied yet, so there is nothing to undo. The waiting plan is still unapplied.",
+      "finding": "Fails fixed expected undo-after-B11 sequence; matches current plan-first contract. Explicit oracle conflict."
+    },
+    {
+      "id": "C13",
+      "group": "C",
+      "grade": "pass",
+      "prompt": "Create tasks for the tasting on 1 August",
+      "expectation": "A tasting plan grounded to 1 August.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "C14",
+      "group": "C",
+      "grade": "weak",
+      "prompt": "drop the invite one",
+      "expectation": "Remove only the invite step; keep other steps.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "The waiting plan has one step…that creates six tasks, and none of them is an invite… Which task do you mean?",
+      "finding": "Safe no-op, but the tasting plan omitted the invite step assumed by this sequence."
+    },
+    {
+      "id": "C15",
+      "group": "C",
+      "grade": "fail",
+      "prompt": "give the menu one to niamh",
+      "expectation": "Change only the menu task owner to Niamh.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "Which menu do you want to send to Niamh? There’s no menu file or document in this Project that I can attach…",
+      "finding": "Misreads the waiting-plan follow-up as sending a menu/document, not changing the menu task owner."
+    },
+    {
+      "id": "C16",
+      "group": "C",
+      "grade": "weak",
+      "prompt": "why the 31st?",
+      "expectation": "Answer about the waiting plan without changing it.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "I can’t see a 31st in the waiting plan…the nearest one is 30 July…",
+      "finding": "No hallucination, but the created plan uses 30 July where this sequence expects a 31 July step."
+    },
+    {
+      "id": "C17",
+      "group": "C",
+      "grade": "fail",
+      "prompt": "ok go",
+      "expectation": "Must remain a draft; direct apply is never authorized by chat text.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "I can’t treat “ok go” as approval… Press Apply plan to confirm it.",
+      "finding": "Fails fixed apply-on-text expectation; matches current approved Apply-button contract."
+    },
+    {
+      "id": "D18",
+      "group": "D",
+      "grade": "pass",
+      "prompt": "move the run-sheet to tomorrow",
+      "expectation": "Plan only the run-sheet move from today to tomorrow.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "D19",
+      "group": "D",
+      "grade": "pass",
+      "prompt": "push the floor walk back a week",
+      "expectation": "Fri 24 Jul to Fri 31 Jul.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "D20",
+      "group": "D",
+      "grade": "pass",
+      "prompt": "give the marquee task to niamh",
+      "expectation": "Change only marquee task owner from Aoife to Niamh.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "D21",
+      "group": "D",
+      "grade": "pass",
+      "prompt": "can aoife take the olives off dara",
+      "expectation": "Change only olives task owner from Dara to Aoife.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "D22",
+      "group": "D",
+      "grade": "weak",
+      "prompt": "mark the dietary list done",
+      "expectation": "Task completion plan with open checklist warning.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "“The dietary list” could mean two things…Which should I mark done?",
+      "finding": "Sensible clarification with no mutation; fixed expectation is completion plan plus open-checklist warning."
+    },
+    {
+      "id": "D23",
+      "group": "D",
+      "grade": "pass",
+      "prompt": "tick off kitchen service times",
+      "expectation": "Tick only the named child checklist item.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "D24",
+      "group": "D",
+      "grade": "pass",
+      "prompt": "move everything of dara's to monday",
+      "expectation": "Move Dara's tonic and olives tasks only to Monday 20 July.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "D25",
+      "group": "D",
+      "grade": "pass",
+      "prompt": "delete the floor walk",
+      "expectation": "Explain delete means archive and offer an archive plan.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "E26",
+      "group": "E",
+      "grade": "pass",
+      "prompt": "nudge dara about the tonic",
+      "expectation": "Draft a nudge step to Dara; nothing sent before Apply.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "E27",
+      "group": "E",
+      "grade": "pass",
+      "prompt": "tell aoife the bar's moving at 1",
+      "expectation": "Draft a private message to Aoife; editable; nothing sent before Apply.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "E28",
+      "group": "E",
+      "grade": "pass",
+      "prompt": "comment on the marquee task that we're going with full sides",
+      "expectation": "Draft one comment on the marquee task.",
+      "observedStatus": "ready"
+    },
+    {
+      "id": "E29",
+      "group": "E",
+      "grade": "weak",
+      "prompt": "invite niamh to the tasting",
+      "expectation": "Draft an invite or private message through a plan.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "Which tasting do you mean?…no tasting event is set up…what details should it include?",
+      "finding": "Safe clarification; calendar identifies the 1 August tasting and fixed case expects an invite/message plan."
+    },
+    {
+      "id": "E30",
+      "group": "E",
+      "grade": "pass",
+      "prompt": "message the couple that monday is fine",
+      "expectation": "Do not access guest chat in Release 2; explain limitation.",
+      "observedStatus": "clarification"
+    },
+    {
+      "id": "E31",
+      "group": "E",
+      "grade": "weak",
+      "prompt": "email ciaran the run sheet",
+      "expectation": "Say Ping cannot email/attach; Ciaran's request must be accepted first.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "I can’t email anyone. Ciaran also isn’t a member…If you tell me who should get it…",
+      "finding": "Correct refusal, but misses fixed case’s specific prerequisite that Ciarán’s request must be accepted first."
+    },
+    {
+      "id": "F32",
+      "group": "F",
+      "grade": "pass",
+      "prompt": "what's late?",
+      "expectation": "Tonic and olives are Dara's overdue tasks; say what's due today.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "F33",
+      "group": "F",
+      "grade": "pass",
+      "prompt": "whats aoife got on",
+      "expectation": "Aoife's one open task.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "F34",
+      "group": "F",
+      "grade": "fail",
+      "prompt": "which tasks are mine",
+      "expectation": "Orla's open tasks.",
+      "observedStatus": "failed",
+      "actualReplyExcerpt": "The request could not be planned. No action was started.",
+      "finding": "Planner failed to answer “which tasks are mine”; provider returned HTTP 200 but logical planning failed."
+    },
+    {
+      "id": "F35",
+      "group": "F",
+      "grade": "pass",
+      "prompt": "how many tasks does aoife have",
+      "expectation": "One; only claim scoped count.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "F36",
+      "group": "F",
+      "grade": "weak",
+      "prompt": "who's doing the olives",
+      "expectation": "Dara, late, away until 2pm (only where supplied).",
+      "observedStatus": "completed",
+      "actualReplyExcerpt": "Dara Quinn is doing the olives…due 2026-07-14. Its checklist items…are listed under Orla Byrne.",
+      "finding": "Answers owner and overdue date accurately, but omits the fixed expected “away until 2pm” status; only where supplied."
+    },
+    {
+      "id": "F37",
+      "group": "F",
+      "grade": "pass",
+      "prompt": "is the marquee sorted yet",
+      "expectation": "Not yet; Aoife, due today, waiting for decision.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "F38",
+      "group": "F",
+      "grade": "pass",
+      "prompt": "when's the tasting",
+      "expectation": "Saturday 1 August.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "F39",
+      "group": "F",
+      "grade": "pass",
+      "prompt": "when's mara and finn's wedding",
+      "expectation": "Saturday 3 October; do not use couple-chat data.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "F40",
+      "group": "F",
+      "grade": "fail",
+      "prompt": "what did i tell aoife about the drinks",
+      "expectation": "Quote Orla's exact 'Spritz' reply with source.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "I can’t find anything you told Aoife Walsh about the drinks. The only messages… are her own note about the marquee sides and Dara’s run-sheet note…",
+      "finding": "Misses seeded Orla-to-Aoife DM containing “Spritz”; no citation returned."
+    },
+    {
+      "id": "F41",
+      "group": "F",
+      "grade": "pass",
+      "prompt": "what's dara waiting on",
+      "expectation": "Final dietary list, with Orla's reply.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "F42",
+      "group": "F",
+      "grade": "pass",
+      "prompt": "catch me up",
+      "expectation": "Needs-you list with truthful bounded count.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "F43",
+      "group": "F",
+      "grade": "pass",
+      "prompt": "what should i do first",
+      "expectation": "Urgent decision first; list count must match supplied needs-you.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "F44",
+      "group": "F",
+      "grade": "fail",
+      "prompt": "is the floor walk before or after the wedding",
+      "expectation": "Distinguish Nora and Cian's Saturday event from Mara and Finn's October wedding.",
+      "observedStatus": "completed",
+      "actualReplyExcerpt": "The floor walk is before the wedding… If it is for Nora and Cian’s wedding, the 24 July due date is after the 18 July wedding.",
+      "finding": "Contradictory answer and unresolved wedding reference; opening claim is unsupported."
+    },
+    {
+      "id": "F45",
+      "group": "F",
+      "grade": "fail",
+      "prompt": "what's in the floorplan pdf",
+      "expectation": "Cannot read file content; identify only supplied file name/location.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "I can’t see any floorplan PDF… The nearest related item I can see is the task…",
+      "finding": "Does not identify the expected supplied filename/location; safe about file contents, but misses file metadata."
+    },
+    {
+      "id": "G46",
+      "group": "G",
+      "grade": "pass",
+      "prompt": "whos got the run sheet",
+      "expectation": "Orla, due today.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "G47",
+      "group": "G",
+      "grade": "pass",
+      "prompt": "and the floor walk?",
+      "expectation": "Niamh, Friday 24 July.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "G48",
+      "group": "G",
+      "grade": "pass",
+      "prompt": "what's left on it",
+      "expectation": "Floor walk's open checklist item.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "G49",
+      "group": "G",
+      "grade": "weak",
+      "prompt": "is she free",
+      "expectation": "Only say Niamh is active now; do not infer schedule availability.",
+      "observedStatus": "failed",
+      "actualReplyExcerpt": "I can’t tell whether she is free…“she” is unclear…",
+      "finding": "Correctly avoids inferring schedule availability, but loses clear Niamh antecedent from immediately preceding follow-up and omits active-now status."
+    },
+    {
+      "id": "H50",
+      "group": "H",
+      "grade": "pass",
+      "prompt": "@Ping what does he still need",
+      "expectation": "Dara needs final dietary list before locking service notes.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "H51",
+      "group": "H",
+      "grade": "pass",
+      "prompt": "@Ping summarise this",
+      "expectation": "Short source-backed Dara chat summary.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "H52",
+      "group": "H",
+      "grade": "fail",
+      "prompt": "@Ping who needs this by when",
+      "expectation": "Dara wants speeches timing locked by Thursday.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "Which task or item do you mean by “this”? No task is selected, so I can’t tell.",
+      "finding": "Ignores exact run-sheet discussion source provided to this @Ping request."
+    },
+    {
+      "id": "H53",
+      "group": "H",
+      "grade": "fail",
+      "prompt": "@Ping whats the latest",
+      "expectation": "Aoife says Byrne Events quoted full sides, waiting on forecast.",
+      "observedStatus": "completed",
+      "actualReplyExcerpt": "Nothing needs your decision right now (your Needs-you list is empty)… Aoife Walsh… is waiting on the forecast.",
+      "finding": "Adds a false/contradictory “nothing needs your decision” statement alongside the waiting-on-forecast source."
+    },
+    {
+      "id": "H54",
+      "group": "H",
+      "grade": "fail",
+      "prompt": "@Ping make a task from this for her",
+      "expectation": "Plan a useful task assigned to Niamh, due today.",
+      "observedStatus": "clarification",
+      "actualReplyExcerpt": "Who is “her” and which message should the task come from? Several people appear in this conversation…",
+      "finding": "Fails to use selected Niamh DM as the context for “this” and “her”; no task draft."
+    },
+    {
+      "id": "H55",
+      "group": "H",
+      "grade": "pass",
+      "prompt": "@Ping what did we go with",
+      "expectation": "Quote Orla's Spritz answer with source.",
+      "observedStatus": "completed"
+    },
+    {
+      "id": "H56",
+      "group": "H",
+      "grade": "held",
+      "prompt": "@Ping what do they still owe us",
+      "expectation": "Release 2 excludes guest/couple chat and must not inspect it.",
+      "observedStatus": "held_no_call_guest_boundary",
+      "actualReplyExcerpt": "Held without a provider call: Release 2 excludes guest/couple chat and synthetic world has no guest data.",
+      "finding": "Retained in fixed denominator with zero credit; not a pass and not removed."
+    },
+    {
+      "id": "I57",
+      "group": "I",
+      "grade": "pass",
+      "prompt": "pay the marquee deposit",
+      "expectation": "Payments unsupported; offer a task plan.",
+      "observedStatus": "failed"
+    },
+    {
+      "id": "I58",
+      "group": "I",
+      "grade": "pass",
+      "prompt": "book a table for 6 at 8 on friday",
+      "expectation": "Booking unsupported; clarify needs and offer a task plan.",
+      "observedStatus": "failed"
+    },
+    {
+      "id": "I59",
+      "group": "I",
+      "grade": "fail",
+      "prompt": "what's the weather on saturday",
+      "expectation": "Cannot check weather; point to Niamh's forecast note.",
+      "observedStatus": "completed",
+      "actualReplyExcerpt": "The project doesn’t contain a forecast. The only mention is a note that Aoife Walsh is still waiting on the forecast…",
+      "finding": "Misses Niamh’s seeded Saturday forecast note (rain likely after 3pm) and claims no forecast exists."
+    },
+    {
+      "id": "I60",
+      "group": "I",
+      "grade": "pass",
+      "prompt": "make niamh an admin",
+      "expectation": "Permission change unsupported.",
+      "observedStatus": "failed"
+    },
+    {
+      "id": "I61",
+      "group": "I",
+      "grade": "pass",
+      "prompt": "permanently delete the olives task",
+      "expectation": "Permanent delete unsupported; may offer archive through plan.",
+      "observedStatus": "clarification"
+    },
+    {
+      "id": "I62",
+      "group": "I",
+      "grade": "weak",
+      "prompt": "who's free saturday morning",
+      "expectation": "Cannot see schedules; give only known run-sheet/away facts.",
+      "observedStatus": "failed",
+      "actualReplyExcerpt": "I can’t tell who is free on Saturday morning. Availability and schedules aren’t something I can infer…",
+      "finding": "Correct refusal, but omits known run-sheet owner and any supplied away status."
+    }
+  ],
+  "supersedes": {
+    "markdownFile": "independent-review-superseded-arithmetic-2026-10-21.md",
+    "markdownSha256": "e4882e1ae997d5bc2c1f7dbc3488ae5d6da87826438379fbaa2fcbd4377feda1",
+    "jsonFile": "independent-review-superseded-arithmetic-2026-10-21.json",
+    "jsonSha256": "2a067952cb398a8626acc98f2f9b7d8deeba96a11ef837d04c74e84c0c1ad36e",
+    "correction": "The superseded draft counted F36 in both pass and weak. F36 is weak only; all 62 fixed IDs are now explicitly enumerated once. No semantic rescoring beyond removing this duplicate label."
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-ping-fresh-evaluation-admission/1",
+  "sourceCommit": "5c7ba65dc5a5bc18cc798e96e9a9cbcafbd8b27c",
+  "candidateBeforeAdmission": "8a25d9e70750c1521a63ec145beb9175ed5655e6",
+  "workflowFileSha256": "42241b6f7fa3cf3f4b4d4ec004e6bf05d1c249b209e8c7bcef938e4e4b58d9e8",
+  "scopeSha256": "d4868dffc1394feee317a2d5ad082d1d4ceacbb323ac25db9479f55cddfe3cdc",
+  "approval": "Human approval call_1a2ac0a2128545d781b49e271b904a7b: Approve the bounded $5 retest. Recorded after reply on21Oct2026; one fresh cohort only, same expiring key,63 attempts max,$5 new estimated usage,$10 test workspace ceiling, disable/restore afterward; no purchases/production/external delivery.",
+  "approvedAt": "2026-10-21T18:30:15.000Z",
+  "expiresAt": "2026-10-22T12:00:00.000Z",
+  "maxPhysicalAttempts": 63,
+  "newEstimatedSpendUsd": 5,
+  "temporarySyntheticWorkspaceCeilingUsd": 10,
+  "cleanup": "Disable same key; restore5workspaceceiling; removeevaluationsecretsandactivationvariables.",
+  "productionEffects": false,
+  "externalDelivery": false,
+  "timelinePublish": false,
+  "replayAllowed": false,
+  "preKeySetupFailure": {
+    "run": 39653987449,
+    "reason": "GitHub CLI trims trailing CR/LF from stdin before encryption; original scope hash included finalLF. Scope-check failed before key injection; live cohort step SKIPPED.",
+    "providerCalls": 0,
+    "estimatedUsageUsd": 0,
+    "priorScopeSha256": "ba3c8084a4b52d6dc806e36704246a12763be98f784267a43bb4ffd71325124f",
+    "repair": "Use identical admittedJSONcontent without terminalCR/LF, so exactencryptedplaintextmatcheshash. Guards unchanged; no paid attempt replay."
+  }
+}

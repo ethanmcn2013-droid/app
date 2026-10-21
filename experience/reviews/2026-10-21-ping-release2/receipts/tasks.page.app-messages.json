@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-messages",
+  "source": "tasks/src/app/app/messages/page.tsx",
+  "materialityHash": "b3090728f061cdbd",
+  "reviewedAt": "2026-10-21",
+  "reviewer": "Codex independent reviewer",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+    "attestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+    "runId": "tasks-playwright-0d8727521d9c156849242415",
+    "canonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+    "rawArtifactSha256": "92c985ae241e4c11de6a7f5a8738b9b35cd87d529b9104f0cf6ee91ad40e93c9",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-messages",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Release 2 Chat panel and Ping integration on the Messages route.",
+  "decision": "Accepted for app-messages source materiality refresh only. Canonical 188/188 and synthetic receiver support the scoped behavior; no screenshot or accessibility coverage is granted, and this is not full Ping acceptance."
+}

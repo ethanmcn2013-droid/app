@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "signal-ping-quality-repair-review/1",
+  "date": "2026-10-21",
+  "reviewer": "Codex independent reviewer /root/r2_independent_review",
+  "base": "e3fce2414a4e3059208766bc9d50649c5c6eb51e",
+  "status": "Independent review: no remaining blocker in this frozen source scope. No model qualification or release acceptance.",
+  "scope": "Server context/interpretation fixes and metadata-only diagnostics after the independently failed model cohort; existing read-only candidate capture branch opt-in.",
+  "facts": [
+    "Frozen model score40pass/8weak/13fail/1held of62 is unchanged; no model qualification for these fixes.",
+    "All data changes remain behind Apply plan; private shared-chat replies and guest exclusion preserved.",
+    "DM limit optional1..50 in SQL before authorization; current context30candidates perproject, defaultUI listing unchanged.",
+    "Planner metadata retains onlyfixedfailure enums; oldplanfailure remainsparseable, rawprovideroutputexcluded.",
+    "Eval reports retain canonicalusage tokens andcontent-freecontextcounts; provider-free dryrun projectsallselectedsources.",
+    "Criticalfixture refresh changesonly6 reviewedsourcehashes;18 materialitybindingsmustawaitfreshcaptureandindependentreview."
+  ],
+  "files": [
+    {
+      "path": ".github/workflows/experience-candidate-capture.yml",
+      "sha256": "2f90b99fd03a1de94cd7dffe9335d172d464bf00138d6881a61e7825b45be338",
+      "gitLfSha256": "2f90b99fd03a1de94cd7dffe9335d172d464bf00138d6881a61e7825b45be338"
+    },
+    {
+      "path": "docs/PING_TEXT_ASSISTANT.md",
+      "sha256": "21d9fad99c646949912670ae9b3454ccf4acc58f60a694f53f0e62b333a77d47",
+      "gitLfSha256": "21d9fad99c646949912670ae9b3454ccf4acc58f60a694f53f0e62b333a77d47"
+    },
+    {
+      "path": "experience/ping-assistant/release2-model-eval.ts",
+      "sha256": "6e6a58d69ae76b9dddb4a90fc8c6323b8ee9cbc248f8d97212f6da3f7b4a0b71",
+      "gitLfSha256": "6e6a58d69ae76b9dddb4a90fc8c6323b8ee9cbc248f8d97212f6da3f7b4a0b71"
+    },
+    {
+      "path": "src/lib/ping/assistant/contract.ts",
+      "sha256": "8e93b4d0e81b02bd3454c48755acb9d98346e3bfe1f016aa23980bff2186f60e",
+      "gitLfSha256": "8e93b4d0e81b02bd3454c48755acb9d98346e3bfe1f016aa23980bff2186f60e"
+    },
+    {
+      "path": "src/server/conversations/service.ts",
+      "sha256": "ed0ce1887244214c9f07a5214424c7f9a61afe9d1347e6785a039eee4209864c",
+      "gitLfSha256": "ed0ce1887244214c9f07a5214424c7f9a61afe9d1347e6785a039eee4209864c"
+    },
+    {
+      "path": "src/server/conversations/dm.persistence.test.ts",
+      "sha256": "70155279163bf7852c280213a85daa01bc5d3036a7dfe3303d2732961451d8d2",
+      "gitLfSha256": "70155279163bf7852c280213a85daa01bc5d3036a7dfe3303d2732961451d8d2"
+    },
+    {
+      "path": "src/server/ping/assistant/claude-planner.ts",
+      "sha256": "848c102b1984533c59d677cfd274088d9fad5391ce83fafd76b87487b49254ae",
+      "gitLfSha256": "848c102b1984533c59d677cfd274088d9fad5391ce83fafd76b87487b49254ae"
+    },
+    {
+      "path": "src/server/ping/assistant/claude-planner.test.ts",
+      "sha256": "7c647685546a0aa5f4145c5b9330c8f8a2a038d8673462c76ac8b17f62c04001",
+      "gitLfSha256": "7c647685546a0aa5f4145c5b9330c8f8a2a038d8673462c76ac8b17f62c04001"
+    },
+    {
+      "path": "src/server/ping/assistant/planner-attempt-metadata.ts",
+      "sha256": "47b91a173439d9f3d31b1a7200298e41251d077e4bc0910c6d52b2b4d9ca8f9c",
+      "gitLfSha256": "47b91a173439d9f3d31b1a7200298e41251d077e4bc0910c6d52b2b4d9ca8f9c"
+    },
+    {
+      "path": "src/server/ping/assistant/planner-attempt-metadata.test.ts",
+      "sha256": "040e2f512f35b3a7370196103ca4401f628499cf849f2451e80c2b3e50fe9bca",
+      "gitLfSha256": "040e2f512f35b3a7370196103ca4401f628499cf849f2451e80c2b3e50fe9bca"
+    },
+    {
+      "path": "src/server/ping/assistant/conversation-context.ts",
+      "sha256": "d53286a2f8f8417e077c4710c51837ebc2ab873db8ec62116aed672df3140c4c",
+      "gitLfSha256": "d53286a2f8f8417e077c4710c51837ebc2ab873db8ec62116aed672df3140c4c"
+    },
+    {
+      "path": "src/server/ping/assistant/conversation-context.test.ts",
+      "sha256": "d148ebe27e866b51055c99816de051b52a586f667c47fd599e370f0dc3a1efd4",
+      "gitLfSha256": "5962da0ff7e5f37b3e63ff00c0d238017a0576f8cc5747301bcb238edb377055"
+    },
+    {
+      "path": "src/server/ping/assistant/planner-context.ts",
+      "sha256": "a9af0ba0a8d743fdf5bed18d67fe47c65a09fcb5ddf517456c58ef9c8af58997",
+      "gitLfSha256": "a9af0ba0a8d743fdf5bed18d67fe47c65a09fcb5ddf517456c58ef9c8af58997"
+    },
+    {
+      "path": "src/server/ping/assistant/runtime.ts",
+      "sha256": "ff6821a13759c2486e507b17c76fd8d87288584a8ecd4f1fe2eae91ce517d735",
+      "gitLfSha256": "ff6821a13759c2486e507b17c76fd8d87288584a8ecd4f1fe2eae91ce517d735"
+    },
+    {
+      "path": "experience/critical-fixtures.json",
+      "sha256": "93b51003e1ab244ba93f61b6574ce1502a32bb86fd268b59cfe1050c52de2957",
+      "gitLfSha256": "93b51003e1ab244ba93f61b6574ce1502a32bb86fd268b59cfe1050c52de2957"
+    }
+  ],
+  "coverageReview": "DM results distinguish checked,disabled,unavailable,not_run; account project count describes selected candidates, not completed reads. Needs-you unavailable/not-queried never implies an empty list.",
+  "verification": {
+    "fullTypecheck": "Root pnpm typecheck session29654 exit0; prior6+2test/typeerrors preserved thenfixed.",
+    "scopedLint": "All12 touchedTypeScriptfiles exit0.",
+    "plannerTests": "25/25 targeted syntheticplanner/metadata tests passed.",
+    "contextTests": "Prior9/10 withtest-onlyassertionfailure retained; corrected affectedDM/coveragetests2/2 plusfinalfocused1/1+2/2passed. Fullowning CIstillrequired.",
+    "dmLimitTest": "NewDB-backedlimit test1/1; olderfullDMterminaloutputunavailable,nofull-suitepassclaimed.",
+    "workflowContract": "4/4 scripts/ci-workflow.test.mjs passed.",
+    "fixtures": "39/39. Exactly18 staleattestationbindingsexpectedpendingfreshcapture."
+  }
+}

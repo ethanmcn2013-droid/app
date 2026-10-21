@@ -10,15 +10,21 @@ test("floating target parsing refuses ambiguous or unbounded scopes before inter
     projectId: "project_a", rootId: "root_1", messageId: "message_2", messageSeq: 123,
   });
   for (const query of ["projectId=a&projectId=b", "projectId=", "projectId=../bad", "rootId=root", "messageSeq=3&projectId=a", "messageId=m&projectId=a&messageSeq=0",
-    "messageId=m&projectId=a&messageSeq=1e3", "messageId=m&projectId=a&messageSeq=9999999999999999", "projectId=a&messageId=" + "a".repeat(129), "c=a&projectId=a", "projectId=a&actorId=b", "c=a&c=b"]) {
+    "messageId=m&projectId=a&messageSeq=1e3", "messageId=m&projectId=a&messageSeq=9999999999999999", "projectId=a&messageId=" + "a".repeat(129), "c=a&projectId=a", "projectId=a&actorId=b", "c=a&c=b",
+    "conversationId=dm_1", "projectId=project_a&conversationId=", "projectId=project_a&conversationId=dm_1&conversationId=dm_2", "projectId=project_a&conversationId=../dm",
+    "projectId=project_a&conversationId=dm_1&c=demo_1"]) {
     assert.equal(parseFloatingChatTarget(new URLSearchParams(query)), null, query);
   }
+  assert.deepEqual(parseFloatingChatTarget(new URLSearchParams("projectId=project_a&conversationId=dm_1&messageId=message_2&messageSeq=123")),{
+    projectId:"project_a",conversationId:"dm_1",messageId:"message_2",messageSeq:123,
+  });
 });
 
 test("each target request has its own generation even inside the same Project and thread", () => {
   const target = { projectId: assertProjectId("project_a"), rootId: "root_1", messageId: "message_1", messageSeq: 100 };
   assert.notEqual(chatNavigationKey(1, target), chatNavigationKey(2, target));
   assert.notEqual(chatNavigationKey(1, target), chatNavigationKey(1, { ...target, messageId: "message_2", messageSeq: 500 }));
+  assert.notEqual(chatNavigationKey(1,target),chatNavigationKey(1,{...target,conversationId:"dm_room"}));
   const focus = { visible: true, ready: true, found: true, targetId: "message_2", alreadyFocused: false, requestedRoot: "root_1", currentRoot: "root_1" };
   assert.equal(shouldFocusChatTarget(focus), true);
   assert.equal(shouldFocusChatTarget({ ...focus, visible: false }), false);

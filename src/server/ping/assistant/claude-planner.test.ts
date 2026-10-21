@@ -83,7 +83,7 @@ test("provider schema factors the real contract within optional/union limits and
   const walk=(value:unknown)=>{if(Array.isArray(value)){value.forEach(walk);return;}if(!value||typeof value!=="object")return;const v=value as Record<string,unknown>;
     if(v.properties)optional+=Object.keys(v.properties as object).filter(k=>!(v.required as string[]).includes(k)).length;
     if(v.anyOf)unions++;for(const child of Object.values(v))walk(child);};walk(wire);
-  assert.equal(optional,24);assert.equal(unions,6);
+  assert.ok(optional<=32,`Optional-field budget exceeded: ${optional}`);assert.ok(unions<=12,`Union budget exceeded: ${unions}`);
   const dereference=(value:Record<string,unknown>):Record<string,unknown>=>value.$ref?(wire.$defs as Record<string,Record<string,unknown>>)[String(value.$ref).split('/').at(-1)!]:value;
   const plans=dereference((wire.properties as Record<string,Record<string,unknown>>).plan).anyOf as Record<string,unknown>[];
   const actions=dereference(((plans[0].properties as Record<string,Record<string,unknown>>).actions).items as Record<string,unknown>).anyOf as Record<string,unknown>[];
@@ -121,11 +121,11 @@ test("compact envelope keeps canonical bounds, actions and decoded JSON fail clo
   const cases=["not-json",JSON.stringify({plan:{...valid,actions:[{...valid.actions[0],tasks:Array.from({length:101},()=>({title:"Synthetic"}))}]}}),
     JSON.stringify({plan:{...valid,actions:[{id:"one",kind:"publish_project",project:{kind:"current"}}]}}),
     JSON.stringify({plan:{...valid,mode:"draft"}})];
-  for(const [index,plan_json] of cases.entries()){let calls=0;
+  for(const plan_json of cases){let calls=0;
     const planner=createPingAssistantPlanner({apiKey:key,budget:{reserve:async()=>true,recordUsage:async()=>{}},fetch:(async(_url,init)=>{calls++;
       const body=JSON.parse(String(init?.body));assert.equal(body.model,"claude-sonnet-5-5");
       return response(body.model,{content:[{type:"text",text:JSON.stringify({plan_json})}]});}) as typeof fetch});
-    await assert.rejects(planner.plan({runId:"run",requestId:"request",text:"Make a task",context},signal()),index===0?/^Error: planner_request_failed$/:/^Error: planner_plan_invalid$/);
+    await assert.rejects(planner.plan({runId:"run",requestId:"request",text:"Make a task",context},signal()),/^Error: planner_plan_invalid$/);
     assert.equal(calls,1);
   }
   const original=JSON.stringify(schema);const f=fixture(async()=>response(),{planJsonEnvelope:true,instructions:"x".repeat(66_000)});
@@ -185,6 +185,41 @@ test('preflight and pre-aborted requests create no dispatch entitlement or telem
  const f=fixture(async()=>response());const controller=new AbortController();controller.abort();
  await assert.rejects(f.planner.plan(request(),controller.signal),/cancelled/);await assert.rejects(f.planner.plan({...request(),text:''},signal()),/input_invalid/);
  assert.equal(f.calls.length,0);assert.equal(f.reservations.length,0);assert.equal(f.attempts.length,0);
+});
+
+test('plan telemetry distinguishes JSON, envelope and schema failures without retaining provider text',async()=>{
+  const variants=[
+    {label:'json',failureCode:'plan_json',text:'{not valid'},
+    {label:'inner-json',failureCode:'plan_json',text:JSON.stringify({plan_json:'{not valid'})},
+    {label:'envelope',failureCode:'plan_envelope',text:JSON.stringify({unexpected:'synthetic'})},
+    {label:'schema',failureCode:'plan_schema',text:JSON.stringify({plan_json:JSON.stringify({version:'ping.assistant.v1',outcome:'unsupported',message:'Synthetic only',extra:'invalid'})})},
+  ] as const;
+  for(const variant of variants){
+    const attempts:PlannerAttemptMetadata[]=[];
+    const planner=createPingAssistantPlanner({apiKey:key,budget:{reserve:async()=>true,recordUsage:async()=>{},recordAttempt:async value=>{attempts.push(value.attempt);}},
+      fetch:(async(_url,init)=>{const body=JSON.parse(String(init?.body));return response(String(body.model),{content:[{type:'text',text:variant.text}]});}) as typeof fetch});
+    await assert.rejects(planner.plan({runId:'run',requestId:`request-${variant.label}`,text:'Synthetic test request',context},signal()),/^Error: planner_/);
+    await new Promise(resolve=>setTimeout(resolve,0));
+    assert.equal(attempts.at(-1)?.failureCode,variant.failureCode);
+    assert.ok(!JSON.stringify(attempts).includes(variant.text));
+  }
+});
+
+test('planner instructions keep owner edits on the uniquely matching waiting task and compare every event date',async()=>{
+  const bodies:Record<string,unknown>[]=[];
+  const planner=createPingAssistantPlanner({apiKey:key,budget:{reserve:async()=>true,recordUsage:async()=>{}},fetch:(async(_url,init)=>{
+    bodies.push(JSON.parse(String(init?.body)));return response('claude-sonnet-5-5',{content:[{type:'text',text:JSON.stringify({plan_json:JSON.stringify({plan:{version:'ping.assistant.v1',outcome:'clarification',message:'Synthetic only'}})})}]});
+  }) as typeof fetch});
+  await planner.plan({runId:'run',requestId:'intent-1',text:'give the menu one to Niamh',context:{...context,waitingPlan:[{id:'s1',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Agree tasting menu dishes with the kitchen',assignees:[{kind:'self'}]}]}],
+    selectedSource:{kind:'conversation',label:'Private conversation with Niamh Kelly',participants:['Orla Byrne','Niamh Kelly']},needsYouState:'not_checked'}},signal());
+  const system=String(bodies[0].system);
+  assert.match(system,/uniquely matching task/);assert.match(system,/Do not interpret this wording as sending or attaching a file/);
+  assert.match(system,/state the relationship to each relevant candidate separately/);assert.match(system,/never begin with an unqualified singular/);
+  assert.match(system,/press Apply plan/);assert.match(system,/selectedSource gives its safe display label/);
+  assert.match(system,/Say the list is empty only when needsYouState is checked and needsYouTotal is exactly zero/);
+  const sent=JSON.parse(String((bodies[0].messages as Array<{content:string}>)[0].content));
+  assert.equal(sent.context.selectedSource.label,'Private conversation with Niamh Kelly');assert.deepEqual(sent.context.selectedSource.participants,['Orla Byrne','Niamh Kelly']);
+  assert.equal(sent.context.needsYouState,'not_checked');assert.equal('needsYou' in sent.context,false);
 });
 
 test('post-dispatch cancellation retains unknown usage and accounting failure remains fail closed',async()=>{

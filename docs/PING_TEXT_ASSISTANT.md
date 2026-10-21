@@ -14,7 +14,7 @@ Since 21 October 2026 the panel follows the chat and Ping design contract in `do
 
 ## Request and result
 
-Choose an account or Project scope, enter the whole request, and choose execution or draft mode. One bounded model response produces a finite plan; server validation and domain operations decide what can run. The model cannot supply internal IDs, change permissions, publish a Timeline or choose another database.
+Choose an account or Project scope and enter the whole request. Ping shows the saved plan before any action runs. Only Apply plan authorizes changes, including messages, comments, nudges and invitations. The HTTP boundary forces draft mode, and the runtime also holds recovery of older execute-mode plans until Apply. The model cannot supply internal IDs, change permissions, publish a Timeline or choose another database.
 
 Execution saves each step's local effects and result in one fenced transaction. Earlier successful steps remain saved if a later step is blocked. Draft mode saves a plan without executing its actions; Apply starts that saved plan with fresh checks. Checking an original request reads its saved result. An uncertain action or external delivery is not permission to submit it again. Cancel prevents further work where possible; it does not undo committed changes or retract a message already accepted by a provider.
 
@@ -27,6 +27,8 @@ The current catalog is deliberately finite:
 | Update tasks | Changes the supported title, description, assignees, due date, system status or milestone fields. Subtask and recurring-task edits are refused. |
 | Archive / restore | Ordinary “delete” requests use archive. Archive includes children; Undo restores only the exact IDs changed by that action and preserves previously archived children. No permanent-delete action exists. |
 | Comment / chat | Saves task comments or a Project chat message through the existing audience checks and original-receipt services. Can read a bounded Project chat page. |
+| Private messages | A named recipient selects an existing, consented direct conversation when DMs are enabled. Missing or paused consent never falls back to a Project-room broadcast. |
+| Checklist | Adds child items under one authorized parent, or ticks one uniquely named child. The parent and its siblings keep their state. |
 | Nudge / invite | Saves local intent before optional external dispatch. Nudges retain current membership, non-self, mute and 24-hour cooldown checks. Invitations require Project management permission and member-capacity checks. |
 | Open / list | Opens a Project or its chat, or lists a bounded task selection. |
 | Current Timeline | Explicitly prepares the exact Project's current Timeline and opens a private preview. Provisioning and sync require the actual owner. The preview GET does not provision or publish; an older publication remains separate. |
@@ -35,11 +37,31 @@ A request has at most 20 actions and 500 cumulative task effects. Creation, upda
 
 Follow-up references to tasks from an earlier request require an explicit Project scope. They use an actor-owned saved creation result in that same Project; they do not search account-wide history for an assumed target.
 
+## Release 2 candidate
+
+The approved Chat design remains the contract. An explicit conversation source supplies only that authorized conversation or task discussion; account searches inspect bounded recent sources in authorized Projects. Direct messages additionally require their existing feature switch and readable consent. Selected-Project searches can inspect bounded recent messages in its readable, active, consented direct conversations, prioritizing an explicitly named counterpart. A selected chat or task discussion carries its own display identity; unrelated Project members do not make its participants ambiguous. Catch up uses the same directed Needs-you service as Chat, with visible coverage limits when not every item fits. An attention list that was not checked or is unavailable must never be described as empty.
+
+The planner receives opaque source references, readable excerpts and bounded task summaries. Answers can quote those sources and link to their exact messages or tasks. Before saving or showing a cited answer, the server checks current membership, audience, revision and content. Deleted or changed sources make the saved answer unavailable. Provider input omits source IDs, internal links and credentials.
+
+Waiting plans retain their source snapshots and canonical existing-task targets privately. Apply rechecks sources and permissions, including inside the writer transaction; later steps keep the approved task identities when titles change. New effects are refused if a source changes or direct-message access is withdrawn. Saved and undone receipts remain readable after Ping changes its own task record, subject to current Project access. Answers about a waiting plan name its exact steps; other factual answers require a source quote.
+
+In a member conversation, a leading `@Ping` command opens a private request rather than sending it to the shared conversation. Ordinary messages use the existing transport. The shared draft is retained, and forwarded requests use the existing recovery flow with an ID-only once marker. Direct-conversation links carry both Project and conversation identity and require current consented read access.
+
+Follow-ups name an earlier actor-owned request in the same scope and source. Up to eight earlier turns and the unapplied plan form the memory. Editing replaces that waiting plan atomically; the old plan cannot be applied afterward. A time-only edit retains the day; an edit naming one task in a bulk creation leaves its siblings unchanged. All changes still wait for Apply plan. Cancelled plans remain history rather than instructions to execute.
+
+If an earlier source changes or becomes inaccessible, Ping leaves out the inherited conversation chain and uses fresh authorized context. It does not carry forward replies derived from that older source. Existing plans still require their original source and target checks before Apply or Undo. A plan to finish a task warns when its checklist still has open items; finishing the task leaves those items open.
+
+Step Undo restores captured task state only if it still matches what Ping saved. Ping-created tasks are archived. Messages and comments are taken back through their original author, audience and revision checks. The reversal and its receipt share one transaction; repeat requests read that receipt. Later edits cause a conflict rather than being overwritten. Delivered emails and accepted invitations cannot be recalled; those steps are not presented as reversible.
+
+Date-only tasks keep the existing calendar-day convention. Explicit clock times retain a local clock label and a time-zone-correct instant. Ambiguous or nonexistent daylight-saving times are refused for clarification.
+
+This candidate adds no migration, provider key, budget increase, publication or general-access activation. Source tests, rendered receiving and live Sonnet evaluation remain separate evidence; only an independent reviewer scores the fixed request set and Ping scorecard.
+
 ## Authorization and privacy
 
 Each HTTP request requires both a Clerk user and session, resolves the persisted Tasks actor, and checks the explicit actor allowlist. Each step freshly checks database Project capability, archive/deletion state and actor/owner account fences. This is not a remote Clerk session-revocation query before every step.
 
-The planner receives the request text plus a bounded projection of authorized Project/member names, selection counts, prior-task count and calendar context. It does not receive the database credentials or internal identity references from the action layer. Requests, plans and receipts are application records; do not put secrets into requests. Diagnostic stage events are metadata only and are separate from those records.
+The planner receives the request text plus bounded authorized Project/member names, chat excerpts, task summaries, earlier turns, the waiting plan, selection counts and calendar context. Sources use opaque references; database credentials and internal source identities stay on the server. Requests, plans and receipts are application records; do not put secrets into requests. Diagnostic stage events are metadata only and are separate from those records.
 
 ## Configuration and receiving
 

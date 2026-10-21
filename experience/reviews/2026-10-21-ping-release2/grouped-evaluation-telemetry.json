@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "signal-ping-release2-eval-reconciliation/1",
+  "workflowRun": "https://github.com/ethanmcn2013-droid/app/actions/runs/39634042526",
+  "sourceCommit": "3dfaee21820ab3a3edf245877e647924d325cdfa",
+  "workflowCommit": "7724168d4be2203b7de62d60fa928387aaaed05c",
+  "evaluationFingerprint": "d11ad39f6014d839aa1884c5195282cd70aeac465cdc2137bff22f1a28f6d841",
+  "fixedCases": 62,
+  "separateSetupCases": 1,
+  "physicalAttempts": 62,
+  "newLinuxAttempts": 59,
+  "observedEstimatedMicroUsd": 2547592,
+  "newLinuxEstimatedMicroUsd": 2429064,
+  "infrastructureFailure": "A3: provider499,19049input/0output,estimated38098;noanswer/noquality/noretry",
+  "heldNoCall": "H56: guest boundary, retained in fixed denominator",
+  "unknownUsage": false,
+  "durableTaskChanges": 0,
+  "fixedResponsesWallMs": {
+    "sampleCount": 60,
+    "median": 2737.336,
+    "p95NearestRank": 5904.64,
+    "min": 1784.19,
+    "max": 12924.606,
+    "underOneSecond": 0
+  },
+  "fixedResponsesPlanningMs": {
+    "sampleCount": 59,
+    "median": 2696,
+    "p95NearestRank": 6182,
+    "min": 1773,
+    "max": 12904,
+    "underOneSecond": 0
+  },
+  "cacheReadTokens": 0,
+  "cacheWriteTokens": 0,
+  "firstTokenTiming": "Unobserved (nonstreaming); null is retained.",
+  "quality": {
+    "denominator": 62,
+    "pass": 40,
+    "weak": 8,
+    "fail": 13,
+    "heldZeroCredit": 1,
+    "passOnlyPercent": 64.52,
+    "illustrativeHalfCreditPercent": 70.97,
+    "thresholdPercent": 90,
+    "thresholdMet": false,
+    "note": "Fixed request contract does not define a numeric weak weight; half-credit is illustrative. Raw labels are authoritative.",
+    "review": "grouped-model-independent-review.md",
+    "matrix": "grouped-model-independent-review.json",
+    "supersededArithmetic": "Initial reviewer arithmetic double-counted F36 as pass and weak; original files retained unchanged outside repository. Corrected explicit62-label matrix is authoritative."
+  },
+  "billing": "Rate-card estimated usage, not settled invoice. Provider UI workspace month-to-date $4.87 includes earlier separate tests.",
+  "latencyWindow": "A1/A2 retained original Windows timings; A3 has no successful-response timing; A4 onward Linux. Fixed timed responses exclude B setup. Timed provider responses include F34, whose HTTP200 output failed plan validation; these timings do not imply semantic success.",
+  "artifacts": [
+    {
+      "group": "A",
+      "filename": "approved-39634042526-1-A.json",
+      "sha256": "a9dfd5e51f3b86f1aea2766c6052227cd5cbca7c4d40d063755ace0e06812bb7",
+      "records": 6
+    },
+    {
+      "group": "B",
+      "filename": "approved-39634042526-1-B.json",
+      "sha256": "8f9f9547184a56185014ef0432c9940d6cbb51b0f6a9ecdfabc2fe2c1a2a95b7",
+      "records": 7
+    },
+    {
+      "group": "C",
+      "filename": "approved-39634042526-1-C.json",
+      "sha256": "9147f10c2b5aaf694affbd9d9389d0e448a53f6a986c93c679a1886c9c7b4eb7",
+      "records": 5
+    },
+    {
+      "group": "D",
+      "filename": "approved-39634042526-1-D.json",
+      "sha256": "7838052732eec5a0277add381edeb3e9ce6f3491e504de846e5f010db0c2d1aa",
+      "records": 8
+    },
+    {
+      "group": "E",
+      "filename": "approved-39634042526-1-E.json",
+      "sha256": "015e7ab158e5450d0e97b6997f9d215320ca9dfdeb9ed7317a30a0f4498cfbfd",
+      "records": 6
+    },
+    {
+      "group": "F",
+      "filename": "approved-39634042526-1-F.json",
+      "sha256": "3ab0dfb710675702f941645311ae763b5167aba14b70dbd25e2c4e7628e9a507",
+      "records": 14
+    },
+    {
+      "group": "G",
+      "filename": "approved-39634042526-1-G.json",
+      "sha256": "fff3ac5faf579fb285e91239a6344512997107405e977cc67a4e0f980752e030",
+      "records": 4
+    },
+    {
+      "group": "H",
+      "filename": "approved-39634042526-1-H.json",
+      "sha256": "d642e018e6cc7024383a59f71f6481b066c9ae30320e84a67f90adcd7fb1ea9b",
+      "records": 7
+    },
+    {
+      "group": "I",
+      "filename": "approved-39634042526-1-I.json",
+      "sha256": "867d392d7c42d1be3ae2f4d1ed2d572b4e21eda30597e18a2a47884779f6ca74",
+      "records": 6
+    }
+  ],
+  "cleanup": {
+    "providerKey": "Disabled via Claude Platform, observed21Oct",
+    "workspaceMonthlyCeilingUsd": 5,
+    "providerWorkspaceMonthToDateDisplayedUsd": 4.87,
+    "ephemeralGitHubEnvironmentSecretsRemaining": 0,
+    "approvedWorkflowShaVariable": "Deleted; live step inert",
+    "evidence": "outputs/ping-release2-linux-complete-key-disabled-oct21.png and outputs/ping-release2-linux-complete-cap-restored-oct21.png in task workspace; GitHub CLI secret names-only readback []"
+  },
+  "timedProviderResponsesIncludingSetup": {
+    "sampleCount": 61,
+    "median": 2767.729,
+    "p95NearestRank": 6198.634,
+    "min": 1784.19,
+    "max": 12924.606,
+    "underOneSecond": 0
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "kind": "ping-release2-grouped-runner-provider-off-guard-proof",
+  "date": "2026-10-21",
+  "classification": "harness-integrity-only; not model-evaluation evidence; no provider API calls; no credentials or keys read",
+  "providerCalls": 0,
+  "sourceFingerprint": {
+    "sha256": "5a9b8f0339197ee290e5ef15c9d73a69ebd5180dec49778db23f3a967606a1fa",
+    "fileCount": 40,
+    "files": [
+      "docs/projects/chat-ping-redesign/ping-eval.md",
+      "docs/projects/chat-ping-redesign/ping-requests.md",
+      "docs/projects/chat-ping-redesign/scorecards.md",
+      "experience/ping-assistant/release2-model-eval.ts",
+      "experience/ping-assistant/release2-model-fixture.ts",
+      "package.json",
+      "pnpm-lock.yaml",
+      "src/lib/ping/assistant/contract.ts",
+      "src/lib/ping/assistant/release2.ts",
+      "src/server/account-deletion-key.ts",
+      "src/server/actions/private-task-db-write.ts",
+      "src/server/actions/project-authz.ts",
+      "src/server/conversations/attention.ts",
+      "src/server/conversations/database.ts",
+      "src/server/conversations/service.ts",
+      "src/server/conversations/task-discussion.ts",
+      "src/server/db/board-config-read.ts",
+      "src/server/db/schema.ts",
+      "src/server/ping/assistant/actions.ts",
+      "src/server/ping/assistant/calendar-time.ts",
+      "src/server/ping/assistant/claude-planner.ts",
+      "src/server/ping/assistant/context.ts",
+      "src/server/ping/assistant/conversation-context.ts",
+      "src/server/ping/assistant/conversation-memory.ts",
+      "src/server/ping/assistant/conversation-transaction.ts",
+      "src/server/ping/assistant/plan-targets.ts",
+      "src/server/ping/assistant/planner-attempt-metadata.ts",
+      "src/server/ping/assistant/planner-budget.ts",
+      "src/server/ping/assistant/planner-context.ts",
+      "src/server/ping/assistant/service.ts",
+      "src/server/ping/assistant/store.ts",
+      "src/server/ping/assistant/task-batch.ts",
+      "src/server/ping/assistant/task-context.ts",
+      "src/server/ping/assistant/task-snapshot.ts",
+      "src/server/ping/assistant/task-update-batch.ts",
+      "src/server/ping/assistant/undo.ts",
+      "src/server/ping/proof-fixture.ts",
+      "src/server/projects/create-project-core.ts",
+      "src/server/projects/project-deletion-fence.ts",
+      "src/server/tasks/create-task-core.ts"
+    ]
+  },
+  "finalDryRun": {
+    "command": "node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --dry-run --output experience/output/ping-release2-model-eval/grouped-runner-final-2026-10-21.json",
+    "exitCode": 0,
+    "stdout": "providerCalls=0 cases=63 dryRun=true group=null",
+    "inventoryPrompts": 63,
+    "expectedPhysicalCalls": 62
+  },
+  "guards": [
+    {
+      "name": "missing predecessor refused",
+      "command": "... --group B --dry-run (no --prior-results)",
+      "exitCode": 1,
+      "stderr": "release2_eval_stopped:prior_group_results_required"
+    },
+    {
+      "name": "pending prior refused",
+      "command": "... --group G --dry-run --prior-results experience/output/ping-release2-model-eval/live-2026-10-21-round3.json",
+      "exitCode": 1,
+      "stderr": "release2_eval_stopped:prior_group_incomplete_or_pending",
+      "note": "Preserved earlier round 3 evidence; it was not rewritten."
+    },
+    {
+      "name": "valid hash-linked provider-off synthetic chain accepted for dry-run only",
+      "exitCode": 0,
+      "stdout": "providerCalls=0 cases=5 dryRun=true group=C",
+      "note": "Built temporary local-only invariant fixtures A and B with exact current fixture prompt inventory, synthetic-only world, settled placeholder accounting and current source fingerprint. No provider call. Removed these synthetic reports immediately after validation; this does not claim live A/B results."
+    },
+    {
+      "name": "modified parent artifact rejected",
+      "exitCode": 1,
+      "stderr": "release2_eval_stopped:prior_group_hash_mismatch",
+      "note": "After accepted synthetic A->B chain, appended one byte to temporary A; prior B continuation rejected. Restored then removed synthetic fixtures."
+    }
+  ],
+  "checks": {
+    "eslint": {
+      "command": "pnpm exec eslint experience/ping-assistant/release2-model-eval.ts",
+      "exitCode": 0
+    },
+    "typecheck": {
+      "command": "pnpm exec tsc --noEmit --pretty false",
+      "exitCode": 0
+    }
+  },
+  "limits": "No live model evaluations run or resumed. Unknown F33 remains blocked; provider admission and credentials not read. The 63-attempt and USD caps remain enforced in runner code; this proof does not consume them."
+}

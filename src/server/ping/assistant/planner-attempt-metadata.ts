@@ -9,7 +9,8 @@ export type PlannerAttemptMetadata = {
   physical: "pending" | "settled"; dispatched: boolean;
   httpStatus: number | null; providerRequestId: string | null;
   stopReason: "end_turn" | "max_tokens" | "refusal" | "other" | null;
-  failureCode: "provider" | "response" | "plan" | "budget" | "accounting" | "request" | null;
+  // `plan` remains accepted for persisted records from before these safe subtypes existed.
+  failureCode: "provider" | "response" | "plan" | "plan_json" | "plan_envelope" | "plan_schema" | "budget" | "accounting" | "request" | null;
   cacheReadTokens: number | null; cacheWriteTokens: number | null; cacheWrite5mTokens: number | null; cacheWrite1hTokens: number | null;
   ttftMs: null; hiddenReasoning: null;
   stages: Record<typeof ATTEMPT_STAGES[number], number | null>;
@@ -28,7 +29,7 @@ export function parsePlannerAttemptMetadata(value: unknown): PlannerAttemptMetad
     !(value.httpStatus===null||natural(value.httpStatus,599)&&Number(value.httpStatus)>=100)||
     !(value.providerRequestId===null||typeof value.providerRequestId==="string"&&/^req_[A-Za-z0-9_-]{1,120}$/.test(value.providerRequestId))||
     ![null,"end_turn","max_tokens","refusal","other"].includes(value.stopReason as null)||
-    ![null,"provider","response","plan","budget","accounting","request"].includes(value.failureCode as null)||
+    ![null,"provider","response","plan","plan_json","plan_envelope","plan_schema","budget","accounting","request"].includes(value.failureCode as null)||
     [value.cacheReadTokens,value.cacheWriteTokens,value.cacheWrite5mTokens,value.cacheWrite1hTokens].some(n=>n!==null&&!natural(n,1_000_000))||
     value.ttftMs!==null||value.hiddenReasoning!==null||!object(value.stages)||Object.keys(value.stages).length!==ATTEMPT_STAGES.length||
     ATTEMPT_STAGES.some(k=>!Object.hasOwn(value.stages as object,k)||((value.stages as Record<string,unknown>)[k]!==null&&

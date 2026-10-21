@@ -10,6 +10,7 @@ export type AssistantHttpService = {
   resume(actorId: string, runId: string): Promise<AssistantRunView>;
   apply(actorId: string, runId: string): Promise<AssistantRunView>;
   cancel(actorId: string, runId: string): Promise<AssistantRunView>;
+  undo?(actorId:string,runId:string,stepId:string):Promise<AssistantRunView>;
 };
 const headers = { "Cache-Control": "private, no-store, max-age=0", "CDN-Cache-Control": "no-store", "Vercel-CDN-Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff" };
 const reply = (body: AssistantApiResponse, status = 200) => Response.json(body, { status, headers });
@@ -50,12 +51,16 @@ export function createAssistantHttp(deps: {
       }
       const command = parseAssistantApiCommand(await boundedPingJson(request, 72_000));
       if (!command) return error("invalid_input", "The request could not be read. Shorten it and try again.", 400);
-      const run = command.operation === "submit" ? await service.submit(actor, command.request, request.signal) :
-        await service[command.operation](actor, command.runId);
+      if(command.operation==='undo'&&!service.undo)return error('unavailable','This action cannot be undone here.',404);
+      // Browser input never authorizes an effect. Even forged execute mode becomes a waiting plan.
+      const run = command.operation === "submit" ? await service.submit(actor, {...command.request,mode:'draft'}, request.signal) :
+        command.operation==='undo'?await service.undo!(actor,command.runId,command.stepId):await service[command.operation](actor, command.runId);
       return reply({ version: ASSISTANT_VERSION, ok: true, available: true, run });
     } catch (caught) {
       const code = caught && typeof caught === "object" && "code" in caught ? String(caught.code) : "temporarily_unavailable";
       if (code === "request_conflict") return error(code, "This request reference already belongs to a different request. Check the original result.", 409);
+      if(code==='stale')return error(code,'This item changed after Ping acted. Nothing was undone. Review the latest version first.',409);
+      if(code==='unsupported')return error(code,'This action cannot be undone safely. Your saved work is unchanged.',409);
       if (["busy", "lease_lost", "uncertain"].includes(code)) return error(code, "Check the original request before continuing. It has not been repeated.", 409);
       if (code === "unavailable") return error(code, "This request is unavailable.", 404);
       if (code === "invalid_input") return error(code, "The request could not be applied.", 400);

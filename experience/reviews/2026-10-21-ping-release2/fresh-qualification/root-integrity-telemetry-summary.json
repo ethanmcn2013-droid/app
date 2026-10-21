@@ -1,0 +1,18 @@
+{
+  "run": 39655309238,
+  "calls": 62,
+  "fixedCases": 62,
+  "returnedTimedFixedResponses": 61,
+  "estimatedUsd": 2.715504,
+  "medianWallMs": 2736.610632,
+  "p95NearestRankWallMs": 6256.254697999999,
+  "cacheReadTokens": 0,
+  "cacheWriteTokens": 0,
+  "inputTokens": 1261772,
+  "outputTokens": 19196,
+  "unknownUsage": false,
+  "allDraftTaskDigestsUnchanged": true,
+  "sourceFingerprint": "d25a2e678a1b3899874f04d64cd7bc34aa37ae4d40aae06e407fa8c0cd9e907b",
+  "timingBoundary": "Synthetic service.submit includescontext/memory/provider/validation; notbrowserorproduction latency. TTFTnull/nonstreaming.",
+  "quality": "Pending independent reviewer"
+}
