@@ -1,0 +1,263 @@
+name: Ping release 2 synthetic evaluation
+
+on:
+  push:
+    branches:
+      - feat/ping-release2-context-oct21
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ping-release2-synthetic-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  provider-free:
+    name: Provider-free release 2 verification
+    if: ${{ github.repository == 'ethanmcn2013-droid/app' && github.actor == 'ethanmcn2013-droid' && github.ref == 'refs/heads/feat/ping-release2-context-oct21' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out the reviewed release 2 source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 1658de713f1d059984a4f01ae7652b3b7e4b9273
+          persist-credentials: false
+
+      - name: Require the reviewed source revision
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "1658de713f1d059984a4f01ae7652b3b7e4b9273"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: 11.9.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run the owning Ping and conversation suites
+        run: |
+          pnpm test:ping-assistant
+          pnpm test:conversations
+
+      - name: Run reviewed partial-recovery guard tests
+        run: node --import tsx --import ./src/test/register-server-only.mjs --test experience/ping-assistant/release2-partial-recovery.test.ts
+
+      - name: Verify dry-run and synthetic action check without provider credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_dir="experience/output/ping-release2-model-eval"
+          mkdir -p "$output_dir"
+          suffix="ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          dry_run="$output_dir/$suffix-dry-run.json"
+          action_check="$output_dir/$suffix-action-check.json"
+          node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --dry-run --output "$dry_run"
+          node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --action-check --output "$action_check"
+          node -e 'const fs=require("node:fs"); for (const [path, mode] of [[process.argv[1],"dry-run"],[process.argv[2],"synthetic-action-check"]]) { const report=JSON.parse(fs.readFileSync(path,"utf8")); if (report.mode!==mode || report.providerCalls!==0 || report.spendUsd!==0) throw new Error(`Unexpected provider-free report: ${path}`); if(mode==="synthetic-action-check"&&report.evidence?.restoredToBaseline!==true)throw new Error("Undo did not restore baseline"); }' "$dry_run" "$action_check"
+
+  live-synthetic:
+    name: Approved bounded synthetic continuation
+    needs: provider-free
+    if: ${{  github.repository == 'ethanmcn2013-droid/app' && github.actor == 'ethanmcn2013-droid' && github.ref == 'refs/heads/feat/ping-release2-context-oct21' && vars.PING_R2_APPROVED_SOURCE_SHA != '' && github.workflow_sha == vars.PING_R2_APPROVED_WORKFLOW_SHA && vars.PING_R2_APPROVED_TEMPLATE_SHA != '' && github.run_attempt == '1' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: ping-release2-synthetic
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the separately reviewed recovery source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ vars.PING_R2_APPROVED_SOURCE_SHA }}
+          persist-credentials: false
+
+      - name: Require exact approved source and workflow revisions
+        shell: bash
+        env:
+          APPROVED_SOURCE_SHA: ${{ vars.PING_R2_APPROVED_SOURCE_SHA }}
+          APPROVED_WORKFLOW_SHA: ${{ vars.PING_R2_APPROVED_WORKFLOW_SHA }}
+          APPROVED_TEMPLATE_SHA: ${{ vars.PING_R2_APPROVED_TEMPLATE_SHA }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APPROVED_SOURCE_SHA"
+          test "$WORKFLOW_SHA" = "$APPROVED_WORKFLOW_SHA"
+          test -n "$APPROVED_TEMPLATE_SHA"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: 11.9.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run the reviewed partial-recovery guard tests
+        run: node --import tsx --import ./src/test/register-server-only.mjs --test experience/ping-assistant/release2-partial-recovery.test.ts
+
+      - name: Prove the actual action path without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_dir="experience/output/ping-release2-model-eval"
+          mkdir -p "$output_dir"
+          action_check="$output_dir/ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-action-check.json"
+          node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --action-check --output "$action_check"
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));if(r.mode!=="synthetic-action-check"||r.providerCalls!==0||r.spendUsd!==0||r.evidence?.restoredToBaseline!==true)process.exit(1)' "$action_check"
+
+      - name: Bind the one-run recovery approval to reviewed inputs and offline proof
+        id: bind
+        shell: bash
+        env:
+          APPROVED_TEMPLATE_SHA: ${{ vars.PING_R2_APPROVED_TEMPLATE_SHA }}
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const crypto = require('node:crypto');
+          const root = process.cwd();
+          const templatePath = path.join(root, 'experience/ping-assistant/release2-recovery-approval.template.json');
+          const templateBytes = fs.readFileSync(templatePath);
+          const template = JSON.parse(templateBytes.toString('utf8'));
+          const hash = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex');
+          const normalizedFileHash = (filename) => hash(Buffer.from(fs.readFileSync(filename, 'utf8').replace(/\r\n?/g, '\n'), 'utf8'));
+          if (hash(templateBytes) !== process.env.APPROVED_TEMPLATE_SHA) throw new Error('reviewed recovery template checksum mismatch');
+          const normalize = (bytes) => Buffer.from(bytes.toString('utf8').replace(/\r\n/g, '\n'), 'utf8');
+          const recoveryPaths = ['experience/ping-assistant/release2-partial-recovery.test.ts','experience/ping-assistant/release2-partial-recovery.ts'].sort();
+          const recoveryDigest = crypto.createHash('sha256');
+          for (const filename of recoveryPaths) { recoveryDigest.update(filename); recoveryDigest.update('\0'); recoveryDigest.update(normalize(fs.readFileSync(filename))); recoveryDigest.update('\0'); }
+          const outputDir = path.join(root, 'experience/output/ping-release2-model-eval');
+          const actionCheck = path.join(outputDir, `ci-${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT}-action-check.json`);
+          const approval = {
+            ...template,
+            currentRunnerSha256: normalizedFileHash(path.join(root, 'experience/ping-assistant/release2-model-eval.ts')),
+            offlineRuntimeProof: {
+              sha256: hash(fs.readFileSync(actionCheck)), platform: 'linux', nodeMajor: Number(process.versions.node.split('.')[0]),
+              workflowRun: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+            },
+            templateSha256: hash(templateBytes),
+            reviewedRecoverySha256: recoveryDigest.digest('hex'),
+            approvedAt: new Date().toISOString(),
+          };
+          const target = path.join(process.env.RUNNER_TEMP, 'ping-r2-recovery-approval.json');
+          fs.writeFileSync(target, JSON.stringify(approval), { flag: 'wx', mode: 0o600 });
+          const artifactPrefix = `approved-${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT}`;
+          fs.copyFileSync(target, path.join(outputDir, `${artifactPrefix}-recovery-approval.json`), fs.constants.COPYFILE_EXCL);
+          fs.copyFileSync(actionCheck, path.join(outputDir, `${artifactPrefix}-runtime-action-check.json`), fs.constants.COPYFILE_EXCL);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `approval_path=${target}\n`);
+          NODE
+
+      - name: Decode and safely extract the bounded synthetic seed
+        id: seed
+        shell: bash
+        env:
+          PING_R2_SYNTHETIC_SEED: ${{ secrets.PING_R2_SYNTHETIC_SEED }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, io, os, pathlib, tarfile
+          encoded = os.environ.get('PING_R2_SYNTHETIC_SEED', '')
+          if not encoded or len(encoded.encode('ascii')) > 48000:
+              raise SystemExit('synthetic seed is missing or exceeds the approved size')
+          archive = base64.b64decode(encoded, validate=True)
+          if hashlib.sha256(archive).hexdigest() != '20f6f722e427e398e5f09b26369f54b25a53971dfb8ba387efcc18d474e45da3':
+              raise SystemExit('synthetic seed checksum mismatch')
+          expected = {
+              'synthetic-backup.db': '89e7d4c5f13777a0bbcbc2bc584d53757031d8279620d471ebf2ea2815cecc66',
+              'original-evaluation-inputs.json': 'a81975c2f1d7232346bf20e0c040e1372bbc13a2fb6bcad42aff2690b7986eb6',
+              'original-A.json': '1cd9d108389315a9184f434f1ae9318b0938f362fb9b886852e5ec7e9833b8f4',
+              'provider-observation.json': '89733f769f00d370b6636d1289fa56118d790bbdac775f36c9891655f117aaa4',
+              'provider-review.md': 'c696caaed356820792cc0ebd6c412b677d71a5f745f44ef8e3b1aed5c7df9e05f8',
+              'admission.json': '685b6b6ffa3f1ee98f71f105d8ee0ea66a4d5ffa48b1c302c9be53cb00d8352b',
+          }
+          destination = pathlib.Path(os.environ['RUNNER_TEMP']) / 'ping-r2-seed'
+          destination.mkdir(mode=0o700, exist_ok=False)
+          found = set()
+          with tarfile.open(fileobj=io.BytesIO(archive), mode='r:xz') as bundle:
+              for member in bundle.getmembers():
+                  if member.name not in expected or member.name in found or not member.isfile() or member.size > 12_000_000:
+                      raise SystemExit('synthetic seed contains an unexpected entry')
+                  source = bundle.extractfile(member)
+                  if source is None:
+                      raise SystemExit('synthetic seed entry is unreadable')
+                  data = source.read(12_000_001)
+                  if len(data) != member.size or len(data) > 12_000_000:
+                      raise SystemExit('synthetic seed entry size mismatch')
+                  if hashlib.sha256(data).hexdigest() != expected[member.name]:
+                      raise SystemExit('synthetic seed entry checksum mismatch')
+                  target = destination / member.name
+                  with target.open('xb') as output:
+                      os.chmod(target, 0o600)
+                      output.write(data)
+                  found.add(member.name)
+          if found != set(expected):
+              raise SystemExit('synthetic seed is incomplete')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf8') as output:
+              output.write(f'seed_dir={destination}\n')
+          PY
+
+      - name: Verify the actual database recovery before exposing the API key
+        shell: bash
+        env:
+          PING_RELEASE2_MODEL_EVAL_AUTHORIZED: '1'
+          SEED_DIR: ${{ steps.seed.outputs.seed_dir }}
+          APPROVAL_PATH: ${{ steps.bind.outputs.approval_path }}
+        run: |
+          set -euo pipefail
+          output_dir="experience/output/ping-release2-model-eval"
+          proof="$output_dir/approved-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-recovery-preflight.json"
+          node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --group A --resume-a3 --dry-run --resume-approval "$APPROVAL_PATH" --resume-runtime-proof "$output_dir/ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-action-check.json" --resume-db "$SEED_DIR/synthetic-backup.db" --resume-report "$SEED_DIR/original-A.json" --resume-inputs "$SEED_DIR/original-evaluation-inputs.json" --resume-observation "$SEED_DIR/provider-observation.json" --resume-review "$SEED_DIR/provider-review.md" --scope-file "$SEED_DIR/admission.json" --output "$proof"
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));if(r.mode!=="a3-recovery-preflight"||r.providerCalls!==0||r.spendUsd!==0||r.carriedPhysicalAttempts!==3||r.carriedEstimatedMicroUsd!==118528||r.baseline.taskSha256!==r.finalTaskState.taskSha256||r.records[2].status!=="provider_failed_no_answer_no_quality_credit")throw new Error("Recovery preflight failed");' "$proof"
+
+      - name: Continue A4-A6 once, then run the remaining groups in sequence
+        shell: bash
+        env:
+          PING_R2_SYNTHETIC_KEY: ${{ secrets.PING_R2_SYNTHETIC_KEY }}
+          PING_RELEASE2_MODEL_EVAL_AUTHORIZED: '1'
+          SEED_DIR: ${{ steps.seed.outputs.seed_dir }}
+          APPROVAL_PATH: ${{ steps.bind.outputs.approval_path }}
+          PREFLIGHT_PATH: experience/output/ping-release2-model-eval/ci-${{ github.run_id }}-${{ github.run_attempt }}-a3-preflight.json
+        run: |
+          set -euo pipefail
+          umask 077
+          node -e 'const r=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));if(r.mode!=="a3-recovery-preflight"||r.providerCalls!==0||r.recoveryChecked!==true)process.exit(1)' "$PREFLIGHT_PATH"
+          test -n "$PING_R2_SYNTHETIC_KEY"
+          key_file="$RUNNER_TEMP/ping-r2-api-key"
+          printf '%s' "$PING_R2_SYNTHETIC_KEY" > "$key_file"
+          trap 'rm -f "$key_file"' EXIT
+          output_dir="experience/output/ping-release2-model-eval"
+          suffix="approved-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          current="$output_dir/$suffix-A.json"
+          node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --group A --resume-a3 --resume-approval "$APPROVAL_PATH" --resume-runtime-proof "$output_dir/ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-action-check.json" --resume-db "$SEED_DIR/synthetic-backup.db" --resume-report "$SEED_DIR/original-A.json" --resume-inputs "$SEED_DIR/original-evaluation-inputs.json" --resume-observation "$SEED_DIR/provider-observation.json" --resume-review "$SEED_DIR/provider-review.md" --scope-file "$SEED_DIR/admission.json" --key-file "$key_file" --output "$current"
+          for group in B C D E F G H I; do
+            next="$output_dir/$suffix-$group.json"
+            node --import tsx --import ./src/test/register-server-only.mjs experience/ping-assistant/release2-model-eval.ts --group "$group" --prior-results "$current" --scope-file "$SEED_DIR/admission.json" --key-file "$key_file" --output "$next"
+            current="$next"
+          done
+
+      - name: Preserve synthetic evaluation outputs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ping-release2-synthetic-${{ github.run_id }}-${{ github.run_attempt }}
+          path: experience/output/ping-release2-model-eval/approved-${{ github.run_id }}-${{ github.run_attempt }}-*.json
+          if-no-files-found: warn
+          retention-days: 7
