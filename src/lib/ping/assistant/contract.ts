@@ -1,3 +1,4 @@
+import type { AssistantSource, AssistantSourceScope, AssistantCitation, AssistantVisibleCitation, AssistantPlanEdit, AssistantMemoryTurn, AssistantReversal, AssistantUndoResult } from './release2';
 /** Shared text-first intent and result contract. Models never provide authority or internal IDs. */
 export const ASSISTANT_VERSION = "ping.assistant.v1" as const;
 export const ASSISTANT_LIMITS = Object.freeze({ actions: 20, tasksPerCreate: 100, taskEffects: 500, text: 16000, recipients: 20 });
@@ -5,6 +6,7 @@ export const ASSISTANT_LIMITS = Object.freeze({ actions: 20, tasksPerCreate: 100
 export type AssistantScope = Readonly<{ kind: "account" }> | Readonly<{ kind: "project"; projectId: string }>;
 export type AssistantRequest = Readonly<{
   requestId: string; text: string; scope: AssistantScope; mode: "execute" | "draft"; selectedTaskIds?: readonly string[];
+  source?: AssistantSourceScope; replyToRunId?: string;
 }>;
 export type AssistantProjectRef = Readonly<{ kind: "current" }> | Readonly<{ kind: "name"; name: string }> |
   Readonly<{ kind: "created"; stepId: string }>;
@@ -19,7 +21,7 @@ export type AssistantTaskSelector = Readonly<{ kind: "selected" }> |
   Readonly<{ kind: "all"; status?: AssistantStatus; limit?: number }>;
 export type AssistantTaskFields = Readonly<{
   title?: string; description?: string; assignees?: readonly AssistantMemberRef[]; dueDate?: AssistantDate;
-  status?: AssistantStatus; milestone?: boolean;
+  status?: AssistantStatus; milestone?: boolean; dueTime?: string | null;
 }>;
 export type AssistantTaskDraft = AssistantTaskFields & Readonly<{ title: string }>;
 export type AssistantTaskTemplate = Omit<AssistantTaskFields, "title"> & Readonly<{
@@ -36,16 +38,26 @@ export type AssistantAction =
   | ProjectStep & Readonly<{ kind: "add_comment"; targets: AssistantTaskSelector; body: string }>
   | ProjectStep & Readonly<{ kind: "nudge_tasks"; targets: AssistantTaskSelector }>
   | ProjectStep & Readonly<{ kind: "invite_members"; emails: readonly string[] }>
-  | ProjectStep & Readonly<{ kind: "send_message"; body: string; mentions?: readonly AssistantMemberRef[] }>
+  | ProjectStep & Readonly<{ kind: "send_message"; body: string; mentions?: readonly AssistantMemberRef[]; recipient?:AssistantMemberRef }>
+  | ProjectStep & Readonly<{ kind: "set_checklist_item"; parent: AssistantTaskSelector; itemTitle: string; completed: boolean }>
+  | ProjectStep & Readonly<{ kind: "create_checklist_items"; parent: AssistantTaskSelector; items: readonly string[] }>
   | ProjectStep & Readonly<{ kind: "open_project" | "open_chat" | "read_timeline" | "preview_timeline" }>
   | ProjectStep & Readonly<{ kind: "read_chat"; limit?: number }>
   | ProjectStep & Readonly<{ kind: "list_tasks"; status?: AssistantStatus; limit?: number }>;
 export type AssistantPlan = Readonly<{ version: typeof ASSISTANT_VERSION; outcome: "plan"; mode: "execute" | "draft"; actions: readonly AssistantAction[] }> |
+  Readonly<{ version: typeof ASSISTANT_VERSION; outcome: 'answer'; message: string; citations: readonly AssistantCitation[] }> |
+  Readonly<{ version: typeof ASSISTANT_VERSION; outcome: 'edit'; edits: readonly AssistantPlanEdit[] }> |
   Readonly<{ version: typeof ASSISTANT_VERSION; outcome: "clarification" | "unsupported"; message: string }>;
 export type AssistantPlannerContext = Readonly<{
   actorName: string; projectName: string | null; projects: readonly Readonly<{ name: string }>[];
   members: readonly Readonly<{ name: string }>[]; selectedTaskCount: number; previousTaskCount: number;
   referenceDate: string; timeZone: string;
+  sources?: readonly AssistantSource[]; memory?: readonly AssistantMemoryTurn[];
+  waitingPlan?: readonly AssistantAction[];
+  needsYou?: readonly Readonly<{ref:string;projectName:string;unseen:boolean;createdAt:string}>[];
+  tasks?: readonly Readonly<{title:string;projectName:string;description?:string;assignees:readonly string[];dueDate:string|null;dueTime:string|null;status:string;parentTitle:string|null}>[];
+  coverage?:string;
+  needsYouTotal?:number; needsYouComplete?:boolean;
 }>;
 export type AssistantResultItem = Readonly<{ id: string; title: string; detail?: string; href?: string }>;
 export type AssistantActionResult = Readonly<{
@@ -54,18 +66,22 @@ export type AssistantActionResult = Readonly<{
   taskIds?: readonly string[]; href?: string; items?: readonly AssistantResultItem[];
   delivery?: Readonly<{ queued: number; accepted: number; unknown: number; suppressed: number }>;
   undo?: Readonly<{ projectId: string; taskIds: readonly string[]; archived: boolean }>;
+  reversal?: AssistantReversal;
+  undoResult?: AssistantUndoResult;
   code?: string;
 }>;
 export type AssistantRunStatus = "planning" | "ready" | "running" | "completed" | "partial" | "clarification" | "failed" | "cancelled" | "unknown";
 export type AssistantStepStatus = "queued" | "running" | "completed" | "blocked" | "failed" | "unknown" | "cancelled";
-export type AssistantStepView = Readonly<{ id: string; actionId: string; kind: AssistantAction["kind"]; status: AssistantStepStatus; result: AssistantActionResult | null }>;
+export type AssistantStepView = Readonly<{ id: string; actionId: string; kind: AssistantAction["kind"]; status: AssistantStepStatus; result: AssistantActionResult | null; plan?:AssistantAction; canUndo?:boolean; undoResult?:AssistantUndoResult }>;
 export type AssistantRunView = Readonly<{
   id: string; requestId: string; text: string; scope: AssistantScope; mode: "execute" | "draft";
   status: AssistantRunStatus; message?: string; steps: readonly AssistantStepView[]; createdAt: string; updatedAt: string;
   timing?: Readonly<{ planningMs?: number; executionMs?: number; totalMs?: number }>;
   model?: string; estimatedCostMicrousd?: number;
+  citations?: readonly AssistantVisibleCitation[]; planRevision?:number; replyToRunId?:string; source?:AssistantSourceScope; accessUnavailable?:boolean;
 }>;
 export type AssistantApiCommand = Readonly<{ operation: "submit"; request: AssistantRequest }> |
+  Readonly<{ operation: 'undo'; runId:string; stepId:string }> |
   Readonly<{ operation: "resume" | "cancel" | "apply"; runId: string }>;
 export type AssistantApiResponse = Readonly<{
   version: typeof ASSISTANT_VERSION; ok: true; available: boolean; run?: AssistantRunView; runs?: readonly AssistantRunView[];
@@ -88,10 +104,11 @@ const selector = either(object({ kind: literal("selected") }), object({ kind: li
   object({ kind: literal("created"), stepId, limit: integer(500) }, ["kind", "stepId"]),
   object({ kind: literal("previous"), limit: integer(500) }, ["kind"]),
   object({ kind: literal("all"), status, limit: integer(500) }, ["kind"]));
-const fields = { title: string(), description: string(2000, 0), assignees: array(member, 20), dueDate: date, status, milestone: { type: "boolean" } };
+const time = either({type:'null'}, {...string(5),pattern:'^(?:[01][0-9]|2[0-3]):[0-5][0-9]$'});
+const fields = { title: string(), description: string(2000, 0), assignees: array(member, 20), dueDate: date, status, milestone: { type: "boolean" }, dueTime:time };
 const task = object(fields, ["title"]);
 const template = object({ count: integer(100), titlePrefix: string(), description: fields.description, assignees: fields.assignees,
-  dueDate: date, status, milestone: fields.milestone, distribution: enumeration("all", "round_robin"), milestoneCount: integer(100, 0) }, ["count", "titlePrefix"]);
+  dueDate: date, dueTime:time, status, milestone: fields.milestone, distribution: enumeration("all", "round_robin"), milestoneCount: integer(100, 0) }, ["count", "titlePrefix"]);
 const action = (kind: string, properties: Record<string, Schema>, required?: string[]): Schema => object({ id: stepId, kind: literal(kind), ...properties }, ["id", "kind", ...(required ?? Object.keys(properties))]);
 export const ASSISTANT_ACTION_SCHEMA: Schema = either(
   action("create_project", { name: string(), description: string(2000, 0) }, ["name"]),
@@ -101,13 +118,17 @@ export const ASSISTANT_ACTION_SCHEMA: Schema = either(
   action("add_comment", { project, targets: selector, body: string(5000) }),
   action("nudge_tasks", { project, targets: selector }),
   action("invite_members", { project, emails: array({ ...string(254), pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$" }, 20, 1) }),
-  action("send_message", { project, body: string(5000), mentions: array(member, 20) }, ["project", "body"]),
+  action("send_message", { project, body: string(5000), mentions: array(member, 20),recipient:member }, ["project", "body"]),
+  action('set_checklist_item',{project,parent:selector,itemTitle:string(),completed:{type:'boolean'}}),
+  action('create_checklist_items',{project,parent:selector,items:array(string(),100,1)}),
   ...["open_project", "open_chat", "read_timeline", "preview_timeline"].map(kind => action(kind, { project })),
   action("read_chat", { project, limit: integer(50) }, ["project"]),
   action("list_tasks", { project, status, limit: integer(100) }, ["project"]),
 );
 export const ASSISTANT_PLAN_SCHEMA: Schema = either(
   object({ version: literal(ASSISTANT_VERSION), outcome: literal("plan"), mode: enumeration("execute", "draft"), actions: array(ASSISTANT_ACTION_SCHEMA, 20, 1) }),
+  object({version:literal(ASSISTANT_VERSION),outcome:literal('answer'),message:string(5000),citations:array(object({ref:string(80),quote:string(2000)}),12)}),
+  object({version:literal(ASSISTANT_VERSION),outcome:literal('edit'),edits:array(either(object({kind:literal('drop'),stepId,taskTitle:string()},['kind','stepId']),object({kind:literal('task_fields'),stepId,taskTitle:string(),changes:object(fields,[])},['kind','stepId','changes'])),20,1)}),
   object({ version: literal(ASSISTANT_VERSION), outcome: enumeration("clarification", "unsupported"), message: string(1000) }),
 );
 
@@ -145,12 +166,14 @@ export function parseAssistantPlan(value: unknown): AssistantPlan | null {
   try {
     if (!matches(value, ASSISTANT_PLAN_SCHEMA)) return null;
     const plan = value as AssistantPlan;
+    if(plan.outcome==='edit' && plan.edits.some(edit=>edit.kind==='task_fields'&&(!Object.keys(edit.changes).length||!validDate(edit.changes.dueDate))))return null;
     if (plan.outcome !== "plan") return structuredClone(plan);
     const earlier = new Map<string, AssistantAction>(); let created = 0;
     for (const item of plan.actions) {
       if (earlier.has(item.id)) return null;
       if ("project" in item && item.project.kind === "created" && earlier.get(item.project.stepId)?.kind !== "create_project") return null;
       if ("targets" in item && item.targets.kind === "created" && earlier.get(item.targets.stepId)?.kind !== "create_tasks") return null;
+      if ('parent' in item && item.parent.kind==='created' && earlier.get(item.parent.stepId)?.kind!=='create_tasks')return null;
       if (item.kind === "update_tasks" && Object.keys(item.changes).length === 0) return null;
       const taskFields = item.kind === "create_tasks" ? (item.tasks ?? [item.template]) : item.kind === "update_tasks" ? [item.changes] : [];
       if (taskFields.some(fields => !validDate(fields.dueDate))) return null;
@@ -167,13 +190,16 @@ export function parseAssistantPlan(value: unknown): AssistantPlan | null {
 
 const requestSchema = object({ requestId: { ...string(80), pattern: "^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$" }, text: string(16000),
   scope: either(object({ kind: literal("account") }), object({ kind: literal("project"), projectId: string(160) })),
-  mode: enumeration("execute", "draft"), selectedTaskIds: array(string(160), 500) }, ["requestId", "text", "scope", "mode"]);
+  mode: enumeration("execute", "draft"), selectedTaskIds: array(string(160), 500), replyToRunId:string(160),
+  source:either(object({kind:literal('conversation'),conversationId:string(160),rootId:string(160)},['kind','conversationId']),object({kind:literal('task_discussion'),taskId:string(160)})) }, ["requestId", "text", "scope", "mode"]);
 export function parseAssistantRequest(value: unknown): AssistantRequest | null {
   try {
     if (!matches(value, requestSchema)) return null;
     const request = value as AssistantRequest;
     if (request.selectedTaskIds && new Set(request.selectedTaskIds).size !== request.selectedTaskIds.length) return null;
     if (request.scope.kind === "account" && request.selectedTaskIds?.length) return null;
+    if(request.source&&request.scope.kind!=='project')return null;
+    if(request.replyToRunId&&!/^[A-Za-z0-9_-]{8,160}$/.test(request.replyToRunId))return null;
     return structuredClone(request);
   } catch { return null; }
 }
@@ -182,6 +208,7 @@ export function parseAssistantApiCommand(value: unknown): AssistantApiCommand | 
   if (value.operation === "submit" && Object.keys(value).length === 2) {
     const request = parseAssistantRequest(value.request); return request ? { operation: "submit", request } : null;
   }
+  if(value.operation==='undo' && Object.keys(value).length===3 && typeof value.runId==='string' && /^[A-Za-z0-9_-]{8,160}$/.test(value.runId) && typeof value.stepId==='string' && /^[A-Za-z0-9_-]{8,160}$/.test(value.stepId))return {operation:'undo',runId:value.runId,stepId:value.stepId};
   return (value.operation === "resume" || value.operation === "cancel" || value.operation === "apply") && Object.keys(value).length === 2 && typeof value.runId === "string" && /^[A-Za-z0-9_-]{8,160}$/.test(value.runId)
     ? { operation: value.operation, runId: value.runId } : null;
 }

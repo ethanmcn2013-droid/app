@@ -25,6 +25,7 @@ export async function insertAssistantTaskBatch(tx: AssistantActionTransaction, i
       description: task.description, lane: task.lane, priority: task.priority, assignees: [...task.assignees],
       estimate: task.estimate, due: task.due, dueAt: task.dueAtSeconds === null ? null : new Date(task.dueAtSeconds * 1000),
       position, isMilestone: task.isMilestone, completedAt: task.completedAtSeconds === null ? null : new Date(task.completedAtSeconds * 1000),
+      parentTaskId: task.parentTaskId,
       createdAt: new Date(task.createdAtSeconds * 1000), updatedAt: new Date(task.createdAtSeconds * 1000) };
   });
   // 25 rows keeps bound parameters below SQLite's conservative 999-variable limit.

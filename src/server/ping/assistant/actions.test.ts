@@ -8,6 +8,8 @@ import { executeAssistantAction, type AssistantActionInput } from "./actions";
 import type { AssistantAction, AssistantActionResult } from "@/lib/ping/assistant/contract";
 import { getAssistantContext } from "./context";
 import type { AssistantDeliveryPort } from "./delivery";
+import { assertProjectId } from "@/lib/projects/project-ref";
+import { createConversationService } from "@/server/conversations/service";
 
 async function fixture() {
   const proof = await createPingProofFixture();
@@ -89,6 +91,80 @@ test("Undo restores the exact changed IDs and preserves previously archived chil
   } finally { f.client.close(); }
 });
 
+test("checklist actions create child items and complete exactly one matching item", async () => {
+  const f = await fixture();
+  try {
+    const parent = await f.run({ id:"parent",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Run of show"}] });
+    const parentId=parent.createdTaskIds![0];
+    const made=await f.run({ id:"items",kind:"create_checklist_items",project:{kind:"current"},parent:{kind:"titles",titles:["Run of show"]},items:["Confirm kitchen timings","Print run sheet"] });
+    assert.equal(made.createdTaskIds?.length,2); assert.equal(made.reversal?.kind,"tasks");
+    const children=await f.client.execute({sql:"SELECT id,title,parent_task_id,lane FROM tasks WHERE parent_task_id=? ORDER BY title",args:[parentId]});
+    assert.equal(children.rows.length,2); assert.ok(children.rows.every(row=>row.parent_task_id===parentId));
+    const one=await f.run({id:"tick",kind:"set_checklist_item",project:{kind:"current"},parent:{kind:"titles",titles:["Run of show"]},itemTitle:"  CONFIRM kitchen timings ",completed:true});
+    assert.equal(one.affectedCount,1); assert.equal(one.taskIds?.length,1);
+    const state=await f.client.execute({sql:"SELECT title,lane,completed_at FROM tasks WHERE parent_task_id=? ORDER BY title",args:[parentId]});
+    const kitchen=state.rows.find(row=>row.title==="Confirm kitchen timings")!;
+    const print=state.rows.find(row=>row.title==="Print run sheet")!;
+    assert.equal(kitchen.lane,"done"); assert.notEqual(kitchen.completed_at,null); assert.equal(print.lane,"todo"); assert.equal(print.completed_at,null);
+    assert.equal(Number((await f.client.execute({sql:"SELECT lane='todo' AS todo FROM tasks WHERE id=?",args:[parentId]})).rows[0].todo),1);
+  } finally { f.client.close(); }
+});
+
+test("checklist item selection refuses ambiguous labels and leaves siblings untouched", async () => {
+  const f=await fixture();
+  try {
+    const parent=await f.run({id:"parent",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Checklist parent"}]});
+    const parentId=parent.createdTaskIds![0];
+    await f.client.execute({sql:"INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees,parent_task_id) VALUES('sub-a',?,'Confirm lights','todo','p2','[]',?),('sub-b',?,'Confirm lights','todo','p2','[]',?)",args:[PROOF_PROJECT,parentId,PROOF_PROJECT,parentId]});
+    await assert.rejects(()=>f.run({id:"tick",kind:"set_checklist_item",project:{kind:"current"},parent:{kind:"titles",titles:["Checklist parent"]},itemTitle:"Confirm lights",completed:true}));
+    assert.equal(Number((await f.client.execute({sql:"SELECT COUNT(*) n FROM tasks WHERE parent_task_id=? AND lane='todo'",args:[parentId]})).rows[0].n),2);
+  } finally { f.client.close(); }
+});
+
+test("time-only task updates retain each task's existing calendar day", async () => {
+  const f=await fixture();
+  try {
+    const created=await f.run({id:"timed",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Timed item",dueDate:"2026-10-22"}]});
+    const id=created.createdTaskIds![0];
+    const updated=await f.run({id:"time",kind:"update_tasks",project:{kind:"current"},targets:{kind:"selected"},changes:{dueTime:"14:35"}},{selectedTaskIds:[id]});
+    assert.equal(updated.affectedCount,1);
+    const row=await f.client.execute({sql:"SELECT due,due_at FROM tasks WHERE id=?",args:[id]});
+    assert.equal(row.rows[0].due,"2026-10-22 14:35"); assert.equal(new Date(Number(row.rows[0].due_at)*1000).toISOString(),"2026-10-22T14:35:00.000Z");
+    assert.equal(updated.reversal?.kind,"tasks");
+  } finally { f.client.close(); }
+});
+
+test("date-only keeps the 09:00Z sentinel while explicit Project time stores a local clock label",async()=>{
+ const f=await fixture();try{
+  const dayOnly=await f.run({id:"day",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Date only",dueDate:"2026-10-22"}]});
+  const timed=await f.run({id:"timed",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Explicit time",dueDate:"2026-10-22",dueTime:"10:00"}]},{timeZone:"Europe/Dublin"});
+  const rows=await f.client.execute({sql:"SELECT id,due,due_at FROM tasks WHERE id IN (?,?)",args:[dayOnly.createdTaskIds![0],timed.createdTaskIds![0]]});
+  const day=rows.rows.find(row=>row.id===dayOnly.createdTaskIds![0])!,clock=rows.rows.find(row=>row.id===timed.createdTaskIds![0])!;
+  assert.equal(day.due,"2026-10-22");assert.equal(new Date(Number(day.due_at)*1000).toISOString(),"2026-10-22T09:00:00.000Z");
+  assert.equal(clock.due,"2026-10-22 10:00");assert.equal(new Date(Number(clock.due_at)*1000).toISOString(),"2026-10-22T09:00:00.000Z");
+ }finally{f.client.close();}
+});
+
+test("clearing an explicit time restores date-only storage and its 09:00Z sentinel",async()=>{
+ const f=await fixture();try{
+  const created=await f.run({id:"timed",kind:"create_tasks",project:{kind:"current"},tasks:[{title:"Timed item",dueDate:"2026-10-22",dueTime:"14:35"}]});
+  const id=created.createdTaskIds![0];
+  await f.run({id:"clear-time",kind:"update_tasks",project:{kind:"current"},targets:{kind:"selected"},changes:{dueTime:null}},{selectedTaskIds:[id],timeZone:"Europe/Dublin"});
+  const row=await f.client.execute({sql:"SELECT due,due_at FROM tasks WHERE id=?",args:[id]});
+  assert.equal(row.rows[0].due,"2026-10-22");assert.equal(new Date(Number(row.rows[0].due_at)*1000).toISOString(),"2026-10-22T09:00:00.000Z");
+ }finally{f.client.close();}
+});
+
+test("a date-only move keeps an existing explicit clock time across the DST boundary",async()=>{
+ const f=await fixture();try{
+  const created=await f.run({id:'clock',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Time-specific task',dueDate:'2026-10-22',dueTime:'10:00'}]},{timeZone:'Europe/Dublin'});
+  const id=created.createdTaskIds![0];
+  await f.run({id:'move-day',kind:'update_tasks',project:{kind:'current'},targets:{kind:'selected'},changes:{dueDate:'2026-10-26'}},{selectedTaskIds:[id],timeZone:'Europe/Dublin'});
+  const row=(await f.client.execute({sql:'SELECT due,due_at FROM tasks WHERE id=?',args:[id]})).rows[0];
+  assert.equal(row.due,'2026-10-26 10:00');assert.equal(new Date(Number(row.due_at)*1000).toISOString(),'2026-10-26T10:00:00.000Z');
+ }finally{f.client.close();}
+});
+
 test("Timeline preparation occurs after a durable pending intent; recovery never repeats task writes", async () => {
   const f = await fixture();
   try {
@@ -154,6 +230,19 @@ test("cross-Project selection, ambiguous titles and stale created references can
   } finally { f.client.close(); }
 });
 
+test("previous tasks selects only the explicit earlier-turn receipt, never new tasks in this run",async()=>{
+ const f=await fixture();try{
+  const earlier=await f.run({id:'earlier',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Earlier turn task'}]});
+  const current=await f.run({id:'current',kind:'create_tasks',project:{kind:'current'},tasks:[{title:'Current turn task'}]});
+  await assert.rejects(f.run({id:'missing',kind:'archive_tasks',project:{kind:'current'},targets:{kind:'previous'},archived:true}),/unavailable/);
+  const archived=await f.run({id:'explicit',kind:'archive_tasks',project:{kind:'current'},targets:{kind:'previous'},archived:true},{results:{current,__previous:earlier}});
+  assert.deepEqual(archived.undo?.taskIds,earlier.createdTaskIds);
+  const rows=await f.client.execute('SELECT title,archived_at FROM tasks ORDER BY title');
+  assert.equal(rows.rows.find(row=>row.title==='Current turn task')?.archived_at,null);
+  assert.ok(rows.rows.find(row=>row.title==='Earlier turn task')?.archived_at);
+ }finally{f.client.close();}
+});
+
 test("late batch write failure rolls back tasks, activities and completion receipt", async () => {
   const f = await fixture();
   try {
@@ -193,6 +282,33 @@ test("canonical task comments and Project chat keep original receipts on replay"
     const read = await f.run({ id: "read", kind: "read_chat", project: { kind: "current" } });
     assert.equal(read.items?.[0].title, "Synthetic Project message");
   } finally { f.client.close(); }
+});
+
+test("recipient message uses only an already-consented exact direct conversation",async()=>{
+ const f=await fixture();try{
+  const service=createConversationService(f.adapter,{directMessagesEnabled:true}),projectId=assertProjectId(PROOF_PROJECT);
+  const request=await service.requestDirectMessage({actorId:"alice",projectId,recipientId:"bob",clientRequestId:"ping_dm_request_01"});
+  assert.equal(request.ok,true);if(!request.ok)return;
+  const id=request.value.scope.conversationId,bobScope=await service.getDirectMessage({actorId:"bob",projectId,conversationId:id});
+  assert.equal(bobScope.ok,true);if(!bobScope.ok)return;
+  const accepted=await service.transitionDirectMessage({actorId:"bob",projectId,conversationId:id,operation:"accept",clientRequestId:"ping_dm_accept_01",expectedAudienceEpoch:bobScope.value.audienceEpoch});
+  assert.equal(accepted.ok,true);
+  const result=await f.run({id:"private",kind:"send_message",project:{kind:"current"},recipient:{kind:"name",name:"bob"},body:"Private note to Bob"},{directMessagesEnabled:true});
+  assert.equal(result.status,"completed");assert.match(result.href??"",/\/app\/messages\?c=/);
+  const dmRows=await f.client.execute({sql:"SELECT m.body,m.conversation_id FROM conversation_messages m JOIN conversations c ON c.id=m.conversation_id WHERE c.kind='dm'"});
+  assert.equal(dmRows.rows.length,1);assert.equal(dmRows.rows[0].body,"Private note to Bob");assert.equal(dmRows.rows[0].conversation_id,id);
+  assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM conversations WHERE kind='project'")).rows[0].n),0);
+ }finally{f.client.close();}
+});
+
+test("recipient message refuses pending consent and never falls back to Project chat",async()=>{
+ const f=await fixture();try{
+  const service=createConversationService(f.adapter,{directMessagesEnabled:true}),projectId=assertProjectId(PROOF_PROJECT);
+  await service.requestDirectMessage({actorId:"alice",projectId,recipientId:"bob",clientRequestId:"ping_dm_pending_01"});
+  await assert.rejects(()=>f.run({id:"private",kind:"send_message",project:{kind:"current"},recipient:{kind:"name",name:"bob"},body:"Must wait for consent"},{directMessagesEnabled:true}),/unavailable/);
+  assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM conversation_messages")).rows[0].n),0);
+  assert.equal(Number((await f.client.execute("SELECT COUNT(*) n FROM conversations WHERE kind='project'")).rows[0].n),0);
+ }finally{f.client.close();}
 });
 
 test("nudges honor mute and cooldown; uncertain fake delivery is never retried", async () => {

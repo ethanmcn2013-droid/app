@@ -1,5 +1,13 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-21 · Internal candidate · Follow a conversation with Ping
+
+Ping can prepare a plan from an authorized conversation or task discussion, quote what it read, and link back to the source. Follow-ups can change a waiting plan's owner, date or time, or remove one item. Nothing changes until Apply plan.
+
+Checklist items stay separate from their parent task. Individual saved steps can be taken back when their targets have not changed since Ping acted; messages and comments use the original conversation checks. Delivered emails cannot be recalled. Private in-chat requests stay visible only to the person who asked.
+
+The approved Chat design, recovery controls, access switches and spending limits remain in force. Live model evaluation and release receiving are still required; this entry records a candidate, not a deployment.
+
 ## 2026-10-20 · Release · A new Home, and the Full Briefing retires
 
 Home now opens on what is coming and how the week is going. The next target date counts down with a burn-up chart against plan, its stages and one next step; page through up to five dated Projects. Done this week sets each day beside the same day last week. Activity shows a year of finished work, by week or by hour, with a weeks-in-a-row streak. Four cards at the foot open Tasks, Projects, Files and Chat, or start something new in each.

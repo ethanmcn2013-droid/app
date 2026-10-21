@@ -28,6 +28,10 @@
 .result h3 { margin:0; font-size:13.5px; font-weight:600; }
 .progress { color:var(--v3-text-2); font-size:11.5px; font-variant-numeric:tabular-nums; }
 .result p { margin:6px 0; font-size:13px; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; }
+.sources { display:grid; gap:8px; margin-top:10px; }
+.sources blockquote { margin:0; padding:8px 10px; border-radius:8px; background:var(--v3-sunken); }
+.sources blockquote p { margin:0; }
+.sources cite { display:block; margin-top:5px; color:var(--v3-text-2); font-size:11.5px; font-style:normal; }
 
 /* The plan: what will change, shown before anything does. */
 .plan { margin-top:10px; border:1px solid var(--v3-border); border-radius:12px; background:var(--v3-surface); overflow:hidden; }

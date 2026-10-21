@@ -1,10 +1,11 @@
 import { createBrowserPingTelemetry, createPingTelemetryRequest, pingTelemetryBegin, pingTelemetryHeaders, pingTelemetryRecord } from "@/lib/ping/telemetry-client";
 import type { PingTelemetryRecorder, PingTelemetryEnd, PingTelemetryOutcome } from "@/lib/ping/telemetry";
-import { ASSISTANT_VERSION, isAssistantInternalHref, type AssistantApiCommand, type AssistantApiResponse, type AssistantRunView, type AssistantScope, type AssistantStepView, type AssistantStepStatus } from "@/lib/ping/assistant/contract";
+import { ASSISTANT_VERSION, isAssistantInternalHref, parseAssistantPlan, type AssistantAction, type AssistantApiCommand, type AssistantApiResponse, type AssistantRunView, type AssistantScope, type AssistantStepView, type AssistantStepStatus, type AssistantMemberRef } from "@/lib/ping/assistant/contract";
+import type { AssistantSourceScope } from "@/lib/ping/assistant/release2";
 export type PendingAssistantRequest = Readonly<{ version: 1; requestId: string; runId?: string }>;
 const requestId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$/.test(value);
 const runId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9_-]{8,160}$/.test(value);
-export const pendingAssistantKey = (actorId: string) => `signal.ping.assistant.pending.v1:${actorId}`;
+export const pendingAssistantKey = (actorId: string, source?:AssistantSourceScope) => `signal.ping.assistant.pending.v1:${actorId}${source?`:source:${encodeURIComponent(source.kind==="conversation"?`${source.conversationId}:${source.rootId??"root"}`:source.taskId)}`:""}`;
 export function parsePendingAssistantRequest(raw: string | null): PendingAssistantRequest | null {
   try { const value = raw ? JSON.parse(raw) : null;
     return value && value.version === 1 && requestId(value.requestId) &&
@@ -17,16 +18,36 @@ export function isAssistantScope(value: unknown): value is AssistantScope {
   const scope = value as Record<string, unknown>;
   return scope.kind === "account" && Object.keys(scope).length === 1 || scope.kind === "project" && Object.keys(scope).length === 2 && typeof scope.projectId === "string" && scope.projectId.length > 0;
 }
+export function isAssistantSourceScope(value:unknown):value is AssistantSourceScope{
+  if(!value||typeof value!=="object")return false;
+  const source=value as Record<string,unknown>;
+  if(source.kind==="conversation")return Object.keys(source).every(key=>["kind","conversationId","rootId"].includes(key))&&typeof source.conversationId==="string"&&source.conversationId.length>0&&(source.rootId===undefined||typeof source.rootId==="string"&&source.rootId.length>0);
+  return source.kind==="task_discussion"&&Object.keys(source).length===2&&typeof source.taskId==="string"&&source.taskId.length>0;
+}
 export function isAssistantRunView(value: unknown): value is AssistantRunView {
   if (!value || typeof value !== "object") return false;
   const run = value as Record<string, unknown>;
+  const rawSteps=Array.isArray(run.steps)?run.steps:[];
+  const plannedActions=rawSteps.flatMap(step=>step&&typeof step==="object"&&(step as Record<string,unknown>).plan&&typeof (step as Record<string,unknown>).plan==="object"?[(step as Record<string,unknown>).plan]:[]);
+  const plannedActionsValid=!plannedActions.length||!!parseAssistantPlan({version:ASSISTANT_VERSION,outcome:"plan",mode:"draft",actions:plannedActions});
   return runId(run.id) && requestId(run.requestId) && typeof run.text === "string" && run.text.length <= 16000 &&
     isAssistantScope(run.scope) && (run.mode === "execute" || run.mode === "draft") &&
     ["planning", "ready", "running", "completed", "partial", "clarification", "failed", "cancelled", "unknown"].includes(run.status as string) &&
     typeof run.createdAt === "string" && typeof run.updatedAt === "string" &&
-    (run.message === undefined || typeof run.message === "string") && Array.isArray(run.steps) && run.steps.length <= 20 && run.steps.every(step =>
+    (run.message === undefined || typeof run.message === "string") &&
+    (run.accessUnavailable===undefined||typeof run.accessUnavailable==='boolean') &&
+    (run.planRevision === undefined || Number.isSafeInteger(run.planRevision) && Number(run.planRevision) >= 0) &&
+    (run.replyToRunId === undefined || runId(run.replyToRunId)) &&
+    (run.source === undefined || isAssistantSourceScope(run.source)) &&
+    (run.citations === undefined || Array.isArray(run.citations) && run.citations.length <= 12 && run.citations.every((citation: Record<string, unknown>) =>
+      citation && typeof citation.ref === "string" && citation.ref.length <= 80 && typeof citation.quote === "string" && citation.quote.length <= 2000 &&
+      typeof citation.authorName === "string" && citation.authorName.length <= 120 && isAssistantInternalHref(citation.href))) &&
+    Array.isArray(run.steps) && run.steps.length <= 20 && plannedActionsValid && run.steps.every(step =>
       step && typeof step.id === "string" && typeof step.kind === "string" && typeof step.actionId === "string" &&
       ["queued", "running", "completed", "blocked", "failed", "unknown", "cancelled"].includes(step.status) &&
+      (step.plan === undefined || typeof step.plan === "object" && step.plan !== null && step.plan.kind === step.kind && step.plan.id === step.actionId) &&
+      (step.canUndo === undefined || typeof step.canUndo === "boolean") &&
+      (step.undoResult === undefined || step.undoResult && ["reverted", "conflict", "unavailable"].includes(step.undoResult.status) && typeof step.undoResult.summary === "string" && Number.isSafeInteger(step.undoResult.affectedCount) && step.undoResult.affectedCount >= 0) &&
       (step.result === null || step.result && typeof step.result.summary === "string" && Number.isSafeInteger(step.result.affectedCount) && step.result.affectedCount >= 0 &&
         (step.result.delivery === undefined || ["queued", "accepted", "unknown", "suppressed"].every(key => Number.isSafeInteger(step.result.delivery[key]) && step.result.delivery[key] >= 0)) &&
         (step.result.items === undefined || Array.isArray(step.result.items) && step.result.items.length <= 500 && step.result.items.every((item: Record<string, unknown>) => item && typeof item.id === "string" && typeof item.title === "string"))));
@@ -45,7 +66,45 @@ export const assistantNeedsRecovery = (run: AssistantRunView) => run.status !== 
 export const assistantCanContinue = (run: AssistantRunView) => run.mode !== "draft" && !assistantNeedsRecovery(run) &&
   (run.status === "ready" || run.status === "partial" && run.steps.some(step => step.result?.code === "timeline_pending"));
 export const assistantRunLabel = (run: AssistantRunView): string => ({ planning: "Understanding your request", ready: run.mode === "draft" ? "Draft ready" : "Ready to continue", running: "Working on your request", completed: "Done", partial: "Some work is saved", clarification: "A detail is needed", failed: "Could not finish", cancelled: "Remaining work cancelled", unknown: "Result not confirmed" })[run.status];
-export const assistantStepLabel = (kind: string): string => ({ create_project: "Create Project", create_tasks: "Create tasks", update_tasks: "Update tasks", archive_tasks: "Archive or restore tasks", add_comment: "Add comments", nudge_tasks: "Send nudges", invite_members: "Invite members", send_message: "Send message", open_project: "Open Project", open_chat: "Open chat", read_timeline: "Read Timeline", preview_timeline: "Prepare private preview", read_chat: "Read chat", list_tasks: "Find tasks" } as Record<string, string>)[kind] ?? "Task";
+export const assistantStepLabel = (kind: string): string => ({ create_project: "Create Project", create_tasks: "Create tasks", update_tasks: "Update tasks", archive_tasks: "Archive or restore tasks", add_comment: "Add comments", nudge_tasks: "Send nudges", invite_members: "Invite members", send_message: "Send message", set_checklist_item: "Update checklist item", create_checklist_items: "Add checklist items", open_project: "Open Project", open_chat: "Open chat", read_timeline: "Read Timeline", preview_timeline: "Prepare private preview", read_chat: "Read chat", list_tasks: "Find tasks" } as Record<string, string>)[kind] ?? "Task";
+
+const projectName = (action: AssistantAction) => {
+  if(!("project" in action))return "the Project";
+  if (action.project.kind === "current") return "this Project";
+  if (action.project.kind === "name") return action.project.name;
+  return "the new Project";
+};
+const memberNames = (refs: readonly AssistantMemberRef[] | undefined) => refs?.map(ref=>ref.kind==="self"?"you":ref.name).join(", ");
+const dateText = (date: string | null | undefined) => date === null ? "no due date" : date === undefined ? undefined : date;
+/** A compact, literal preview of the closed action schema. Never invent effect text. */
+export function assistantPlanDescription(action: AssistantAction): string {
+  const destination=projectName(action);
+  switch(action.kind){
+    case "create_project":return `Create Project “${action.name}”${action.description?` · ${action.description}`:""}`;
+    case "create_tasks":return `${action.tasks?`Create ${action.tasks.length} task${action.tasks.length===1?"":"s"}`:`Create ${action.template.count} task${action.template.count===1?"":"s"}`} in ${destination}${action.tasks?`: ${action.tasks.slice(0,5).map(task=>task.title).join("; ")}${action.tasks.length>5?`; and ${action.tasks.length-5} more (view full list)`:""}`:""}`;
+    case "update_tasks":return `Update ${action.targets.kind==="titles"?action.targets.titles.join(", "):"selected tasks"}${action.changes.assignees?` · assign to ${memberNames(action.changes.assignees)}`:""}${action.changes.dueDate!==undefined?` · due ${dateText(action.changes.dueDate)}`:""}${action.changes.dueTime!==undefined?` · at ${action.changes.dueTime??"no time"}`:""}`;
+    case "archive_tasks":return `${action.archived?"Archive":"Restore"} ${action.targets.kind==="titles"?action.targets.titles.join(", "):"selected tasks"}`;
+    case "add_comment":return `Comment on ${action.targets.kind==="titles"?action.targets.titles.join(", "):"selected tasks"}: “${action.body}”`;
+    case "nudge_tasks":return `Send a nudge about ${action.targets.kind==="titles"?action.targets.titles.join(", "):"selected tasks"}`;
+    case "invite_members":return `Invite ${action.emails.join(", ")} to ${destination}`;
+    case "send_message":return action.recipient?`Send a private message to ${action.recipient.kind==="self"?"you":action.recipient.name}: “${action.body}”`:`Send in ${destination} chat: “${action.body}”`;
+    case "set_checklist_item":return `${action.completed?"Tick":"Untick"} “${action.itemTitle}”`;
+    case "create_checklist_items":return `Add checklist items: ${action.items.join("; ")}`;
+    case "open_project":return `Open ${destination}`;
+    case "open_chat":return `Open the chat for ${destination}`;
+    case "read_timeline":return `Read the Timeline for ${destination}`;
+    case "preview_timeline":return `Prepare a private Timeline preview for ${destination}`;
+    case "read_chat":return `Read recent messages in ${destination}`;
+    case "list_tasks":return `Find tasks in ${destination}`;
+  }
+}
+export function assistantFollowUpRequest(input:{text:string;scope:AssistantScope;latest?:AssistantRunView|null;requestId:string;source?:AssistantSourceScope}):AssistantRequestDraft {
+  const latest=input.latest;
+  return {requestId:input.requestId,text:input.text,scope:input.scope,mode:"draft",...(latest&&sameAssistantScope(latest.scope,input.scope)?{replyToRunId:latest.id}: {}),...(input.source?{source:input.source}:{})};
+}
+export type AssistantRequestDraft = Readonly<{requestId:string;text:string;scope:AssistantScope;mode:"draft";replyToRunId?:string;source?:AssistantSourceScope}>;
+export const sameAssistantScope=(a:AssistantScope,b:AssistantScope)=>a.kind===b.kind&&(a.kind==="account"||b.kind==="project"&&a.projectId===b.projectId);
+export const sameAssistantSource=(a:AssistantSourceScope|undefined,b:AssistantSourceScope)=>!!a&&a.kind===b.kind&&(a.kind==="conversation"&&b.kind==="conversation"&&a.conversationId===b.conversationId&&(a.rootId??null)===(b.rootId??null)||a.kind==="task_discussion"&&b.kind==="task_discussion"&&a.taskId===b.taskId);
 /** A stored receipt is not necessarily a successful action or confirmed delivery. */
 export function assistantVisibleStepStatus(step: AssistantStepView): AssistantStepStatus {
   if (step.result && step.result.status !== "completed") return step.result.status;
@@ -176,10 +235,11 @@ export function refreshAssistantTasks(options: {
   if (operation === "read" && (!options.pendingRequestId || options.pendingRequestId !== run.requestId)) return false;
   if (run.status === "ready" || run.status === "clarification" || run.status === "planning") return false;
   const keys = run.steps.filter(step =>
-    ["create_tasks", "update_tasks", "archive_tasks"].includes(step.kind) && step.status === "completed" &&
+    ["create_tasks", "update_tasks", "archive_tasks", "set_checklist_item", "create_checklist_items"].includes(step.kind) && step.status === "completed" &&
     step.result?.status === "completed" && step.result.kind === step.kind &&
-    Number.isSafeInteger(step.result.affectedCount) && step.result.affectedCount > 0
-  ).map(step => JSON.stringify([actorId, run.id, step.id])).filter(key => !state.receipts.has(key));
+    Number.isSafeInteger(step.result.affectedCount) && step.result.affectedCount > 0 &&
+    (operation !== "undo" || step.undoResult?.status === "reverted")
+  ).map(step => JSON.stringify([actorId, run.id, step.id, step.undoResult?.status === "reverted" ? "undo" : "apply"])).filter(key => !state.receipts.has(key));
   if (!keys.length) return false;
   try { options.invalidate(); } catch { return false; }
   for (const key of keys) {

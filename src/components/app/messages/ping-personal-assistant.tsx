@@ -4,24 +4,24 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { ASSISTANT_LIMITS, type AssistantApiResponse, type AssistantRequest, type AssistantRunView, isAssistantInternalHref } from "@/lib/ping/assistant/contract";
+import type { AssistantSourceScope } from "@/lib/ping/assistant/release2";
 import { createBrowserPingTelemetry, pingTelemetryBegin } from "@/lib/ping/telemetry-client";
 import { invalidateTaskSnapshotEpoch } from "@/lib/tasks/task-snapshot-epoch";
 import { ChatHeader, Composer } from "./chat-ui";
 import { PingTile } from "./chat-marks";
-import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
+import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, assistantPlanDescription, assistantFollowUpRequest, sameAssistantSource, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
 import styles from "./ping-personal-assistant.module.css";
 function readEventTime() { return performance.now(); }
 const queryFor = (pending: PendingAssistantRequest) => pending.runId ? `?runId=${encodeURIComponent(pending.runId)}` : `?clientRequestId=${encodeURIComponent(pending.requestId)}`;
 /** Actor-keyed by the chat shell. A recovery note stores identifiers, never request text or results. */
-export function PingPersonalAssistant({ actorId, projects, visible, onBack, actions }: { actorId: string; projects: readonly { id: string; name: string }[]; visible: boolean; onBack?: () => void; actions?: ReactNode }) {
+export function PingPersonalAssistant({ actorId, projects, visible, onBack, backLabel="All chats", actions, source, initialProjectId }: { actorId: string; projects: readonly { id: string; name: string }[]; visible: boolean; onBack?: () => void; backLabel?:string; actions?: ReactNode; source?:AssistantSourceScope; initialProjectId?:string }) {
   const router = useRouter();
   const [runs, setRuns] = useState<readonly AssistantRunView[]>([]);
   const [draft, setDraft] = useState("");
-  const [scope, setScope] = useState("");
+  const [scope, setScope] = useState(initialProjectId ?? "");
   const [createdProjects, setCreatedProjects] = useState<readonly { id: string; name: string }[]>([]);
   const scopeProjects = [...projects, ...createdProjects.filter(project => !projects.some(value => value.id === project.id))];
   // Ping always shows a plan before anything changes (founder decision): requests are drafts until applied.
-  const [mode, setMode] = useState<"execute" | "draft">("draft");
   const [ready, setReady] = useState(false);
   const [available, setAvailable] = useState(false);
   const [pending, setPending] = useState<PendingAssistantRequest | null>(null);
@@ -39,17 +39,19 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, acti
   const lookupAbort = useRef<AbortController | null>(null);
   const taskRefresh = useRef<AssistantTaskRefreshState>({ actorId, receipts: new Set() });
   const historyRef = useRef<HTMLDivElement>(null);
+  const pendingKey = pendingAssistantKey(actorId,source);
   const keepPending = useCallback((next: PendingAssistantRequest | null) => {
-    const key = pendingAssistantKey(actorId);
+    const key = pendingKey;
     if (next) window.localStorage.setItem(key, JSON.stringify(next)); else window.localStorage.removeItem(key);
     pendingRef.current = next; setPending(next);
-  }, [actorId]);
+  }, [pendingKey]);
   const receive = useCallback((response: AssistantApiResponse) => {
     if (!response.ok) throw new Error(response.message);
     setAvailable(response.available);
-    if (response.runs) setRuns(response.runs);
+    if (response.runs) setRuns(source?response.runs.filter(run=>sameAssistantSource(run.source,source)):response.runs);
     if (response.run) {
       const run = response.run;
+      if(source&&!sameAssistantSource(run.source,source))return response;
       const created = assistantCreatedProjects(run);
       if (created.length) { setCreatedProjects(previous => [...previous.filter(project => !created.some(value => value.id === project.id)), ...created]); if (created.length === 1) setScope(previous => previous || created[0].id); }
       setRuns(previous => [run, ...previous.filter(value => value.id !== run.id)].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
@@ -60,7 +62,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, acti
       }
     }
     return response;
-  }, [keepPending]);
+  }, [keepPending,source,setReentering]);
   const checkOriginal = useCallback(async () => {
     if (latch.current || !pendingRef.current) return;
     latch.current = true; setBusy(true); setError(null);
@@ -83,7 +85,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, acti
     const controller = new AbortController();
     void (async () => {
       try {
-        const raw = window.localStorage.getItem(pendingAssistantKey(actorId));
+        const raw = window.localStorage.getItem(pendingKey);
         const saved = parsePendingAssistantRequest(raw);
         if (raw !== null && !saved) throw new Error("A recovery note could not be read. Reload before starting another request.");
         pendingRef.current = saved; setPending(saved);
@@ -105,7 +107,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, acti
       finishAssistantTiming(visibleTiming.current, "context_invalidated");
       visibleTiming.current = null;
     };
-  }, [actorId, receive]);
+  }, [actorId, receive, pendingKey]);
   const active = pending ? runs.find(run => run.requestId === pending.requestId) : undefined;
   useEffect(() => {
     if (!visible || !ready || !pending || !active || !assistantIsWorking(active)) return;
@@ -139,8 +141,8 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, acti
   }
   async function submit(retry = false) {
     if (latch.current || !ready || !available || (!retry && pendingRef.current && !reentering)) return;
-    const request = retry ? original.current : { requestId: reentering ? assistantReentryId(pendingRef.current, absent)! : `ping_${crypto.randomUUID().replaceAll("-", "")}`, text: draft.trim(),
-      scope: scope ? { kind: "project" as const, projectId: scope } : { kind: "account" as const }, mode };
+    const request = retry ? original.current : assistantFollowUpRequest({requestId:reentering ? assistantReentryId(pendingRef.current, absent)! : `ping_${crypto.randomUUID().replaceAll("-", "")}`,
+      text:draft.trim(),scope:scope ? {kind:"project" as const,projectId:scope} : {kind:"account" as const},latest:source?runs.find(run=>sameAssistantSource(run.source,source)):runs[0],source});
     if (reentering && (!absent || !pendingRef.current)) return;
     if (!request || !request.text || request.text.length > ASSISTANT_LIMITS.text) return;
     latch.current = true; setBusy(true); setError(null); setAbsent(false);
@@ -168,6 +170,14 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, acti
     } catch { finishAssistantTiming(timing, "unknown"); if (mounted.current && epoch === generation.current) setError("The latest result is not confirmed. Check status; work already saved stays saved."); }
     finally { if (epoch === generation.current) { latch.current = false; if (mounted.current) setBusy(false); } }
   }
+  async function undo(run:AssistantRunView,stepId:string){
+    if(latch.current||pendingRef.current&&pendingRef.current.requestId!==run.requestId)return;
+    latch.current=true;setBusy(true);setError(null);const timing=beginVisibleTiming(run.requestId);const epoch=generation.current;
+    try{keepPending({version:1,requestId:run.requestId,runId:run.id});const response=await assistantRequest("",{operation:"undo",runId:run.id,stepId},undefined,timing);
+      if(mounted.current&&epoch===generation.current){receive(response);refreshAssistantTasks({state:taskRefresh.current,actorId,operation:"read",response,invalidate:invalidateTaskSnapshotEpoch});}}
+    catch{finishAssistantTiming(timing,"unknown");if(mounted.current&&epoch===generation.current)setError("The take-back result is not confirmed. Check status before trying again.");}
+    finally{if(epoch===generation.current){latch.current=false;if(mounted.current)setBusy(false);}}
+  }
   const latest = runs[0];
   const currentStep = latest?.steps.find(step => step.status === "running");
   const working = busy || !!latest && assistantIsWorking(latest);
@@ -175,28 +185,32 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, acti
   const ordered = [...runs].reverse();
   const status = working ? currentStep ? assistantStepLabel(currentStep.kind) : "Working" : pending ? "Check request" : !ready ? "Loading" : !available ? "Unavailable" : "Ready";
   return <section className={styles.assistant} aria-label="Ping personal assistant">
-    <ChatHeader panel onBack={onBack} backLabel="All chats" leading={<PingTile size={32} working={working} />} title="Ping"
+    <ChatHeader panel onBack={onBack} backLabel={backLabel} leading={<PingTile size={32} working={working} />} title="Ping"
       subtitle={<span className={styles.presence} data-active={working || undefined} role="status"><span aria-hidden="true" />{status} · only you see what you ask</span>} actions={actions} />
-    <div className={styles.scopeBar}><label className={styles.scope}>Work in<select value={scope} onChange={event => setScope(event.target.value)} disabled={!ready || !!pending && !reentering || busy} aria-label="Ping scope">
+    <div className={styles.scopeBar}><label className={styles.scope}>Work in<select value={scope} onChange={event => setScope(event.target.value)} disabled={!!source || !ready || !!pending && !reentering || busy} aria-label="Ping scope">
       <option value="">Across my account</option>{scopeProjects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
     </select></label></div>
     <div className={styles.history} ref={historyRef} tabIndex={0} aria-label="Ping requests and results">
       {!ready && !error ? <p className={styles.note} role="status">Loading your saved requests...</p> : null}
       {ready && !available ? <p className={styles.note}>Ping is not available for this account yet.</p> : null}
       {ready && available && !runs.length && !pending ? <div className={styles.empty}><PingTile size={44} /><h3>What would you like to move forward?</h3><p>Ask in your own words: create a Project, put tasks in order, assign work or prepare a private Timeline preview. You can put several actions in one request.</p><p>Ping always shows you a plan first. Nothing changes until you apply it.</p></div> : null}
-      <ol className={styles.runs}>{ordered.map((run, index) => { const current = index === ordered.length - 1; const plan = run.status === "ready" && run.mode === "draft"; return <li key={run.id} className={styles.run} data-current={current || undefined}>
+      <ol className={styles.runs}>{ordered.map((run, index) => { const current = index === ordered.length - 1; const plan = run.status === "ready" && run.mode === "draft" && !run.accessUnavailable; return <li key={run.id} className={styles.run} data-current={current || undefined}>
         <div className={styles.ask}><span className={styles.who}>You</span><p>{run.text}</p></div>
         <div className={styles.reply}><PingTile size={28} /><div className={styles.result}>
-          <div className={styles.resultHead}><h3 aria-live={current ? "polite" : undefined}>{plan ? "Here's the plan" : assistantRunLabel(run)}</h3>{run.steps.length && !plan ? <span className={styles.progress}>{run.steps.filter(step => assistantVisibleStepStatus(step) === "completed" && step.result?.status === "completed").length} of {run.steps.length} {run.steps.length === 1 ? "step" : "steps"} complete</span> : null}</div>
+          <div className={styles.resultHead}><h3 aria-live={current ? "polite" : undefined}>{plan ? "Here's the plan" : assistantRunLabel(run)}</h3>{run.steps.length && !plan ? <span className={styles.progress}>{run.steps.filter(step => step.undoResult?.status!=="reverted"&&assistantVisibleStepStatus(step) === "completed" && step.result?.status === "completed").length} of {run.steps.length} {run.steps.length === 1 ? "step" : "steps"} complete</span> : null}</div>
           {run.message ? <p>{run.message}</p> : null}
+          {run.citations?.length ? <div className={styles.sources} aria-label="Sources">{run.citations.map((citation,index)=><blockquote key={`${citation.ref}:${index}`}><p>“{citation.quote}”</p><cite>{isAssistantInternalHref(citation.href)?<Link href={citation.href}>{citation.authorName}</Link>:citation.authorName}</cite></blockquote>)}</div>:null}
           {run.steps.length ? <div className={styles.plan} role="group" aria-label={plan ? "Ping's plan" : "Ping's steps"} data-plan={plan || undefined}>
             {plan ? <div className={styles.planHead}><strong>Plan · {run.steps.length} {run.steps.length === 1 ? "change" : "changes"}</strong></div> : null}
-            <ol className={styles.steps}>{run.steps.map(step => { const visibleStatus = assistantVisibleStepStatus(step); return <li key={step.id} data-state={visibleStatus}>
-              <div className={styles.stepHead}><span className={styles.stepTitle}><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">{visibleStatus === "completed" && step.result?.status === "completed" ? <path d="m3.5 8 3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/> : <circle cx="8" cy="8" r="4.5" stroke="currentColor"/>}</svg>{assistantStepLabel(step.kind)}</span><span>{visibleStatus === "completed" ? "Done" : visibleStatus === "running" ? "In progress" : visibleStatus === "queued" ? plan ? "Planned" : "Waiting" : visibleStatus === "unknown" ? "Not confirmed" : visibleStatus === "cancelled" ? "Cancelled" : visibleStatus === "blocked" ? "Needs attention" : "Could not finish"}</span></div>
-              {step.result ? <><p>{step.result.summary}</p>{step.result.status === "completed" && step.result.affectedCount > 0 && ["create_tasks", "update_tasks", "archive_tasks"].includes(step.kind) ? <p className={styles.note}>{step.result.affectedCount} {step.result.affectedCount === 1 ? "task" : "tasks"}</p> : null}
+            <ol className={styles.steps}>{run.steps.map(step => { const visibleStatus = assistantVisibleStepStatus(step); const undone=step.undoResult?.status==="reverted"; return <li key={step.id} data-state={undone?"cancelled":visibleStatus}>
+              <div className={styles.stepHead}><span className={styles.stepTitle}><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">{!undone&&visibleStatus === "completed" && step.result?.status === "completed" ? <path d="m3.5 8 3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/> : <circle cx="8" cy="8" r="4.5" stroke="currentColor"/>}</svg>{assistantStepLabel(step.kind)}</span><span>{undone ? "Undone" : visibleStatus === "completed" ? "Done" : visibleStatus === "running" ? "In progress" : visibleStatus === "queued" ? plan ? "Planned" : "Waiting" : visibleStatus === "unknown" ? "Not confirmed" : visibleStatus === "cancelled" ? "Cancelled" : visibleStatus === "blocked" ? "Needs attention" : "Could not finish"}</span></div>
+              {step.plan ? <><p>{assistantPlanDescription(step.plan)}</p>{step.plan.kind==="create_tasks"&&step.plan.tasks?<details><summary>View details for all {step.plan.tasks.length} tasks</summary><ol className={styles.items}>{step.plan.tasks.map((task,index)=><li key={`${step.id}:${index}`}><span>{task.title}</span><p>Assigned to {task.assignees?.length?task.assignees.map(member=>member.kind==="self"?"you":member.name).join(", "):"No assignee"}</p><p>Due {task.dueDate??"date not set"}{task.dueTime?` · ${task.dueTime}`:" · no time"}</p>{task.status?<p>Status: {task.status}</p>:null}{task.milestone!==undefined?<p>{task.milestone?"Milestone":"Not a milestone"}</p>:null}{task.description?<p>{task.description}</p>:null}</li>)}</ol></details>:null}{step.plan.kind==="create_tasks"&&step.plan.template?<p className={styles.note}>Template: “{step.plan.template.titlePrefix}” · {step.plan.template.distribution==="all"?"assign all":step.plan.template.distribution==="round_robin"?"round-robin":"distribution not specified"} · {step.plan.template.assignees?.length?step.plan.template.assignees.map(member=>member.kind==="self"?"you":member.name).join(", "):"unassigned"} · due {step.plan.template.dueDate??"date not set"}{step.plan.template.dueTime?` at ${step.plan.template.dueTime}`:" · no time"}{step.plan.template.milestoneCount!==undefined?` · ${step.plan.template.milestoneCount} milestones`:""}</p>:null}{step.plan.kind==="invite_members"?<p className={styles.note}>Invitations cannot be recalled after delivery.</p>:null}{step.plan.kind==="nudge_tasks"?<p className={styles.note}>A nudge cannot be taken back after delivery.</p>:null}</>:null}
+              {step.result ? <><p>{step.result.summary}</p>{step.result.status === "completed" && step.result.affectedCount > 0 && ["create_tasks", "update_tasks", "archive_tasks","set_checklist_item","create_checklist_items"].includes(step.kind) ? <p className={styles.note}>{step.result.affectedCount} {step.result.affectedCount === 1 ? "task" : "tasks"}</p> : null}
                 <div className={styles.resultLinks}>{isAssistantInternalHref(step.result.href) ? <Link href={step.result.href}>{step.kind === "preview_timeline" ? "Open private preview" : step.kind === "open_project" ? "Open tasks" : step.kind === "open_chat" || step.kind === "send_message" ? "Open chat" : step.kind === "read_timeline" ? "Open Timeline" : "Open result"}</Link> : null}
                 {step.result.status === "completed" && step.result.projectId && ["create_tasks", "update_tasks", "archive_tasks"].includes(step.kind) ? <Link href={`${PRODUCT_APP_PATHS.tasks}?workspaceId=${encodeURIComponent(step.result.projectId)}`}>Open tasks</Link> : null}</div>
                 {step.result.delivery ? <p className={styles.note}>Delivery: {step.result.delivery.queued} queued / {step.result.delivery.accepted} accepted / {step.result.delivery.unknown} unconfirmed / {step.result.delivery.suppressed} suppressed</p> : null}
+                {step.undoResult ? <p role="status">{step.undoResult.summary}</p>:null}
+                {step.canUndo ? <button type="button" className={styles.secondary} disabled={busy||!!pending} onClick={()=>void undo(run,step.id)}>{step.kind==="send_message"||step.kind==="add_comment"?"Take back":"Undo step"}</button>:null}
                 {step.result.items?.length ? <details><summary>View {step.result.items.length} {step.result.items.length === 1 ? "item" : "items"}</summary><ul className={styles.items}>{step.result.items.map(item => <li key={item.id}>{isAssistantInternalHref(item.href) ? <Link href={item.href}>{item.title}</Link> : <span>{item.title}</span>}{typeof item.detail === "string" ? <p>{item.detail}</p> : null}</li>)}</ul></details> : null}
               </> : null}
             </li>; })}</ol>
@@ -213,9 +227,9 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, acti
     {error ? <div className={styles.error} role="alert">{error}</div> : null}
     {pending ? <div className={styles.recovery} role="status"><span>{busy ? "Waiting for the latest result..." : "Your request is kept until its result is confirmed."}</span><button type="button" onClick={() => void checkOriginal()} disabled={busy}>Check status</button>{absent && !hasOriginal && !reentering ? <button type="button" disabled={busy} onClick={() => setReentering(true)}>Re-enter original request</button> : null}{absent && hasOriginal ? <button type="button" onClick={() => void submit(true)} disabled={busy}>Retry original request</button> : null}</div> : null}
     <div className={styles.compose}>
-      {reentering ? <><p className={styles.note}>Re-enter the exact original request and choose its original scope and mode. Ping will use the saved request ID to check for duplicate work.</p>
-        <label className={styles.mode}><input type="checkbox" checked={mode === "draft"} onChange={event => setMode(event.target.checked ? "draft" : "execute")} disabled={busy} />Show a plan first</label></> : null}
-      <Composer value={draft} onChange={setDraft} onSend={() => void submit()} label="Request for Ping" placeholder="Ask Ping to get something done" people={[]} selfId={actorId} mentionIds={[]} disabled={!ready || !available || !!pending && !reentering || busy} sendDisabled={!draft.trim() || draft.length > ASSISTANT_LIMITS.text} showHint={false} count={<span className={styles.note}>{draft.length.toLocaleString()} / {ASSISTANT_LIMITS.text.toLocaleString()}</span>} />
+      {reentering ? <><p className={styles.note}>Re-enter the exact original request and choose its original scope. Ping will use the saved request ID to check for duplicate work.</p>
+        <span className={styles.mode}>Every request is a plan first. Nothing changes until you apply it.</span></> : null}
+      <Composer value={draft} onChange={setDraft} onSend={() => void submit()} label="Request for Ping" placeholder="Ask Ping to get something done" people={[]} selfId={actorId} mentionIds={[]} disabled={!ready || !available || !!pending && !reentering || busy} sendDisabled={!draft.trim() || draft.length > ASSISTANT_LIMITS.text} showHint={false} autoFocus={Boolean(source)} count={<span className={styles.note}>{draft.length.toLocaleString()} / {ASSISTANT_LIMITS.text.toLocaleString()}</span>} />
     </div>
   </section>;
 }

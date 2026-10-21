@@ -24,6 +24,7 @@ import { loadDeepLinkedComment } from "@/lib/conversations/deep-link-comment";
 import { emptyTaskCommentDraft, withTaskCommentBody, withTaskCommentMention,
   withoutTaskCommentMention, withTaskCommentRoot, type TaskCommentDraft } from "@/lib/conversations/task-comment-draft";
 import { useConversationCaches } from "@/components/app/messages/conversation-session-provider";
+import { AskPingPrivatelyForTask } from "@/components/app/messages/private-ping-entry";
 
 export type ConversationFeedProps = {
   taskId: string;
@@ -487,6 +488,7 @@ function ConversationFeedState({
   const audienceReady = reviewedAudienceEpoch === discussion.audienceEpoch;
   return (
     <div id="discussion" ref={discussionNodeRef} className="space-y-3 pb-6" data-task-discussion data-audience-epoch={discussion.audienceEpoch}>
+      <AskPingPrivatelyForTask taskId={taskId} projectId={discussion.projectId} />
       {notice ? (
         <p role="status" className="rounded-lg bg-bg-sunken px-3 py-2 text-[12px] text-ink-soft">{notice}</p>
       ) : null}

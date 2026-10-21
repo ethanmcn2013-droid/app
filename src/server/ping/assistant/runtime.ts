@@ -11,13 +11,19 @@ import { assistantDatabaseTransaction, createAssistantStore } from "./store";
 import { createAssistantService } from "./service";
 import { createPingAssistantPlanner } from "./claude-planner";
 import { pingAssistantApiKey } from "./provider-key";
-import { assertAssistantActor, authorizeAssistantProject, getAssistantContext } from "./context";
+import { assertAssistantActor, authorizeAssistantProject, getAssistantContext,resolveAssistantProjectName } from "./context";
+import { assistantConversationAdapter } from './conversation-transaction';
+import { createAssistantConversationContext } from './conversation-context';
+import { executeAssistantUndo } from './undo';
 import { executeAssistantAction } from "./actions";
 import { prepareAssistantTimeline } from "./timeline";
 import { createAssistantDispatcher } from "./dispatch";
 import { pingTelemetrySpan } from "../telemetry";
-import type { AssistantActionResult } from "@/lib/ping/assistant/contract";
+import {parseAssistantRequest,type AssistantActionResult } from "@/lib/ping/assistant/contract";
+import {sameAssistantRoom} from './conversation-memory';
 import { guardAssistantCommitStep } from "./runtime-admission";
+import { resolveConversationControls } from '@/lib/conversations/flags';
+import { loadAssistantTaskContext, validateAssistantTaskSources } from './task-context';
 
 type Target = NonNullable<ReturnType<typeof assistantTarget>>;
 const currentTarget = () => assistantTarget(process.env, isDemoMode());
@@ -41,17 +47,23 @@ function createInstance(target: Target) {
   // credentials requires restart; old result reads remain available meanwhile.
   const planner = key ? createPingAssistantPlanner({ apiKey: key, fetch, budget: store.budget, retainCompletion: completion => after(() => completion) }) : null;
   const dispatcher = createAssistantDispatcher(database);
-  const service = createAssistantService({ store,
+  const service = createAssistantService({ store,requireApproval:true,
     planner: { plan: (input, signal) => {
       if (!planner || !stillCurrent() || pingAssistantApiKey(process.env) !== key) throw new Error("planner_unavailable");
       return pingTelemetrySpan("prepare", () => planner.plan(input, signal ?? new AbortController().signal));
     } },
     priorTaskResult: async (actorId, request) => {
       if (request.scope.kind !== "project") return null;
-      for (const run of await store.listRuns(actorId)) {
-        if (run.requestId === request.requestId) continue;
+      let priorId=request.replyToRunId;
+      const visited=new Set<string>();
+      while(priorId&&visited.size<8){
+        if(visited.has(priorId))return null;visited.add(priorId);
+        const run=await store.getRun(actorId,priorId);
+        const priorRequest=run.requestJson?parseAssistantRequest(JSON.parse(run.requestJson)):null;
+        if(!priorRequest||!sameAssistantRoom(request,priorRequest))return null;
+        priorId=priorRequest.replyToRunId;
         const results = Object.values(await store.getStepResults<AssistantActionResult>(actorId, run.id));
-        const prior = results.filter(result => result.kind === "create_tasks" && result.status === "completed" && result.createdTaskIds?.length &&
+        const prior = results.filter(result => result.kind === "create_tasks" && result.status === "completed" && !result.undoResult && result.createdTaskIds?.length &&
           (request.scope.kind !== "project" || result.projectId === request.scope.projectId)).at(-1);
         if (!prior?.projectId) continue;
         try { await transact(tx => authorizeAssistantProject(tx, actorId, prior.projectId!)); return prior; } catch { return null; }
@@ -61,6 +73,7 @@ function createInstance(target: Target) {
     context: (actorId, request) => transact(async tx => {
       const actor = await assertAssistantActor(tx, actorId);
       const context = await getAssistantContext(tx, actorId, request.scope.kind === "project" ? request.scope.projectId : null);
+      const conversations=await createAssistantConversationContext(assistantConversationAdapter(tx),{directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled}).load(actorId,request);
       const [preferences] = await tx.select({ timeZone: schema.userPreferences.timeZone }).from(schema.userPreferences).where(eq(schema.userPreferences.userId, actorId)).limit(1);
       let timeZone = preferences?.timeZone ?? "UTC";
       if (context.project) {
@@ -69,23 +82,56 @@ function createInstance(target: Target) {
         timeZone = period?.timeZone ?? timeZone;
       }
       try { new Intl.DateTimeFormat("en", { timeZone }).format(); } catch { timeZone = "UTC"; }
+      const taskContext=await loadAssistantTaskContext(tx,actorId,request,timeZone);
       const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
       const day = (kind: Intl.DateTimeFormatPartTypes) => parts.find(p => p.type === kind)!.value;
       return { actorName: actor.name ?? "You", projectName: context.project?.name ?? null, projects: context.projects.map(p => ({ name: p.name })),
-        members: context.members.map(m => ({ name: m.name ?? "Unnamed member" })), selectedTaskCount: request.selectedTaskIds?.length ?? 0,
-        previousTaskCount: 0, referenceDate: `${day("year")}-${day("month")}-${day("day")}`, timeZone };
+        members: taskContext.members, selectedTaskCount: request.selectedTaskIds?.length ?? 0,
+        previousTaskCount: 0, referenceDate: `${day("year")}-${day("month")}-${day("day")}`, timeZone,
+        sources:[...conversations.sources,...taskContext.sources],coverage:`${taskContext.coverage} ${conversations.coverage}`.slice(0,1000),
+        needsYou:conversations.needsYou,
+        needsYouTotal:conversations.needsYouTotal,needsYouComplete:conversations.needsYouComplete,
+        tasks:taskContext.tasks };
     }),
-    authorizeView: (actorId, run) => transact(async tx => {
+    validateSources:(actorId,sources)=>transact(async tx=>{
+      const chat=sources.filter(source=>source.kind!=='task'),task=sources.filter(source=>source.kind==='task');
+      if(chat.length&&!await createAssistantConversationContext(assistantConversationAdapter(tx),{directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled}).validate(actorId,chat))return false;
+      for(const zone of new Set(task.map(source=>source.timeZone??'UTC'))){
+        if(!await validateAssistantTaskSources(tx,actorId,task.filter(source=>(source.timeZone??'UTC')===zone),zone))return false;
+      }
+      return true;
+    }),
+    undo:(tx,actorId,result)=>{
+      if(!stillCurrent()||!result.reversal)throw new Error('assistant_configuration_changed');
+      return pingTelemetrySpan('execute',()=>executeAssistantUndo(tx,actorId,result.reversal!,{directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled}));
+    },
+    authorizePlan:(actorId,request,plan)=>transact(async tx=>{
+      await assertAssistantActor(tx,actorId);
+      const ids=new Set<string>();
+      for(const step of plan.actions){
+        if(!('project' in step)||step.project.kind==='created')continue;
+        if(step.project.kind==='current'){
+          if(request.scope.kind!=='project')throw new Error('assistant_project_unavailable');
+          await authorizeAssistantProject(tx,actorId,request.scope.projectId);ids.add(request.scope.projectId);
+        }else ids.add((await resolveAssistantProjectName(tx,actorId,step.project.name)).id);
+      }
+      return [...ids];
+    }),
+    authorizeView: (actorId, run,authorizationProjects=[]) => transact(async tx => {
       try {
         await assertAssistantActor(tx, actorId);
-        const projects = new Set(run.steps.flatMap(s => s.result?.projectId ? [s.result.projectId] : []));
+        const projects = new Set([...authorizationProjects,...run.steps.flatMap(s => s.result?.projectId ? [s.result.projectId] : [])]);
         if (run.scope.kind === "project") projects.add(run.scope.projectId);
+        for(const {plan} of run.steps)if(plan&&'project' in plan&&plan.project.kind==='name')projects.add((await resolveAssistantProjectName(tx,actorId,plan.project.name)).id);
         for (const projectId of projects) await authorizeAssistantProject(tx, actorId, projectId);
         return true;
       } catch { return false; }
     }),
-    execute: input => pingTelemetrySpan("execute", () => executeAssistantAction({ ...input,
-      commitStep: guardAssistantCommitStep(input.commitStep, stillCurrent), dispatch: dispatcher, deliveryTransaction: transact,
+    execute: input => pingTelemetrySpan("execute", () => executeAssistantAction({ ...input,directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled,
+      commitStep:(stepId,fence,operation)=>guardAssistantCommitStep(input.commitStep,stillCurrent)(stepId,fence,async tx=>{
+        for(const projectId of input.authorizationProjects??[])await authorizeAssistantProject(tx,input.actorId,projectId);
+        return operation(tx);
+      }), dispatch: dispatcher, deliveryTransaction: transact,
       prepareTimeline: action => prepareAssistantTimeline(action, (actorId, projectId) => transact(async tx => {
         const actor = await assertAssistantActor(tx, actorId), project = await authorizeAssistantProject(tx, actorId, projectId);
         const owner = await assertAssistantActor(tx, project.ownerUserId!);
