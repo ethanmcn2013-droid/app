@@ -1,5 +1,9 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-21 · Release · Home leads with your four ways in
+
+Home now opens with the four start cards, Tasks, Projects, Files and Chat, straight under the greeting. The next big day, Done this week and Activity follow below them. The loading tracing matches the new order.
+
 ## 2026-10-20 · Release · A new Home, and the Full Briefing retires
 
 Home now opens on what is coming and how the week is going. The next target date counts down with a burn-up chart against plan, its stages and one next step; page through up to five dated Projects. Done this week sets each day beside the same day last week. Activity shows a year of finished work, by week or by hour, with a weeks-in-a-row streak. Four cards at the foot open Tasks, Projects, Files and Chat, or start something new in each.
