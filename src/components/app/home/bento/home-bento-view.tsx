@@ -12,8 +12,8 @@ import styles from "./home-bento.module.css";
 /**
  * Home (20 October 2026): the authenticated front door.
  *
- * Greeting, then four sections in a fixed order: the launch countdown and
- * done this week side by side, a year of activity, and four start cards.
+ * Greeting, then three rows in a fixed order: the launch countdown and done
+ * this week side by side, four start cards, then a year of activity.
  * Every figure comes from one model (`buildHomeBento`), so no two sections
  * can disagree. Server component; the charts are client islands.
  */
@@ -33,7 +33,6 @@ export function HomeBentoView({ model }: { model: HomeBento }) {
         <div className={styles.bento}>
           <LaunchCard launches={model.launches} hasProjects={model.hasProjects} projectsHref={PROJECT_APP_PATH} createProjectHref="/welcome" />
           <WeekCard week={model.week} historyKnown={model.historyKnown} hasProjects={model.hasProjects} dueThisWeek={model.dueThisWeekTotal} />
-          <ActivityCard activity={model.activity} historyKnown={model.historyKnown} hasProjects={model.hasProjects} />
           <section className={styles.cards} aria-label="Start something">
             <StartCard
               icon={<ShellIcon.tasks />}
@@ -94,6 +93,7 @@ export function HomeBentoView({ model }: { model: HomeBento }) {
               />
             )}
           </section>
+          <ActivityCard activity={model.activity} historyKnown={model.historyKnown} hasProjects={model.hasProjects} />
         </div>
       </EnterOnce>
     </div>

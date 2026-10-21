@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-files",
+  "source": "tasks/src/app/app/files/page.tsx",
+  "materialityHash": "08771bc864af3e7b",
+  "reviewedAt": "2026-10-21",
+  "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+    "attestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+    "runId": "tasks-playwright-ab9153c24dda715c343d2dce",
+    "canonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+    "rawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-files",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+  "decision": "accepted"
+}

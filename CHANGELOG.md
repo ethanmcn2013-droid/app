@@ -6,6 +6,14 @@ Operators now see the Files redesign: three folders by where files live (In Sign
 
 Everyone else, including demo and review builds, sees the current Files page unchanged. The gate is the existing operator check (`ADMIN_USER_IDS`) and fails closed. There is no upload, attach, delete or Drive connection on this page; files are still added from a task. Status and what was left out: `docs/projects/files-sources-shelf/STATUS.md`.
 
+## 2026-10-21 · Release · Home in three rows
+
+Home now reads in three rows: the next big day with Done this week beside it, then the four start cards (Tasks, Projects, Files and Chat), then Activity. The loading tracing follows the same order.
+
+## 2026-10-21 · Release · Home leads with your four ways in
+
+Home now opens with the four start cards, Tasks, Projects, Files and Chat, straight under the greeting. The next big day, Done this week and Activity follow below them. The loading tracing matches the new order.
+
 ## 2026-10-20 · Release · A new Home, and the Full Briefing retires
 
 Home now opens on what is coming and how the week is going. The next target date counts down with a burn-up chart against plan, its stages and one next step; page through up to five dated Projects. Done this week sets each day beside the same day last week. Activity shows a year of finished work, by week or by hour, with a weeks-in-a-row streak. Four cards at the foot open Tasks, Projects, Files and Chat, or start something new in each.

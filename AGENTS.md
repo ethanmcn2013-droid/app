@@ -1,6 +1,6 @@
 # Signal App
 
-This repository owns the signed-in Signal Studio app at app.signalstudio.ie. Notes captures work, Tasks executes it, and Timeline provides direction. Home is the authenticated front door: the next target date, this week's pace, a year of activity and four ways to start. The Full Briefing was retired on 20 October 2026; /app/home/briefing and legacy /app/signal links redirect to Home. Home is not a fourth product. This entrypoint is self-contained in an isolated checkout. Product source and checks belong here; shared workflow tools live in Signal Operations.
+This repository owns the signed-in Signal Studio app at app.signalstudio.ie. Notes captures work, Tasks executes it, and Timeline provides direction. Home is the authenticated front door: the next target date and this week's pace, four ways to start, and a year of activity. The Full Briefing was retired on 20 October 2026; /app/home/briefing and legacy /app/signal links redirect to Home. Home is not a fourth product. This entrypoint is self-contained in an isolated checkout. Product source and checks belong here; shared workflow tools live in Signal Operations.
 
 <!-- signal-shared-rules:begin -->
 <!-- Source: docs/agent-rules.md; sha256: b87309ff14660a99c962bd2deca2147faaf782e9f04ccfce01d5bec15b2c2068 -->
@@ -57,7 +57,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Product, design and access contracts
 
-Follow docs/SUITE_URL_AND_NAMING_CONTRACT.md and the typed constants in src/lib/product-urls.ts. Marketing uses signalstudio.ie/{notes|tasks|timeline} and /features/daily-briefing; signed-in products use app.signalstudio.ie/app/{notes|tasks|timeline}, Home /app/home and Full Briefing /app/home/briefing. Retired /app/board, /app/plan, /app/brief and legacy /app/signal inputs remain compatibility redirects only; new UI, analytics, docs and email must not emit them.
+Follow docs/SUITE_URL_AND_NAMING_CONTRACT.md and the typed constants in src/lib/product-urls.ts. Marketing uses signalstudio.ie/{notes|tasks|timeline}; signed-in products use app.signalstudio.ie/app/{notes|tasks|timeline} and Home /app/home. Retired /app/board, /app/plan, /app/brief, /app/home/briefing and legacy /app/signal inputs remain compatibility redirects only; new UI, analytics, docs and email must not emit them.
 
 For front-facing changes preserve the priority order: considered experience, deliberate design, then unaided utility. Use docs/brand.md, the installed signal-ds tokens and owning component styles; preserve existing spacing, type, motion, loading/error/empty-state and copy standards. The existing quality-council evidence and 9.5 gate live in experience/QUALITY_COUNCIL_EVIDENCE.md. Relevant first-contact behavior follows docs/FIRST_CONTACT_TEST.md. A workflow refactor does not waive these gates or require a design panel for unrelated engineering. Delightful moments require an explicit animate-or-restrained verdict. The operator re-derives the north star about every six months; its durable decision and review date live in Studio content/hq/decisions/product-north-star.md. Locate that owning repository explicitly rather than assuming a parent checkout.
 
