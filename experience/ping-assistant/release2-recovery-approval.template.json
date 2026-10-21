@@ -11,7 +11,7 @@
   "partialReportSha256": "1cd9d108389315a9184f434f1ae9318b0938f362fb9b886852e5ec7e9833b8f4",
   "backupDbSha256": "89e7d4c5f13777a0bbcbc2bc584d53757031d8279620d471ebf2ea2815cecc66",
   "providerObservationSha256": "89733f769f00d370b6636d1289fa56118d790bbdac775f36c9891655f117aaa4",
-  "independentReviewSha256": "c696caaed356820792cc0ebd6c412b677d71a5f745f44ef8e3b1aed5c7df9e05f8",
+  "independentReviewSha256": "c696caaed356820792cceb6d412b677d71a5f745f44ef8e3b1aed5c7df9e05f8",
   "currentRunnerSha256": "<computed-at-runtime>",
   "offlineRuntimeProof": {
     "sha256": "<computed-at-runtime>",

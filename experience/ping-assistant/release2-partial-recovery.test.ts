@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { A3_RECOVERY_BINDINGS, claimRecoveryOnce, recoveryClaimPath, sha256, validateRecoveryApproval, validateRecoveredA3Rows } from "./release2-partial-recovery";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -22,6 +22,9 @@ const actual = () => ({ admissionSha256: b.admissionSha256, originalInputsSha256
   physicalAttempts: 3, accountedMicroUsd: 118528 });
 
 async function main() {
+for (const [name, value] of Object.entries(b)) if (name.endsWith("Sha256")) assert.match(String(value), /^[a-f0-9]{64}$/, name);
+assert.equal(sha256(await readFile("experience/ping-assistant/release2-recovery-approval.template.json")), b.templateSha256);
+assert.equal(sha256(await readFile("experience/reviews/2026-10-21-ping-release2/grouped-A3-reconciliation-review.md")), b.independentReviewSha256);
 assert.equal(validateRecoveryApproval(approval(), actual()).noRetryA3, true);
 assert.notEqual(sha256("immutable"), sha256("tampered"));
 assert.equal(recoveryClaimPath("/output"), `/output/a3-recovery-${b.partialReportSha256}-${b.a3RunId}.claimed`);
