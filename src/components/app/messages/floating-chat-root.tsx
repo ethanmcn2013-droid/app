@@ -93,7 +93,7 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
     setStarted(true); setOpen(true);
     requestAnimationFrame(() => panel.current?.querySelector<HTMLElement>("button, textarea")?.focus());
   }, []);
-  const close = () => { setOpen(false); setView("home"); setAssistantSource(null); requestAnimationFrame(() => { if (trigger.current?.isConnected && trigger.current.getClientRects().length) trigger.current.focus(); else launcher.current?.focus(); }); };
+  const close = () => { setOpen(false); if(assistantSource){setView("home");setAssistantSource(null);} requestAnimationFrame(() => { if (trigger.current?.isConnected && trigger.current.getClientRects().length) trigger.current.focus(); else launcher.current?.focus(); }); };
   const openPrivateTaskPing=useCallback(({source,projectId,trigger:sourceTrigger}:{source:Extract<AssistantSourceScope,{kind:"task_discussion"}>;projectId:string;trigger:HTMLElement})=>{
     if(!assistantEnabled)return;
     const project=projects.find(candidate=>candidate.id===projectId);
