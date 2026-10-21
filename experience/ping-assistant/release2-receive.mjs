@@ -22,13 +22,14 @@ async function inspectPersonAvatar(page,theme){return page.evaluate(theme=>{
   document.documentElement.dataset.theme=theme;
   const avatar=[...document.querySelectorAll('[aria-hidden="true"][data-tone]')].find(node=>node.textContent?.trim()==='BO');
   if(!avatar)throw new Error('The rendered Bob DM has no person avatar');
-  const parse=value=>{const s=value.match(/color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/);if(s)return[+s[1]*255,+s[2]*255,+s[3]*255];const m=value.match(/rgba?\((\d+)\D+(\d+)\D+(\d+)/);if(m)return[+m[1],+m[2],+m[3]];const h=value.match(/^#([0-9a-f]{6})$/i);return h?[parseInt(h[1].slice(0,2),16),parseInt(h[1].slice(2,4),16),parseInt(h[1].slice(4,6),16)]:null;};
   const foreground=getComputedStyle(avatar).color,background=getComputedStyle(avatar).backgroundColor;
   const accentToken=getComputedStyle(document.documentElement).getPropertyValue('--v3-accent').trim();
   const probe=document.createElement('span');probe.style.color='var(--v3-accent)';document.body.append(probe);const accent=getComputedStyle(probe).color;probe.remove();
   const luminance=rgb=>rgb.map(value=>value/255).map(value=>value<=.04045?value/12.92:((value+.055)/1.055)**2.4).reduce((sum,value,index)=>sum+value*[.2126,.7152,.0722][index],0);
-  const fg=parse(foreground),bg=parse(background),ac=parse(accent);
-  if(!fg||!bg||!ac)throw new Error(`Could not parse computed avatar colors: ${foreground} / ${background} / ${accent}`);
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=1;const context=canvas.getContext('2d',{willReadFrequently:true});
+  if(!context)throw new Error('Could not create a color-conversion canvas');
+  const toRgb=value=>{context.clearRect(0,0,1,1);context.fillStyle=value;context.fillRect(0,0,1,1);return [...context.getImageData(0,0,1,1).data].slice(0,3);};
+  const fg=toRgb(foreground),bg=toRgb(background),ac=toRgb(accent);
   const contrast=(Math.max(luminance(fg),luminance(bg))+.05)/(Math.min(luminance(fg),luminance(bg))+.05);
   const accentDistance=Math.hypot(bg[0]-ac[0],bg[1]-ac[1],bg[2]-ac[2]);
   return{theme,foreground,background,accent,accentToken,contrast,accentDistance};
