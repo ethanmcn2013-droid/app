@@ -3784,7 +3784,7 @@
     "src/components/app/messages/private-ping-entry.tsx": "8a6a3ddb72c27a70c7914ee899b6e550ddff7dfcca160279f4a91473047e2772",
     "src/lib/ping/assistant/release2.ts": "e30af7d3960a8a00db15f874a1044b8e747b96e368f823b4b4d00aa433c2631a",
     "src/server/ping/assistant/calendar-time.ts": "644905617e77daeec4c5756ad43e064b68e11250afccee1df976cf26315764f1",
-    "src/server/ping/assistant/conversation-context.test.ts": "5962da0ff7e5f37b3e63ff00c0d238017a0576f8cc5747301bcb238edb377055",
+    "src/server/ping/assistant/conversation-context.test.ts": "6887597b710895c2c9fab54644d1120eeb512a98f80bf06160eafec9ab687d39",
     "src/server/ping/assistant/conversation-context.ts": "d53286a2f8f8417e077c4710c51837ebc2ab873db8ec62116aed672df3140c4c",
     "src/server/ping/assistant/conversation-memory.ts": "9f4cbda076a8ee230f80a0099aec91cc5e15279da884153d4efb43bb8b4b129f",
     "src/server/ping/assistant/plan-targets.ts": "584fb3b42366355ad1f0699a4cce81e89e77925879a3a80efb06f3e474f941a4",
