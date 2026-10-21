@@ -9,7 +9,8 @@ import { createLocalConversationDatabaseAdapter } from "@/server/conversations/d
 import { createConversationService } from "@/server/conversations/service";
 import { createTaskDiscussionService } from "@/server/conversations/task-discussion";
 import { createMessageAttentionService } from "@/server/conversations/attention";
-import { createAssistantConversationContext } from "./conversation-context";
+import { createAssistantConversationContext, createAssistantConversationContextFromServices } from "./conversation-context";
+import { assistantConversationPlannerContext } from "./planner-context";
 
 const projectId = assertProjectId("ping_context_project");
 const taskId = "ping_context_task";
@@ -25,9 +26,14 @@ async function fixture() {
     { sql: "INSERT INTO users(id,clerk_id,handle,name,color,initials) VALUES('ping_ctx_alice','clerk_ping_ctx_alice','alice','Alice','#444','AA')" },
     { sql: "INSERT INTO users(id,clerk_id,handle,name,color,initials) VALUES('ping_ctx_bob','clerk_ping_ctx_bob','bob','Bob','#555','BB')" },
     { sql: "INSERT INTO users(id,clerk_id,handle,name,color,initials) VALUES('ping_ctx_other','clerk_ping_ctx_other','other','Other','#666','OO')" },
+    ...([['cara','Cara'],['dee','Dee'],['eve','Eve'],['finn','Finn']] as const).map(([id,name]) => ({
+      sql: "INSERT INTO users(id,clerk_id,handle,name,color,initials) VALUES(?,?,?,?,'#777','XX')",
+      args: [`ping_ctx_${id}`,`clerk_ping_ctx_${id}`,id,name],
+    })),
     { sql: "INSERT INTO workspaces(id,slug,name,owner_user_id,context_type,created_at,updated_at) VALUES(?,'ping-context','Ping Context','ping_ctx_alice','project',?,?)", args: [projectId, now, now] },
     { sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES(?,'ping_ctx_alice','owner',?)", args: [projectId, now] },
     { sql: "INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES(?,'ping_ctx_bob','member',?)", args: [projectId, now] },
+    ...(['cara','dee','eve','finn'] as const).map(id => ({sql:"INSERT INTO workspace_members(workspace_id,user_id,role,joined_at) VALUES(?,?,'member',?)",args:[projectId,`ping_ctx_${id}`,now]})),
     { sql: "INSERT INTO tasks(id,workspace_id,title,lane,priority,assignees,created_at,updated_at) VALUES(?,?,'Kitchen service times','backlog','p2','[]',?,?)", args: [taskId, projectId, now, now] },
   ], "write");
   const adapter = createLocalConversationDatabaseAdapter({ client });
@@ -36,6 +42,29 @@ async function fixture() {
   const attention = createMessageAttentionService(adapter);
   const context = createAssistantConversationContext(adapter);
   return { client, adapter, conversation, taskDiscussion, attention, context };
+}
+
+async function acceptedDm(f: Awaited<ReturnType<typeof fixture>>, peerId: string, clientKey: string, body: string, count = 1) {
+  const dm = createConversationService(f.adapter, { directMessagesEnabled: true });
+  const requested = await dm.requestDirectMessage({ actorId: "ping_ctx_alice", projectId, recipientId: peerId, clientRequestId: `${clientKey}_request` });
+  if (!requested.ok) assert.fail(`DM request failed: ${requested.code}`);
+  const peerScope = await dm.getDirectMessage({ actorId: peerId, projectId, conversationId: requested.value.scope.conversationId });
+  if (!peerScope.ok) assert.fail("DM peer scope unavailable");
+  const accepted = await dm.transitionDirectMessage({ actorId: peerId, projectId, conversationId: requested.value.scope.conversationId,
+    clientRequestId: `${clientKey}_accept`, expectedAudienceEpoch: peerScope.value.audienceEpoch, operation: "accept" });
+  if (!accepted.ok) assert.fail(`DM consent failed: ${accepted.code}`);
+  let epoch = accepted.value.scope.audienceEpoch;
+  const ids: string[] = [];
+  for (let index = 0; index < count; index++) {
+    const sent = await dm.sendMessage({ actorId: peerId, input: { projectId, conversationId: requested.value.scope.conversationId,
+      clientRequestId: `${clientKey}_message_${index}`, expectedAudienceEpoch: epoch, body: `${body} ${index + 1}`, rootId: null, mentionUserIds: [] } });
+    if (!sent.ok) assert.fail(`DM message failed: ${sent.code}`);
+    ids.push(sent.value.messageId);
+    const latest = await dm.getDirectMessage({ actorId: "ping_ctx_alice", projectId, conversationId: requested.value.scope.conversationId });
+    if (!latest.ok) assert.fail("DM readback unavailable");
+    epoch = latest.value.audienceEpoch;
+  }
+  return { conversationId: requested.value.scope.conversationId, ids };
 }
 
 function request(project: string = projectId, source?: { kind: "conversation"; conversationId: string } | { kind: "task_discussion"; taskId: string }) {
@@ -65,14 +94,17 @@ test("Ping context is project-scoped, bounded, cites current sources, and follow
     assert.equal(source.projectId, projectId);
     assert.match(source.href, /messageId=/);
     assert.match(source.body, /confirmed for Friday/);
-    assert.equal(loaded.needsYou.length, 0, "an in-conversation Ping mention must not receive unrelated Needs-you items");
+    assert.equal(loaded.needsYou, undefined, "an in-conversation Ping mention does not claim an unrelated Needs-you list");
+    assert.equal(loaded.needsYouState, "not_checked");
+    assert.equal(loaded.needsYouTotal, undefined, "an unqueried list is not an empty list");
     assert.equal(await f.context.validate("ping_ctx_alice", [source]), true);
     const fallback = await f.context.load("ping_ctx_alice", request());
     assert.equal(fallback.sources.some(item => item.itemId === sent.id), true);
     await assert.rejects(f.context.load("ping_ctx_other", request(projectId, { kind: "conversation", conversationId: room.value.conversationId })),
       { name: "AssistantContextUnavailableError" });
-    assert.equal(fallback.needsYou.some(item => item.ref === source.ref), true);
-    assert.equal((await f.context.load("ping_ctx_bob", request())).needsYou.length, 0);
+    assert.equal(fallback.needsYouState, "checked");
+    assert.equal(fallback.needsYou?.some(item => item.ref === source.ref), true);
+    assert.equal((await f.context.load("ping_ctx_bob", request())).needsYou?.length ?? 0, 0);
 
     const oversized = await say(f, "ping_ctx_bob", room.value.conversationId, "x".repeat(4_001), "ping_context_send_0002");
     const bounded = await f.context.load("ping_ctx_alice", request(projectId, { kind: "conversation", conversationId: room.value.conversationId }));
@@ -100,7 +132,7 @@ test("account Ping can search recent authorized project chat without an unread a
     await f.client.execute({ sql: "DELETE FROM conversation_attention WHERE recipient_id='ping_ctx_alice'" });
     const accountRequest = { requestId: "ping_context_account_001", text: "What did I tell Aoife?", scope: { kind: "account" as const }, mode: "draft" as const };
     const loaded = await f.context.load("ping_ctx_alice", accountRequest);
-    assert.equal(loaded.needsYou.length, 0);
+    assert.equal(loaded.needsYou?.length ?? 0, 0);
     assert.ok(loaded.sources.some(source => source.itemId === sent.value.messageId && source.body.includes("meet at seven")));
     assert.match(loaded.coverage, /recent messages from 1 of up to 1 authorized active projects/);
   } finally { f.client.close(); }
@@ -115,7 +147,7 @@ test('Catch up and first-action context match canonical Needs-you order, count a
   const assertParity=async(text:string)=>{
    const canonical=await f.attention.listDirected({actorId:'ping_ctx_alice',limit:50});if(!canonical.ok)assert.fail('attention unavailable');
    const loaded=await f.context.load('ping_ctx_alice',{...request(),text});
-   const resolved=loaded.needsYou.map(item=>{const source=loaded.sources.find(source=>source.ref===item.ref);assert.ok(source);return {id:source.itemId,unseen:item.unseen};});
+   const resolved=(loaded.needsYou??[]).map(item=>{const source=loaded.sources.find(source=>source.ref===item.ref);assert.ok(source);return {id:source.itemId,unseen:item.unseen};});
    assert.deepEqual(resolved,canonical.value.map(item=>({id:item.itemId,unseen:item.seenAt===null})));
    assert.equal(loaded.needsYouTotal,canonical.value.length);assert.equal(loaded.needsYouComplete,true);
    return resolved;
@@ -148,6 +180,8 @@ test("task discussion context is project-bound and does not create a discussion 
     const source = loaded.sources.find(item => item.itemId === comment.value.commentId);
     assert.ok(source);
     assert.equal(source.kind, "task_discussion");
+    assert.deepEqual(loaded.selectedSource, { kind: "task_discussion", label: "Task discussion: Kitchen service times" });
+    assert.equal(loaded.needsYouState, "not_checked");
     assert.match(source.href, /comment-/);
     assert.equal(await f.context.validate("ping_ctx_alice", [source]), true);
     await assert.rejects(f.context.load("ping_ctx_alice", request("another_project", { kind: "task_discussion", taskId })),
@@ -180,6 +214,7 @@ test("Ping reads a direct conversation only after consent and only for an enable
     const loaded = await gated.load("ping_ctx_alice", request(projectId, source));
     const cited = loaded.sources.find(item => item.itemId === sent.value.messageId);
     assert.ok(cited);
+    assert.deepEqual(loaded.selectedSource, { kind: "conversation", label: "Direct message with Bob", participants: ["You", "Bob"] });
     assert.equal(cited.authorName, "Bob");
     assert.equal(await gated.validate("ping_ctx_alice", [cited]), true);
     assert.equal(await gated.validate("ping_ctx_other", [cited]), false);
@@ -189,4 +224,121 @@ test("Ping reads a direct conversation only after consent and only for an enable
     assert.equal(blocked.ok,true);
     assert.equal(await gated.validate('ping_ctx_alice',[cited]),false,'remaining a Project member must not retain private DM context after consent is withdrawn');
   } finally { f.client.close(); }
+});
+
+test("project Ping searches a small, authorized set of active consented direct messages", async () => {
+  const f = await fixture();
+  try {
+    const context = createAssistantConversationContext(f.adapter, { directMessagesEnabled: true });
+    const bob = await acceptedDm(f, "ping_ctx_bob", "ping_ctx_named_bob", "I told you the Saturday forecast is on file");
+    const cara = await acceptedDm(f, "ping_ctx_cara", "ping_ctx_recent_cara", "The Saturday service plan is ready", 8);
+    const dee = await acceptedDm(f, "ping_ctx_dee", "ping_ctx_recent_dee", "The Friday menu is ready", 8);
+    const pending = await createConversationService(f.adapter, { directMessagesEnabled: true }).requestDirectMessage({ actorId: "ping_ctx_alice", projectId,
+      recipientId: "ping_ctx_eve", clientRequestId: "ping_ctx_pending_eve_request" });
+    if (!pending.ok) assert.fail("pending DM setup failed");
+
+    const loaded = await context.load("ping_ctx_alice", request(projectId));
+    assert.ok(loaded.sources.some(source => bob.ids.includes(source.itemId)), "a named eligible peer's conversation is prioritized even when older");
+    assert.ok(loaded.sources.length <= 12, "three selected DMs are capped at four recent messages each");
+    assert.ok(loaded.sources.every(source => source.scopeId !== pending.value.scope.conversationId), "pending, nonconsented DMs are excluded");
+    assert.equal(loaded.needsYouState, "checked");
+    assert.match(loaded.coverage, /30 recent direct-message candidates/);
+    const outsider = await context.load("ping_ctx_other", request(projectId));
+    const knownDirectMessageScopes = new Set([bob.conversationId, cara.conversationId, dee.conversationId, pending.value.scope.conversationId]);
+    assert.equal(outsider.sources.some(source => knownDirectMessageScopes.has(source.scopeId)), false,
+      "a project nonparticipant cannot enumerate or read consented DMs");
+  } finally { f.client.close(); }
+});
+
+test("direct-message coverage never says candidates were searched when the feature is disabled or lookup fails", async () => {
+  const f = await fixture();
+  try {
+    const disabled = await f.context.load("ping_ctx_alice", request(projectId));
+    assert.match(disabled.coverage, /direct-message search is disabled/);
+    assert.doesNotMatch(disabled.coverage, /direct-message candidates were (?:searched|checked)/);
+
+    const unavailable = createAssistantConversationContextFromServices({
+      conversation: { ...f.conversation, listDirectMessages: async () => ({ ok: false, code: "temporarily_unavailable" as const }) },
+      taskDiscussion: f.taskDiscussion,
+      attention: f.attention,
+    }, { directMessagesEnabled: true });
+    const failedLookup = await unavailable.load("ping_ctx_alice", request(projectId));
+    assert.match(failedLookup.coverage, /direct-message search was unavailable/);
+    assert.doesNotMatch(failedLookup.coverage, /direct-message candidates were (?:searched|checked)/);
+  } finally { f.client.close(); }
+});
+
+test("project factual search includes a bounded recent consented DM without requiring a named person", async () => {
+  const f = await fixture();
+  try {
+    const context = createAssistantConversationContext(f.adapter, { directMessagesEnabled: true });
+    const niamh = await acceptedDm(f, "ping_ctx_bob", "ping_ctx_saturday_forecast", "Met Éireann says rain likely after 3pm on Saturday");
+    const loaded = await context.load("ping_ctx_alice", { ...request(), text: "What is the Saturday forecast?" });
+    assert.ok(loaded.sources.some(source => niamh.ids.includes(source.itemId)));
+    assert.ok(loaded.sources.length <= 5);
+    assert.equal(loaded.needsYouState, "checked");
+  } finally { f.client.close(); }
+});
+
+test("the class caps retain both project-room facts and an explicitly named DM under long-message pressure", async () => {
+  const f = await fixture();
+  try {
+    const context = createAssistantConversationContext(f.adapter, { directMessagesEnabled: true });
+    const room = await f.conversation.ensureProjectConversation({ actorId: "ping_ctx_alice", projectId });
+    if (!room.ok) assert.fail("project conversation unavailable");
+    let epoch = room.value.audienceEpoch;
+    const filler = "x".repeat(3_800);
+    for (let index = 0; index < 3; index++) {
+      const sent = await f.conversation.sendMessage({ actorId: "ping_ctx_alice", input: { projectId, conversationId: room.value.conversationId,
+        clientRequestId: `ping_ctx_room_pressure_${index}`, expectedAudienceEpoch: epoch,
+        body: `Project calendar fact: kitchen opens at ${index + 1}. ${filler}`, rootId: null, mentionUserIds: [] } });
+      if (!sent.ok) assert.fail(`project message failed: ${sent.code}`);
+      const latest = await f.conversation.getProjectConversation({ actorId: "ping_ctx_alice", projectId });
+      if (!latest.ok || !latest.value) assert.fail("project room readback unavailable");
+      epoch = latest.value.audienceEpoch;
+    }
+    const dm = await acceptedDm(f, "ping_ctx_bob", "ping_ctx_named_pressure_bob", `Aoife chose Spritz ${filler}`, 3);
+    const loaded = await context.load("ping_ctx_alice", request(projectId));
+    assert.ok(loaded.sources.some(source => source.scopeId === room.value.conversationId && source.body.includes("Project calendar fact")));
+    assert.ok(loaded.sources.some(source => dm.ids.includes(source.itemId) && source.body.includes("Spritz")));
+    assert.ok(loaded.sources.reduce((sum, source) => sum + source.body.length, 0) <= 24_000);
+    assert.ok(loaded.sources.length <= 30);
+    assert.match(loaded.coverage, /up to 8/);
+  } finally { f.client.close(); }
+});
+
+test("selected-source labels stay bounded for long canonical task and participant names", async () => {
+  const f = await fixture();
+  try {
+    await f.client.execute({ sql: "UPDATE tasks SET title=? WHERE id=?", args: ["Kitchen service times " + "long ".repeat(90), taskId] });
+    const opened = await f.taskDiscussion.openTaskDiscussion({ actorId: "ping_ctx_alice", taskId });
+    if (!opened.ok) assert.fail("discussion setup failed");
+    const comment = await f.taskDiscussion.sendComment({ actorId: "ping_ctx_bob", input: { taskId, clientRequestId: "ping_context_long_title_comment",
+      expectedAudienceEpoch: opened.value.audienceEpoch, body: "Final service details.", rootCommentId: null, mentionUserIds: [] } });
+    if (!comment.ok) assert.fail("discussion comment failed");
+    const taskContext = await f.context.load("ping_ctx_alice", request(projectId, { kind: "task_discussion", taskId }));
+    assert.ok(taskContext.selectedSource);
+    assert.ok(taskContext.selectedSource.label.length <= 300);
+    assert.ok(taskContext.selectedSource.label.endsWith("…"));
+
+    await f.client.execute({ sql: "UPDATE users SET name=? WHERE id='ping_ctx_bob'", args: ["Bob " + "Longname ".repeat(20)] });
+    const dm = await acceptedDm(f, "ping_ctx_bob", "ping_context_long_peer_name", "A note about Saturday");
+    const dmContext = await createAssistantConversationContext(f.adapter, { directMessagesEnabled: true }).load("ping_ctx_alice", request(projectId, { kind: "conversation", conversationId: dm.conversationId }));
+    assert.ok(dmContext.selectedSource);
+    assert.ok(dmContext.selectedSource.participants?.every(name => name.length <= 120));
+    assert.ok(dmContext.selectedSource.participants?.some(name => name.endsWith("…")));
+  } finally { f.client.close(); }
+});
+
+test("planner receives display-only selected-source identity and explicit unqueried Needs-you state", () => {
+  const projected = assistantConversationPlannerContext({ actorName: "Alice", projectName: "Ping Context", projects: [], members: [{ name: "Unrelated member" }],
+    selectedTaskCount: 0, previousTaskCount: 0, referenceDate: "2026-10-21", timeZone: "UTC", sources: [],
+    selectedSource: { kind: "conversation", label: "Direct message with Bob", participants: ["You", "Bob"] }, needsYouState: "not_checked" });
+  assert.deepEqual(projected.selectedSource, { kind: "conversation", label: "Direct message with Bob", participants: ["You", "Bob"] });
+  assert.equal(projected.needsYouState, "not_checked");
+  assert.equal(projected.needsYouTotal, undefined);
+  assert.throws(() => assistantConversationPlannerContext({ actorName: "Alice", projectName: null, projects: [], members: [],
+    selectedTaskCount: 0, previousTaskCount: 0, referenceDate: "2026-10-21", timeZone: "UTC", selectedSource: {
+      kind: "conversation", label: "x", participants: Array.from({ length: 21 }, () => "Person"),
+    } }));
 });

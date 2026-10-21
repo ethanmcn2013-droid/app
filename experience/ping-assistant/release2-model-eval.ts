@@ -44,6 +44,7 @@ type Continuation = Readonly<{ version: 1; group: string; groups: readonly strin
   previous: Readonly<{ path: string; sha256: string }> | null }>;
 type Row = { caseId: string; group: string; prompt: string; expectation: string; held?: string; status: string;
   requestId?: string; runId?: string; modelPlan?: unknown; runView?: unknown; sourceCoverage?: string; timing?: unknown; providerAttempt?: unknown;
+  contextMetrics?:{requestSourceKind:string|null;selectedSourceKind:string|null;needsYouState:string|null;sourceCount:number;sourceBodyUtf8Bytes:number};
   usage?: unknown; durableEffectDiff?: unknown; failure?: string; providerAttemptProvenance?: string };
 
 function flags(argv: readonly string[]) {
@@ -262,9 +263,24 @@ async function contextFor(database:AssistantDatabase,actorId:string,request:Assi
     const tasks=await loadAssistantTaskContext(tx,actorId,request,timeZone);
     return {actorName:"Orla Byrne",projectName:base.project?.name??null,projects:base.projects.map(project=>({name:project.name})),
       members:tasks.members,selectedTaskCount:request.selectedTaskIds?.length??0,previousTaskCount:0,referenceDate:EVAL_WORLD.referenceDate,timeZone,
-      sources:[...conversations.sources,...tasks.sources],coverage:`${tasks.coverage} ${conversations.coverage}`.slice(0,1000),needsYou:conversations.needsYou,
-      needsYouTotal:conversations.needsYouTotal,needsYouComplete:conversations.needsYouComplete,tasks:tasks.tasks};
+      sources:[...conversations.sources,...tasks.sources],coverage:`${tasks.coverage} ${conversations.coverage}`.slice(0,1000),
+      ...(conversations.needsYou?{needsYou:conversations.needsYou}:{}),
+      ...(conversations.needsYouTotal!==undefined?{needsYouTotal:conversations.needsYouTotal}:{}),
+      ...(conversations.needsYouComplete!==undefined?{needsYouComplete:conversations.needsYouComplete}:{}),
+      needsYouState:conversations.needsYouState,...(conversations.selectedSource?{selectedSource:conversations.selectedSource}:{}),tasks:tasks.tasks};
   });
+}
+
+
+async function checkCaseContext(database:AssistantDatabase,item:EvalCase,ids:Parameters<typeof caseSource>[1]){
+  const source=caseSource(item,ids);
+  const context=await contextFor(database,ACTOR,{requestId:"r2eval_preflight",text:item.prompt,
+    scope:{kind:"project",projectId:PROJECT},mode:"draft",...(source?{source}:{})});
+  const projected=assistantConversationPlannerContext(context);
+  if(source&&projected.selectedSource?.kind!==source.kind)throw new Error("selected_source_projection_missing");
+  return {caseId:item.id,requestSourceKind:source?.kind??null,selectedSourceKind:context.selectedSource?.kind??null,
+    needsYouState:context.needsYouState??null,sourceCount:context.sources?.length??0,
+    sourceBodyUtf8Bytes:(context.sources??[]).reduce((sum,entry)=>sum+Buffer.byteLength(entry.body,"utf8"),0)};
 }
 
 /** Apply the production source-revalidation contract to both local action checks and model runs. */
@@ -436,7 +452,13 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
           note:"A3 usage was reconciled only in the copied database. No API key was read and no model call was sent."});
         return {output,providerCalls:0,cases:records.length,dryRun:true,group:"A",recoveryChecked:true};
       }
-      await persist(output,{version:"ping.release2.eval.v1",mode:"dry-run",startedAt,finishedAt:new Date().toISOString(),world:{actorId:ACTOR,projectId:PROJECT,name:EVAL_WORLD.projectName,
+      const contextDatabase=drizzle(fixture.client,{schema}) as AssistantDatabase;
+      const contextChecks=[];
+      for(const item of inventory){
+        if(item.held?.includes("Unsupported guest-chat"))continue;
+        contextChecks.push(await checkCaseContext(contextDatabase,item,fixture.conversationIds));
+      }
+      await persist(output,{version:"ping.release2.eval.v1",mode:"dry-run",contextChecks,startedAt,finishedAt:new Date().toISOString(),world:{actorId:ACTOR,projectId:PROJECT,name:EVAL_WORLD.projectName,
         referenceDate:EVAL_WORLD.referenceDate,timeZone:EVAL_WORLD.timeZone,syntheticOnly:true,guestOrCoupleDataSeeded:false},preflight,
         sourceFingerprintSha256,continuationPreflight:priorContinuation?{lastCompletedGroup:priorContinuation.group,cumulativePhysicalAttempts:priorContinuation.physicalAttempts,cumulativeObservedMicroUsd:priorContinuation.observedMicroUsd,
           admissionSha256:priorContinuation.admissionSha256}:null,
@@ -498,9 +520,7 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
     const database=drizzle(fixture.client,{schema}) as AssistantDatabase;
     for(const item of inventory){
       if(item.held?.includes("Unsupported guest-chat"))continue;
-      const source=caseSource(item,fixture.conversationIds);
-      assistantConversationPlannerContext(await contextFor(database,ACTOR,{requestId:'r2eval_preflight',text:item.prompt,
-        scope:{kind:'project',projectId:PROJECT},mode:'draft',...(source?{source}:{})}));
+      await checkCaseContext(database,item,fixture.conversationIds);
     }
     const apiKey=(await readFile(resolve(keyFile),"utf8")).trim();
     if(apiKey.length<20||/[\r\n\0]/.test(apiKey))throw new Error("explicit_key_file_invalid");
@@ -556,12 +576,17 @@ export async function runRelease2ModelEval(argv=process.argv.slice(2)){
       const elapsedMs=performance.now()-at;
       if(item.id==="B-SETUP-A2"||item.group==="B"||item.group==="C"||item.group==="G")priorRunId=view.id;
       const providerAttempt=await store.getPlannerAttempt(ACTOR,view.id).catch(()=>null);
+      const usageRun=await store.getRun(ACTOR,view.id);
       if(providerAttempt?.dispatched)attempts.push(1);
       const afterCase=await taskDigest(fixture.client);
       const modelPlan=view.steps.map(step=>step.plan).filter(Boolean);
       records.push({caseId:item.id,group:item.group,prompt:item.prompt,expectation:item.expectation,held:item.held,status:view.status,
         requestId,runId:view.id,modelPlan,runView:view,sourceCoverage:context.coverage,
-        timing:{wallMs:elapsedMs,...view.timing},providerAttempt,usage:{estimatedCostMicrousd:view.estimatedCostMicrousd??null},
+        contextMetrics:{requestSourceKind:source?.kind??null,selectedSourceKind:context.selectedSource?.kind??null,
+          needsYouState:context.needsYouState??null,sourceCount:context.sources?.length??0,
+          sourceBodyUtf8Bytes:(context.sources??[]).reduce((sum,item)=>sum+Buffer.byteLength(item.body,"utf8"),0)},
+        timing:{wallMs:elapsedMs,...view.timing},providerAttempt,usage:{inputTokens:usageRun.inputTokens,outputTokens:usageRun.outputTokens,
+          state:usageRun.usageState,estimatedCostMicrousd:view.estimatedCostMicrousd??null},
         ...(plannerFailure?{failure:plannerFailure}:{}),
         durableEffectDiff:{beforeActiveSha256:beforeCase.sha256,afterActiveSha256:afterCase.sha256,beforeAllRowsSha256:beforeCase.allRowsSha256,
           afterAllRowsSha256:afterCase.allRowsSha256,unchanged:beforeCase.allRowsSha256===afterCase.allRowsSha256}});

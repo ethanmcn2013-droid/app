@@ -382,15 +382,17 @@ export function createConversationService(
     });
   }
 
-  async function listDirectMessages(input: ActorProject): Promise<ConversationResult<readonly DirectMessageScope[]>> {
+  async function listDirectMessages(input: ActorProject & Readonly<{ limit?: number }>): Promise<ConversationResult<readonly DirectMessageScope[]>> {
     if (!directMessagesEnabled) return failure("unavailable");
-    if (!validIdentity(input.actorId) || !isProjectId(input.projectId)) return failure("invalid_input");
+    if (!validIdentity(input.actorId) || !isProjectId(input.projectId) || input.limit !== undefined &&
+        (!Number.isSafeInteger(input.limit) || input.limit < 1 || input.limit > 50)) return failure("invalid_input");
     return inTransaction("read", async (executor) => {
       const member = await executor.execute({ sql: `SELECT 1 FROM workspace_members wm JOIN users u ON u.id=wm.user_id
         JOIN workspaces w ON w.id=wm.workspace_id WHERE wm.workspace_id=? AND wm.user_id=?`, args: [input.projectId, input.actorId] });
       if (!member.rows[0]) return failure("unavailable");
       const ids = await executor.execute({ sql: `SELECT id FROM conversations WHERE workspace_id=? AND kind='dm'
-        AND ? IN(dm_low_user_id,dm_high_user_id) ORDER BY created_at DESC,id`, args: [input.projectId, input.actorId] });
+        AND ? IN(dm_low_user_id,dm_high_user_id) ORDER BY created_at DESC,id${input.limit === undefined ? "" : " LIMIT ?"}`,
+        args: input.limit === undefined ? [input.projectId, input.actorId] : [input.projectId, input.actorId, input.limit] });
       const scopes: DirectMessageScope[] = [];
       for (const row of ids.rows) {
         const authorized = await authorize(executor, { ...input, conversationId: text(row.id) });

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "signal-ping-release2-model-evidence/1",
-  "recordedAt": "2026-10-21T15:16:48.216Z",
+  "recordedAt": "2026-10-21T16:31:56.272650+00:00",
   "status": "incomplete, preserved historical run before corrections",
   "fixedDenominator": 62,
   "completedFixedCases": 32,
@@ -30,10 +30,10 @@
   "billing": "Rate-card estimate from observed usage, not a provider invoice. Reservation is not confirmed spend.",
   "newEvaluation": {
     "approval": "Explicit Ethan approval of one fresh corrected evaluation, max63 attempts/$5 new estimated usage/$10 isolated workspace ceiling; no purchases.",
-    "status": "Interrupted in group A by native Windows exit0xC0000005; no downstream calls.",
-    "completedFixedCases": 2,
-    "observedEstimatedMicroUsd": 80430,
-    "pendingCase": "A3",
+    "status": "Full A-I technical execution completed; independent40pass/8weak/13fail/1held of62, below90%gate. Follow-up fixes not yet model-qualified.",
+    "completedFixedCases": 60,
+    "observedEstimatedMicroUsd": 2547592,
+    "pendingCase": null,
     "databaseReservationMicroUsd": 2040960,
     "externalProviderObservation": {
       "requestId": "req_011CgFbJWStQAwMjsVBtUtA3",
@@ -43,15 +43,45 @@
       "rateCardEstimateMicroUsd": 38098,
       "association": "Independent reviewer accepts unique chronological association with high confidence, not invoice proof."
     },
-    "keyState": "Disabled",
-    "workspaceCap": "Restored to $5",
+    "keyState": "Disabled after completed run",
+    "workspaceCap": "Restored to $5; provider UI displayed $4.87 month-to-date including other cohorts",
     "replayAllowed": false,
     "artifacts": [
       "experience/output/ping-release2-model-eval/grouped-qualified-oct21-A.json",
       "experience/output/ping-release2-model-eval/grouped-interruption-oct21-A.json",
       "experience/output/ping-release2-model-eval/grouped-A3-provider-observation-oct21.json"
     ],
-    "review": "experience/reviews/2026-10-21-ping-release2/grouped-A3-reconciliation-review.md"
+    "review": "experience/reviews/2026-10-21-ping-release2/grouped-A3-reconciliation-review.md",
+    "physicalAttempts": 62,
+    "heldNoCallFixedCases": 1,
+    "infrastructureNoAnswerFixedCases": 1,
+    "separateSetupCases": 1,
+    "unknownUsage": false,
+    "workflowRun": "https://github.com/ethanmcn2013-droid/app/actions/runs/39634042526",
+    "sourceCommit": "3dfaee21820ab3a3edf245877e647924d325cdfa",
+    "workflowCommit": "7724168d4be2203b7de62d60fa928387aaaed05c",
+    "telemetry": "experience/reviews/2026-10-21-ping-release2/grouped-evaluation-telemetry.json",
+    "artifactDirectory": "D:/Codex-scratch/project-ping/release2-proof-oct21/linux-completed-39634042526",
+    "draftTaskMutations": 0,
+    "ephemeralSecretsRemaining": 0,
+    "executionGate": "Successful infrastructure execution is not independent semantic acceptance.",
+    "historicalInterruptedCase": "A3 original immutable report/backup preserved; provider499 reconciled on clone only, no answer and no retry.",
+    "independentScore": {
+      "denominator": 62,
+      "pass": 40,
+      "weak": 8,
+      "fail": 13,
+      "heldZeroCredit": 1,
+      "passOnlyPercent": 64.52,
+      "illustrativeHalfCreditPercent": 70.97,
+      "thresholdPercent": 90,
+      "thresholdMet": false,
+      "note": "Fixed request contract does not define a numeric weak weight; half-credit is illustrative. Raw labels are authoritative.",
+      "review": "experience/reviews/2026-10-21-ping-release2/grouped-model-independent-review.md",
+      "reviewSha256": "341a847b65f7558a0bac9dbccc19b00ef7ed15c5d4c8ebbc1df7110b551b8629",
+      "matrix": "experience/reviews/2026-10-21-ping-release2/grouped-model-independent-review.json",
+      "matrixSha256": "8196f23a855cb4b17e860a2aa47283b5be697c156c30bf242d345f038fa92afc"
+    }
   },
   "artifacts": [
     "experience/output/ping-release2-model-eval/live-2026-10-21-round3.json",

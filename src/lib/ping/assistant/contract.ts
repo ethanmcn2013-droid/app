@@ -58,6 +58,10 @@ export type AssistantPlannerContext = Readonly<{
   tasks?: readonly Readonly<{title:string;projectName:string;description?:string;assignees:readonly string[];dueDate:string|null;dueTime:string|null;status:string;parentTitle:string|null}>[];
   coverage?:string;
   needsYouTotal?:number; needsYouComplete?:boolean;
+  /** Display-only identity for the exact conversation or discussion Ping was invoked in. */
+  selectedSource?:Readonly<{kind:'conversation'|'task_discussion';label:string;participants?:readonly string[]}>;
+  /** `not_checked` and `unavailable` must never be described as an empty list. */
+  needsYouState?:'checked'|'not_checked'|'unavailable';
 }>;
 export type AssistantResultItem = Readonly<{ id: string; title: string; detail?: string; href?: string }>;
 export type AssistantActionResult = Readonly<{

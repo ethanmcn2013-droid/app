@@ -26,5 +26,6 @@
   "attestationSha256": "515a6cf7ab8a27b9900af1a865920c90c7c9ef57b762d25678caa05a258c3bb7",
   "review": "experience/reviews/2026-10-21-ping-release2/capture/merged-capture-independent-review-2026-10-21.md",
   "fixtureBuildReceiptSha256": "b13d2a03beb22054668b7a61c0b9235326aa9d2a12f3def0ae41db7413f0c7e3",
-  "captureSourceNote": "Test launched after merging main271c at370ec5e; bundle receipt records75088b0f. Intervening eval/workflow changes did not change manifest/product UI source hashes."
+  "captureSourceNote": "Test launched after merging accepted mainbd1fff49 (PR304 Home, including PR302 at271c) at370ec5e; bundle receipt records75088b0f. Intervening eval/workflow changes did not change manifest/product UI source hashes.",
+  "qualificationStatus": "This accepted merged Home/Ping capture predates server quality repairs; fresh current-source capture pending."
 }

@@ -8,3 +8,9 @@ test('closed metadata rejects private content, unknown fields, invalid IDs and i
     {stages:{...sample().stages,body:NaN}},{stages:{...sample().stages,body:-1}},{revision:101}])assert.equal(parsePlannerAttemptMetadata({...sample(),...extra}),null);
   const input=sample(),parsed=parsePlannerAttemptMetadata(input)!;parsed.stages.logical=10;assert.equal(input.stages.logical,null);
 });
+test('accepts content-free plan validation subtypes and legacy plan failures only',()=>{
+  for(const code of ['plan','plan_json','plan_envelope','plan_schema'] as const)
+    assert.equal(parsePlannerAttemptMetadata({...sample(),logical:'failed',dispatched:true,failureCode:code})?.failureCode,code);
+  assert.equal(parsePlannerAttemptMetadata({...sample(),failureCode:'plan_private_text'}),null);
+  assert.equal(parsePlannerAttemptMetadata({...sample(),failureCode:'plan_json',generatedText:'private'}),null);
+});

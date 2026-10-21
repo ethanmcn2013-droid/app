@@ -39,7 +39,7 @@ Follow-up references to tasks from an earlier request require an explicit Projec
 
 ## Release 2 candidate
 
-The approved Chat design remains the contract. An explicit conversation source supplies only that authorized conversation or task discussion; account searches inspect bounded recent sources in authorized Projects. Direct messages additionally require their existing feature switch and readable consent. Catch up uses the same directed Needs-you service as Chat, with visible coverage limits when not every item fits.
+The approved Chat design remains the contract. An explicit conversation source supplies only that authorized conversation or task discussion; account searches inspect bounded recent sources in authorized Projects. Direct messages additionally require their existing feature switch and readable consent. Selected-Project searches can inspect bounded recent messages in its readable, active, consented direct conversations, prioritizing an explicitly named counterpart. A selected chat or task discussion carries its own display identity; unrelated Project members do not make its participants ambiguous. Catch up uses the same directed Needs-you service as Chat, with visible coverage limits when not every item fits. An attention list that was not checked or is unavailable must never be described as empty.
 
 The planner receives opaque source references, readable excerpts and bounded task summaries. Answers can quote those sources and link to their exact messages or tasks. Before saving or showing a cited answer, the server checks current membership, audience, revision and content. Deleted or changed sources make the saved answer unavailable. Provider input omits source IDs, internal links and credentials.
 

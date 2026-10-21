@@ -100,8 +100,11 @@ function createInstance(target: Target) {
         members: taskContext.members, selectedTaskCount: request.selectedTaskIds?.length ?? 0,
         previousTaskCount: 0, referenceDate: `${day("year")}-${day("month")}-${day("day")}`, timeZone,
         sources:[...conversations.sources,...taskContext.sources],coverage:`${taskContext.coverage} ${conversations.coverage}`.slice(0,1000),
-        needsYou:conversations.needsYou,
-        needsYouTotal:conversations.needsYouTotal,needsYouComplete:conversations.needsYouComplete,
+        ...(conversations.needsYou ? { needsYou: conversations.needsYou } : {}),
+        ...(conversations.needsYouTotal !== undefined ? { needsYouTotal: conversations.needsYouTotal } : {}),
+        ...(conversations.needsYouComplete !== undefined ? { needsYouComplete: conversations.needsYouComplete } : {}),
+        needsYouState:conversations.needsYouState,
+        ...(conversations.selectedSource ? { selectedSource: conversations.selectedSource } : {}),
         tasks:taskContext.tasks };
     }),
     validateSources:(actorId,sources)=>transact(tx=>validateSources(tx,actorId,sources)),

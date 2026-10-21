@@ -33,9 +33,15 @@ export function assistantConversationPlannerContext(context:AssistantPlannerCont
     if(!refs.has(item.ref)||!text(item.projectName,240)||!text(item.createdAt,40)||typeof item.unseen!=='boolean')invalid();
     return {ref:item.ref,projectName:item.projectName,unseen:item.unseen,createdAt:item.createdAt};
   });
+  const selectedSource=context.selectedSource;
+  if(selectedSource!==undefined&&(!selectedSource||!['conversation','task_discussion'].includes(selectedSource.kind)||!text(selectedSource.label,300)||
+      selectedSource.participants!==undefined&&(!Array.isArray(selectedSource.participants)||selectedSource.participants.length>20||selectedSource.participants.some(name=>!text(name,120)))))invalid();
   if(context.coverage!==undefined&&!text(context.coverage,1000))invalid();
   if(context.needsYouTotal!==undefined&&(!Number.isSafeInteger(context.needsYouTotal)||context.needsYouTotal<0||context.needsYouTotal>100))invalid();
   if(context.needsYouComplete!==undefined&&typeof context.needsYouComplete!=='boolean')invalid();
+  if(context.needsYouState!==undefined&&!['checked','not_checked','unavailable'].includes(context.needsYouState))invalid();
   return {...(context.coverage?{coverage:context.coverage}:{}),...(context.needsYouTotal!==undefined?{needsYouTotal:context.needsYouTotal}:{}),...(context.needsYouComplete!==undefined?{needsYouComplete:context.needsYouComplete}:{}),...(context.sources?{sources:projectedSources}:{}),...(context.memory?{memory:projectedMemory}:{}),
-    ...(context.waitingPlan?{waitingPlan:actions(context.waitingPlan)}:{}),...(context.tasks?{tasks:projectedTasks}:{}),...(context.needsYou?{needsYou:projectedNeeds}:{})};
+    ...(context.waitingPlan?{waitingPlan:actions(context.waitingPlan)}:{}),...(context.tasks?{tasks:projectedTasks}:{}),...(context.needsYou?{needsYou:projectedNeeds}:{}),
+    ...(selectedSource?{selectedSource:{kind:selectedSource.kind,label:selectedSource.label,...(selectedSource.participants?{participants:[...selectedSource.participants]}:{})}}:{}),
+    ...(context.needsYouState?{needsYouState:context.needsYouState}:{})};
 }

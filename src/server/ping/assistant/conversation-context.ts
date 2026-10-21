@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { AssistantRequest } from "@/lib/ping/assistant/contract";
+import type { AssistantPlannerContext, AssistantRequest } from "@/lib/ping/assistant/contract";
 import type { AssistantSource, AssistantSourceScope } from "@/lib/ping/assistant/release2";
 import { isProjectId } from "@/lib/projects/project-ref";
 import type { ProjectId } from "@/lib/projects/project-ref";
@@ -11,9 +11,17 @@ import { createMessageAttentionService, type DirectedAttention } from "@/server/
 
 const SOURCE_LIMIT = 30;
 const SOURCE_CHARACTER_LIMIT = 24_000;
+const PROJECT_CHAT_CHARACTER_LIMIT = 8_000;
+const DIRECT_MESSAGE_CHARACTER_LIMIT = 8_000;
+const NEEDS_YOU_CHARACTER_LIMIT = 8_000;
 const MESSAGE_CHARACTER_LIMIT = 4_000;
 const NEEDS_YOU_LIMIT = 10;
 const ACCOUNT_PROJECT_LIMIT = 3;
+const DIRECT_MESSAGE_LIMIT = 3;
+const DIRECT_MESSAGE_CANDIDATE_LIMIT = 30;
+const PROJECT_CHAT_MESSAGE_LIMIT = 8;
+const DIRECT_MESSAGE_SOURCE_LIMIT = 12;
+const DIRECT_MESSAGE_MESSAGE_LIMIT = 4;
 const PROJECT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 
 export class AssistantContextUnavailableError extends Error {
@@ -68,6 +76,23 @@ function sourceKey(kind: AssistantSource["kind"], scopeId: string, itemId: strin
   return `${kind}\u0000${scopeId}\u0000${itemId}`;
 }
 
+function normalizedWords(value: string): string[] {
+  return value.normalize("NFKC").toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) ?? [];
+}
+
+function directMessageMatchesRequest(name: string, text: string): boolean {
+  const requestWords = new Set(normalizedWords(text));
+  return normalizedWords(name).some(word => word.length >= 3 && requestWords.has(word));
+}
+
+function boundedDisplayText(value: string, max: number): string {
+  const normalized = value.replace(/[\u0000-\u001f\u007f]/g, " ").trim();
+  if (normalized.length <= max) return normalized;
+  let prefix = normalized.slice(0, max - 1);
+  if (/[\uD800-\uDBFF]$/.test(prefix)) prefix = prefix.slice(0, -1);
+  return `${prefix.trimEnd()}…`;
+}
+
 /**
  * Builds a bounded, authorized source pack using the same conversation services
  * as the chat UI. Reading context never opens or creates a discussion.
@@ -86,9 +111,11 @@ export function createAssistantConversationContextFromServices(services: Service
 
   async function load(actorId: string, rawRequest: AssistantRequest): Promise<{
     sources: readonly AssistantSource[];
-    needsYou: readonly AssistantNeedsYouItem[];
-    needsYouTotal: number;
-    needsYouComplete: boolean;
+    needsYou?: readonly AssistantNeedsYouItem[];
+    needsYouTotal?: number;
+    needsYouComplete?: boolean;
+    needsYouState: "checked" | "not_checked" | "unavailable";
+    selectedSource?: NonNullable<AssistantPlannerContext["selectedSource"]>;
     coverage: string;
   }> {
     const request = rawRequest as SourceRequest;
@@ -96,9 +123,11 @@ export function createAssistantConversationContextFromServices(services: Service
     const seen = new Set<string>();
     const refs = new Map<string, string>();
     let usedCharacters = 0;
+    const usedBuckets = new Map<string, { count: number; characters: number }>();
     const projectConversationScopes = new Map<string, Promise<boolean>>();
     const projectAudiences = new Map<string, Promise<Awaited<ReturnType<typeof conversation.listProjectAudience>>>>();
     const dmAudiences = new Map<string, Promise<Awaited<ReturnType<typeof conversation.listDirectMessageAudience>>>>();
+    const discussions = new Map<string, Promise<Awaited<ReturnType<typeof taskDiscussion.listProjectDiscussions>>>>();
 
     async function isProjectConversation(projectId: string, conversationId: string) {
       const key = `${projectId}\u0000${conversationId}`;
@@ -111,23 +140,27 @@ export function createAssistantConversationContextFromServices(services: Service
       return pending;
     }
 
-    const add = (source: Omit<AssistantSource, "ref"> | null) => {
+    const add = (source: Omit<AssistantSource, "ref"> | null, bucket: "explicit" | "project" | "direct" | "needsYou" = "project") => {
       if (!source) return null;
       const key = sourceKey(source.kind, source.scopeId, source.itemId);
       if (seen.has(key)) return refs.get(key) ?? null;
       if (found.length >= SOURCE_LIMIT) return null;
+      const current = usedBuckets.get(bucket) ?? { count: 0, characters: 0 };
+      const countLimit = bucket === "explicit" ? SOURCE_LIMIT : bucket === "needsYou" ? NEEDS_YOU_LIMIT : bucket === "project" ? PROJECT_CHAT_MESSAGE_LIMIT : DIRECT_MESSAGE_SOURCE_LIMIT;
+      const characterLimit = bucket === "explicit" ? SOURCE_CHARACTER_LIMIT : bucket === "needsYou" ? NEEDS_YOU_CHARACTER_LIMIT : bucket === "project" ? PROJECT_CHAT_CHARACTER_LIMIT : DIRECT_MESSAGE_CHARACTER_LIMIT;
       const length = source.body.length;
-      if (usedCharacters + length > SOURCE_CHARACTER_LIMIT) return null;
+      if (usedCharacters + length > SOURCE_CHARACTER_LIMIT || current.count >= countLimit || current.characters + length > characterLimit) return null;
       const ref = `source-${found.length + 1}`;
       const next = { ...source, ref };
       found.push(next);
       seen.add(key);
       refs.set(key, ref);
       usedCharacters += length;
+      usedBuckets.set(bucket, { count: current.count + 1, characters: current.characters + length });
       return ref;
     };
 
-    async function loadConversation(projectId: string, conversationId: string, beforeCreateSeq?: number, rootId?: string | null) {
+    async function loadConversation(projectId: string, conversationId: string, beforeCreateSeq?: number, rootId?: string | null, limit = SOURCE_LIMIT) {
       if (!isProjectId(projectId) || !PROJECT_ID_PATTERN.test(conversationId)) return [] as Omit<AssistantSource, "ref">[];
       const projectThread = await isProjectConversation(projectId, conversationId);
       if (!projectThread) {
@@ -135,7 +168,7 @@ export function createAssistantConversationContextFromServices(services: Service
         const dm = await conversation.getDirectMessage({ actorId, projectId, conversationId });
         if (!dm.ok || dm.value.canRead !== true || dm.value.lifecycle !== "active") return [] as Omit<AssistantSource, "ref">[];
       }
-      const page = await conversation.getMessagePage({ actorId, projectId, conversationId, limit: SOURCE_LIMIT, ...(beforeCreateSeq ? { beforeCreateSeq } : {}), ...(rootId ? { rootId } : {}) });
+      const page = await conversation.getMessagePage({ actorId, projectId, conversationId, limit, ...(beforeCreateSeq ? { beforeCreateSeq } : {}), ...(rootId ? { rootId } : {}) });
       if (!page.ok) return [] as Omit<AssistantSource, "ref">[];
       const audienceKey = `${projectId}\u0000${conversationId}`;
       if (projectThread && !projectAudiences.has(audienceKey)) projectAudiences.set(audienceKey, conversation.listProjectAudience({ actorId, projectId }));
@@ -157,7 +190,7 @@ export function createAssistantConversationContextFromServices(services: Service
       if (!PROJECT_ID_PATTERN.test(projectId) || !PROJECT_ID_PATTERN.test(taskId)) return [] as AssistantSource[];
       // This list proves the task belongs to the requested, currently authorized project.
       if (!isProjectId(projectId)) return [] as Omit<AssistantSource, "ref">[];
-      const listed = await taskDiscussion.listProjectDiscussions({ actorId, projectId });
+      const listed = await listProjectDiscussions(projectId);
       if (!listed.ok || !listed.value.some(task => task.taskId === taskId)) return [] as Omit<AssistantSource, "ref">[];
       const page = await taskDiscussion.getCommentPage({ actorId, taskId, limit: SOURCE_LIMIT, ...(beforeCreateSeq ? { beforeCreateSeq } : {}) });
       if (!page.ok) return [] as AssistantSource[];
@@ -170,9 +203,65 @@ export function createAssistantConversationContextFromServices(services: Service
       });
     }
 
+    function listProjectDiscussions(projectId: string) {
+      let pending = discussions.get(projectId);
+      if (!pending) { pending = taskDiscussion.listProjectDiscussions({ actorId, projectId }); discussions.set(projectId, pending); }
+      return pending;
+    }
+
+    async function selectedSourceDescriptor(projectId: string, scope: AssistantSourceScope) {
+      if (!isProjectId(projectId)) throw new AssistantContextUnavailableError();
+      if (scope.kind === "task_discussion") {
+        const listed = await listProjectDiscussions(projectId);
+        if (!listed.ok) throw new AssistantContextUnavailableError();
+        const task = listed.value.find(item => item.taskId === scope.taskId);
+        if (!task) throw new AssistantContextUnavailableError();
+        return { kind: "task_discussion" as const, label: boundedDisplayText(`Task discussion: ${task.title}`, 300) };
+      }
+
+      const projectThread = await isProjectConversation(projectId, scope.conversationId);
+      if (!projectThread) {
+        if (options.directMessagesEnabled !== true) throw new AssistantContextUnavailableError();
+        const dm = await conversation.getDirectMessage({ actorId, projectId, conversationId: scope.conversationId });
+        if (!dm.ok || dm.value.canRead !== true || dm.value.lifecycle !== "active") throw new AssistantContextUnavailableError();
+        const audience = await conversation.listDirectMessageAudience({ actorId, projectId, conversationId: scope.conversationId });
+        if (!audience.ok) throw new AssistantContextUnavailableError();
+        const participants = audience.value.members.slice(0, 20).map(member => boundedDisplayText(member.id === actorId ? "You" : member.name, 120));
+        return { kind: "conversation" as const, label: boundedDisplayText(`Direct message with ${dm.value.other.name}`, 300), participants };
+      }
+
+      const room = await conversation.getProjectConversation({ actorId, projectId: projectId as ProjectId });
+      if (!room.ok || !room.value || room.value.conversationId !== scope.conversationId || room.value.lifecycle !== "active") throw new AssistantContextUnavailableError();
+      const audience = await conversation.listProjectAudience({ actorId, projectId });
+      if (!audience.ok) throw new AssistantContextUnavailableError();
+      return { kind: "conversation" as const, label: boundedDisplayText(`Project conversation: ${room.value.projectName}`, 300),
+        participants: audience.value.members.slice(0, 20).map(member => boundedDisplayText(member.id === actorId ? "You" : member.name, 120)) };
+    }
+
+    async function loadProjectDirectMessages(projectId: ProjectId, requestText: string): Promise<{ included: number; status: "checked" | "disabled" | "unavailable" | "not_run" }> {
+      if (options.directMessagesEnabled !== true) return { included: 0, status: "disabled" };
+      if (found.length >= SOURCE_LIMIT) return { included: 0, status: "not_run" };
+      const listed = await conversation.listDirectMessages({ actorId, projectId, limit: DIRECT_MESSAGE_CANDIDATE_LIMIT });
+      if (!listed.ok) return { included: 0, status: "unavailable" };
+      const eligible = listed.value.filter(dm => dm.canRead && dm.lifecycle === "active");
+      const named = eligible.filter(dm => directMessageMatchesRequest(dm.other.name, requestText));
+      const chosen = [...named, ...eligible.filter(dm => !named.some(item => item.conversationId === dm.conversationId))].slice(0, DIRECT_MESSAGE_LIMIT);
+      let loadedCount = 0;
+      for (const dm of chosen) {
+        if (found.length >= SOURCE_LIMIT) break;
+        const sources = await loadConversation(projectId, dm.conversationId, undefined, null, DIRECT_MESSAGE_MESSAGE_LIMIT);
+        let included = false;
+        for (const source of sources) included = add(source, "direct") !== null || included;
+        if (included) loadedCount += 1;
+      }
+      return { included: loadedCount, status: "checked" };
+    }
+
     const needsYou: AssistantNeedsYouItem[] = [];
     let needsYouTotal = 0;
     let needsYouComplete = true;
+    let needsYouState: "checked" | "not_checked" | "unavailable" = "not_checked";
+    let selectedSource: NonNullable<AssistantPlannerContext["selectedSource"]> | undefined;
     let coverage = "";
 
     // A mention inside a conversation is strictly scoped to that source. It
@@ -185,14 +274,16 @@ export function createAssistantConversationContextFromServices(services: Service
         ? await loadConversation(request.scope.projectId, request.source.conversationId, undefined, request.source.rootId ?? null)
         : await loadTaskDiscussion(request.scope.projectId, request.source.taskId);
       if (!sources.length) throw new AssistantContextUnavailableError();
-      for (const source of sources) add(source);
+      for (const source of sources) add(source, "explicit");
       if (!found.length) throw new AssistantContextUnavailableError();
+      selectedSource = await selectedSourceDescriptor(request.scope.projectId, request.source);
       coverage = "Only the explicitly selected conversation or task discussion was searched.";
     } else {
       // Load Needs-you first so broad history searches cannot consume the
       // source budget needed for the user's actual requests.
       const attentionResult = await attention.listDirected({ actorId, limit: 50 });
       const directed: readonly DirectedAttention[] = attentionResult.ok ? attentionResult.value : [];
+      needsYouState = attentionResult.ok ? "checked" : "unavailable";
       const selectedProjectId = request.scope.kind === "project" && isProjectId(request.scope.projectId) ? request.scope.projectId : null;
       if (request.scope.kind === "project" && !selectedProjectId) throw new AssistantContextUnavailableError();
       const scoped = selectedProjectId ? directed.filter(item => item.projectId === selectedProjectId) : directed;
@@ -205,7 +296,7 @@ export function createAssistantConversationContextFromServices(services: Service
           ? await loadConversation(item.projectId, item.scopeId, item.createSeq + 1, item.rootId ?? item.itemId)
           : await loadTaskDiscussion(item.projectId, item.scopeId, item.createSeq + 1);
         const source = context.find(candidate => candidate.itemId === item.itemId);
-        const ref = source ? add(source) : null;
+        const ref = source ? add(source, "needsYou") : null;
         if (ref) needsYou.push({ ref, projectName: item.projectName, unseen: item.seenAt === null, createdAt: iso(item.createdAt) });
       }
       needsYouComplete = scoped.length < 50 && scoped.length <= NEEDS_YOU_LIMIT && needsYou.length === scoped.length;
@@ -220,9 +311,16 @@ export function createAssistantConversationContextFromServices(services: Service
         const scope = await conversation.getProjectConversation({ actorId, projectId: selectedProjectId });
         if (scope.ok && scope.value?.kind === "project" && scope.value.lifecycle === "active") {
           projectConversationScopes.set(`${selectedProjectId}\u0000${scope.value.conversationId}`, Promise.resolve(true));
-          for (const source of await loadConversation(selectedProjectId, scope.value.conversationId)) add(source);
+          for (const source of await loadConversation(selectedProjectId, scope.value.conversationId, undefined, null, PROJECT_CHAT_MESSAGE_LIMIT)) add(source, "project");
         }
-        coverage = "Recent messages from the selected project and its top 10 Needs-you items were searched.";
+        const directMessages = await loadProjectDirectMessages(selectedProjectId, request.text);
+        const needsYouCoverage = needsYouState === "checked" ? `up to ${NEEDS_YOU_LIMIT} Needs-you items were searched` : "Needs-you could not be checked";
+        const directMessageCoverage = directMessages.status === "checked"
+          ? `up to ${DIRECT_MESSAGE_CANDIDATE_LIMIT} recent direct-message candidates were checked`
+          : directMessages.status === "disabled" ? "direct-message search is disabled"
+            : directMessages.status === "not_run" ? "direct-message search was not run because the context limit was reached"
+              : "direct-message search was unavailable";
+        coverage = `Recent messages from the selected project (up to ${PROJECT_CHAT_MESSAGE_LIMIT}); ${needsYouCoverage}; ${directMessageCoverage}. Only active consented messages are included, capped at ${DIRECT_MESSAGE_LIMIT} threads and ${DIRECT_MESSAGE_SOURCE_LIMIT} messages${directMessages.included ? ` (${directMessages.included} direct messages included)` : ""}.`;
       } else {
         const projects = await conversation.listProjects({ actorId });
         const catalog = projects.ok ? projects.value : [];
@@ -240,28 +338,33 @@ export function createAssistantConversationContextFromServices(services: Service
             projectConversationScopes.set(`${project.id}\u0000${scope.value.conversationId}`, Promise.resolve(true));
           }
         }
+        const directMessageSearches: Array<{ included: number; status: "checked" | "disabled" | "unavailable" | "not_run" }> = [];
         for (const project of selected) {
           if (found.length >= SOURCE_LIMIT) break;
-          for (const source of await loadConversation(project.id, project.conversationId)) add(source);
-          if (options.directMessagesEnabled !== true || found.length >= SOURCE_LIMIT) continue;
-          const direct = await conversation.listDirectMessages({ actorId, projectId: project.id });
-          if (!direct.ok) continue;
-          let matchingChats = 0;
-          for (const dm of direct.value.slice(0, 20)) {
-            if (!dm.canRead || dm.lifecycle !== "active" || !isNamedInRequest(dm.other.name)) continue;
-            const items = await loadConversation(project.id, dm.conversationId);
-            if (items.length) matchingChats += 1;
-            for (const source of items) add(source);
-            if (matchingChats >= 2 || found.length >= SOURCE_LIMIT) break;
-          }
+          for (const source of await loadConversation(project.id, project.conversationId, undefined, null, PROJECT_CHAT_MESSAGE_LIMIT)) add(source, "project");
+          directMessageSearches.push(await loadProjectDirectMessages(project.id, request.text));
         }
         const named = selected.some(project => isNamedInRequest(project.name));
-        coverage = `Needs-you: up to ${NEEDS_YOU_LIMIT} of ${needsYouTotal} current entries; account search: recent messages from ${selected.length} of up to ${catalog.length} authorized active projects${named ? ", including projects named in the request" : ""}.`;
+        const needsYouCoverage = needsYouState === "checked" ? `Needs-you: up to ${NEEDS_YOU_LIMIT} of ${needsYouTotal} current entries` : "Needs-you could not be checked";
+        const checkedDirectMessageSearches = directMessageSearches.filter(result => result.status === "checked").length;
+        const unavailableDirectMessageSearches = directMessageSearches.filter(result => result.status === "unavailable").length;
+        const disabledDirectMessageSearches = directMessageSearches.filter(result => result.status === "disabled").length;
+        const notRunDirectMessageSearches = directMessageSearches.filter(result => result.status === "not_run").length;
+        const directMessageCoverage = checkedDirectMessageSearches === directMessageSearches.length && directMessageSearches.length > 0
+          ? `up to ${DIRECT_MESSAGE_CANDIDATE_LIMIT} recent direct-message candidates were checked in ${checkedDirectMessageSearches} selected projects`
+          : unavailableDirectMessageSearches > 0
+            ? `direct-message search was unavailable in ${unavailableDirectMessageSearches} selected projects${disabledDirectMessageSearches ? ` and disabled in ${disabledDirectMessageSearches}` : ""}`
+            : disabledDirectMessageSearches > 0 ? "direct-message search is disabled"
+              : notRunDirectMessageSearches > 0 ? "direct-message search was not run for some selected projects because the context limit was reached"
+                : "direct-message search was not run";
+        const includedDirectMessages = directMessageSearches.reduce((sum, result) => sum + result.included, 0);
+        coverage = `${needsYouCoverage}; account search selected ${selected.length} of up to ${catalog.length} authorized active projects as candidates; source limits may stop before all selected projects are read, with up to ${PROJECT_CHAT_MESSAGE_LIMIT} project-chat messages per project; ${directMessageCoverage}. Only active consented messages are included, capped at ${DIRECT_MESSAGE_LIMIT} threads and ${DIRECT_MESSAGE_SOURCE_LIMIT} messages${includedDirectMessages ? ` (${includedDirectMessages} direct messages included)` : ""}${named ? ", including projects named in the request" : ""}.`;
         if (selected.length < Math.min(ACCOUNT_PROJECT_LIMIT, catalog.length)) coverage += " Some projects had no readable active conversation.";
       }
     }
 
-    return { sources: found, needsYou, needsYouTotal, needsYouComplete, coverage };
+    return { sources: found, ...(needsYouState === "checked" ? { needsYou, needsYouTotal, needsYouComplete } : {}),
+      needsYouState, ...(selectedSource ? { selectedSource } : {}), coverage };
   }
 
   async function validate(actorId: string, sources: readonly AssistantSource[]): Promise<boolean> {
