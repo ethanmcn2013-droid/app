@@ -1,0 +1,1249 @@
+{
+  "schemaVersion": "signal-undo-refresh-prior-validation/1",
+  "mode": "read-only prior receipt and source validation; no fresh capture comparison or new review decision",
+  "candidateCommit": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+  "currentHead": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+  "registrySha256": "fbb15962b614d1e7d7668d137f8944b4ed7b8f6bb7776ee6a57c9bab07c78ec3",
+  "registryProjectionSha256": "0c5986587e4f894fc705f2411b7ae92c8e894eb7dbcfa596a5a70033164c60f8",
+  "reviewedEntriesSha256": "4610800e83b47c44c6ed5f89b1400cac30f98db2412dc62e08a5858c00df9357",
+  "unreviewedPing": {
+    "id": "tasks.workspace.ping-personal-assistant",
+    "materialityHash": "440401ebff7ab9b0"
+  },
+  "sourceBaselineCommit": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+  "attestationContractCommit": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+  "receiptCount": 18,
+  "validation": {
+    "all18ReceiptsValidatedByCanonicalHelper": true,
+    "allSourcesMatchCandidate": true,
+    "allMaterialityHashesMatch": true,
+    "reviewFieldsAndCoverageAbsencePreserved": true,
+    "noReceiptOrRegistryChanged": true
+  },
+  "rows": [
+    {
+      "id": "tasks.page.app-settings",
+      "source": "tasks/src/app/app/settings/page.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "3fcba4d3b2bb4dcfa6bf95630a7838fb81078185ff7228c6f44a6822fd1f6372",
+      "materialityHash": {
+        "receipt": "3fcba4d3b2bb4dcf",
+        "registry": "3fcba4d3b2bb4dcf",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-settings.json",
+      "receiptSha256": "a61de908029e6bf86499d93c074e4a04e58aef0b074ad0bba6d8d81fd95fa0b1",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.page.app-settings",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-settings / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.page.welcome",
+      "source": "tasks/src/app/welcome/page.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "56f4c16d02cbcebbefdc3a8ff5a31211d3206bbdaa6ca4319df0f64b7b6f435f",
+      "materialityHash": {
+        "receipt": "56f4c16d02cbcebb",
+        "registry": "56f4c16d02cbcebb",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.welcome.json",
+      "receiptSha256": "ae7d0e24601030e7f6addcd3ee0075d4ec1c9605c7fb8e5c38ab4188e1fd2ec9",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.page.welcome",
+        "name": "unavailable explicit project recovery",
+        "title": "tasks.page.welcome / unavailable explicit project recovery",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.page.app-project",
+      "source": "tasks/src/app/app/project/page.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "795236cc4236a32a140df49e0c7e45fadc18c0a0579c1b4647a53ef4b8503f7e",
+      "materialityHash": {
+        "receipt": "795236cc4236a32a",
+        "registry": "795236cc4236a32a",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-project.json",
+      "receiptSha256": "18595d1fc87976c80009fa5ff720d6d02487af5379822c9876fe931ca6bfbd1a",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.page.app-project",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-project / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.state.app-project-loading",
+      "source": "tasks/src/app/app/project/loading.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "50734606e8cded67f088da92b96daefa4dd17482308c09997f2458489a5cce6b",
+      "materialityHash": {
+        "receipt": "50734606e8cded67",
+        "registry": "50734606e8cded67",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-project-loading.json",
+      "receiptSha256": "88aa062b37a66649b8a18009bcd67293d1c3dacf259155c798f921bd7f219cc6",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.state.app-project-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-project-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.state.app-home-loading",
+      "source": "tasks/src/app/app/home/loading.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "30c075ecd9482d611f5566678eae8ea688c74ecebbd9cf24cd04fb54de0a554b",
+      "materialityHash": {
+        "receipt": "30c075ecd9482d61",
+        "registry": "30c075ecd9482d61",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-home-loading.json",
+      "receiptSha256": "3ede8b9f83d81d610cad77b44dc9c80131ecc561a3b3853dadf8ac8e85a4f35d",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.state.app-home-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-home-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.state.app-home-error",
+      "source": "tasks/src/app/app/home/error.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "f0e4960b366e6091b98cb6c0af1f7d1abb8b408dcacc9921e1f4b61ef0eeb1c2",
+      "materialityHash": {
+        "receipt": "f0e4960b366e6091",
+        "registry": "f0e4960b366e6091",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-home-error.json",
+      "receiptSha256": "5946155bef1d6a1112ed73271bcd24ecfd123bda07c70b2299acf0b425129228",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.state.app-home-error",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-home-error / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.state.app-tasks-loading",
+      "source": "tasks/src/app/app/tasks/loading.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "12140b4bae611a58cafe42f1022e63817a031a47807a798df4286c721a6264d3",
+      "materialityHash": {
+        "receipt": "12140b4bae611a58",
+        "registry": "12140b4bae611a58",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-tasks-loading.json",
+      "receiptSha256": "4dad0be2168b9a256ae88f9d299db51d3bcf2c2d810c924908eb79da1e132cd2",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.state.app-tasks-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-tasks-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.resources.drive-upload",
+      "source": "tasks/src/components/app/detail-panel/resources-section.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "19f85eac6f784ffaec512a8b8c4ab9b3ea0e14ddf1d5a9db81af63d811344826",
+      "materialityHash": {
+        "receipt": "19f85eac6f784ffa",
+        "registry": "19f85eac6f784ffa",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.resources.drive-upload.json",
+      "receiptSha256": "4e0772a2e1ed5d3563f68ed01450e9894dba754573d3b311816e3e69731b0aba",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.resources.drive-upload",
+        "name": "own surface in demo",
+        "title": "tasks.resources.drive-upload / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.page.app-messages",
+      "source": "tasks/src/app/app/messages/page.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "b3090728f061cdbdeaab7be66a2c0620b50b619454df3aeee65c2e975ff45654",
+      "materialityHash": {
+        "receipt": "b3090728f061cdbd",
+        "registry": "b3090728f061cdbd",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-ping-release2/receipts/tasks.page.app-messages.json",
+      "receiptSha256": "822fdad08d052b09e58c3cf458f223a1aac0827de2a2823beb7f31947395a573",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.page.app-messages",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-messages / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Codex independent reviewer",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Release 2 Chat panel and Ping integration on the Messages route.",
+        "decision": "Accepted for app-messages source materiality refresh only. Canonical 188/188 and synthetic receiver support the scoped behavior; no screenshot or accessibility coverage is granted, and this is not full Ping acceptance.",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.page.app-analytics",
+      "source": "tasks/src/app/app/analytics/page.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "d89f2a4abd38ee576f23508c2b37d05aec8b6637f1f49755a58cad1bac54d485",
+      "materialityHash": {
+        "receipt": "d89f2a4abd38ee57",
+        "registry": "d89f2a4abd38ee57",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-analytics.json",
+      "receiptSha256": "650f1bd5852bc0a5457a7480cd377b1ac65d7c88675638becaefc138d72a47aa",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.page.app-analytics",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-analytics / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.state.app-analytics-loading",
+      "source": "tasks/src/app/app/analytics/loading.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "9a83f9e97a750b1b6861c3b116ea38badf31d8077dd7fa609c275b930a72cf58",
+      "materialityHash": {
+        "receipt": "9a83f9e97a750b1b",
+        "registry": "9a83f9e97a750b1b",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-analytics-loading.json",
+      "receiptSha256": "90830b3221b51dee87ead3055b15a3f8a7474807f7c02e66aa39a2dc4bc9ea7c",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.state.app-analytics-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-analytics-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.state.app-analytics-error",
+      "source": "tasks/src/app/app/analytics/error.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "16a0888ed7b367ab79c3b596bc8597b01271a53e259ae50a20cae1889e9e4d4d",
+      "materialityHash": {
+        "receipt": "16a0888ed7b367ab",
+        "registry": "16a0888ed7b367ab",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-analytics-error.json",
+      "receiptSha256": "81636df1cf7b0a5f7fa89aae94487a919c73cfd654ea572dd840c597cff47369",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.state.app-analytics-error",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-analytics-error / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.page.app-tools-by-slug",
+      "source": "tasks/src/app/app/tools/[slug]/page.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "4a1b05486b44306f44c958e68e47b9716614682975f7b626f5644133e6557bad",
+      "materialityHash": {
+        "receipt": "4a1b05486b44306f",
+        "registry": "4a1b05486b44306f",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-tools-by-slug.json",
+      "receiptSha256": "68cf0031e672bfcee1d2a2274740d531542c92ef980cd1db835491f7c53e1976",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.page.app-tools-by-slug",
+        "name": "wedding hub in demo",
+        "title": "tasks.page.app-tools-by-slug / wedding hub in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.state.app-tools-loading",
+      "source": "tasks/src/app/app/tools/loading.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "45e0fc19aaf3ca483239677276d30f0e08005791ab479d650786a962a7dc12dc",
+      "materialityHash": {
+        "receipt": "45e0fc19aaf3ca48",
+        "registry": "45e0fc19aaf3ca48",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-tools-loading.json",
+      "receiptSha256": "cab093a862aa144043f660c661330259e250aaed4454cb9b605b1c11ef8191b0",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.state.app-tools-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-tools-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.page.app-concepts",
+      "source": "tasks/src/app/app/concepts/page.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "63e7924b683e8c066b772fda67a7a3c3d347062d1686b785716c6b5d82ba18a2",
+      "materialityHash": {
+        "receipt": "63e7924b683e8c06",
+        "registry": "63e7924b683e8c06",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-concepts.json",
+      "receiptSha256": "0cd86178ed79f0404c3bec261a58764ad46c74f9939a6e72482cefcf0bdca7f5",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.page.app-concepts",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-concepts / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.page.app-files",
+      "source": "tasks/src/app/app/files/page.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "20ffc2d1e68dcfdd16dd7d2357de6b245d44a611526182688190083709c1a2a2",
+      "materialityHash": {
+        "receipt": "20ffc2d1e68dcfdd",
+        "registry": "20ffc2d1e68dcfdd",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.page.app-files.json",
+      "receiptSha256": "7903fbd302fb95ffee768baf184e39f8f7a7b8b1811c7ed901c3e617112c6480",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.page.app-files",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-files / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): reviewed the Files Sources + shelf view (home, In Signal folder with preview, phone dark, search), the 188/188 capture and these receipts in chat on 2026-10-21 and answered 'Approve all 18'",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Files page now renders the internal Sources + shelf view (FilesShelfView) for operators only, gated by filesSourcesShelfEnabled (callerIsAdmin, fails closed, false in demo and review); everyone else gets FilesView unchanged. Canonical capture tasks-playwright-0e5b99e3a971996d51daa39f ran 188/188 one attempt each in demo, where the default view is shown. Shelf evidence: docs/projects/files-sources-shelf/evidence and experience/files-sources-shelf.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.state.app-files-loading",
+      "source": "tasks/src/app/app/files/loading.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "9beac142f8f04cb2c85eb1ac1d95adaee7104ced1039aea19a2b3d27ffbd96f4",
+      "materialityHash": {
+        "receipt": "9beac142f8f04cb2",
+        "registry": "9beac142f8f04cb2",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-files-loading.json",
+      "receiptSha256": "568ad58adc19c05c47dade361f82f97277e0b243c145afa1544e17c73bbd0ea9",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.state.app-files-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-files-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    },
+    {
+      "id": "tasks.state.app-files-error",
+      "source": "tasks/src/app/app/files/error.tsx",
+      "sourceRevision": "3aa54bbfcb65cc2c18eb7c13b4da9cfe73309dee",
+      "sourceSha256": "83d088f7615c6a6b017300c3e3e29922a47ec030f44434435e46dd3049bf5121",
+      "materialityHash": {
+        "receipt": "83d088f7615c6a6b",
+        "registry": "83d088f7615c6a6b",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-files-sources-shelf/receipts/tasks.state.app-files-error.json",
+      "receiptSha256": "7e19277adb6a07126e00e0da08c1c61257f4162d7e1cb539c7e1972ba77e7009",
+      "priorAttestationContractRevision": "4e27dddc1931d3cdc036903e6f38eb7029997e13",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-0d8727521d9c156849242415-92c985ae241e4c11.json",
+      "priorAttestationSha256": "02f6c4941776ba017ee3f4ff0bfe228421f23a99c55c956e8a3f26f448be096e",
+      "priorRunId": "tasks-playwright-0d8727521d9c156849242415",
+      "priorCanonicalEvidenceSha256": "0d8727521d9c1568492424156d9172f9a4ae9b0e9facefae9ebfaa0d2eef7844",
+      "case": {
+        "id": "tasks.state.app-files-error",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-files-error / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "tablet",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "desktop",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          },
+          {
+            "project": "wide",
+            "tuple": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ]
+          }
+        ]
+      },
+      "preservedReview": {
+        "reviewer": "Ethan McNamara (founder): approved this relink to the fresh 188/188 capture in chat on 2026-10-21 ('Approve all 18')",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this branch; relinked to fresh canonical capture tasks-playwright-0e5b99e3a971996d51daa39f (188/188, one attempt each) after the Files Sources + shelf branch changed the capture-contract inventory. No production or numerical design rating claim.",
+        "decision": "accepted",
+        "coverageFieldPresent": false
+      }
+    }
+  ]
+}
