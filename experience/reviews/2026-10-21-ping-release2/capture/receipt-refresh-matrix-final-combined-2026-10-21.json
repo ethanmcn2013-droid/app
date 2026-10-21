@@ -1,0 +1,1846 @@
+{
+  "schemaVersion": "signal-receipt-refresh-matrix/1",
+  "kind": "preparation-only comparison; no independent decision recorded; receipts remain unchanged",
+  "candidateCommit": "68815b7d2fe361c4379fe7c53b29dda0b95db9c9",
+  "candidateRegistrySha256": "d1eef37a5deab7f382666decc0d7175731ebccbcf398b5451f1f1a4e4f24b539",
+  "freshCapture": {
+    "runId": "tasks-playwright-69593e1eb73b520893740f3d",
+    "commit": "68815b7d2fe361c4379fe7c53b29dda0b95db9c9",
+    "tree": "8648910a3e791184da775ef3c547830c47b26e13",
+    "artifactId": 12367735620,
+    "artifactDigest": "sha256:7ec15c1084f8a170d251e1ff8698cfe3203612f51d57a9c0cec3d90c4d3d0ba2",
+    "evidenceArchivePath": "D:/Codex-scratch/project-ping/release2-proof-oct21/final-combined-capture-39644147598",
+    "attestationPath": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\final-combined-capture-39644147598\\tasks-selected-candidate-68815b7d2fe361c4379fe7c53b29dda0b95db9c9\\output\\evidence-attestation.json",
+    "attestationSha256": "326b1a60d804f4a2200013e9318ab64bda3e7fded42140db8dac9ba415be8e75",
+    "canonicalEvidenceSha256": "69593e1eb73b520893740f3ddd3bf0d0af9a4cec32e140070269b7def31076f8",
+    "rawArtifactPath": "D:\\Codex-scratch\\project-ping\\release2-proof-oct21\\final-combined-capture-39644147598\\tasks-selected-candidate-68815b7d2fe361c4379fe7c53b29dda0b95db9c9\\output\\critical-evidence.json",
+    "rawArtifactSha256": "c3f6e9a204578c2a06323610a9a85a379e89a138cd0cbc4bb74d64c500d2ddd8",
+    "fixtureManifestSha256": "afb51fd5e6c9fc019d1c0f7c0d3d546c44e11457b70b777eaecc8047c23e58c5",
+    "testCount": 188,
+    "passedCount": 188,
+    "unexpectedCount": 0,
+    "skippedCount": 0,
+    "flakyCount": 0,
+    "allRowsMappedByExactTitleAndProject": true
+  },
+  "receiptCount": 18,
+  "pingRecord": {
+    "id": "tasks.workspace.ping-personal-assistant",
+    "sourceReviewedAt": "2026-10-18",
+    "currentRegistryMaterialityReview": false,
+    "note": "Historical source-contract only; no fresh materiality review is created by this matrix."
+  },
+  "validation": {
+    "receiptPathsDerivedFromCandidateRegistry": true,
+    "receiptPriorAttestationsVerified": true,
+    "sourceAndFixtureManifestHashesVerified": true,
+    "receiptMaterialityHashesVerified": true,
+    "casesCompared": 18,
+    "projectTuplesCompared": 72,
+    "allReceiptCurrentTuplesEqualFreshTuples": true,
+    "receiptFilesChanged": false,
+    "independentDecisionRecorded": false
+  },
+  "rows": [
+    {
+      "id": "tasks.page.app-settings",
+      "source": "src/app/app/settings/page.tsx",
+      "sourceSha256": {
+        "prior": "3fcba4d3b2bb4dcfa6bf95630a7838fb81078185ff7228c6f44a6822fd1f6372",
+        "current": "3fcba4d3b2bb4dcfa6bf95630a7838fb81078185ff7228c6f44a6822fd1f6372",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "3fcba4d3b2bb4dcf",
+        "currentRegistry": "3fcba4d3b2bb4dcf",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-settings.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.page.app-settings",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-settings / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.page.welcome",
+      "source": "src/app/welcome/page.tsx",
+      "sourceSha256": {
+        "prior": "56f4c16d02cbcebbefdc3a8ff5a31211d3206bbdaa6ca4319df0f64b7b6f435f",
+        "current": "56f4c16d02cbcebbefdc3a8ff5a31211d3206bbdaa6ca4319df0f64b7b6f435f",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "56f4c16d02cbcebb",
+        "currentRegistry": "56f4c16d02cbcebb",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.welcome.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.page.welcome",
+        "name": "unavailable explicit project recovery",
+        "title": "tasks.page.welcome / unavailable explicit project recovery",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.page.app-project",
+      "source": "src/app/app/project/page.tsx",
+      "sourceSha256": {
+        "prior": "795236cc4236a32a140df49e0c7e45fadc18c0a0579c1b4647a53ef4b8503f7e",
+        "current": "795236cc4236a32a140df49e0c7e45fadc18c0a0579c1b4647a53ef4b8503f7e",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "795236cc4236a32a",
+        "currentRegistry": "795236cc4236a32a",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-project.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.page.app-project",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-project / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.state.app-project-loading",
+      "source": "src/app/app/project/loading.tsx",
+      "sourceSha256": {
+        "prior": "50734606e8cded67f088da92b96daefa4dd17482308c09997f2458489a5cce6b",
+        "current": "50734606e8cded67f088da92b96daefa4dd17482308c09997f2458489a5cce6b",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "50734606e8cded67",
+        "currentRegistry": "50734606e8cded67",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-project-loading.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.state.app-project-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-project-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.state.app-home-loading",
+      "source": "src/app/app/home/loading.tsx",
+      "sourceSha256": {
+        "prior": "30c075ecd9482d611f5566678eae8ea688c74ecebbd9cf24cd04fb54de0a554b",
+        "current": "30c075ecd9482d611f5566678eae8ea688c74ecebbd9cf24cd04fb54de0a554b",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "30c075ecd9482d61",
+        "currentRegistry": "30c075ecd9482d61",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-home-loading.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.state.app-home-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-home-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Home reordered into three rows: the countdown with Done this week, the four start cards, then Activity; the loading tracing follows the same order and keeps its Opening Home status. Fresh canonical capture 188/188 one attempt each. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.state.app-home-error",
+      "source": "src/app/app/home/error.tsx",
+      "sourceSha256": {
+        "prior": "f0e4960b366e6091b98cb6c0af1f7d1abb8b408dcacc9921e1f4b61ef0eeb1c2",
+        "current": "f0e4960b366e6091b98cb6c0af1f7d1abb8b408dcacc9921e1f4b61ef0eeb1c2",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "f0e4960b366e6091",
+        "currentRegistry": "f0e4960b366e6091",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-home-error.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.state.app-home-error",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-home-error / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.state.app-tasks-loading",
+      "source": "src/app/app/tasks/loading.tsx",
+      "sourceSha256": {
+        "prior": "12140b4bae611a58cafe42f1022e63817a031a47807a798df4286c721a6264d3",
+        "current": "12140b4bae611a58cafe42f1022e63817a031a47807a798df4286c721a6264d3",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "12140b4bae611a58",
+        "currentRegistry": "12140b4bae611a58",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-tasks-loading.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.state.app-tasks-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-tasks-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.resources.drive-upload",
+      "source": "src/components/app/detail-panel/resources-section.tsx",
+      "sourceSha256": {
+        "prior": "19f85eac6f784ffaec512a8b8c4ab9b3ea0e14ddf1d5a9db81af63d811344826",
+        "current": "19f85eac6f784ffaec512a8b8c4ab9b3ea0e14ddf1d5a9db81af63d811344826",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "19f85eac6f784ffa",
+        "currentRegistry": "19f85eac6f784ffa",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.resources.drive-upload.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.resources.drive-upload",
+        "name": "own surface in demo",
+        "title": "tasks.resources.drive-upload / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.page.app-messages",
+      "source": "src/app/app/messages/page.tsx",
+      "sourceSha256": {
+        "prior": "b3090728f061cdbdeaab7be66a2c0620b50b619454df3aeee65c2e975ff45654",
+        "current": "b3090728f061cdbdeaab7be66a2c0620b50b619454df3aeee65c2e975ff45654",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "b3090728f061cdbd",
+        "currentRegistry": "b3090728f061cdbd",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-ping-release2/receipts/tasks.page.app-messages.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-54543786e8c7fab6b10eb4bb-c22fe3a7293b5230.json",
+      "priorAttestationSha256": "53ee13ceb38fbeb5e5d44d26692bdbea444796b9fc924560049f68e78ea8a7f9",
+      "priorRunId": "tasks-playwright-54543786e8c7fab6b10eb4bb",
+      "priorCanonicalEvidenceSha256": "54543786e8c7fab6b10eb4bb013dd6c46767b4a114e238373d3b018d10c602f5",
+      "priorRawArtifactSha256": "c22fe3a7293b5230dd9f805ae2501f062bebd25e7d7088604038ea0f3db3e381",
+      "priorManifestSha256": "93b51003e1ab244ba93f61b6574ce1502a32bb86fd268b59cfe1050c52de2957",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.page.app-messages",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-messages / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Codex independent reviewer",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Release 2 Chat panel and Ping integration on the Messages route.",
+        "decision": "Accepted for app-messages source materiality refresh only. Canonical 188/188 and synthetic receiver support the scoped behavior; no screenshot or accessibility coverage is granted, and this is not full Ping acceptance."
+      }
+    },
+    {
+      "id": "tasks.page.app-analytics",
+      "source": "src/app/app/analytics/page.tsx",
+      "sourceSha256": {
+        "prior": "d89f2a4abd38ee576f23508c2b37d05aec8b6637f1f49755a58cad1bac54d485",
+        "current": "d89f2a4abd38ee576f23508c2b37d05aec8b6637f1f49755a58cad1bac54d485",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "d89f2a4abd38ee57",
+        "currentRegistry": "d89f2a4abd38ee57",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-analytics.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.page.app-analytics",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-analytics / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.state.app-analytics-loading",
+      "source": "src/app/app/analytics/loading.tsx",
+      "sourceSha256": {
+        "prior": "9a83f9e97a750b1b6861c3b116ea38badf31d8077dd7fa609c275b930a72cf58",
+        "current": "9a83f9e97a750b1b6861c3b116ea38badf31d8077dd7fa609c275b930a72cf58",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "9a83f9e97a750b1b",
+        "currentRegistry": "9a83f9e97a750b1b",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-analytics-loading.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.state.app-analytics-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-analytics-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.state.app-analytics-error",
+      "source": "src/app/app/analytics/error.tsx",
+      "sourceSha256": {
+        "prior": "16a0888ed7b367ab79c3b596bc8597b01271a53e259ae50a20cae1889e9e4d4d",
+        "current": "16a0888ed7b367ab79c3b596bc8597b01271a53e259ae50a20cae1889e9e4d4d",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "16a0888ed7b367ab",
+        "currentRegistry": "16a0888ed7b367ab",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-analytics-error.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.state.app-analytics-error",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-analytics-error / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.page.app-tools-by-slug",
+      "source": "src/app/app/tools/[slug]/page.tsx",
+      "sourceSha256": {
+        "prior": "4a1b05486b44306f44c958e68e47b9716614682975f7b626f5644133e6557bad",
+        "current": "4a1b05486b44306f44c958e68e47b9716614682975f7b626f5644133e6557bad",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "4a1b05486b44306f",
+        "currentRegistry": "4a1b05486b44306f",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-tools-by-slug.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.page.app-tools-by-slug",
+        "name": "wedding hub in demo",
+        "title": "tasks.page.app-tools-by-slug / wedding hub in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.state.app-tools-loading",
+      "source": "src/app/app/tools/loading.tsx",
+      "sourceSha256": {
+        "prior": "45e0fc19aaf3ca483239677276d30f0e08005791ab479d650786a962a7dc12dc",
+        "current": "45e0fc19aaf3ca483239677276d30f0e08005791ab479d650786a962a7dc12dc",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "45e0fc19aaf3ca48",
+        "currentRegistry": "45e0fc19aaf3ca48",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-tools-loading.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.state.app-tools-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-tools-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.page.app-concepts",
+      "source": "src/app/app/concepts/page.tsx",
+      "sourceSha256": {
+        "prior": "63e7924b683e8c066b772fda67a7a3c3d347062d1686b785716c6b5d82ba18a2",
+        "current": "63e7924b683e8c066b772fda67a7a3c3d347062d1686b785716c6b5d82ba18a2",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "63e7924b683e8c06",
+        "currentRegistry": "63e7924b683e8c06",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-concepts.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.page.app-concepts",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-concepts / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.page.app-files",
+      "source": "src/app/app/files/page.tsx",
+      "sourceSha256": {
+        "prior": "08771bc864af3e7bf4181619a7856a8354842ce86bd8a04095ae0816b0853bc3",
+        "current": "08771bc864af3e7bf4181619a7856a8354842ce86bd8a04095ae0816b0853bc3",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "08771bc864af3e7b",
+        "currentRegistry": "08771bc864af3e7b",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.page.app-files.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.page.app-files",
+        "name": "own surface in demo",
+        "title": "tasks.page.app-files / own surface in demo",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.state.app-files-loading",
+      "source": "src/app/app/files/loading.tsx",
+      "sourceSha256": {
+        "prior": "9beac142f8f04cb2c85eb1ac1d95adaee7104ced1039aea19a2b3d27ffbd96f4",
+        "current": "9beac142f8f04cb2c85eb1ac1d95adaee7104ced1039aea19a2b3d27ffbd96f4",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "9beac142f8f04cb2",
+        "currentRegistry": "9beac142f8f04cb2",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-files-loading.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.state.app-files-loading",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-files-loading / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    },
+    {
+      "id": "tasks.state.app-files-error",
+      "source": "src/app/app/files/error.tsx",
+      "sourceSha256": {
+        "prior": "83d088f7615c6a6b017300c3e3e29922a47ec030f44434435e46dd3049bf5121",
+        "current": "83d088f7615c6a6b017300c3e3e29922a47ec030f44434435e46dd3049bf5121",
+        "equal": true
+      },
+      "materialityHash": {
+        "receipt": "83d088f7615c6a6b",
+        "currentRegistry": "83d088f7615c6a6b",
+        "equal": true
+      },
+      "receiptPath": "experience/reviews/2026-10-21-home-three-rows/receipts/tasks.state.app-files-error.json",
+      "priorAttestation": "experience/evidence-runs/tasks-playwright-ab9153c24dda715c343d2dce-2e9d3c7c4daec3a8.json",
+      "priorAttestationSha256": "850eb76a068d62b0ca2c870879e99ffa7e7f019736919457951f56f5d1122d90",
+      "priorRunId": "tasks-playwright-ab9153c24dda715c343d2dce",
+      "priorCanonicalEvidenceSha256": "ab9153c24dda715c343d2dce8d0d48da88dd7289018cba645248a831f77ad702",
+      "priorRawArtifactSha256": "2e9d3c7c4daec3a82df1631a491701b94c7e5f6adb9da10fd08bbf770d2d5b2a",
+      "priorManifestSha256": "f94a0c08c0a33db61b4d11e3a4451d7b5d9847ec31d2b14d45b189d449fd5798",
+      "priorManifestRevision": "receipt-linked attestation recorded in immutable candidate commit",
+      "case": {
+        "id": "tasks.state.app-files-error",
+        "name": "actual component with deterministic local inputs",
+        "title": "tasks.state.app-files-error / actual component with deterministic local inputs",
+        "projects": [
+          {
+            "project": "mobile",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "tablet",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "desktop",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          },
+          {
+            "project": "wide",
+            "prior": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "current": [
+              "passed",
+              "expected",
+              "passed",
+              0
+            ],
+            "equal": true
+          }
+        ],
+        "allTuplesEqual": true
+      },
+      "preserve": {
+        "reviewer": "Ethan McNamara (founder): reviewed the three-row Home renders, the 188/188 capture and these receipt texts in chat on 2026-10-21",
+        "reviewedAt": "2026-10-21",
+        "reviewedChange": "Source unchanged by this change; relinked to fresh canonical capture 188/188 one attempt each after Home was reordered into three rows, which changed the shared fixture contract. No production or numerical design rating claim.",
+        "decision": "accepted"
+      }
+    }
+  ]
+}
