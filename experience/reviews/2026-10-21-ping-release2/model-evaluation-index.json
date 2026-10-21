@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "signal-ping-release2-model-evidence/1",
+  "recordedAt": "2026-10-21T15:16:48.216Z",
+  "status": "incomplete, preserved historical run before corrections",
+  "fixedDenominator": 62,
+  "completedFixedCases": 32,
+  "separateSetupCases": 1,
+  "independentScore": {
+    "fail": 2,
+    "weak": 7,
+    "sha256": "e774122df389051d996eeb3f7dec1f50713915d2ce37736d469cbb6c5916a1b9",
+    "pass": 23,
+    "review": "experience/reviews/2026-10-21-ping-release2/model-round3-independent-review.md"
+  },
+  "observedProviderCalls": 33,
+  "maximumIncludingUnconfirmed": 34,
+  "observedEstimatedMicroUsd": 1343020,
+  "unconfirmedReservationMicroUsd": 2040960,
+  "unconfirmedCase": "F33",
+  "retryAllowed": false,
+  "wallLatencyMs": {
+    "includesSeparateSetup": true,
+    "p50": 3048.72,
+    "p95": 9570.04,
+    "sampleCount": 33,
+    "max": 10211.8
+  },
+  "billing": "Rate-card estimate from observed usage, not a provider invoice. Reservation is not confirmed spend.",
+  "newEvaluation": {
+    "approval": "Explicit Ethan approval of one fresh corrected evaluation, max63 attempts/$5 new estimated usage/$10 isolated workspace ceiling; no purchases.",
+    "status": "Interrupted in group A by native Windows exit0xC0000005; no downstream calls.",
+    "completedFixedCases": 2,
+    "observedEstimatedMicroUsd": 80430,
+    "pendingCase": "A3",
+    "databaseReservationMicroUsd": 2040960,
+    "externalProviderObservation": {
+      "requestId": "req_011CgFbJWStQAwMjsVBtUtA3",
+      "status": 499,
+      "inputTokens": 19049,
+      "outputTokens": 0,
+      "rateCardEstimateMicroUsd": 38098,
+      "association": "Independent reviewer accepts unique chronological association with high confidence, not invoice proof."
+    },
+    "keyState": "Disabled",
+    "workspaceCap": "Restored to $5",
+    "replayAllowed": false,
+    "artifacts": [
+      "experience/output/ping-release2-model-eval/grouped-qualified-oct21-A.json",
+      "experience/output/ping-release2-model-eval/grouped-interruption-oct21-A.json",
+      "experience/output/ping-release2-model-eval/grouped-A3-provider-observation-oct21.json"
+    ],
+    "review": "experience/reviews/2026-10-21-ping-release2/grouped-A3-reconciliation-review.md"
+  },
+  "artifacts": [
+    "experience/output/ping-release2-model-eval/live-2026-10-21-round3.json",
+    "experience/output/ping-release2-model-eval/interruption-2026-10-21-round3.json",
+    "experience/output/ping-release2-model-eval/latency-summary-2026-10-21-round3.json"
+  ]
+}

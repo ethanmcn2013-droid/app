@@ -1,0 +1,232 @@
+{
+  "schemaVersion": "signal-ping-release2-receiving-index/1",
+  "recordedAt": "2026-10-21T14:58:29.123Z",
+  "scope": "Synthetic SQLite, actual Chat/Ping UI and server operations, finite injected planner. No provider calls, production authentication, external delivery or Timeline publishing.",
+  "evidence": [
+    {
+      "receipt": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/release2-receipt.json",
+      "sha256": "06080d2d3caf3f12680dcef4a92e893cef9eba9720e6d22ad2b5bc52251b432a",
+      "startedAt": "2026-10-21T14:41:49.353Z",
+      "finishedAt": "2026-10-21T14:42:18.174Z",
+      "screenshots": [
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-source-empty.png",
+          "sha256": "64c186d5f37d1a905f5807939e2247502cabd6e229f2aa8a54ed205d5f9766e6",
+          "bytes": 42206
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-source-quoted-linked.png",
+          "sha256": "02bf2668a2e899328b09ff0b81df425063d03c240bd5212d760db18024ff919d",
+          "bytes": 32926
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-plan-first-empty.png",
+          "sha256": "871fc6610e6a2edc183b81ec0df0faa546659bf3abca0a9e978be4f794cda2a0",
+          "bytes": 32855
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-florist-plan-unapplied.png",
+          "sha256": "cef8cb8b9b997744e81add7cc4abce5b7094df34614d1081d514fcea0b898e87",
+          "bytes": 53287
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-waiting-plan-memory.png",
+          "sha256": "7f4a9f2f91519773c1d8f7c9f56ce16ae82d2bda1ea89e1fcb3d20f3c26c1a9b",
+          "bytes": 63548
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-florist-applied.png",
+          "sha256": "4f659d24b68c17b2afa13d5725e33605f27dceae0151a038b8e4ebc48fd0a32f",
+          "bytes": 61142
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-florist-undo.png",
+          "sha256": "1024054098b8f9b507add4e58de1a695116907ebf638bd89e3e4784abe341ad1",
+          "bytes": 62582
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-checklist-one-child.png",
+          "sha256": "9408a06524cece393808a60cdbd28262721864bb13aeb2449940ba9bec364bb5",
+          "bytes": 64912
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-exact-private-message-navigation-light.png",
+          "sha256": "e1dbcc59f8f7f6de0a0aa7a0aae4731ae58fdd25c3c9d025deb1148de5719c18",
+          "bytes": 71550
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-exact-private-message-navigation.png",
+          "sha256": "9dbf6c219b4145bb527b0363e849ddb8bab761460084bdd320cbe0436ff0905b",
+          "bytes": 74238
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-at-ping-private-draft.png",
+          "sha256": "89dbf94e8e553228d0d61554c093ba5e838b9f88bbdf6d82f1b26e67861432d6",
+          "bytes": 90631
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/390x844-at-ping-private-draft.png",
+          "sha256": "c60318df861ea9cdb0dd5cdb182224d554e779d03b8197a8dfb503c3edc94509",
+          "bytes": 51368
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-light-theme.png",
+          "sha256": "9360fac89740d613b20e05d7970c5f772514a92842472c95446824271262b329",
+          "bytes": 69328
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/390x844-dark-history.png",
+          "sha256": "b6ae39b61bce1474e4c0e7126af6b73f24e1560f4f2fcfc46276331e1bd80078",
+          "bytes": 21094
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/390x844-light-history.png",
+          "sha256": "579f78a6aaf1f907ab70e1b20efa4624ce2dd787735b556cdba4b37975a0ffba",
+          "bytes": 20714
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/768x1024-dark-history.png",
+          "sha256": "04a33599f7e45ed73e4f04dfe00444033c40cbebe3d8d47d3e248f6dd26f8ad7",
+          "bytes": 23548
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/768x1024-light-history.png",
+          "sha256": "9910fa8d02421986010dbd2c7048f77e464f389ebee47f3495c0fb52c938a32c",
+          "bytes": 23157
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1280x900-dark-history.png",
+          "sha256": "58dd24ce4bd74ba855ec7238e272a493e74ca667e54ac18f2f9e10df4e1c65b0",
+          "bytes": 24404
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1280x900-light-history.png",
+          "sha256": "222daf3ced6bafa218f064d518abe28659a86690d1e150d0888054a90b8274fd",
+          "bytes": 24007
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-dark-history.png",
+          "sha256": "649f6504ec69cfaba5c4711290e04ad35368114e789b4e733530ebbdf894ace4",
+          "bytes": 25367
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-receiving-2026-10-21-24/1440x960-light-history.png",
+          "sha256": "66a54c998a25faadc665857f602768c0cef9e327982aaecbacf035223404a16f",
+          "bytes": 24962
+        }
+      ],
+      "checks": [
+        {
+          "name": "canonical conversation context quoted and linked",
+          "ok": true
+        },
+        {
+          "name": "follow-up time edit keeps the original waiting plan day and cancelled prior plan is no longer applicable",
+          "ok": true
+        },
+        {
+          "name": "follow-up owner edit remains draft until apply",
+          "ok": true
+        },
+        {
+          "name": "question answered from current waiting plan",
+          "ok": true
+        },
+        {
+          "name": "apply persists edited task date, clock, and owner",
+          "ok": true
+        },
+        {
+          "name": "per-step task Undo is idempotent and database freshness is visible",
+          "ok": true
+        },
+        {
+          "name": "dependent Project creation and task assignment persisted",
+          "ok": true
+        },
+        {
+          "name": "checklist action toggles only the exact child item",
+          "ok": true
+        },
+        {
+          "name": "private message targets only accepted DM and canonical Undo takes it back",
+          "ok": true
+        },
+        {
+          "name": "Cancel closes a pending draft without mutation",
+          "ok": true
+        },
+        {
+          "name": "rendered DM person avatar stays outside Signal indigo and keeps readable initials in light and dark themes",
+          "ok": true
+        },
+        {
+          "name": "private source link opens the exact existing DM and canonical message, without Project fallback",
+          "ok": true
+        },
+        {
+          "name": "desktop @Ping Enter routes once to a private plan, with no pre-Apply domain write",
+          "ok": true
+        },
+        {
+          "name": "reload does not replay the forwarded @Ping request",
+          "ok": true
+        },
+        {
+          "name": "ordinary Send uses canonical shared conversation path exactly once",
+          "ok": true
+        },
+        {
+          "name": "phone Send button routes @Ping once to a private plan without shared send or pre-Apply writes",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "receipt": "experience/output/ping-assistant-release2-avatar-receiving-2026-10-21-01/avatar-receipt.json",
+      "sha256": "5cf52d7d81e54daf2a7e1ab291bded73b95c43949ce0fa0f937f5b6d08caa8b3",
+      "startedAt": "2026-10-21T14:52:27.204Z",
+      "finishedAt": "2026-10-21T14:52:28.441Z",
+      "screenshots": [
+        {
+          "path": "experience/output/ping-assistant-release2-avatar-receiving-2026-10-21-01/bob-dm-dark.png",
+          "sha256": "e75369e87ae7ee909527ae6ef7866ecf01ae881b601bac27d4199caca3ed7d29",
+          "bytes": 67369
+        },
+        {
+          "path": "experience/output/ping-assistant-release2-avatar-receiving-2026-10-21-01/bob-dm-light.png",
+          "sha256": "d2369c7e65bebd2bf6e10416e745861523330119a5f76103e022ce6af0f31805",
+          "bytes": 64430
+        }
+      ],
+      "settledColors": [
+        {
+          "theme": "dark",
+          "stableFrames": 5,
+          "contrasts": [
+            4.9512624502150056,
+            4.9512624502150056
+          ],
+          "accentDistances": [
+            243.8729177256056,
+            243.8729177256056
+          ]
+        },
+        {
+          "theme": "light",
+          "stableFrames": 5,
+          "contrasts": [
+            9.45700429725877,
+            9.45700429725877
+          ],
+          "accentDistances": [
+            217.9908254950194,
+            217.9908254950194
+          ]
+        }
+      ]
+    }
+  ],
+  "correction": "Receiver24 light contrast5.00 was sampled during a theme transition and is superseded by settled avatar01 light9.457. Fifteen functional workflows remain valid; settled color evidence is separate.",
+  "limits": "No live model score, complete Ping scorecard, real-device use or programme acceptance is granted by this index."
+}
