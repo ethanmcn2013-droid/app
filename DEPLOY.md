@@ -13,6 +13,10 @@ summary.
 
 Before any production source upload or promotion, run `node scripts/deploy-preflight.mjs <expected-production-deployment-id> <receipt.json>`. It reads GitHub origin, local and remote main revisions, tracked status, `.vercel/project.json`, exact-commit GitHub checks, current Vercel production deployment and the `app.signalstudio.ie` alias. It requires the fixed App Vercel project and green `verify`, `registry-and-drift`, and `prod migrations current` checks for HEAD, and refuses if the production deployment or alias differs from the expected deployment ID supplied from the last custody readback. It writes a JSON receipt and exits nonzero on missing, failed or mismatched evidence. This preflight does not deploy. Test with `node --test scripts/deploy-preflight.test.mjs`.
 
+Release the entire accepted main revision together. Never overlay a few new UI files onto an older export or upload an old build to deliver one feature. Use a clean export with resolved Git LFS assets, explicit App/main/commit metadata, and compare the provider-uploaded source hashes with that export. Recheck canonical deployment custody immediately before promotion. Finish by checking Home, Files, Chat and Ping while signed in; READY alone does not prove the intended experience is live. The guard is mandatory for agents using this release path; it does not prevent an administrator bypassing the procedure with a separate manual upload.
+
+## 1. Environment variables
+
 One convention everywhere: `<MODULE>_DATABASE_URL` + `<MODULE>_AUTH_TOKEN`.
 No vendor names in variables, no aliases.
 
