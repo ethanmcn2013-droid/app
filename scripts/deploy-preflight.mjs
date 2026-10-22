@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { access, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -13,16 +13,29 @@ export function evaluateDeploymentPreflight(facts) {
   check(Array.isArray(facts.dirtyTracked) && facts.dirtyTracked.length === 0, 'tracked files are modified');
   check(Boolean(facts.head) && facts.head === facts.originMain, 'HEAD does not match origin/main');
   check(facts.vercelProject === EXPECTED_VERCEL_PROJECT && facts.expectedVercelProject === EXPECTED_VERCEL_PROJECT, 'linked Vercel project is incorrect or unconfigured');
-  const checks = new Map((facts.requiredChecks ?? []).map(c => [c.name, c]));
-  check(REQUIRED_CHECKS.every(name => checks.get(name)?.sha === facts.head && checks.get(name)?.conclusion === 'success'), 'required CI is missing, failed, or belongs to another commit');
+  const checks = new Map();
+  for (const c of facts.requiredChecks ?? []) {
+    const previous = checks.get(c.name);
+    if (!previous || Number(c.id) > Number(previous.id)) checks.set(c.name, c);
+  }
+  check(REQUIRED_CHECKS.every(name => checks.get(name)?.sha === facts.head && checks.get(name)?.status === 'completed' && checks.get(name)?.conclusion === 'success'), 'required CI is missing, pending, failed, or belongs to another commit');
   check(Boolean(facts.productionDeployment) && facts.productionDeployment === facts.expectedProductionDeployment, 'production deployment differs from custody baseline');
-  check(facts.canonicalDeployment === facts.productionDeployment, 'canonical production alias does not resolve to inspected deployment');
+  check(facts.canonicalState === 'READY' && facts.canonicalProjectId === EXPECTED_VERCEL_PROJECT && facts.canonicalHostname === 'app.signalstudio.ie' && facts.canonicalDeployment === facts.productionDeployment, 'canonical production deployment is not READY on the expected project and alias');
   return { ok: failures.length === 0, failures, receipt: { ...facts, checkedAt: facts.checkedAt ?? new Date().toISOString() } };
 }
 
 export async function collectFacts({ cwd, expectedProductionDeployment, run, read = readFile }) {
   const exec = run ?? (async (file, args) => {
     const { execFile } = await import('node:child_process');
+    if (file === 'vercel' && process.platform === 'win32') {
+      let cli;
+      for (const directory of [path.dirname(process.execPath), ...(process.env.PATH ?? '').split(path.delimiter)]) {
+        const candidate = path.join(directory, 'node_modules', 'vercel', 'dist', 'vc.js');
+        try { await access(candidate); cli = candidate; break; } catch { /* continue to the next installed CLI location */ }
+      }
+      if (!cli) throw new Error('Installed Vercel Node CLI not found on PATH');
+      return new Promise((resolve, reject) => execFile(process.execPath, [cli, ...args], { cwd, timeout: 90000, maxBuffer: 8 * 1024 * 1024 }, (error, stdout) => error ? reject(error) : resolve(stdout.trim())));
+    }
     return new Promise((resolve, reject) => execFile(file, args, { cwd }, (error, stdout) => error ? reject(error) : resolve(stdout.trim())));
   });
   const head = await exec('git', ['rev-parse', 'HEAD']);
@@ -30,19 +43,18 @@ export async function collectFacts({ cwd, expectedProductionDeployment, run, rea
     exec('git', ['remote', 'get-url', 'origin']),
     exec('git', ['ls-remote', 'origin', 'refs/heads/main']), exec('git', ['status', '--porcelain']),
     read(path.join(cwd, '.vercel', 'project.json'), 'utf8'),
-    exec('gh', ['api', `repos/${EXPECTED_REPOSITORY}/commits/${head}/check-runs?per_page=100`]),
+    exec('gh', ['api', '--paginate', '--slurp', `repos/${EXPECTED_REPOSITORY}/commits/${head}/check-runs?per_page=100`]),
     exec('vercel', ['api', '/v13/deployments/app.signalstudio.ie', '--scope', 'ethanmcn2013-1730s-projects'])
   ]);
   const normalizedRemote = remote.replace(/\.git$/, '');
   const remoteHostApproved = /^https:\/\/github\.com\/ethanmcn2013-droid\/app$/.test(normalizedRemote) || /^git@github\.com:ethanmcn2013-droid\/app$/.test(normalizedRemote) || /^ssh:\/\/git@github\.com\/ethanmcn2013-droid\/app$/.test(normalizedRemote);
   const repository = normalizedRemote.split(/[:/]/).slice(-2).join('/');
   const project = JSON.parse(projectText);
-  const deployment = JSON.parse(deploymentText);
   const canonical = JSON.parse(deploymentText);
-  const checks = JSON.parse(checksText).check_runs.map(c => ({ name: c.name, sha: c.head_sha, conclusion: c.conclusion }));
+  const checks = JSON.parse(checksText).flatMap(page => page.check_runs ?? []).map(c => ({ id:c.id, name: c.name, sha: c.head_sha, status:c.status, conclusion: c.conclusion }));
   return { repository, remoteHostApproved, head, originMain: originMain.split(/\s+/)[0], dirtyTracked: status.split(/\r?\n/).filter(x => x && !x.startsWith('??')),
     vercelProject: project.projectId, expectedVercelProject: EXPECTED_VERCEL_PROJECT, requiredChecks: checks,
-    productionDeployment: canonical.id, canonicalDeployment: canonical.id,
+    productionDeployment: canonical.id, canonicalDeployment: canonical.id, canonicalState:canonical.readyState, canonicalProjectId:canonical.projectId, canonicalHostname:'app.signalstudio.ie',
     expectedProductionDeployment };
 }
 

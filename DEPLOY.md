@@ -11,7 +11,7 @@ summary.
 
 ## 0. Mandatory deployment preflight
 
-Before any production source upload or promotion, run `node scripts/deploy-preflight.mjs <expected-production-deployment-id> <receipt.json>`. It reads GitHub origin, local and remote main revisions, tracked status, `.vercel/project.json`, exact-commit GitHub checks, current Vercel production deployment and the `app.signalstudio.ie` alias. It requires the fixed App Vercel project and green `verify`, `Design quality`, and `migration-drift` checks for HEAD, and refuses if the production deployment or alias differs from the expected deployment ID supplied from the last custody readback. It writes a JSON receipt and exits nonzero on missing, failed or mismatched evidence. This preflight does not deploy. Test with `node --test scripts/deploy-preflight.test.mjs`.
+Before any production source upload or promotion, run `node scripts/deploy-preflight.mjs <expected-production-deployment-id> <receipt.json>`. It reads GitHub origin, local and remote main revisions, tracked status, `.vercel/project.json`, exact-commit GitHub checks, current Vercel production deployment and the `app.signalstudio.ie` alias. It requires the fixed App Vercel project and green `verify`, `registry-and-drift`, and `prod migrations current` checks for HEAD, and refuses if the production deployment or alias differs from the expected deployment ID supplied from the last custody readback. It writes a JSON receipt and exits nonzero on missing, failed or mismatched evidence. This preflight does not deploy. Test with `node --test scripts/deploy-preflight.test.mjs`.
 
 One convention everywhere: `<MODULE>_DATABASE_URL` + `<MODULE>_AUTH_TOKEN`.
 No vendor names in variables, no aliases.
