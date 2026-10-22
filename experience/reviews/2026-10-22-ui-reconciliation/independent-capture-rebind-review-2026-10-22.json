@@ -1,0 +1,51 @@
+{
+  "schema": "signal-independent-capture-rebind-review/1",
+  "reviewedAt": "2026-10-22",
+  "reviewer": "independent review agent",
+  "candidateCommit": "ba418a1731ba3a1c68b46592bfcddef426f442c8",
+  "sourceRevision": "56bf95046b6f070c2a95b0bad4d83a558f5acd93",
+  "workflowRun": "39826493645",
+  "freshRunId": "tasks-playwright-ca2f92a17c177debfddf5d05",
+  "verdict": "APPROVE_MECHANICAL_REBIND_ONLY",
+  "evidence": {
+    "passed": 188,
+    "testCount": 188,
+    "attestation": "capture/output/evidence-attestation.json",
+    "allTuplesEqual": true,
+    "errors": 0,
+    "tupleCount": 72,
+    "rawReport": "capture/output/critical-evidence.json",
+    "skipped": 0,
+    "sourceHashesUnchanged": true,
+    "receiptCount": 18,
+    "allPriorReceiptsValidated": true,
+    "priorValidation": "prior-validation.json",
+    "registryUnchanged": true,
+    "matrix": "receipt-refresh-matrix.json",
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "approvedFields": [
+    "attestationPath",
+    "attestationSha256",
+    "runId",
+    "canonicalEvidenceSha256",
+    "rawArtifactSha256"
+  ],
+  "preserveExactly": [
+    "reviewer",
+    "reviewedAt",
+    "reviewedChange",
+    "decision",
+    "coverage value or absence",
+    "ratings and scores",
+    "registry entries",
+    "canonical screenshots"
+  ],
+  "limitations": [
+    "This approval is limited to rebinding the five listed Playwright evidence pointers on the same 18 existing receipts.",
+    "It does not approve or alter canonical screenshot references or scores.",
+    "The dedicated new Files UI evidence must remain preserved separately.",
+    "Final authenticated live receiving check is still required before claiming production rollout complete."
+  ]
+}

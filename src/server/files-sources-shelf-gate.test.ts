@@ -69,3 +69,19 @@ test("the Files page renders FilesView unless the gate says yes", () => {
   assert.match(page, /filesSourcesShelfEnabled\(\)/, "the page asks the gate");
   assert.match(page, /\{shelf \? \(\s*<FilesShelfView[\s\S]*?\) : \(\s*<FilesView/, "the shelf renders only on yes; FilesView otherwise");
 });
+
+test("the display rollout admits a resolved member without granting admin powers", async () => {
+  await withAdmins("user_operator", async () => {
+    assert.equal(callerIsAdmin("user_member"), false);
+    assert.equal(await filesSourcesShelfEnabled(deps({ rolloutEnabled: () => true })), true);
+    assert.equal(callerIsAdmin("user_member"), false);
+  });
+});
+
+test("display rollout still excludes demo and unresolved callers and fails closed", async () => {
+  assert.equal(await filesSourcesShelfEnabled(deps({ rolloutEnabled: () => true, demo: () => true })), false);
+  assert.equal(await filesSourcesShelfEnabled(deps({ rolloutEnabled: () => true, currentUser: async () => "" })), false);
+  assert.equal(await filesSourcesShelfEnabled(deps({ rolloutEnabled: () => { throw new Error("unavailable"); } })), false);
+  assert.equal(await filesSourcesShelfEnabled(deps({ rolloutEnabled: (() => "true") as unknown as () => boolean })), false);
+});
+

@@ -28,6 +28,8 @@ jobs:
           git rev-parse 'HEAD^{tree}'
       - name: CI workflow contract
         run: node --test scripts/ci-workflow.test.mjs
+      - name: Production deployment preflight refusals
+        run: node --test scripts/deploy-preflight.test.mjs
       - uses: pnpm/action-setup@v4
         with:
           version: 11.9.0

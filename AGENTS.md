@@ -33,6 +33,12 @@ Programme-only development remains internal with isolated test data. Programme d
 
 ## Setup and checks
 
+Before any production deployment, run the mandatory deployment preflight in
+`DEPLOY.md` section 0 and retain its JSON receipt. A merge or READY deployment
+alone is not sufficient evidence; refuse deployment when repository, source
+cleanliness, main revision, Vercel project, required CI, or expected production
+custody differs.
+
 Use the package-manager version declared in package.json, currently pnpm 11.9.0, through Corepack. CI uses Node 22; this source has no .node-version pin. Install with corepack pnpm install --frozen-lockfile in the actual task checkout. Keep environment values in approved secret storage or ignored configuration; never copy production credentials into test fixtures or evidence.
 
 - Quick source checks: corepack pnpm typecheck and corepack pnpm lint.

@@ -1,0 +1,50 @@
+{
+  "schema": "signal-ui-release-review/1",
+  "reviewedAt": "2026-10-22",
+  "scope": [
+    {
+      "files": [
+        "scripts/deploy-preflight.mjs",
+        "scripts/deploy-preflight.test.mjs",
+        "DEPLOY.md"
+      ],
+      "commit": "e6bd8cad36c42e86c44147af7cb9ca3aecc82f7f",
+      "repo": "D:/Codex-scratch/project-ping/ui-release-guard-oct22",
+      "tree": "77b06ea41551016aed67202c45b3e8d3129addb2"
+    },
+    {
+      "files": [
+        "content/hq/features/project-files-in-drive.md"
+      ],
+      "commit": "ce927bfdf3885e3f35933b61a5dbfbb41ef8b81a",
+      "repo": "D:/Codex-scratch/project-ping/studio-ping-release2-hq-oct21"
+    }
+  ],
+  "verdict": "PASS",
+  "findings": [],
+  "evidence": {
+    "failClosedChecks": [
+      "wrong repo/host",
+      "dirty tracked source",
+      "local versus origin/main mismatch",
+      "wrong Vercel project",
+      "missing/pending/failed exact-revision required checks",
+      "older success masked by newer failure",
+      "deployment identity mismatch",
+      "canonical readiness/project/hostname mismatch"
+    ],
+    "hq": [
+      "records display rollout separately from Drive permission and admin powers",
+      "states final deployment/authenticated receiving remains Delivery issue 111",
+      "does not claim merge proves live deployment"
+    ],
+    "guardFocusedTests": "14/14 passed",
+    "liveCollectorSmoke": "provided by requester: positive live collection; refused non-main HEAD and pending/failed candidate CI"
+  },
+  "notes": [
+    "No implementation or access-control blocker found. Windows Vercel CLI discovery and paginated GitHub check collection are covered by collector smoke and unit tests."
+  ],
+  "limitations": [
+    "HQ receipt is a content review; no authenticated private HQ page render assessed."
+  ]
+}
