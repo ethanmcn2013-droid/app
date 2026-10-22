@@ -11,6 +11,19 @@ summary.
 
 ## 1. Environment variables
 
+## 0. Mandatory deployment preflight
+
+Before any production source upload or promotion, collect fresh custody facts
+and run `node scripts/deploy-preflight.mjs <fresh-facts.json> <receipt.json>`.
+The facts file must record the canonical repository, tracked-file status,
+HEAD and `origin/main` SHA, linked Vercel project, required CI check names and
+conclusions for that SHA, plus the production deployment ID and the expected
+ID from the last approved custody readback. The command fails closed if any
+fact is missing or mismatched and writes a JSON receipt either way. Do not
+upload or promote after a refusal. This is a preflight only; it does not deploy
+or replace the normal Vercel receiving checks below. Its decision logic is
+covered by `node --test scripts/deploy-preflight.test.mjs`.
+
 One convention everywhere: `<MODULE>_DATABASE_URL` + `<MODULE>_AUTH_TOKEN`.
 No vendor names in variables, no aliases.
 
