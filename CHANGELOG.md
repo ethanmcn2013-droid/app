@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-22 · Files presentation rollout
+
+The approved Files layout can now be enabled for signed-in members without making them administrators. Source folders, latest additions, search and previews use the same authorized Project files as before. Demo and review builds retain their existing view.
+
+The display switch is `FILES_SOURCES_SHELF_ENABLED=true`; absent or invalid values retain the operator-only rollout. File access, storage and sharing permissions are unchanged.
+
 ## 2026-10-21 · Private release · Follow a conversation with Ping
 
 Ping can prepare a plan from an authorized conversation or task discussion, quote what it read, and link back to the source. Follow-ups can change a waiting plan's owner, date or time, or remove one item. Nothing changes until Apply plan.

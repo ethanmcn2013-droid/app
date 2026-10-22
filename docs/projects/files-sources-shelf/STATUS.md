@@ -1,5 +1,11 @@
 # Files · Sources + shelf · status
 
+## Production rollout · 22 October 2026
+
+Ethan requested the approved Home, Files, Chat and Ping designs be fully live together. `FILES_SOURCES_SHELF_ENABLED=true` now enables the Files presentation for authenticated members. This display switch grants no administrator powers and changes no Project, file, download, storage or sharing permissions. The existing page access check, Project resolution and file loader still run first. Demo/review builds and unresolved callers retain the old view; any gate error fails closed. With the switch absent, the previous operator-only behavior remains.
+
+The operator-only record below describes the initial 21 October release. It is preserved as history, not the current production rollout rule.
+
 Branch `feat/files-sources-shelf`, based on `origin/main` 271c4014. Internal and flagged: operators only.
 
 ## The gate
