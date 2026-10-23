@@ -1,5 +1,9 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Analytics discovery
+
+Analytics opens with a centred search field and aligned question cards. How the numbers are calculated appears when you open an answer.
+
 ## 2026-10-23 · Ping folder result history
 
 Ping keeps a completed folder result visible when an unrelated task changes. It checks current Project membership and folder access before showing that result; removed access still hides it. Waiting plans retain their existing change checks, and checking history does not repeat folder creation.
