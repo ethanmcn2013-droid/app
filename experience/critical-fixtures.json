@@ -3656,7 +3656,7 @@
     "src/server/stripe-lifecycle.ts": "04c8da72caf5c7be7ac95ce4568544baad50957fc3628922095942f85016c7b3",
     "src/server/stripe.ts": "2418005e0b54db7bf66b8bd7bd36a302b9a4520d112671cfa5d46713907eb95d",
     "src/server/suite-context-contract.test.mjs": "a969d6822a31b5895a74c71832ae14db649b417a3912050aa7c220211a7219f1",
-    "src/server/suite-navigation-contract.test.mjs": "0f9603536e27eb9e4c82bca32ae6230f55f4bbf9e168db46409e4d4cf61b04b1",
+    "src/server/suite-navigation-contract.test.mjs": "d514fbd24fa353fdd34bca46bb566ddce46d67d7b90b5bdf56a7340db42c22ef",
     "src/server/tasks-security-regression.test.mjs": "9b11495f475045ea4460fcac1553ca7e32d5ac609ec69125b06c4ccb30b3ac8b",
     "src/server/tasks/create-task-core.test.ts": "d455e72c40d1efc6b6290d64280559cd20b1cc1d98c8cb1105c7d236c892766f",
     "src/server/tasks/create-task-core.ts": "ec09f70985787f1cab68e77d468361b45e50512bf0bcf60fd2ac6b916ec7ee9e",
