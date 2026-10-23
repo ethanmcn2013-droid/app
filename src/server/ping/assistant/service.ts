@@ -204,12 +204,12 @@ export function createAssistantService(deps: {
         if(authorizationSources.length&&(!deps.validateSources||!await deps.validateSources(actorId,authorizationSources)))throw new AssistantStoreError('unavailable');
         const boundTaskTargets=await deps.bindTargets?.(actorId,request,plan,priorTaskResult);
         await store.bindPlan(actorId,runId,{plan,referenceDate,timeZone,authorizationProjects,authorizationSources,...(boundTaskTargets?{boundTaskTargets}:{}),...(priorTaskResult?{priorTaskResult}:{})},plan.actions.map(step=>({key:step.id,payload:step})),supersedes);
-        await store.finishRun(actorId,runId,"ready",{authorizationProjects,planSources:authorizationSources,model:planned.model,timing:{planningMs:now()-started}});
-        if(request.mode==="draft"||plan.mode==='draft'){
-          const checklistWarning=Object.values(boundTaskTargets??{}).some(target=>target.hasOpenChecklist)
-            ?' Some checklist items are still open. Marking their task done will leave those items open.':'';
-          await store.finishRun(actorId,runId,"ready",{message:`Draft prepared. No actions were executed.${checklistWarning}`,model:planned.model,timing:{planningMs:now()-started}});return view(actorId,runId);
-        }
+        const draft=request.mode==="draft"||plan.mode==='draft';
+        const checklistWarning=Object.values(boundTaskTargets??{}).some(target=>target.hasOpenChecklist)
+          ?' Some checklist items are still open. Marking their task done will leave those items open.':'';
+        await store.finishRun(actorId,runId,"ready",{authorizationProjects,planSources:authorizationSources,model:planned.model,timing:{planningMs:now()-started},
+          ...(draft?{message:`Draft prepared. No actions were executed.${checklistWarning}`}:{})});
+        if(draft)return view(actorId,runId);
         return executeRun(actorId,runId);
       }catch(error){
         if(error instanceof AssistantStoreError&&error.code==="cancelled")return view(actorId,runId);
