@@ -350,3 +350,30 @@ test("freshness failure cannot fail the mutation reply and leaves its receipt re
   assert.equal(state.receipts.size,0);
   assert.equal(refreshAssistantTasks({...options,invalidate:()=>{}}),true);
 });
+
+test("Project lifecycle previews name the exact action and preserve publication truth",()=>{
+  const project={kind:"name",name:"Redline"} as const;
+  assert.equal(assistantPlanDescription({id:"archive",kind:"archive_project",project,archived:true}),
+    "Archive Redline. Tasks, members and history stay saved. Any published Timeline stays published.");
+  assert.equal(assistantPlanDescription({id:"restore",kind:"archive_project",project,archived:false}),
+    "Restore Redline to your active Projects. Tasks, members and history stay saved.");
+});
+
+test("Project Apply, recovery and Undo refresh navigation once per saved receipt",()=>{
+  const state:AssistantTaskRefreshState={actorId:null,receipts:new Set()};let tasks=0,projects=0;
+  const step={id:"archive-step",actionId:"archive",kind:"archive_project" as const,status:"completed" as const,
+    result:{stepId:"archive",kind:"archive_project" as const,status:"completed" as const,summary:"Archived Redline",affectedCount:1}};
+  const saved={...run,status:"completed" as const,mode:"draft" as const,steps:[step]};
+  const invoke=(operation:"apply"|"read"|"undo",value:AssistantRunView=saved,pendingRequestId?:string)=>refreshAssistantTasks({state,actorId:"actor",operation,
+    response:{version:"ping.assistant.v1",ok:true,available:true,run:value},pendingRequestId,
+    invalidate:()=>{tasks++;},refreshProjects:()=>{projects++;}});
+  assert.equal(invoke("apply",{...saved,status:"ready"}),false);
+  assert.equal(invoke("read"),false);
+  assert.equal(invoke("read",saved,saved.requestId),true);
+  assert.equal(invoke("apply"),false);
+  assert.deepEqual([tasks,projects],[1,1]);
+  assert.equal(invoke("undo",{...saved,steps:[{...step,undoResult:{status:"reverted",summary:"Restored Redline",affectedCount:1}}]}),true);
+  assert.deepEqual([tasks,projects],[2,2]);
+  assert.equal(invoke("undo",{...saved,steps:[{...step,undoResult:{status:"conflict",summary:"Project changed",affectedCount:0}}]}),false);
+  assert.deepEqual([tasks,projects],[2,2]);
+});

@@ -77,11 +77,11 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
       const response = await assistantRequest(queryFor(pendingRef.current), undefined, controller.signal, timing);
       if (!mounted.current || epoch !== generation.current) return;
       const accepted = receive(response);
-      refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "read", response: accepted, pendingRequestId, invalidate: invalidateTaskSnapshotEpoch });
+      refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "read", response: accepted, pendingRequestId, invalidate: invalidateTaskSnapshotEpoch, refreshProjects: () => router.refresh() });
       if (!accepted.run) { setAbsent(true); setError("The original request is not recorded yet. Check again before starting another request."); }
     } catch (failure) { finishAssistantTiming(timing, "unknown"); if (mounted.current && epoch === generation.current) setError(failure instanceof Error ? failure.message : "The original result could not be checked."); }
     finally { if (lookupAbort.current === controller) lookupAbort.current = null; if (epoch === generation.current) { latch.current = false; if (mounted.current) setBusy(false); } }
-  }, [receive, actorId]);
+  }, [receive, actorId, router]);
   useEffect(() => {
     mounted.current = true;
     const epoch = ++generation.current;
@@ -99,7 +99,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
           const response = await assistantRequest(queryFor(saved), undefined, controller.signal);
           if (!mounted.current || epoch !== generation.current) return;
           const accepted = receive(response);
-          refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "read", response: accepted, pendingRequestId: saved.requestId, invalidate: invalidateTaskSnapshotEpoch });
+          refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "read", response: accepted, pendingRequestId: saved.requestId, invalidate: invalidateTaskSnapshotEpoch, refreshProjects: () => router.refresh() });
           if (!accepted.run) { setAbsent(true); setError("The original request is not recorded yet. Check its status before starting another request."); }
         }
         setReady(true);
@@ -110,7 +110,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
       finishAssistantTiming(visibleTiming.current, "context_invalidated");
       visibleTiming.current = null;
     };
-  }, [actorId, receive, pendingKey]);
+  }, [actorId, receive, pendingKey, router]);
   const active = pending ? runs.find(run => run.requestId === pending.requestId) : undefined;
   useEffect(() => {
     if (!visible || !ready || !pending || !active || !assistantIsWorking(active)) return;
@@ -156,7 +156,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
       original.current = request; setHasOriginal(true);
       const response = await assistantRequest("", { operation: "submit", request }, undefined, timing);
       if (mounted.current && epoch === generation.current) {
-        receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "submit", response, invalidate: invalidateTaskSnapshotEpoch }); openCommandResult("submit", response);
+        receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "submit", response, invalidate: invalidateTaskSnapshotEpoch, refreshProjects: () => router.refresh() }); openCommandResult("submit", response);
         const waitingPlan=response.ok&&response.run?.status==="ready"?assistantWaitingPlanAncestor(runs,response.run.replyToRunId,response.run):null;
         if(waitingPlan){
           const recovery={version:1 as const,requestId:waitingPlan.requestId,runId:waitingPlan.id};
@@ -199,7 +199,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
     try {
       keepPending({ version: 1, requestId: run.requestId, runId: run.id });
       const response = await assistantRequest("", { operation, runId: run.id }, undefined, timing);
-      if (mounted.current && epoch === generation.current) { receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation, response, invalidate: invalidateTaskSnapshotEpoch }); openCommandResult(operation, response); }
+      if (mounted.current && epoch === generation.current) { receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation, response, invalidate: invalidateTaskSnapshotEpoch, refreshProjects: () => router.refresh() }); openCommandResult(operation, response); }
     } catch { finishAssistantTiming(timing, "unknown"); if (mounted.current && epoch === generation.current) setError("The latest result is not confirmed. Check status; work already saved stays saved."); }
     finally { if (epoch === generation.current) { latch.current = false; if (mounted.current) setBusy(false); } }
   }
@@ -207,7 +207,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
     if(latch.current||pendingRef.current&&pendingRef.current.requestId!==run.requestId)return;
     latch.current=true;setBusy(true);setError(null);const timing=beginVisibleTiming(run.requestId);const epoch=generation.current;
     try{keepPending({version:1,requestId:run.requestId,runId:run.id});const response=await assistantRequest("",{operation:"undo",runId:run.id,stepId},undefined,timing);
-      if(mounted.current&&epoch===generation.current){receive(response);refreshAssistantTasks({state:taskRefresh.current,actorId,operation:"undo",response,invalidate:invalidateTaskSnapshotEpoch});}}
+      if(mounted.current&&epoch===generation.current){receive(response);refreshAssistantTasks({state:taskRefresh.current,actorId,operation:"undo",response,invalidate:invalidateTaskSnapshotEpoch,refreshProjects:()=>router.refresh()});}}
     catch{finishAssistantTiming(timing,"unknown");if(mounted.current&&epoch===generation.current)setError("The take-back result is not confirmed. Check status before trying again.");}
     finally{if(epoch===generation.current){latch.current=false;if(mounted.current)setBusy(false);}}
   }
