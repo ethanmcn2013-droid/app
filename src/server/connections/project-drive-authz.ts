@@ -57,7 +57,7 @@ export function assertProjectDriveCapability(
 }
 
 /**
- * The sole minter for Project Drive authority.
+ * Session entry point for Project Drive authority.
  *
  * Demo/review is refused before identity or database access. Production then
  * shape-checks the explicit Project id and freshly proves the required
@@ -76,6 +76,27 @@ export async function authorizeProjectDrive(
   if (projectId === null) throw new ProjectDriveAuthorizationError();
 
   const actorUserId = await getCurrentUser();
+  return authorizeProjectDriveForAuthenticatedActor(projectId, actorUserId, requiredCapability);
+}
+
+/**
+ * Mint the same fresh Project proof for a server-authenticated persisted actor.
+ * The caller must already have authenticated this actor; never pass an actor id
+ * from request input. This local path does not fetch a Clerk profile or provision
+ * an account. Session-based entry points continue through authorizeProjectDrive.
+ */
+export async function authorizeProjectDriveForAuthenticatedActor(
+  candidateProjectId: string | null | undefined,
+  actorUserId: string,
+  requiredCapability: ProjectCapabilityKey = "manageProject",
+): Promise<AuthorizedProjectDriveContext> {
+  if (isDemoMode()) return Promise.reject(new ProjectDriveAuthorizationError());
+
+  const projectId = parseProjectId(candidateProjectId);
+  if (projectId === null || typeof actorUserId !== "string" || !actorUserId.trim()) {
+    throw new ProjectDriveAuthorizationError();
+  }
+
   const grant = await authorizeStoredProject({
     storedProjectId: projectId,
     capability: requiredCapability,

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.resources.drive-upload",
+  "source": "tasks/src/components/app/detail-panel/resources-section.tsx",
+  "materialityHash": "19f85eac6f784ffa",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_apps_analytics independent Projects reviewer plus Codex root independent Analytics-loading supplement; no founder attribution",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-9c56caa560a5eec96c7cac0a-9efa47ed81d54aef.json",
+    "attestationSha256": "447b1f0e202c4ae2e7455a0c0e27ae2fb87416bec9b49212b667ac25bf8f01c0",
+    "runId": "tasks-playwright-9c56caa560a5eec96c7cac0a",
+    "canonicalEvidenceSha256": "9c56caa560a5eec96c7cac0a599cebee012855df077e6e016adfa8e50cf3c6be",
+    "rawArtifactSha256": "9efa47ed81d54aefa9ffac7824be2965810e6217a41d84d357adc03fa4372fd0",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.resources.drive-upload",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Final Projects prefix5daae1dc capture40006469429,188/188 outcomes.70 images exactly match prior independently reviewed Tasks image bytes; Apps reviewer inspected changed Drive-wide image and excluded its own Analytics work; Codex root independently inspected the remaining Analytics-loading-mobile image (supplement SHA e278396b61a2815b1795bd8ecd4a82727a1bc23e835c47733f0e00b540a6a450). Together all72 supplied images are covered with no blocking visible regression. These static/synthetic initial states do not certify Project timeline hover/keyboard previews, published audience artifact parity, mutations or authenticated receiving. Inherited loading width, Files demo, Welcome fallback and upload-affordance limits remain; no numerical score or production claim.",
+  "decision": "accepted for supplied synthetic initial states; explicit interaction and inherited limits retained"
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-tasks-loading",
+  "source": "tasks/src/app/app/tasks/loading.tsx",
+  "materialityHash": "12140b4bae611a58",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_tasks independent rendered reviewer; no founder attribution",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-4d31887bcdd04f29bf956523-35142860398acbd0.json",
+    "attestationSha256": "ebbb12af3018c4673ce56718e3f1a7cee0c23d67339320492ae9945df523b51e",
+    "runId": "tasks-playwright-4d31887bcdd04f29bf956523",
+    "canonicalEvidenceSha256": "4d31887bcdd04f29bf9565234d119360caa2382be137514a963ebc350af7092c",
+    "rawArtifactSha256": "35142860398acbd06d7493dc90f2cba3cd402f4f83a6dbb0b26d5ee7d78f7ea9",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-tasks-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Final Auth prefixf9566d4a capture40009053022,188/188 passing outcomes. Independent reviewer inspected all72 supplied PNGs through nine labeled contact sheets and independently verified every image hash plus raw, source and manifest/browser/config/spec bindings. No blocking layout finding in supplied18 initial-state targets. Settings is General tab: Security, connected-method rows, sign-in/sign-up, provider UI, activation and live authentication are not certified. Synthetic initial states retain inherited Tasks loading width, drawer, Files demo, unavailable Welcome and upload-affordance limits. No numerical scores or authenticated-production claim.",
+  "decision": "accepted for supplied synthetic initial states only; Security/provider/interaction and inherited limits retained"
+}

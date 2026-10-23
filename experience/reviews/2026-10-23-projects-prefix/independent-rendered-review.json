@@ -1,0 +1,41 @@
+{
+  "schema": "signal-independent-rendered-review/1",
+  "reviewedAt": "2026-10-23T19:15:43.1901256Z",
+  "reviewer": "product_apps_analytics",
+  "head": "5daae1dc76ef1596a8336fe6e03816ca77c9ff80",
+  "pullRequest": 319,
+  "workflowRunId": "40006469429",
+  "status": "71-of-72-covered; changed Analytics loading mobile requires separate independent reviewer",
+  "coverage": {
+    "priorReceiptHashMisses": 0,
+    "exactPriorAcceptedBytes": 70,
+    "images": 72,
+    "targets": 18,
+    "newImagesVisuallyInspected": 1,
+    "excludedChangedAnalytics": 1
+  },
+  "priorReview": {
+    "path": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+    "sha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf"
+  },
+  "evidence": {
+    "comparison": "reviews/projects-5daae1dc-image-comparison.json",
+    "attestationSha256": "447b1f0e202c4ae2e7455a0c0e27ae2fb87416bec9b49212b667ac25bf8f01c0",
+    "runId": "tasks-playwright-9c56caa560a5eec96c7cac0a",
+    "rawSha256": "9efa47ed81d54aefa9ffac7824be2965810e6217a41d84d357adc03fa4372fd0"
+  },
+  "inspected": {
+    "observation": "Actual PNG inspected. Detail drawer, file drop area, readable text, controls and shell remain within viewport. No actionable visual finding in this initial synthetic state.",
+    "file": "tasks.resources.drive-upload-wide.png"
+  },
+  "exclusions": [
+    "tasks.state.app-analytics-loading-mobile.png: changed bytes; reviewer authored Analytics, separate reviewer required"
+  ],
+  "findings": [],
+  "limitations": [
+    "70 identical images reused only by exact hashes found in prior independent receipt, not by whole-run verdict",
+    "Static initial captures do not establish Timeline hover/keyboard interaction, authenticated production data, live routing or upload success",
+    "Synthetic Preview capture only; no numerical design score or Ethan acceptance asserted",
+    "Root owns final acceptance; this receipt does not accept the excluded Analytics image"
+  ]
+}

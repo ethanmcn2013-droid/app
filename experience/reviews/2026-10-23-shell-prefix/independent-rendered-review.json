@@ -1,0 +1,629 @@
+{
+  "head": "1465f9ea806b35bfedad9dd27e5f583ae1fe7523",
+  "tree": "cc87affd28abd7136d4aa64cd0e53c50d360434c",
+  "captureRun": "40005072954",
+  "attestationRunId": "tasks-playwright-09f860459e46e3a202e3abeb",
+  "rawArtifactSha256": "2dd7a7abd0165dcfd175cefd15a414ee562051fe8cd3ecfcf6a869f5f4c7e780",
+  "status": "rendered-review-complete-no-blocking-layout-finding",
+  "method": "Current changed materiality images inspected via nine four-viewport contact sheets; unchanged images independently hashed against previously visually inspected Chat capture. Eight additional Home/Inbox originals inspected individually. All 80 original PNG hashes recorded. No numerical scores assigned.",
+  "previousIndependentReview": "architecture/chat-cloud-render-review.json",
+  "targets": [
+    {
+      "id": "tasks.page.app-settings",
+      "decision": "changed: inspected current images; no blocking layout finding",
+      "observation": "Settings title, Project scope, read-only banner, section navigation and stacked mobile General fields intact. Current shell header omits search and bell; retained body remains legible and responsive in captured state.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-settings-mobile.png",
+          "sha256": "2b7823903d78c33d60fd5da776150a96a07bb56d511806ad35970dd8f9ff12a4",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-settings-tablet.png",
+          "sha256": "df55e66b32f8b092a45e6a2c56961ed01be57ca5e060e7b8c7039802fe900a98",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-settings-desktop.png",
+          "sha256": "770a192962727901ba645a2d91c23b0c3d444fd725b76a6cf445291ae744237e",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-settings-wide.png",
+          "sha256": "a5b696f712c741ba835b52d94ddf060bb14775b181de77f099ec2b859f6e50ad",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-project",
+      "decision": "changed: inspected current images; no blocking layout finding",
+      "observation": "Project title, tabs,38%progress, milestones, activity and team remain legible; columns stack on narrow sizes. Current shell header omits search and bell; retained body remains legible and responsive in captured state.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-project-mobile.png",
+          "sha256": "b8785570260139883a19e93f738cdf6ed1af2a1ab6e51d629399e91869c06094",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-project-tablet.png",
+          "sha256": "f13cd7478827c69a2899155b91f5b90d295bdd0c1b39a74e7f47170b7b6ba06a",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-project-desktop.png",
+          "sha256": "aa3b65477275e43cb9ee75c8edf91ff63b979c29df5e80c49b6bf209c55ccf97",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-project-wide.png",
+          "sha256": "1b2620d08b50e24218628828b78f41ab9050590a939c12d504fc9c98b43c7a82",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-project-loading",
+      "decision": "unchanged: exact image bytes match prior independent inspection",
+      "observation": "Project skeleton preserves title/status/tabs plus stacked-to-two-column cards.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-project-loading-mobile.png",
+          "sha256": "7f479ea83e16ba5a40b618ef17613b6dd576de540cfdcfbe0b9f13830aa551b3",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-project-loading-tablet.png",
+          "sha256": "d43c3f522ef093610b10dcbc31dadcd1e1215e3442c92494c28d1ca88880be2e",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-project-loading-desktop.png",
+          "sha256": "44b1ad4652f3559d78b7ca94449e8b3bb392f6a322efbf14d51dc0861ccb7967",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-project-loading-wide.png",
+          "sha256": "350def90d77ea237360d4f8d453614903204a756cdb2fe9a9c3f17e9d7aa9414",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-loading",
+      "decision": "unchanged: exact image bytes match prior independent inspection",
+      "observation": "Home skeleton preserves tall opening panel, secondary panel and responsive tile grouping.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-loading-mobile.png",
+          "sha256": "2e1be11bb0abd80607e25d5f5976f9447aeebca99de951b8f55f9ba35ddd80dd",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-loading-tablet.png",
+          "sha256": "020cde8ce77a66d9ee9b98d5e083683aaeda4e683d88c4120e74b9559159075e",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-loading-desktop.png",
+          "sha256": "1836b620784d1bfcb227c674cf4aeb6a71d3436e3d9100cf7e6d65da119303fa",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-loading-wide.png",
+          "sha256": "e787b2dbb27cef50afd64059d9b9fb52b8826c8ce9ebf3387154916fc1cdb846",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-error",
+      "decision": "unchanged: exact image bytes match prior independent inspection",
+      "observation": "Home error presents explanatory copy and Try again/Open Tasks without overlap.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-error-mobile.png",
+          "sha256": "d841b91452667f83e49d5199b8530b4e537e00b567efb5928788b7d415ccdee2",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-error-tablet.png",
+          "sha256": "369413b5a9b9ab13501dc145ef1e5c63eb0e3b6b33770916a8ea0c9b97515a05",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-error-desktop.png",
+          "sha256": "442fdec3e9a8ee0996e811895c000f99d6e742ad02465559253496b1336df889",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-error-wide.png",
+          "sha256": "30d2f40ca50ba5f98f69477c7f1d7fd31b6dba73980534f430754c8b1d0cfcd0",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-tasks-loading",
+      "decision": "unchanged: exact image bytes match prior independent inspection",
+      "observation": "Tasks skeleton remains horizontally arranged board lanes, with narrow viewport lane continuation.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tasks-loading-mobile.png",
+          "sha256": "0dc35487606b6f227ddeb4577f1c8a20e11986311cccd34a44a3a2d7005413ce",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tasks-loading-tablet.png",
+          "sha256": "7f216114eebcb0fc0d47b35bc43ce9c5894c897c220329510931ebd26c856516",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tasks-loading-desktop.png",
+          "sha256": "97e5ff930760d98d68398d4c4ea870eb11cad3ed98f735a7274f84bcc13151c9",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tasks-loading-wide.png",
+          "sha256": "1b2aba01bf5a22992a6acdaa49c372595f54843c9ea6ddb3b37da0d8e7b5ed44",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        }
+      ]
+    },
+    {
+      "id": "tasks.resources.drive-upload",
+      "decision": "changed: inspected current images; no blocking layout finding",
+      "observation": "Task detail panel has title/status/assignee/dates/notes/files; narrow overlay and wide side-panel preserved. Current shell header omits search and bell; retained body remains legible and responsive in captured state.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.resources.drive-upload-mobile.png",
+          "sha256": "164f99cbf99a3d9e0623fae90f9f6513a4d75cc36532b4df0078559b3fa10421",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.resources.drive-upload-tablet.png",
+          "sha256": "f32309b118e2c60fc59b7ec66f2e6c952ec9598322388a5d7f9632b755bd4d6d",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.resources.drive-upload-desktop.png",
+          "sha256": "d20020602342c296aed82d18c25d400b02ade34ea22d8770dca12b64fe982a17",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.resources.drive-upload-wide.png",
+          "sha256": "4b3e2dadce14e77ec9f4217b1bc6e9946b6f6acb543f206aff8cd460aabac71f",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-messages",
+      "decision": "changed: inspected current images; no blocking layout finding",
+      "observation": "Team chat retains audience header, messages/mentions/link card/thread affordances and bottom composer. No persistent composer counter visible; hide/restore and paste states are not pictured. Current shell header omits search and bell; retained body remains legible and responsive in captured state.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-messages-mobile.png",
+          "sha256": "377bab3bf4238346b871ca32bd48705166ec31a82861dad0c12b6d208a41280c",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-messages-tablet.png",
+          "sha256": "9bb77035300427b892e20fe6719fdcccc41976581a9df6a8d18488825ee4b4f8",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-messages-desktop.png",
+          "sha256": "ec9dbfb3066119c7f464b43221a0d6efc537e37087133e797962d5b2098c5f5b",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-messages-wide.png",
+          "sha256": "c79ec1a44ecb71973c41e05f44117b398cc61d72e304eeb6bf3b8b7cf3de7c8f",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-analytics",
+      "decision": "changed: inspected current images; no blocking layout finding",
+      "observation": "Inherited H1 centered desktop search and aligned question cards; overview methodology disclosure absent. Narrow cards stack correctly; shell header omits search and bell.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-analytics-mobile.png",
+          "sha256": "521de63bb818cea426914d162fa1a364a09ffde5b1e8340cfa3087585e5274c7",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-analytics-tablet.png",
+          "sha256": "99a3b4e876d79be9a2bf05d37264e52b514609d414a27ea9ba2a842549bdef0a",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-analytics-desktop.png",
+          "sha256": "990c28d3328383ec292f9715694d8f68c1b8950c497cbe91e8febb2e927c6671",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-analytics-wide.png",
+          "sha256": "e7bb6a07ae211e4d385728d1b1d702a1c752f67fda51ee5d0e0f23609e4bfc24",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-loading",
+      "decision": "changed: inspected current images; no blocking layout finding",
+      "observation": "Centered desktop/wide search skeleton and aligned card grid; narrow skeleton bytes unchanged.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-loading-mobile.png",
+          "sha256": "e912f34283a516b18b211febbbde15e62bd96c0a2f4952d89a2c12d189c4792b",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-loading-tablet.png",
+          "sha256": "faffcc090b20608175a00b53e145ecd4bfc6722e5285ceddffadcad24286c128",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-loading-desktop.png",
+          "sha256": "a2095617579ed7290a98b6cc2b40e44b8a532c9fc1f784945dbde698173d77ce",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-loading-wide.png",
+          "sha256": "b2ee8af7b64f70d05de82eaca9ff16e298956bd0dee5e59322a50e9fa9679c7a",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-error",
+      "decision": "unchanged: exact image bytes match prior independent inspection",
+      "observation": "Analytics error retains central explanatory card and both recovery controls.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-error-mobile.png",
+          "sha256": "561715fbc926fb9d40521c8a57faa7f652e24503ab203082d50e96e5d7d2af66",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-error-tablet.png",
+          "sha256": "75d6ea47666994f033bf08593a38f0730e9cbc9ca95ccda44c98c79b2b55cb15",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-error-desktop.png",
+          "sha256": "9c10aea7cfa3ca189b5465b9dbc94ce0a8c518d4ec50ece6669c49dcab31dd46",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-error-wide.png",
+          "sha256": "3793ec4ea61e65e985073e9ffef2358b7209dcd68652e4733a81de035ec44643",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-tools-loading",
+      "decision": "unchanged: exact image bytes match prior independent inspection",
+      "observation": "Tools loading skeleton retains heading and responsive tool-card grid.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tools-loading-mobile.png",
+          "sha256": "d3c1b89e8007deb384fa21d5e881da8ead5538be7727e871464aab8e8998ac77",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tools-loading-tablet.png",
+          "sha256": "22b4c30abb67722384faa9aa28e5c05259ecd7a1414bb25ddb4334ed28878a52",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tools-loading-desktop.png",
+          "sha256": "75ebfa491aeec3c99a0a6c58110eac4ef30b1323398a66ff6cd1440ba9c0eb74",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tools-loading-wide.png",
+          "sha256": "887c3c4af88d6898b0200f7d7439b65d27c508a597579e78413177ca4fcd86a3",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-concepts",
+      "decision": "changed: inspected current images; no blocking layout finding",
+      "observation": "Concepts retains clearly labeled unpicked prototype cards in responsive groups. Current shell header omits search and bell; retained body remains legible and responsive in captured state.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-concepts-mobile.png",
+          "sha256": "fdd70d88fec51390a9446fc0fa88f154c21a7e80f020a9add38a1f6d442bd87b",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-concepts-tablet.png",
+          "sha256": "f5a41a130208147b5cfe1ec393b64021a16872b1ea5a650552985c3ef11e221f",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-concepts-desktop.png",
+          "sha256": "5922996bc36e206082904d3dc91330d01cf74cab7a855654547c9f485bb55ffa",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-concepts-wide.png",
+          "sha256": "45d878d9a5a6ac329adbe74e4a68521c16fac896b0bb6e97d52e12b34e573eec",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-files",
+      "decision": "changed: inspected current images; no blocking layout finding",
+      "observation": "Files retains Project scope, search/filter chips, one file and desktop detail preview; phone stacks content. Current shell header omits search and bell; retained body remains legible and responsive in captured state.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-files-mobile.png",
+          "sha256": "c8f94f9fbb99a8cf5500a5f2acd60c785ca010e6d3e366be9d9ae7dca35a1ac8",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-files-tablet.png",
+          "sha256": "b59cb727c1e7c4db2c4c813d67eb1525b5767b10b1068ce5d1f663997078c15e",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-files-desktop.png",
+          "sha256": "292a84e70370b3b77ec866e9c1f3d4913a04261e8fdd6f4ceaa7877641a3a752",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-files-wide.png",
+          "sha256": "b12dfd8e88bcb8f34f34e71cbddbf34aa8a9e2c10a32e080831deabbedffd336",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-loading",
+      "decision": "unchanged: exact image bytes match prior independent inspection",
+      "observation": "Files loading retains search/chips/list and larger-screen detail placeholder.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-loading-mobile.png",
+          "sha256": "3789a0a6f8e5d6592524c50aad4e8dffe6e68b237efbb8e388a80bd93c8192f1",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-loading-tablet.png",
+          "sha256": "95028344ea5077d1a982d16b1e82cb99d1e76cff506e3cbb161c864a5786ff2e",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-loading-desktop.png",
+          "sha256": "4f4f73a7eaf098ee7367c7a2a8ea94a9ae292d8c72f17d70981658614ff95394",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-loading-wide.png",
+          "sha256": "0937026623d4e35ebc1a6c74ff7a84bd3e2b17dc33a8045eb512cca904a230ff",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-error",
+      "decision": "unchanged: exact image bytes match prior independent inspection",
+      "observation": "Files error retains heading, safe failure copy and both recovery controls.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-error-mobile.png",
+          "sha256": "a248472e3d74296e3829c084fdcde572c26d16466ba2562d63590f3038dfd283",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-error-tablet.png",
+          "sha256": "62b7c93355ad890b8d53a789d7dddc6bb51fa36e33dce0cc6cc448a665dc5977",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-error-desktop.png",
+          "sha256": "64910ff4f60b0b922a048c5aa44e7cbc83491fd9692b56fca67021f32758bb6a",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-error-wide.png",
+          "sha256": "070cd8c3783f39d68c16a12022c00fece08bfd75807c47cc3737705588f22b35",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.welcome",
+      "decision": "unchanged: exact image bytes match prior independent inspection",
+      "observation": "Welcome unavailable state states Project unavailable and provides Open Home at all sizes.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.welcome-mobile.png",
+          "sha256": "46e268b66f6442abe7de4ed673fafe4d95232f53273ee4e65eff15d873e4a09b",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.welcome-tablet.png",
+          "sha256": "41b4bfc12fef40254b4acbc98d0d2aba623cb865c09972bca199044f0e404678",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.welcome-desktop.png",
+          "sha256": "3e964893ac2d953857f9644f77da5d815e94e8147549d63a78a27d9189541a8f",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.welcome-wide.png",
+          "sha256": "f3cc0ef71514cf97b4a5b6432d26a03a5e5f46a84dfbc0febe711310f55548ca",
+          "identicalToPreviouslyInspectedChat": true,
+          "inspection": "Previously visually inspected bytes; independently rehashed identical."
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-tools-by-slug",
+      "decision": "changed: inspected current images; no blocking layout finding",
+      "observation": "Wedding hub retains Project chooser, one accessible project and Coming soon tools; narrow stack intact. Current shell header omits search and bell; retained body remains legible and responsive in captured state.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-tools-by-slug-mobile.png",
+          "sha256": "1cb4d08361591c8817570fe3ede9d21deb0056e74d7f5c67ba982859c31ac8de",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-tools-by-slug-tablet.png",
+          "sha256": "827da0f50c33e05c93be79f149624ce86864130d62c8e07edd61d19e304a9309",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-tools-by-slug-desktop.png",
+          "sha256": "9a666ca68f802f618236b861667d6e8d9dde47fee3ac7404883747a8d1f23fd1",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-tools-by-slug-wide.png",
+          "sha256": "d2a450ddf32681c6c720efe60b5b75bfef0069cca09dd9b65e37b1437a703fac",
+          "identicalToPreviouslyInspectedChat": false,
+          "inspection": "Current capture visually inspected in viewport contact sheet."
+        }
+      ]
+    }
+  ],
+  "additionalRouteImages": [
+    {
+      "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\10574953d0df495deae606082395f55864a61fa7.app-home-home-front-door-desktop.png",
+      "sha256": "ddbe884b22843289bb531f3a0d85ba278c8a1db3f7488413fa1f5253637f62c7",
+      "inspection": "Viewed current original PNG individually",
+      "observation": "Home tab active; greeting, countdown card, chart and controls remain readable. Narrow controls wrap; wide weekly card sits beside countdown."
+    },
+    {
+      "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\c0b91cad84031120611fc37cb6bb47f524dfb3b3.app-home-home-front-door-wide.png",
+      "sha256": "b39a52a48b02c8bf6958ef491683fa56db349b42fb01f64602f0f5d7c921d4fa",
+      "inspection": "Viewed current original PNG individually",
+      "observation": "Home tab active; greeting, countdown card, chart and controls remain readable. Narrow controls wrap; wide weekly card sits beside countdown."
+    },
+    {
+      "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\c3dd907879fdafa04dbf6a423e32507d6cf07052.app-home-home-front-door-mobile.png",
+      "sha256": "a84980483aea55abc38c1ac3d3afea9cd4b008d9f3e2a463ebb8856f6f478d5b",
+      "inspection": "Viewed current original PNG individually",
+      "observation": "Home tab active; greeting, countdown card, chart and controls remain readable. Narrow controls wrap; wide weekly card sits beside countdown."
+    },
+    {
+      "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\db352d194252c4a15c2c3a27515af660716a6cb6.app-home-home-front-door-tablet.png",
+      "sha256": "1903197b181ff68c88776739c18b3eaa15dec8156dd55c7053aa395ac5cca2ea",
+      "inspection": "Viewed current original PNG individually",
+      "observation": "Home tab active; greeting, countdown card, chart and controls remain readable. Narrow controls wrap; wide weekly card sits beside countdown."
+    },
+    {
+      "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\2b0e94c67e79240ca5370307ca1fc00f87a65137.app-inbox-demo-digest-with-empty-direct-alerts-wide.png",
+      "sha256": "9e7ec8cd17ebf75265f49e380a23d3e77797a197a4ad5cb207d7ea9e6be5f514",
+      "inspection": "Viewed current original PNG individually",
+      "observation": "Inbox tab active; stuck item and digest readable; narrow layout stacks, wide layout exposes weekly summary and explanation alongside digest."
+    },
+    {
+      "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\4772747ee6d61d1ac32e2a4e96566527cffe0761.app-inbox-demo-digest-with-empty-direct-alerts-desktop.png",
+      "sha256": "f031f5b36eac0cc43025306c1334473aec3c17352f7758623d61d743dedff319",
+      "inspection": "Viewed current original PNG individually",
+      "observation": "Inbox tab active; stuck item and digest readable; narrow layout stacks, wide layout exposes weekly summary and explanation alongside digest."
+    },
+    {
+      "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\a9098b2723a4b1b91644a85f723b63656d74791a.app-inbox-demo-digest-with-empty-direct-alerts-mobile.png",
+      "sha256": "27efaed30bcfbf8e7e30affe92dabab8f42d3e96743ac701c6bf976b41830db9",
+      "inspection": "Viewed current original PNG individually",
+      "observation": "Inbox tab active; stuck item and digest readable; narrow layout stacks, wide layout exposes weekly summary and explanation alongside digest."
+    },
+    {
+      "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\f2ac67b85dba8da756860d3432560c5aad045e49.app-inbox-demo-digest-with-empty-direct-alerts-tablet.png",
+      "sha256": "15d6692d0e57d075f135a0774bb554f630c1a7d4f02300f0bb82c8e060b9c9b6",
+      "inspection": "Viewed current original PNG individually",
+      "observation": "Inbox tab active; stuck item and digest readable; narrow layout stacks, wide layout exposes weekly summary and explanation alongside digest."
+    }
+  ],
+  "limits": [
+    "Synthetic capture only; no live account, data, permissions, invitation delivery or deployment acceptance proved.",
+    "Home/Inbox screenshots prove visible selected tabs, not click or keyboard navigation behavior.",
+    "Development notice overlays lower content in some captures; focused skip link is visible in Home/Inbox capture state. Neither is treated as new successful functionality.",
+    "Tasks loading retains horizontal board lanes; this review does not claim universal zero overflow.",
+    "Files capture remains gated sample UI, Welcome is unavailable-Project recovery, Drive image shows a task attachment affordance rather than provider upload proof.",
+    "Images do not demonstrate A2 invite submission or toast timing/action behavior; source and dedicated interaction evidence remain separately required.",
+    "No metadata receipts, scores or production files were changed by this reviewer."
+  ]
+}
