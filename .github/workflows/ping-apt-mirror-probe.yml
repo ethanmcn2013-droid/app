@@ -1,0 +1,79 @@
+name: Ping APT mirror transfer probe
+
+on:
+  push:
+    branches: [ops/ping-apt-mirror-probe-oct23]
+
+permissions:
+  contents: read
+
+jobs:
+  transfer:
+    if: github.repository == 'ethanmcn2013-droid/app' && github.actor == 'ethanmcn2013-droid' && github.ref == 'refs/heads/ops/ping-apt-mirror-probe-oct23'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Compare one identical logged package from two mirrors
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import datetime, hashlib, json, pathlib, re, subprocess, tempfile
+          # Completed exact-head job120512744918, 2026-10-23:
+          # Get:7 http://azure.archive.ubuntu.com/ubuntu noble/main amd64
+          # fonts-freefont-ttf all 20211204+svn4273-2 [5641 kB]
+          # Preparing to unpack .../05-fonts-freefont-ttf_20211204+svn4273-2_all.deb
+          # Logs do not print a pool path. Resolve it from existing APT metadata;
+          # never guess a pool URL or change/update APT configuration or trust.
+          package = 'fonts-freefont-ttf=20211204+svn4273-2'
+          expected_name = 'fonts-freefont-ttf_20211204+svn4273-2_all.deb'
+          raw = subprocess.run(['apt-cache', 'show', package], check=True,
+                               capture_output=True, text=True, timeout=10).stdout
+          records = []
+          for paragraph in raw.split('\n\n'):
+              fields = dict(line.split(': ', 1) for line in paragraph.splitlines()
+                            if ': ' in line and not line.startswith(' '))
+              if fields.get('Package') == 'fonts-freefont-ttf' and fields.get('Version') == '20211204+svn4273-2':
+                  records.append((fields.get('Filename'), fields.get('Size'), fields.get('SHA256')))
+          identities = set(records)
+          if len(identities) != 1:
+              raise SystemExit('Exact logged package metadata absent or ambiguous; no requests made')
+          filename, size, digest = identities.pop()
+          if not (filename and filename.startswith('pool/') and
+                  pathlib.PurePosixPath(filename).name == expected_name and
+                  re.fullmatch(r'[A-Za-z0-9_+./-]+', filename) and
+                  '..' not in pathlib.PurePosixPath(filename).parts and
+                  size and 0 < int(size) <= 6000000 and digest and
+                  re.fullmatch(r'[0-9a-f]{64}', digest)):
+              raise SystemExit('Unexpected package metadata; no requests made')
+          print(json.dumps({'source_job': 120512744918, 'package': package,
+                            'filename': filename, 'expected_bytes': int(size),
+                            'expected_sha256': digest, 'metadata': 'existing runner APT cache; no refresh'}), flush=True)
+          results = []
+          with tempfile.TemporaryDirectory(prefix='ping-apt-probe-') as directory:
+              for host in ['azure.archive.ubuntu.com', 'archive.ubuntu.com']:
+                  destination = pathlib.Path(directory) / (host + '.deb')
+                  url = 'http://' + host + '/ubuntu/' + filename
+                  started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+                  # One request, no retry, no redirect following, no execution.
+                  process = subprocess.run(['curl', '--silent', '--show-error',
+                      '--proto', '=http', '--retry', '0', '--connect-timeout', '10',
+                      '--max-time', '45', '--max-filesize', '6000000',
+                      '--output', str(destination), '--write-out', '%{json}', url],
+                      capture_output=True, text=True, timeout=50)
+                  metrics = json.loads(process.stdout) if process.stdout else {}
+                  observed_bytes = destination.stat().st_size if destination.exists() else 0
+                  observed_digest = hashlib.sha256(destination.read_bytes()).hexdigest() if destination.exists() else None
+                  result = {'host': host, 'started_utc': started, 'curl_exit': process.returncode,
+                      'http': metrics.get('http_code'), 'bytes': observed_bytes,
+                      'time_seconds': metrics.get('time_total'), 'connect_seconds': metrics.get('time_connect'),
+                      'first_byte_seconds': metrics.get('time_starttransfer'),
+                      'bytes_per_second': metrics.get('speed_download'),
+                      'sha256': observed_digest,
+                      'same_package_verified': process.returncode == 0 and metrics.get('http_code') == 200 and observed_bytes == int(size) and observed_digest == digest,
+                      'error': process.stderr.strip()}
+                  results.append(result)
+                  print(json.dumps(result), flush=True)
+          print('One sequential pair on one hosted runner; ordering, transient routing and caches can affect timings. No APT install, signing-trust change, CI speed guarantee or Ping/model latency claim.')
+          if not all(result['same_package_verified'] for result in results):
+              raise SystemExit('Incomplete or mismatched transfer: comparison inconclusive')
+          PY
