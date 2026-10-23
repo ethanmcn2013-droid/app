@@ -19,6 +19,7 @@ before(() => {
 });
 
 const projectKeys = (projectId: string) => [
+  `project-color:${projectId}`,
   projectStatusMetaKey(projectId),
   projectTargetDateMetaKey(projectId),
   projectPurposeMetaKey(projectId),
@@ -33,6 +34,7 @@ async function fixture() {
     await f.db.insert(workspaces).values({ id: `project-${id}`, slug: id, name: id, ownerUserId: id, contextType: "wedding" });
     await f.db.insert(workspaceMembers).values({ workspaceId: `project-${id}`, userId: id, role: "owner" });
     await f.db.insert(meta).values([
+      { key: `project-color:project-${id}`, value: "3" },
       { key: projectStatusMetaKey(`project-${id}`), value: "at_risk" },
       { key: projectTargetDateMetaKey(`project-${id}`), value: "2028-12-12" },
       { key: projectPurposeMetaKey(`project-${id}`), value: "A synthetic purpose" },
@@ -48,6 +50,7 @@ async function fixture() {
 
 test("the owned keys are the status, target date and purpose of that one Project", () => {
   assert.deepEqual(projectOwnedMetaKeys("p1"), [
+    "project-color:p1",
     "project-status:p1",
     "project-target-date:p1",
     "room:p1:purpose",
