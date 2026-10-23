@@ -5,6 +5,10 @@ import { createPortal } from "react-dom";
 import type { ConsoleRow } from "@/lib/projects/project-console";
 import styles from "./project-timeline-preview.module.css";
 
+function previewPosition(rect: DOMRect) {
+  return { top: Math.min(rect.bottom + 6, Math.max(8, window.innerHeight - 360)), left: Math.max(8, Math.min(rect.left, window.innerWidth - 336)) };
+}
+
 /** The same authorized milestone tasks as the Project timeline. No hover reads. */
 export function ProjectTimelinePreview({ row, href, onGo }: { row: ConsoleRow; href: string; onGo: () => void }) {
   const id = useId();
@@ -16,7 +20,7 @@ export function ProjectTimelinePreview({ row, href, onGo }: { row: ConsoleRow; h
   const open = () => {
     cancel();
     const rect = anchor.current?.getBoundingClientRect();
-    if (rect) setPosition({ top: Math.min(rect.bottom + 6, Math.max(8, window.innerHeight - 360)), left: Math.max(8, Math.min(rect.left, window.innerWidth - 336)) });
+    if (rect) setPosition(previewPosition(rect));
   };
   const leave = () => { cancel(); timer.current = setTimeout(() => setPosition(null), 120); };
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
@@ -24,10 +28,15 @@ export function ProjectTimelinePreview({ row, href, onGo }: { row: ConsoleRow; h
     if (!position) return;
     const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { event.stopPropagation(); setPosition(null); } };
     const hide = () => setPosition(null);
+    const reposition = () => {
+      const rect = anchor.current?.getBoundingClientRect();
+      if (!rect || rect.bottom < 0 || rect.top > window.innerHeight) setPosition(null);
+      else setPosition(previewPosition(rect));
+    };
     document.addEventListener("keydown", escape, true);
     window.addEventListener("resize", hide);
-    window.addEventListener("scroll", hide, true);
-    return () => { document.removeEventListener("keydown", escape, true); window.removeEventListener("resize", hide); window.removeEventListener("scroll", hide, true); };
+    window.addEventListener("scroll", reposition, true);
+    return () => { document.removeEventListener("keydown", escape, true); window.removeEventListener("resize", hide); window.removeEventListener("scroll", reposition, true); };
   }, [position]);
   const go = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
