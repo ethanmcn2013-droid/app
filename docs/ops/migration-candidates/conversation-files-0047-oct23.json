@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "tasks-reviewed-migration-candidate/1",
+  "id": "conversation-files-0047-oct23",
+  "repository": "ethanmcn2013-droid/app",
+  "pullRequestNumber": 323,
+  "candidateSourceRevision": "2d462621ee774d469a36d873044e9a70eae247de",
+  "candidateBaseRevision": "891eee1c646397c4b5ddd29266717cc5bf9922da",
+  "baseLedgerSha256": "8e9a0d5f35485290bb21106eae9ba4c6a1ed87d486a9541bc2bafc572d6a0919",
+  "candidateLedgerSha256": "bbbb29c4739f37dfe31ce7814581b83612adc9eaf224ee848df321b53f3d6aa0",
+  "expectedLastMigrationId": "0046_project_drive_subfolders",
+  "targetUrlSha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "databaseIdentitySha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "notBefore": "2026-10-23T18:33:35.016Z",
+  "expiresAt": "2026-10-24T17:34:35.016Z",
+  "authorization": {
+    "source": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/111#issuecomment-6371451245",
+    "authorizedBy": "Ethan's explicit 23 October product implementation and deployment delegation, confirmed by the resumed coordinator; root retains final production execution after all declared review, encrypted-backup and target gates."
+  },
+  "review": {
+    "verdict": "approved",
+    "sourceRevision": "2d462621ee774d469a36d873044e9a70eae247de",
+    "reviewedBy": "Independent architecture reviewer; exact four-file additive data candidate, no findings",
+    "reference": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/111#issuecomment-6371451245; independent conversation-attachments-migration-review.json SHA256 4863135de2b51c8a11513c902f3ed0890bcb75105ec1da9e66f041c0183e2c25",
+    "reviewedAt": "2026-10-23T18:31:25.964Z"
+  },
+  "migrations": [
+    {
+      "id": "0047_conversation_chat_attachments",
+      "sha256": "90f51e2e6f35e069d211dc2b3743aeeda2f6f74f8c357115c653c1604f41304b",
+      "receiptSha256": "ae2c72e1e4ff4c4b764c260a904bf2b8876e6c61fec3ada841bdfe4541831f88"
+    }
+  ],
+  "files": [
+    {
+      "path": "drizzle/0047_conversation_chat_attachments.sql",
+      "sha256": "90f51e2e6f35e069d211dc2b3743aeeda2f6f74f8c357115c653c1604f41304b"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "sha256": "55c6976f998f98dd763c298a5833a0db9256a7514484f9c3f27ed7b33c9f427e"
+    },
+    {
+      "path": "drizzle/migration-ledger.json",
+      "sha256": "bbbb29c4739f37dfe31ce7814581b83612adc9eaf224ee848df321b53f3d6aa0"
+    },
+    {
+      "path": "drizzle/receipts/conversation-chat-attachments-2026-10-23.json",
+      "sha256": "ae2c72e1e4ff4c4b764c260a904bf2b8876e6c61fec3ada841bdfe4541831f88"
+    }
+  ]
+}
