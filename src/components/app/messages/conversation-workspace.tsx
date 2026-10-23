@@ -9,6 +9,10 @@ import { ConversationPoller } from "@/lib/conversations/polling";
 import { AudienceHeader, Icon } from "./prototype-panels";
 import { MemberMentionPicker } from "./member-mention-picker";
 import { TaskDiscussionDirectory } from "./task-discussion-directory";
+import { discardConversationFile } from "./conversation-attachment-client";
+import { useConversationAttachments } from "./use-conversation-attachments";
+import type { ConversationAttachmentCache } from "./conversation-attachment-drafts";
+import { ConversationFilePicker, DraftConversationFiles, ConversationMessageFiles } from "./conversation-attachments";
 import { useConversationCaches } from "./conversation-session-provider";
 import { SavedDraftsPanel } from "./saved-drafts-panel";
 import { hasDraftCapacity, listSavedDrafts, type SavedConversationScope } from "./conversation-client-model";
@@ -83,7 +87,7 @@ function ConversationWorkspaceActor({ actorId, projects, initialProjectId, initi
   const requestKey = chatNavigationKey(navigationVersion, { projectId: initialProjectId, conversationId:initialConversationId, rootId: initialRootId, messageId: initialMessageId, messageSeq: initialMessageSeq });
   const [followedRequest, setFollowedRequest] = useState(requestKey);
   if (requestKey !== followedRequest) { setFollowedRequest(requestKey); setPane("conversation"); if (initialProjectId) { setProjectId(initialProjectId); setDirect(null); setSavedScope(null); } }
-  const { drafts: draftCache, scroll: scrollCache, outgoing: outgoingCache } = useConversationCaches(actorId);
+  const { drafts: draftCache, scroll: scrollCache, outgoing: outgoingCache, attachments: attachmentCache } = useConversationCaches(actorId);
   if (!projectId || projects.length === 0) return <section className={styles.noProjects}>{stacked ? <ChatHeader panel onBack={onBack} backLabel="All chats" title="Project conversations" actions={headerActions} /> : <h1>Chat</h1>}<p>Add a Project before starting a Project conversation.</p></section>;
   const selected = projects.find((project) => project.id === projectId) ?? { id: projectId, name: "Project" };
   const directId = directMessagesEnabled && initialConversationId && initialProjectId === selected.id ? initialConversationId : directMessagesEnabled ? (savedScope?.kind === "dm" ? savedScope.conversationId : direct?.conversationId) : undefined;
@@ -97,7 +101,7 @@ function ConversationWorkspaceActor({ actorId, projects, initialProjectId, initi
       <TaskDiscussionDirectory key={`tasks:${selected.id}`} projectId={selected.id} fixtureActor={fixtureActor} />
       <p>Messages stay inside their named Project.</p>
     </aside>
-    <ProjectConversationSession stacked={stacked} privatePingEnabled={privatePingEnabled} onBack={onBack} headerActions={headerActions} onOpenDirectory={stacked ? () => setPane("directory") : undefined} navigationRequestKey={requestKey} visible={visible && (!stacked || pane === "conversation")} directId={directId} initialRootId={savedScope?.rootId ?? initialRootId} initialMessageId={initialMessageId} initialMessageSeq={initialMessageSeq} onOpenSavedScope={openSavedScope} actorId={actorId} outgoingCache={outgoingCache} draftCache={draftCache} fixtureActor={fixtureActor} key={`${actorId}:${selected.id}:${directId ?? "project"}:${savedScope?.rootId ?? ""}`} onToggleView={() => setView((current) => current === "full" ? "context" : "full")} project={selected} projects={projects} scrollCache={scrollCache} view={view} />
+    <ProjectConversationSession stacked={stacked} privatePingEnabled={privatePingEnabled} onBack={onBack} headerActions={headerActions} onOpenDirectory={stacked ? () => setPane("directory") : undefined} navigationRequestKey={requestKey} visible={visible && (!stacked || pane === "conversation")} directId={directId} initialRootId={savedScope?.rootId ?? initialRootId} initialMessageId={initialMessageId} initialMessageSeq={initialMessageSeq} onOpenSavedScope={openSavedScope} actorId={actorId} attachmentCache={attachmentCache} outgoingCache={outgoingCache} draftCache={draftCache} fixtureActor={fixtureActor} key={`${actorId}:${selected.id}:${directId ?? "project"}:${savedScope?.rootId ?? ""}`} onToggleView={() => setView((current) => current === "full" ? "context" : "full")} project={selected} projects={projects} scrollCache={scrollCache} view={view} />
   </section>;
 }
 
@@ -116,6 +120,7 @@ type ProjectConversationSessionProps = Readonly<{
   onCloseThread?: () => void;
   draftCache: DraftCache;
   outgoingCache: OutgoingCache;
+  attachmentCache: ConversationAttachmentCache;
   scrollCache: ScrollCache;
   view: "full" | "context";
   onToggleView: () => void;
@@ -127,7 +132,7 @@ type ProjectConversationSessionProps = Readonly<{
   headerActions?: ReactNode;
 }>;
 
-function ProjectConversationSession({ actorId, project, projects, fixtureActor, directId, rootId = null, initialRootId, initialMessageId, initialMessageSeq, onOpenSavedScope, onCloseThread, draftCache, outgoingCache, scrollCache, view, onToggleView, visible = true, navigationRequestKey = "", stacked = false, onBack, onOpenDirectory, headerActions, privatePingEnabled=false }: ProjectConversationSessionProps) {
+function ProjectConversationSession({ actorId, project, projects, fixtureActor, directId, rootId = null, initialRootId, initialMessageId, initialMessageSeq, onOpenSavedScope, onCloseThread, draftCache, outgoingCache, attachmentCache, scrollCache, view, onToggleView, visible = true, navigationRequestKey = "", stacked = false, onBack, onOpenDirectory, headerActions, privatePingEnabled=false }: ProjectConversationSessionProps) {
   const [state, dispatch] = useReducer(conversationReducer, undefined, () => emptyConversationState(actorId, `${project.id}:pending`, 1));
   const [privatePingSource,setPrivatePingSource]=useState<AssistantSourceScope|null>(null);
   const [privatePingForwarded,setPrivatePingForwarded]=useState<PrivatePingForwardedRequest|null>(null);
@@ -135,7 +140,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   const privatePingTriggerRef=useRef<HTMLButtonElement>(null);
   const draftMentionUserIds = state.draftMentionUserIds;
   const setDraftMentionUserIds = (ids: readonly string[]) => {
-    if (ids.length && scope && !hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope))) { setDraftLimitReached(true); return; }
+    if (ids.length && scope && !hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope), 20, attachmentCache)) { setDraftLimitReached(true); return; }
     dispatch({ type: "draft_mentions", ids });
   };
   const [showDetails, setShowDetails] = useState(false);
@@ -173,6 +178,10 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   const targetScrolledRef = useRef(false);
   const dispatchAt = (generation: number, action: GeneratedAction) => dispatch({ ...action, generation });
   const isCurrent = (generation: number, signal?: AbortSignal) => generation === generationRef.current && !signal?.aborted;
+  const fileKey = scope ? draftKey(actorId, project.id, scope.conversationId, rootId) : null;
+  const files = useConversationAttachments(attachmentCache, fileKey, scope && state.audienceEpoch !== null ? { kind: scope.kind, projectId: project.id, conversationId: scope.conversationId, rootId, expectedAudienceEpoch: state.audienceEpoch } : null,
+    state.status === "ready" && !!scope && scope.lifecycle === "active" && (scope.kind !== "dm" || scope.canWrite) && !sendsOff && audience?.audienceEpoch === state.audienceEpoch && state.reviewedAudienceEpoch === state.audienceEpoch && !(rootId && state.messages.some(message => message.id === rootId && message.body === null)), fixtureActor);
+
 
   useEffect(() => { stateRef.current = state; }, [state]);
 
@@ -214,8 +223,8 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
     dispatchAt(generation, { type: "refused", failure });
     generationRef.current = generation + 1;
     sessionControllerRef.current?.abort(); pollerRef.current?.stop();
-    if (directId) { forgetConversationDrafts(draftCache, actorId, project.id, directId); forgetConversationDrafts(outgoingCache, actorId, project.id, directId); }
-    else { forgetProjectDrafts(draftCache, actorId, project.id); forgetProjectDrafts(outgoingCache, actorId, project.id); }
+    if (directId) { forgetConversationDrafts(draftCache, actorId, project.id, directId); forgetConversationDrafts(outgoingCache, actorId, project.id, directId); forgetConversationDrafts(attachmentCache, actorId, project.id, directId); }
+    else { forgetProjectDrafts(draftCache, actorId, project.id); forgetProjectDrafts(outgoingCache, actorId, project.id); forgetProjectDrafts(attachmentCache, actorId, project.id); }
     if (scope) scrollCache.delete(scopeCacheKey(scope));
     historyEpochRef.current = null; clearAudience(); setEditing(null); setOpenedRoot(null); setTaskSource(null); setCreatedTasks({}); setMutationError(null); setScope(undefined);
   }
@@ -280,7 +289,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
       if (!result.ok) { setStartFailure(result.code); handleFailure(result, generation); return; }
       setScope(result.value);
       if (!result.value) return;
-      if (result.value.kind === "dm" && !result.value.canRead) { forgetConversationDrafts(draftCache, actorId, project.id, result.value.conversationId); forgetConversationDrafts(outgoingCache, actorId, project.id, result.value.conversationId); return; }
+      if (result.value.kind === "dm" && !result.value.canRead) { forgetConversationDrafts(draftCache, actorId, project.id, result.value.conversationId); forgetConversationDrafts(outgoingCache, actorId, project.id, result.value.conversationId); forgetConversationDrafts(attachmentCache, actorId, project.id, result.value.conversationId); return; }
       restoreScopedOutgoing(result.value, generation);
       const [page, audienceResult] = await Promise.all([loadMessages(result.value, initialMessageSeq && !directId ? initialMessageSeq + 1 : undefined, controller.signal), requestAudience(controller.signal)]);
       if (!isCurrent(generation, controller.signal)) return;
@@ -386,7 +395,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   function updateDraft(value: string) {
     if (!scope) return;
     const key = scopeCacheKey(scope);
-    if (value && !hasDraftCapacity(draftCache, outgoingCache, key)) { setDraftLimitReached(true); return; }
+    if (value && !hasDraftCapacity(draftCache, outgoingCache, key, 20, attachmentCache)) { setDraftLimitReached(true); return; }
     if (!rememberDraft(draftCache, key, value)) { setDraftLimitReached(true); return; }
     dispatch({ type: "draft", value });
   }
@@ -487,6 +496,8 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
 
   function restoreForFreshAudience(pending: PendingSend, generation: number) {
     if (!isCurrent(generation) || !scope) return;
+    const restored = conversationReducer(stateRef.current, { type: "restore_absent", generation, requestId: pending.input.clientRequestId });
+    if (!restored.recoveredDrafts.some(draft => draft.requestId === pending.input.clientRequestId)) files.release(pending.input.clientRequestId);
     clearAudience(); dispatchAt(generation, { type: "restore_absent", requestId: pending.input.clientRequestId });
   }
   async function resolveSend(pending: PendingSend) {
@@ -496,11 +507,11 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
       const lookup = await apiResult<{ state: "committed"; receipt: MessageReceipt } | { state: "absent" }>(apiUrl("receipt", project.id, { conversationId: currentScope.conversationId, clientRequestId: pending.input.clientRequestId }), fixtureActor, { signal });
       if (!isCurrent(generation, signal)) return;
       if (!lookup.ok) { if (lookup.code === "temporarily_unavailable") dispatchAt(generation, { type: "uncertain", requestId: pending.input.clientRequestId }); else handleFailure(lookup, generation, pending.input.clientRequestId); return; }
-      if (lookup.value.state === "committed") { captureScrollAnchor(); dispatchAt(generation, { type: "receipt", receipt: lookup.value.receipt }); return; }
+      if (lookup.value.state === "committed") { files.consume(pending.input.clientRequestId); captureScrollAnchor(); dispatchAt(generation, { type: "receipt", receipt: lookup.value.receipt }); return; }
       if (needsFreshAudienceSend(pending.input.expectedAudienceEpoch, historyEpochRef.current)) { restoreForFreshAudience(pending, generation); return; }
       const result = await apiResult<MessageReceipt>("/api/conversations", fixtureActor, { method: "POST", body: JSON.stringify({ action: "send", ...pending.input }), signal });
       if (!isCurrent(generation, signal)) return;
-      if (result.ok) { captureScrollAnchor(); dispatchAt(generation, { type: "receipt", receipt: result.value }); }
+      if (result.ok) { files.consume(pending.input.clientRequestId); captureScrollAnchor(); dispatchAt(generation, { type: "receipt", receipt: result.value }); }
       else if (result.code === "audience_changed") restoreForFreshAudience(pending, generation);
       else if (result.code === "temporarily_unavailable" || result.code === "rate_limited") dispatchAt(generation, { type: "uncertain", requestId: pending.input.clientRequestId });
       else handleFailure(result, generation, pending.input.clientRequestId);
@@ -509,13 +520,13 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
 
   async function send() {
     const audienceReady = audience !== null && audience.audienceEpoch === state.audienceEpoch;
-    if (!scope || (scope.kind === "dm" && !scope.canWrite) || !audienceReady || state.audienceEpoch === null || state.reviewedAudienceEpoch !== state.audienceEpoch || draftMentionUserIds.some((id) => !audience.members.some((member) => member.id === id)) || !validMessageBody(state.draft) || sendsOff || scope.lifecycle === "archived") return;
-    const input: SendInput = { projectId: project.id, conversationId: scope.conversationId, clientRequestId: newRequestId(), expectedAudienceEpoch: state.audienceEpoch, body: normalizeMessageBody(state.draft), rootId, mentionUserIds: draftMentionUserIds };
-    const next = conversationReducer(state, { type: "submit", input });
-    if (next === state) return;
+    if (!scope || (scope.kind === "dm" && !scope.canWrite) || !audienceReady || state.audienceEpoch === null || state.reviewedAudienceEpoch !== state.audienceEpoch || draftMentionUserIds.some((id) => !audience.members.some((member) => member.id === id)) || !(validMessageBody(state.draft) || (!state.draft.trim() && files.ready.length > 0)) || files.waiting || (files.files.length > 0 && !files.available) || sendsOff || scope.lifecycle === "archived") return;
+    const input: SendInput = { projectId: project.id, conversationId: scope.conversationId, clientRequestId: newRequestId(), expectedAudienceEpoch: state.audienceEpoch, body: files.ready.length && !state.draft.trim() ? "" : normalizeMessageBody(state.draft), rootId, mentionUserIds: draftMentionUserIds, ...(files.ready.length ? { attachmentIds: files.ready.map(file => file.id) } : {}) };
+    const next = conversationReducer(state, { type: "submit", input, attachments: files.ready });
+    if (next === state || (input.attachmentIds?.length && !files.reserve(input.attachmentIds, input.clientRequestId))) return;
     stateRef.current = next;
     retainConversationState(draftCache, outgoingCache, scopeCacheKey(scope), next, scope.kind);
-    scrollAnchorRef.current = { top: 0, bottomDistance: 0, mode: "live" }; dispatch({ type: "submit", input }); rememberDraft(draftCache, scopeCacheKey(scope), ""); await resolveSend(next.pending[next.pending.length - 1]);
+    scrollAnchorRef.current = { top: 0, bottomDistance: 0, mode: "live" }; dispatch({ type: "submit", input, attachments: files.ready }); rememberDraft(draftCache, scopeCacheKey(scope), ""); await resolveSend(next.pending[next.pending.length - 1]);
   }
 
   function sendOrRoutePrivatePing(){
@@ -566,7 +577,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   const canChange = audienceReady && !audienceNeedsReview && !sendsOff && scope?.lifecycle === "active" && (scope.kind !== "dm" || scope.canWrite);
   const unavailableMention = audienceReady && draftMentionUserIds.some((id) => !members.some((member) => member.id === id));
   const removedRoot = rootId !== null && state.messages.some((message) => message.id === rootId && message.body === null);
-  const bodyValid = validMessageBody(state.draft); const bodyBytes = new TextEncoder().encode(state.draft).byteLength;
+  const bodyValid = validMessageBody(state.draft) || (!state.draft.trim() && files.ready.length > 0); const bodyBytes = new TextEncoder().encode(state.draft).byteLength;
   const SessionContainer = "section";
   const title = rootId ? "Replies" : scope?.kind === "dm" ? scope.other.name : project.name;
   const audienceDescription = scope?.kind === "dm" ? `Private conversation in ${project.name} · exactly two people` : audienceReady ? `Visible to ${members.length} current members · ${members.map((member) => member.name).join(", ")}` : "Visible to current Project members · membership list updating";
@@ -595,23 +606,27 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
       {hasOlder ? <li className={styles.olderHistory}><button disabled={loadingOlder} onClick={() => void loadOlder()} type="button">{loadingOlder ? "Loading earlier messages…" : "Load earlier messages"}</button></li> : null}
       {state.messages.length === 0 && state.pending.length === 0 ? <li className={styles.emptyHistory}>{scope.kind === "dm" && !scope.canRead ? scope.pairState === "pending" ? "Messages will appear here after acceptance." : "You no longer have access to messages here." : rootId ? "No replies yet." : "No messages yet. Start with the decision or question the Project needs."}</li> : null}
       {state.messages.map((message) => <LiveMessage canMutate={canChange} unread={unreadMessageIds.has(message.id)} onReply={!rootId ? () => { replyTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setOpenedRoot(message.id); } : undefined} actorId={actorId} editing={editing} key={message.id} members={members} message={message} taskCreated={Boolean(createdTasks[message.id])} onCreateTask={canChange ? () => { taskTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setTaskSource({ sourceProjectId: project.id, conversationId: scope.conversationId, messageId: message.id, expectedRevision: message.revision, expectedAudienceEpoch: state.audienceEpoch! }); } : undefined} onCancelEdit={() => setEditing(null)} onDelete={() => void mutate("tombstone", message)} onEdit={(body) => void mutate("edit", message, body)} onStartEdit={() => message.body && setEditing({ id: message.id, body: message.body, revision: message.revision })} setEditing={setEditing} />)}
-      {state.pending.map((pending) => <li className={styles.pendingMessage} key={pending.input.clientRequestId}><strong>You</strong><p>{pending.input.body}</p><span>{pending.state === "pending" ? "Sending…" : pending.state === "uncertain" ? "Checking whether this sent" : `Not sent · ${pending.error ? failureCopy[pending.error] : "try again"}`}</span>{pending.state !== "pending" ? <button onClick={() => void resolveSend(pending)} type="button">Check receipt, then retry</button> : null}</li>)}
-      {state.recoveredDrafts.map((draft) => <li className={styles.pendingMessage} key={`recovered:${draft.requestId}`}><strong>Earlier message was not sent</strong><p>{draft.body}</p><span>{state.draft || draftMentionUserIds.length ? "Your current draft is kept. Send or save it before restoring this text." : "Restore this text to review it with the current audience."}</span><button disabled={state.draft !== "" || draftMentionUserIds.length > 0} onClick={() => dispatch({ type: "restore_recovered", requestId: draft.requestId })} type="button">Restore draft</button><button onClick={() => dispatch({ type: "discard_recovered", requestId: draft.requestId })} type="button">Discard earlier draft</button></li>)}
+      {state.pending.map((pending) => <li className={styles.pendingMessage} key={pending.input.clientRequestId}><strong>You</strong><p>{pending.input.body}</p><ConversationMessageFiles files={pending.attachments} pending /><span>{pending.state === "pending" ? "Sending…" : pending.state === "uncertain" ? "Checking whether this sent" : `Not sent · ${pending.error ? failureCopy[pending.error] : "try again"}`}</span>{pending.state !== "pending" ? <button onClick={() => void resolveSend(pending)} type="button">Check receipt, then retry</button> : null}</li>)}
+      {state.recoveredDrafts.map((draft) => <li className={styles.pendingMessage} key={`recovered:${draft.requestId}`}><strong>Earlier message was not sent</strong><p>{draft.body}</p><ConversationMessageFiles files={draft.attachments} pending /><span>{state.draft || draftMentionUserIds.length ? "Your current draft is kept. Send or save it before restoring this text." : "Restore this text to review it with the current audience."}</span><button disabled={state.draft !== "" || draftMentionUserIds.length > 0} onClick={() => { files.release(draft.requestId); dispatch({ type: "restore_recovered", requestId: draft.requestId }); }} type="button">Restore draft</button><button onClick={() => { files.discardReservation(draft.requestId); dispatch({ type: "discard_recovered", requestId: draft.requestId }); }} type="button">Discard earlier draft</button></li>)}
     </ol></div>
     {privatePingEnabled && state.status === "ready" && audienceReady && !removedRoot && (scope.kind !== "dm" || scope.canRead) ? <div className={styles.privatePingSlot}><button ref={privatePingTriggerRef} className={styles.askPingPrivately} onClick={()=>{setPrivatePingForwarded(null);setPrivatePingNotice(null);setPrivatePingSource({kind:"conversation",conversationId:scope.conversationId,...(rootId?{rootId}:{})});}} type="button"><PingTile size={18} />Ask Ping privately</button><span>Only you will see the reply</span></div>:null}
     <section aria-label="Message composer" className={styles.composer}>{state.status === "offline" ? <p>Offline. Your draft stays here; nothing will send automatically.</p> : removedRoot || scope.lifecycle === "archived" || sendsOff || (scope.kind === "dm" && !scope.canWrite) ? <p>{scope.kind === "dm" && !scope.canRead && scope.pairState !== "pending" ? "Messages are unavailable to you." : removedRoot ? "The original message was removed. Existing replies remain available." : scope.lifecycle === "archived" ? "This conversation is read only." : scope.kind === "dm" && !scope.canWrite ? "Messages are paused until both people can participate." : "Sending is currently turned off."}</p> : <>
-      {draftLimitReached || !hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope)) ? <SavedDraftsPanel entries={listSavedDrafts(actorId, draftCache, outgoingCache).filter((entry) => entry.key !== scopeCacheKey(scope))} onOpen={onOpenSavedScope} onDiscard={(key) => {
+      {draftLimitReached || !hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope), 20, attachmentCache) ? <SavedDraftsPanel entries={listSavedDrafts(actorId, draftCache, outgoingCache, attachmentCache).filter((entry) => entry.key !== scopeCacheKey(scope))} onOpen={onOpenSavedScope} onDiscard={(key) => {
         const saved = outgoingCache.get(key);
         if (saved?.pending.length || saved?.recoveredDrafts.length) return;
-        draftCache.delete(key); outgoingCache.delete(key); setDraftLimitReached(false); dispatch({ type: "draft", value: state.draft });
+        for (const item of attachmentCache.get(key) ?? []) { if (item.attachment) void discardConversationFile(item.attachment.id, fixtureActor).catch(() => undefined); }
+        attachmentCache.delete(key); draftCache.delete(key); outgoingCache.delete(key); setDraftLimitReached(false); dispatch({ type: "draft", value: state.draft });
       }} /> : null}
-      <textarea disabled={!hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope))} aria-label={rootId ? "Write a reply" : `Message ${title}`} maxLength={CONVERSATION_LIMITS.bodyCharacters} onChange={(event) => updateDraft(event.target.value)} onKeyDown={(event) => { const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches; if (shouldSendComposerKey({ key: event.key, shiftKey: event.shiftKey, composing: event.nativeEvent.isComposing, mobileReturn })) { event.preventDefault(); sendOrRoutePrivatePing(); } }} placeholder={rootId ? "Write a reply" : `Message ${title}`} rows={3} value={state.draft} />
+      <textarea disabled={!hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope), 20, attachmentCache)} aria-label={rootId ? "Write a reply" : `Message ${title}`} maxLength={CONVERSATION_LIMITS.bodyCharacters} onChange={(event) => updateDraft(event.target.value)} onPaste={(event) => { if (!files.available || !hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope), 20, attachmentCache) || !event.clipboardData.files.length) return; event.preventDefault(); files.add(event.clipboardData.files); }} onKeyDown={(event) => { const mobileReturn = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches; if (shouldSendComposerKey({ key: event.key, shiftKey: event.shiftKey, composing: event.nativeEvent.isComposing, mobileReturn })) { event.preventDefault(); sendOrRoutePrivatePing(); } }} placeholder={rootId ? "Write a reply" : `Message ${title}`} rows={3} value={state.draft} />
       {unavailableMention ? <p>A selected person is no longer available. Remove them from Notify people before sending.</p> : null}
       {audienceReady ? <MemberMentionPicker actorId={actorId} members={members} selected={draftMentionUserIds} onChange={setDraftMentionUserIds} /> : null}
+      <DraftConversationFiles files={files.files} disabled={!files.available || audienceNeedsReview} audienceEpoch={state.audienceEpoch} onRemove={files.remove} onRetry={files.retry} />
+      {files.notice ? <p role="status">{files.notice}</p> : null}
+      {files.available ? <ConversationFilePicker disabled={!hasDraftCapacity(draftCache, outgoingCache, scopeCacheKey(scope), 20, attachmentCache) || files.files.length >= 3 || files.all.some(file => file.reservedFor)} onFiles={files.add} /> : null}
       <ChatDictationTools active={visible && !openedRoot && !audienceNeedsReview && !unavailableMention} contextKey={`${actorId}:${scope.conversationId}:${rootId ?? "root"}`} append={(text) => { const next = appendDictatedText(stateRef.current.draft, text); if (next === null) return false; stateRef.current = { ...stateRef.current, draft: next }; updateDraft(next); return true; }} />
-      <div><ChatDraftCounter value={state.draft} /><button data-chat-send="true" disabled={!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes || audienceNeedsReview || unavailableMention} onClick={sendOrRoutePrivatePing} type="button">Send</button></div>
+      <div><ChatDraftCounter value={state.draft} /><button data-chat-send="true" disabled={!bodyValid || bodyBytes > CONVERSATION_LIMITS.bodyBytes || audienceNeedsReview || unavailableMention || files.waiting || (files.files.length > 0 && !files.available)} onClick={sendOrRoutePrivatePing} type="button">Send</button></div>
     </>}</section>
-    {openedRoot && !rootId ? <ThreadFrame visible={visible} onClose={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }}><ProjectConversationSession privatePingEnabled={privatePingEnabled} navigationRequestKey={navigationRequestKey} visible={visible} key={openedRoot} rootId={openedRoot} initialMessageId={initialMessageId} initialMessageSeq={initialMessageSeq} onOpenSavedScope={onOpenSavedScope} onCloseThread={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }} directId={directId} actorId={actorId} project={project} projects={projects} fixtureActor={fixtureActor} draftCache={draftCache} outgoingCache={outgoingCache} scrollCache={scrollCache} view="context" onToggleView={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }} /></ThreadFrame> : null}
+    {openedRoot && !rootId ? <ThreadFrame visible={visible} onClose={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }}><ProjectConversationSession privatePingEnabled={privatePingEnabled} navigationRequestKey={navigationRequestKey} visible={visible} key={openedRoot} rootId={openedRoot} initialMessageId={initialMessageId} initialMessageSeq={initialMessageSeq} onOpenSavedScope={onOpenSavedScope} onCloseThread={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }} directId={directId} actorId={actorId} project={project} projects={projects} fixtureActor={fixtureActor} draftCache={draftCache} outgoingCache={outgoingCache} attachmentCache={attachmentCache} scrollCache={scrollCache} view="context" onToggleView={() => { setOpenedRoot(null); requestAnimationFrame(() => replyTriggerRef.current?.focus()); }} /></ThreadFrame> : null}
     {taskSource ? <TaskOutcomeForm open actorId={actorId} fixture={Boolean(fixtureActor)} source={taskSource} projects={projects} onClose={closeTaskOutcome} loadDestination={(destinationId, signal) => apiResult(apiUrl("task-destination", destinationId), fixtureActor, { signal })} submit={submitTask} onCreated={(result) => { if (result.taskAvailable !== false) setCreatedTasks((current) => ({ ...current, [taskSource.messageId]: result.taskId })); }} /> : null}
   </SessionContainer>;
 }
@@ -620,7 +635,7 @@ function LiveMessage({ canMutate, unread, onReply, actorId, message, members, ed
   const editButtonRef = useRef<HTMLButtonElement | null>(null);
   const name = message.authorId === null ? "Deleted account" : members.find((member) => member.id === message.authorId)?.name ?? (message.authorId === actorId ? "You" : "Project member");
   const cancelAndRestoreFocus = () => { onCancelEdit(); requestAnimationFrame(() => editButtonRef.current?.focus()); };
-  return <li className={styles.message} data-message-id={message.id} tabIndex={-1}><span aria-hidden data-message-observe data-observe-message-id={message.id} className={styles.observeSentinel} /><span className={styles.avatarSlot}><Avatar id={message.authorId ?? "deleted"} name={name} size={32} /></span><div><div className={styles.messageMeta}><strong>{name}</strong><time dateTime={new Date(message.createdAt).toISOString()}>{new Date(message.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</time>{unread && message.body !== null ? <span className={styles.unreadBadge}>Unread</span> : null}{message.editedAt ? <span>Edited</span> : null}</div>{message.body === null ? <p className={styles.deleted}>Message removed</p> : editing?.id === message.id ? <div className={styles.editForm}><textarea aria-label="Edit message" autoFocus onChange={(event) => setEditing({ ...editing, body: event.target.value })} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); cancelAndRestoreFocus(); } }} value={editing.body} /><div><button onClick={cancelAndRestoreFocus} type="button">Cancel</button><button disabled={!validMessageBody(editing.body)} onClick={() => onEdit(editing.body)} type="button">Save edit</button></div></div> : <p>{message.body}</p>}{message.body === null && onReply ? <div className={styles.messageActions}><button onClick={onReply} type="button">View replies</button></div> : null}{message.body !== null && editing?.id !== message.id ? <div className={styles.messageActions}>{onReply ? <button onClick={onReply} type="button">{message.replyCount ? `${message.replyCount} ${message.replyCount === 1 ? "reply" : "replies"}` : "Reply"}</button> : null}{onCreateTask ? <button onClick={onCreateTask} type="button">Create task</button> : null}{taskCreated ? <span>Task created</span> : null}{canMutate && message.authorId === actorId ? <><button onClick={onStartEdit} ref={editButtonRef} type="button">Edit</button><button onClick={onDelete} type="button">Delete</button></> : null}</div> : null}</div></li>;
+  return <li className={styles.message} data-message-id={message.id} tabIndex={-1}><span aria-hidden data-message-observe data-observe-message-id={message.id} className={styles.observeSentinel} /><span className={styles.avatarSlot}><Avatar id={message.authorId ?? "deleted"} name={name} size={32} /></span><div><div className={styles.messageMeta}><strong>{name}</strong><time dateTime={new Date(message.createdAt).toISOString()}>{new Date(message.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</time>{unread && message.body !== null ? <span className={styles.unreadBadge}>Unread</span> : null}{message.editedAt ? <span>Edited</span> : null}</div>{message.body === null ? <p className={styles.deleted}>Message removed</p> : editing?.id === message.id ? <div className={styles.editForm}><textarea aria-label="Edit message" autoFocus onChange={(event) => setEditing({ ...editing, body: event.target.value })} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); cancelAndRestoreFocus(); } }} value={editing.body} /><div><button onClick={cancelAndRestoreFocus} type="button">Cancel</button><button disabled={!validMessageBody(editing.body)} onClick={() => onEdit(editing.body)} type="button">Save edit</button></div></div> : <><p>{message.body}</p><ConversationMessageFiles files={message.attachments} /></>}{message.body === null && onReply ? <div className={styles.messageActions}><button onClick={onReply} type="button">View replies</button></div> : null}{message.body !== null && editing?.id !== message.id ? <div className={styles.messageActions}>{onReply ? <button onClick={onReply} type="button">{message.replyCount ? `${message.replyCount} ${message.replyCount === 1 ? "reply" : "replies"}` : "Reply"}</button> : null}{onCreateTask ? <button onClick={onCreateTask} type="button">Create task</button> : null}{taskCreated ? <span>Task created</span> : null}{canMutate && message.authorId === actorId ? <><button onClick={onStartEdit} ref={editButtonRef} type="button">Edit</button><button onClick={onDelete} type="button">Delete</button></> : null}</div> : null}</div></li>;
 }
 
 function ThreadFrame({ children, onClose, visible = true }: Readonly<{ children: ReactNode; onClose: () => void; visible?: boolean }>) {

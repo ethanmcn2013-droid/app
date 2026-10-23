@@ -46,6 +46,6 @@ Judge each against `ping-requests.md` (90% pass, nothing that changes data wrong
 
 ## Not to regress
 
-- Message loading, sending, receipts, drafts and audience checks in `conversation-workspace.tsx` are unchanged by the redesign; keep them that way.
+- Message loading, sending, receipts, drafts and audience checks in `conversation-workspace.tsx` remain protected. Product note G5 authorizes a bounded extension: upload or paste up to three checked files, bind their ordered IDs to the exact pending message, and reconcile through the existing receipt-first recovery. Scope, root and audience remain pinned; a changed audience requires review and an explicit new upload. Files never send or re-upload automatically. This exception does not authorize broader transport or audience changes.
 - `pnpm test:conversations`, `pnpm test:ping-assistant`, `pnpm experience:fixtures` and `pnpm test:personal-chat-files:browser` stay green.
 - Ping's recovery copy and behaviour ("Check status", "Re-enter original request", no automatic replay) stay as they are.

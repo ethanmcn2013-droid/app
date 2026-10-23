@@ -161,3 +161,32 @@ test("draft audience normalization ignores ordering and restores body plus IDs a
   assert.deepEqual(state.recoveredDrafts, []);
   assert.deepEqual(state.draftMentionUserIds, ["bob", "maya"]);
 });
+
+test("attachment sends freeze ordered IDs and metadata; receipt files are authoritative and tombstones strip them", () => {
+  const file = (n: number) => ({ id: `ca_${String(n).padStart(32, "0")}`, filename: `${n}.txt`, mimeType: "text/plain", sizeBytes: n, href: `/api/conversations/attachments/${n}` });
+  const ids = [file(2).id, file(1).id]; const descriptors = [file(2), file(1)];
+  let state = reduce(ready(), { type: "submit", input: { ...input, body: "", attachmentIds: ids }, attachments: descriptors });
+  ids.reverse(); descriptors[0].filename = "mutated";
+  assert.deepEqual(state.pending[0].input.attachmentIds, [file(2).id, file(1).id]);
+  assert.equal(state.pending[0].attachments?.[0].filename, "2.txt");
+  state = reduce(state, { type: "uncertain", generation: 0, requestId: input.clientRequestId });
+  const resumed = reduce(ready(), { type: "resume_outgoing", generation: 0, pending: state.pending, recoveredDrafts: [] });
+  assert.deepEqual(resumed.pending[0].input.attachmentIds, [file(2).id, file(1).id]);
+  state = reduce(resumed, { type: "receipt", generation: 0, receipt: { ...receipt, attachments: [file(2), file(1)] } });
+  assert.deepEqual(state.messages[0].attachments, [file(2), file(1)]);
+  const deleted = { ...state.messages[0], revision: 2, body: null, deletedAt: 2 };
+  state = reduce(state, { type: "delta", generation: 0, delta: { audienceEpoch: 1, throughChangeSeq: 2, hasMore: false, messages: [deleted] } });
+  assert.equal(state.messages[0].attachments, undefined);
+  state = reduce(state, { type: "page", generation: 0, initialize: false, page: { audienceEpoch: 1, throughChangeSeq: 1, hasOlder: false, beforeCreateSeq: 1, messages: [{ ...deleted, revision: 1, deletedAt: null, body: "old", attachments: [file(2)] }] } });
+  assert.equal(state.messages[0].attachments, undefined);
+});
+
+test("old-audience attachment recovery retains the earlier file identity without replacing a newer text draft", () => {
+  const attachment = { id: "ca_00000000000000000000000000000001", filename: "one.txt", mimeType: "text/plain", sizeBytes: 1, href: "/api/conversations/attachments/one" };
+  let state = reduce(ready(), { type: "submit", input: { ...input, attachmentIds: [attachment.id] }, attachments: [attachment] });
+  state = reduce(state, { type: "draft", value: "Newer draft" });
+  state = reduce(state, { type: "restore_absent", generation: 0, requestId: input.clientRequestId });
+  assert.equal(state.draft, "Newer draft"); assert.equal(state.pending.length, 0);
+  assert.deepEqual(state.recoveredDrafts[0].attachments, [attachment]);
+  assert.equal(reduce(state, { type: "restore_recovered", requestId: input.clientRequestId }), state);
+});

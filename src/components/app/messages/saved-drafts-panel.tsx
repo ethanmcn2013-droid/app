@@ -11,6 +11,7 @@ export function SavedDraftsPanel({ entries, onOpen, onDiscard }: {
     <div role="region" aria-label="Saved conversations" tabIndex={0}>{entries.map((entry, index) => <details key={entry.key}>
       <summary>Saved {entry.scope.kind === "dm" ? "private " : ""}{entry.scope.rootId ? "reply" : "conversation"} {index + 1}</summary>
       {entry.bodies.map((body, bodyIndex) => <textarea key={bodyIndex} aria-label={`Saved text ${index + 1}.${bodyIndex + 1}`} readOnly value={body} rows={3} />)}
+      {entry.files ? <p>{entry.files} {entry.files === 1 ? "file kept" : "files kept"} in this draft.</p> : null}
       {entry.selectedPeople ? <p>{entry.selectedPeople} {entry.selectedPeople === 1 ? "person selected" : "people selected"} to notify.</p> : null}
       <button type="button" onClick={() => onOpen(entry.scope)}>Open saved conversation {index + 1}</button>
       <button disabled={entry.unresolved} type="button" onClick={() => onDiscard(entry.key)}>Discard saved draft {index + 1}</button>

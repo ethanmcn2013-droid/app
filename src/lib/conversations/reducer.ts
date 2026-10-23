@@ -1,7 +1,8 @@
+import type { ConversationAttachment } from "./attachment-contracts";
 import type { ConversationDelta, ConversationFailure, MessagePage, MessageReceipt, MessageRecord, SendInput } from "./contracts";
 
-export type PendingSend = { input: SendInput; state: "pending" | "uncertain" | "failed"; error?: ConversationFailure["code"] };
-export type RecoveredDraft = Readonly<{ requestId: string; body: string; mentionUserIds?: readonly string[] }>;
+export type PendingSend = { input: SendInput; attachments?: readonly ConversationAttachment[]; state: "pending" | "uncertain" | "failed"; error?: ConversationFailure["code"] };
+export type RecoveredDraft = Readonly<{ requestId: string; body: string; mentionUserIds?: readonly string[]; attachments?: readonly ConversationAttachment[] }>;
 export type ConversationClientState = {
   generation: number;
   actorId: string;
@@ -25,7 +26,7 @@ export type ConversationClientAction =
   | { type: "draft"; value: string }
   | { type: "draft_mentions"; ids: readonly string[] }
   | { type: "review_audience"; audienceEpoch: number }
-  | { type: "submit"; input: SendInput }
+  | { type: "submit"; input: SendInput; attachments?: readonly ConversationAttachment[] }
   | { type: "discard"; requestId: string }
   | { type: "resume_outgoing"; generation: number; pending: readonly PendingSend[]; recoveredDrafts: readonly RecoveredDraft[]; reviewedAudienceEpoch?: number | null; draftMentionUserIds?: readonly string[] }
   | { type: "restore_recovered" | "discard_recovered"; requestId: string }
@@ -43,7 +44,9 @@ function mergeMessages(current: readonly MessageRecord[], incoming: readonly Mes
   for (const candidate of incoming) {
     const prior = records.get(candidate.id);
     if (!prior || candidate.revision > prior.revision || (candidate.revision === prior.revision && candidate.deletedAt !== null)) {
-      records.set(candidate.id, candidate.deletedAt !== null ? { ...candidate, body: null } : candidate);
+      const sanitized = { ...candidate };
+      if (candidate.deletedAt !== null) { sanitized.body = null; delete sanitized.attachments; }
+      records.set(candidate.id, sanitized);
     }
     // A reply changes a root's count without editing its body. These two
     // independently ordered values must survive out-of-order page delivery.
@@ -73,7 +76,7 @@ export function conversationReducer(state: ConversationClientState, action: Conv
   }
   if (action.type === "submit") {
     if (state.status !== "ready" || state.audienceEpoch !== action.input.expectedAudienceEpoch || state.reviewedAudienceEpoch !== state.audienceEpoch || state.pending.some((send) => send.input.clientRequestId === action.input.clientRequestId)) return state;
-    return { ...state, draft: "", draftMentionUserIds: [], error: null, pending: [...state.pending, { input: { ...action.input, mentionUserIds: [...action.input.mentionUserIds] }, state: "pending" }] };
+    return { ...state, draft: "", draftMentionUserIds: [], error: null, pending: [...state.pending, { input: { ...action.input, mentionUserIds: [...action.input.mentionUserIds], ...(action.input.attachmentIds?.length ? { attachmentIds: [...action.input.attachmentIds] } : {}) }, ...(action.attachments?.length ? { attachments: action.attachments.map(file => ({ ...file })) } : {}), state: "pending" }] };
   }
   if (action.type === "delta") {
     if (state.status === "unavailable") return state;
@@ -85,7 +88,7 @@ export function conversationReducer(state: ConversationClientState, action: Conv
   if (action.type === "receipt") {
     const pending = state.pending.find((send) => send.input.clientRequestId === action.receipt.clientRequestId);
     if (!pending || state.status === "unavailable") return state;
-    const record: MessageRecord = { id: action.receipt.messageId, authorId: state.actorId, rootId: pending.input.rootId, body: pending.input.body, createSeq: action.receipt.createSeq, revision: action.receipt.revision, createdAt: action.receipt.committedAt, editedAt: null, deletedAt: null };
+    const record: MessageRecord = { id: action.receipt.messageId, authorId: state.actorId, rootId: pending.input.rootId, body: pending.input.body, createSeq: action.receipt.createSeq, revision: action.receipt.revision, createdAt: action.receipt.committedAt, editedAt: null, deletedAt: null, ...(action.receipt.attachments?.length ? { attachments: action.receipt.attachments } : {}) };
     return { ...state, messages: mergeMessages(state.messages, [record]), pending: state.pending.filter((send) => send !== pending) };
   }
   if (action.type === "uncertain") return { ...state, pending: state.pending.map((send) => send.input.clientRequestId === action.requestId ? { ...send, state: "uncertain" } : send) };
@@ -96,7 +99,7 @@ export function conversationReducer(state: ConversationClientState, action: Conv
     const occupied = (state.draft !== "" || state.draftMentionUserIds.length > 0) && (state.draft !== pending.input.body || !sameMentions);
     return { ...state, draft: occupied ? state.draft : pending.input.body,
       draftMentionUserIds: occupied ? state.draftMentionUserIds : [...new Set(pending.input.mentionUserIds)].sort(),
-      recoveredDrafts: occupied ? [...state.recoveredDrafts.filter((draft) => draft.requestId !== action.requestId), { requestId: action.requestId, body: pending.input.body, mentionUserIds: [...pending.input.mentionUserIds] }] : state.recoveredDrafts,
+      recoveredDrafts: occupied ? [...state.recoveredDrafts.filter((draft) => draft.requestId !== action.requestId), { requestId: action.requestId, body: pending.input.body, mentionUserIds: [...pending.input.mentionUserIds], ...(pending.attachments?.length ? { attachments: pending.attachments } : {}) }] : state.recoveredDrafts,
       pending: state.pending.filter((send) => send !== pending), error: "audience_changed", status: "loading" };
   }
   if (action.type === "page") {
