@@ -2964,7 +2964,7 @@
       "lastReviewedAt": "2026-10-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "13c879ddcdccbfcc"
+      "materialityHash": "f966b6d8ecf7a020"
     },
     {
       "id": "tasks.state.app-home-loading",
