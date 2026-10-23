@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.welcome",
+  "source": "tasks/src/app/welcome/page.tsx",
+  "materialityHash": "56f4c16d02cbcebb",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_timeline_files independent Sol6.1 rendered reviewer; no founder attribution",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-cc102731baa9662412b6134b-fa1a967220a469e0.json",
+    "attestationSha256": "028388725d57102156f331d51862be28e90d6fdcc1b424b26dab6475f3cd5229",
+    "runId": "tasks-playwright-cc102731baa9662412b6134b",
+    "canonicalEvidenceSha256": "cc102731baa9662412b6134b0d2f403baa4ac88c473474890c85c9b1c2823645",
+    "rawArtifactSha256": "fa1a967220a469e0574956cacc1a716c53a4afa67bd0bd30397b9b048a3aa2dd",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.welcome",
+    "caseName": "unavailable explicit project recovery",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Corrected Header prefix34ce capture40016173288 passed188/188 outcomes. Independent reviewer verified exact source, four capture contracts, canonical raw digest and all72 mapped PNG bodies against original attachments.52 images verified identical to retained previously independently reviewed bytes;20 new PNGs individually inspected. Visible Share, larger avatars and simplified Files/Analytics chrome were legible across supplied viewports with no blocking finding. Closed Share screenshots do not prove invite interactions. General Settings does not certify Security/provider UI or activation. Static synthetic Files demo, Welcome fallback, upload-affordance, inherited664px loading width and unseen-interaction limits retained. No live claim, numerical score or quality coverage advance.",
+  "decision": "accepted for supplied synthetic initial-state materiality only; interaction and live/provider limits retained"
+}
