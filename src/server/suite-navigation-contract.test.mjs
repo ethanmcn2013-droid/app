@@ -16,6 +16,7 @@ const tasksWorkspaceStyles = read("src/components/tasks/workspace.module.css");
 const tasksToolbar = read("src/components/tasks/toolbar.tsx");
 const tasksHeader = read("src/components/tasks/header.tsx");
 const tasksViewHref = read("src/lib/projects/floor-view-href.ts");
+const tasksViewNavigation = read("src/components/tasks/view-navigation.tsx");
 const appLayout = read("src/app/app/layout.tsx");
 const mobileSuiteNav = read("src/components/app/mobile-suite-nav.tsx");
 const coreNavigation = read("src/lib/core-navigation.ts");
@@ -72,7 +73,16 @@ const crossSuiteJourney = JSON.parse(
 
 test("Tasks view changes can emit only canonical Tasks destinations", () => {
   assert.match(tasksToolbar, /floorViewHref\(view, verified, taskId\)/);
-  assert.match(tasksWorkspace, /router\.push\(viewHref\.href\(next\)\)/);
+  assert.match(tasksWorkspace, /const \{ navigate \} = useTasksViewNavigation\(\)/);
+  assert.match(tasksWorkspace, /navigate\(viewHref\.href\(next\)\)/);
+  assert.match(tasksToolbar, /const \{ navigate \} = useTasksViewNavigation\(\)/);
+  assert.match(tasksToolbar, /navigate\(href\(view\.id\)\)/);
+  // Both controls still use the canonical link builder. The native history
+  // adapter retains that path/query without requesting another page payload.
+  assert.match(tasksViewNavigation, /const next = new URL\(href, current\)/);
+  assert.ok(tasksViewNavigation.includes('window.history.pushState(null, "", `${next.pathname}${next.search}${next.hash}`)'));
+  assert.match(tasksViewNavigation, /if \(!current\.searchParams\.has\("workspaceId"\)\) next\.searchParams\.delete\("workspaceId"\)/);
+  assert.doesNotMatch(tasksViewNavigation, /searchParams\.delete\("task"\)|next\.(?:pathname|search)\s*=/);
   for (const source of [`${tasksToolbar}
 ${tasksViewHref}`, roomTools]) {
     assert.match(source, /TASKS_VIEW_PATHS/);
