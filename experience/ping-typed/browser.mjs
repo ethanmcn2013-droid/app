@@ -33,12 +33,15 @@ const receipt = { sourceNormalization: 'LF', status: 'running', head: execFileSy
   'Explicit synthetic fixture authentication, Next navigation/server-action and disabled EventSource adapters; not genuine Next/Clerk admission or voice/provider proof.'
 ] };
 const stubs = new Map([
-  ['next/navigation', `export const useRouter=()=>({push(){throw Error('Unexpected navigation')},replace(){},refresh(){window.fixtureRouterRefreshes=(window.fixtureRouterRefreshes??0)+1;}});export const usePathname=()=>'/app/tasks';export const useSearchParams=()=>new URLSearchParams();`],
+  ['next/navigation', `export const useRouter=()=>({push(){throw Error('Unexpected navigation')},replace(){},refresh(){window.fixtureRouterRefreshes=(window.fixtureRouterRefreshes??0)+1;}});export const usePathname=()=>'/app/tasks/list';export const useSearchParams=()=>new URLSearchParams();`],
   ['next/link', `import {createElement} from 'react';export default function Link({href,prefetch,scroll,...rest}){return createElement('a',{href,...rest})}`],
   ['next/dynamic', `import {createElement,lazy,Suspense} from 'react';export default function dynamic(load,options={}){const View=lazy(()=>load().then(m=>({default:m.default??m})));return function Dynamic(props){return createElement(Suspense,{fallback:null},createElement(View,props))}}`],
   ['@clerk/nextjs', `export const useUser=()=>({isLoaded:true,isSignedIn:true,user:{id:window.pingFixtureUser}});export const useAuth=()=>({isLoaded:true,isSignedIn:true,userId:window.pingFixtureUser,sessionId:window.pingFixtureSession});`],
   ['@/server/actions/tasks', `export async function getTasksAction(project){const response=await fetch('/fixture/initial');const data=await response.json();if(data.projectId!==project)throw Error('Fixture Project changed');return data.tasks.map(task=>{for(const key of ['dueAt','updatedAt','archivedAt','completedAt'])if(typeof task[key]==='string')task[key]=new Date(task[key]);return task;});}` + ['addTaskAction','duplicateTaskAction','moveTaskAction','removeTaskAction','reorderTaskAction','setTaskArchivedAction','setTaskMilestoneAction','toggleCompleteAction','updateTaskAction'].map(name=>`export const ${name}=()=>{throw Error('Unrelated server action ${name} not exercised')};`).join('')],
   ['@/server/actions/board', ['moveTaskToColumnAction','addColumnAction','deleteColumnAction','renameColumnAction','reorderColumnsAction','setColumnColorAction','setColumnDescriptionAction','setColumnDoneAction','setColumnLimitAction'].map(name=>`export const ${name}=()=>{throw Error('Unrelated board action not exercised')};`).join('')],
+  // Header invitations and project archival are unrelated to this real Ping fixture.
+  ['@/server/actions/settings', `export const inviteMemberByEmailAction=()=>{throw Error('Unrelated invitation action not exercised')};`],
+  ['@/server/actions/planning', `export const archiveProjectAction=()=>{throw Error('Unrelated archive action not exercised')};`],
   ['@/server/actions/set-parent', `export const setParentAction=()=>{throw Error('Unrelated action not exercised')};`],
   ['@/components/app/add-task/add-task-context', `export const useAddTask=()=>({open:false,defaults:{},openDialog(){throw Error('Composer not exercised')},closeDialog(){},setDefaultsProvider(){}});`],
   ['@/components/app/share/share-button', `export const ShareButton=()=>null;`],
