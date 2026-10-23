@@ -33,6 +33,7 @@ import { SIGNAL_INDIGO, suiteMarkMetrics } from "@/lib/brand/suite-mark";
 import { CHAT_ENABLED_ATTRIBUTE, openPalette, ThemeCycleButton, useShell, useShortcutLabel } from "./app-shell";
 import { SidebarIcon, type SidebarIconName } from "./sidebar-icon";
 import { ProjectContextMenu } from "./project-context-menu";
+import { PROJECT_ROWS_CHANGED_EVENT, PROJECT_COLOR_CHANGED_EVENT, parseProjectColorIndex, projectColorToken, type ProjectColorIndex } from "@/lib/projects/project-appearance";
 import { useMorePreferences } from "./use-more-preferences";
 import moreStyles from "./sidebar-more.module.css";
 import {
@@ -160,24 +161,37 @@ function useProjectRows(enabled: boolean) {
   const [marks, setMarks] = useState<Readonly<Record<string, SidebarProjectMark>>>({});
   const [weddingIds, setWeddingIds] = useState<ReadonlySet<string>>(EMPTY_IDS);
   const [failed, setFailed] = useState(false);
-  const loaded = useRef(false);
+  const [colors, setColors] = useState<Readonly<Record<string, ProjectColorIndex>>>({});
   useEffect(() => {
-    if (!enabled || loaded.current) return;
-    loaded.current = true;
-    void (async () => {
+    if (!enabled) return;
+    let cancelled = false;
+    let revision = 0;
+    const load = async () => {
+      const reading = ++revision;
       try {
         const result = await loadSidebarProjectsAction();
+        if (cancelled || reading !== revision) return;
         if (result.ok) {
+          setColors(result.colors ?? {});
+          setFailed(false);
           setRows(result.rows);
           setMarks(result.marks);
           setWeddingIds(new Set(result.weddingIds));
         } else setFailed(true);
-      } catch {
-        setFailed(true);
-      }
-    })();
+      } catch { if (!cancelled && reading === revision) setFailed(true); }
+    };
+    const changed = () => { void load(); };
+    const colorChanged = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      const color = parseProjectColorIndex(detail?.colorIndex);
+      if (typeof detail?.projectId === "string" && color !== null) setColors(previous => ({ ...previous, [detail.projectId]: color }));
+    };
+    void load();
+    window.addEventListener(PROJECT_ROWS_CHANGED_EVENT, changed);
+    window.addEventListener(PROJECT_COLOR_CHANGED_EVENT, colorChanged);
+    return () => { cancelled = true; window.removeEventListener(PROJECT_ROWS_CHANGED_EVENT, changed); window.removeEventListener(PROJECT_COLOR_CHANGED_EVENT, colorChanged); };
   }, [enabled]);
-  return { rows, marks, weddingIds, failed };
+  return { rows, marks, weddingIds, failed, colors };
 }
 
 export function AppSidebar({
@@ -212,7 +226,7 @@ export function AppSidebar({
     ? activeProject.chrome.project.name
     : undefined;
   const { collapsed, toggleCollapsed, setMobileOpen } = useShell();
-  const { rows, marks, weddingIds, failed } = useProjectRows(Boolean(activeProject));
+  const { rows, marks, weddingIds, failed, colors } = useProjectRows(Boolean(activeProject));
   const foldedSections = useFolded();
   const morePreferences = useMorePreferences();
   const hiddenMore = new Set(morePreferences.hidden);
@@ -340,7 +354,7 @@ export function AppSidebar({
     // completion or an empty project without those counts.
     const tile = (
       <span className={styles.projectProgress} aria-hidden="true">
-        <span className={styles.projectProgressCore} style={{ backgroundColor: projectColor(row.id) }} />
+        <span className={styles.projectProgressCore} style={{ backgroundColor: colors[row.id] ? projectColorToken(colors[row.id]) : projectColor(row.id) }} />
       </span>
     );
     const dot = mark ? <span className={styles.statusDot} data-tone={mark} title={SIDEBAR_MARK_LABEL[mark]} aria-hidden="true" /> : null;
@@ -358,7 +372,7 @@ export function AppSidebar({
       ? row.name
       : undefined;
     return (
-      <ProjectContextMenu key={row.id} projectId={row.id} projectName={row.name}>
+      <ProjectContextMenu key={row.id} projectId={row.id} projectName={row.name} role={row.role} colorIndex={colors[row.id]}>
         <SidebarIntentLink
           href={buildProjectUrl({ surface: "tasks", view: "board" }, row.id, readableName)}
           className={styles.item}
@@ -671,7 +685,7 @@ export function AppSidebar({
                 ) : null}
               </>,
               <>
-                <SidebarIntentLink href="/app/archived" aria-label="Archived projects" title="Archived projects" onClick={() => setMobileOpen(false)}>
+                <SidebarIntentLink href="/app/project#archived-projects" aria-label="Archived projects" title="Archived projects" onClick={() => setMobileOpen(false)}>
                   <ShellIcon.archive size={13} />
                 </SidebarIntentLink>
                 <SidebarIntentLink href="/app/project" aria-label="All projects" title="All projects" onClick={() => setMobileOpen(false)}>

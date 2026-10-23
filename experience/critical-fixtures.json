@@ -209,7 +209,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "Niamh O’Connell added you to The Orchard, events.",
+              "name": "Niamh O\u2019Connell added you to The Orchard, events.",
               "proves": [
                 "default"
               ]
@@ -404,7 +404,7 @@
           "assertions": [
             {
               "kind": "text",
-              "text": "Read-only · Shared link",
+              "text": "Read-only \u00b7 Shared link",
               "proves": [
                 "default",
                 "read-only"
@@ -520,7 +520,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "You’re already signed in here.",
+              "name": "You\u2019re already signed in here.",
               "proves": [
                 "default",
                 "disabled"
@@ -647,7 +647,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "Couldn’t find that one. The link, the task, or both.",
+              "name": "Couldn\u2019t find that one. The link, the task, or both.",
               "proves": [
                 "error"
               ]
@@ -673,7 +673,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "This share link doesn’t exist.",
+              "name": "This share link doesn\u2019t exist.",
               "proves": [
                 "error"
               ]
@@ -732,7 +732,7 @@
         {
           "kind": "role",
           "role": "combobox",
-          "name": "Search, jump or create…",
+          "name": "Search, jump or create\u2026",
           "value": "recommended suppliers",
           "proves": [
             "default"
@@ -2136,7 +2136,7 @@
     "src/components/app/project/projects-first-run.module.css": "3970d5ca855054817edabf9a718386c2d122cc2cf257269f16a7f8965cf21847",
     "src/components/app/project/projects-first-run.tsx": "a3f33c00d374aed24e5bf2f2636d2d2f3ae05321cb29cc48de0abfc9976712b8",
     "src/components/app/project/projects-hub.module.css": "499ec60157e146a229cd669c9b4e24bc44bd05a604c2a8a7b64455a52961fa32",
-    "src/components/app/project/projects-hub.tsx": "97ae74f037bbe388a61acc56a967181e41d4412abde8d36b3e1afa4910ad96e8",
+    "src/components/app/project/projects-hub.tsx": "38dc9eaaf7d9a1cec544ebcd37ad294d4289935ecd9fd13e82c10c5bffb2f9fe",
     "src/components/app/project/wedding-date-form.test.ts": "5822ace6e2c63e5738f47d6a98c24c3a4b17dd92b89affff4a869dd391069671",
     "src/components/app/project/wedding-date-form.tsx": "b794756615399e6219ae61c37410494f39b049d6a5fa0cf163511beb6ebcb497",
     "src/components/app/project/wedding-date-readback.browser.test.mjs": "deb97cdcda7f3d54b34b3f722b92745b4a3c19cc816a7dd7b0318e1fe70b7388",
@@ -2635,7 +2635,7 @@
     "src/components/settings/settings-chrome.tsx": "c1f88d61f4552655da474795231133a1e6509c9799129592cbc77cd9cf759154",
     "src/components/shell/account-menu.tsx": "e067d3d8509c1d0396417e0e93418d9cdd5b3c80483533af03f4093ea083f4ef",
     "src/components/shell/app-shell.tsx": "4604b0217dad05226f14b4c795cbc77591296c12e3b30bf1f87ca50b9bd6e1e0",
-    "src/components/shell/app-sidebar.tsx": "a67579ba7fcf814de61257ab0af6d1bb5d3fe6a9ae768e79cd1bcdfa3ef70c0a",
+    "src/components/shell/app-sidebar.tsx": "77dfeea446433e21e57e2eb8e1f0b51539dea0ebcd9fccdd08fac6cd0e466aa7",
     "src/components/shell/favicon-badge.ts": "4cc332d4675acb33fee22b81c20119db0480d113a6d79041e4fde6f9606d4b4d",
     "src/components/shell/launcher/apps-launcher.tsx": "9236c159d410e73b7491b961a4f683aefcb67be030990f0135e50af2c9048577",
     "src/components/shell/launcher/launcher-catalog.test.ts": "dc9d60f5b7a05f73fe271537d1c4e44ef81788ca974b177661b1e20d36a204ac",
@@ -2647,14 +2647,14 @@
     "src/components/shell/launcher/tool-placeholder.tsx": "baefa0d488942a1423d7fc0cbf34e3475be7ffad06674486d534e4f7e61809c7",
     "src/components/shell/more-preferences-model.test.ts": "b077365456e27be2ae1af71d4e08040106a0ffcc8b7f81577fc40e6232eb146f",
     "src/components/shell/more-preferences-model.ts": "06a39eca52d386afe990618f26198e8267e673a059b1b1a5a1ae0e125974944d",
-    "src/components/shell/project-context-menu.module.css": "01775cb72088f3fcca272044f5ea2297d079aed53e87499b52e3333d1775aa87",
-    "src/components/shell/project-context-menu.tsx": "33b648c3c84558937b1f5df286b8164a8ba66b720dfea3d6b0243129e3071828",
+    "src/components/shell/project-context-menu.module.css": "0c897914e74e71688e7210efc54b742dc9c4faf9a515c0a063f0cb97b8303b24",
+    "src/components/shell/project-context-menu.tsx": "7533aa92bec4c210a3bd641bf34ed63beaa8a260da968b18e8c99613d20142d3",
     "src/components/shell/shell-icons.tsx": "a10a02883fd5d4a1cc5305edd2aace5797c12b1cd98662e871365ef87a168094",
-    "src/components/shell/shell-nav.test.ts": "90f0762bf8570d50245e287e992ed250dec051ceaea0ae996e05baeaedec8db0",
+    "src/components/shell/shell-nav.test.ts": "3b569c48b3c4a0ddff60d14afc3966becf28759c9851b95a33154b433effc72a",
     "src/components/shell/shell-nav.ts": "fbc32d28830db98bf5a88ea4cb0b90bca4cc7473989c703d681010ab885cbdae",
     "src/components/shell/shell.module.css": "77742b4674d0f94645bffbd5f0e6e874d996422d2eed7d1e1be0161f859e2ef0",
     "src/components/shell/sidebar-icon.tsx": "205e2ce815f67f4f701a06fe514f52ef4630e61320f222f938d04472f1ab35c2",
-    "src/components/shell/sidebar-icons-contract.test.mjs": "f341efdba4a3bb0369e3bb9776aec07f6c5909c5b8011d83ee9734d5ac48f915",
+    "src/components/shell/sidebar-icons-contract.test.mjs": "52b0a31e3de0968be860c14772b0a288c7f7ea344369fbfdfbcec08f49d55f69",
     "src/components/shell/sidebar-intent-link.tsx": "a4ecf433cda74f63841606ab79b340272003f08605d62019dca0c9b44b32a32c",
     "src/components/shell/sidebar-more.module.css": "8bc5bca3bb09863bfbc1496a46590ed4c3f1fc81ea59f2381742ea15552ca041",
     "src/components/shell/use-more-preferences.ts": "47bbe536f4d24371bcbdb0e295e192afd34e8ad4d0f291e52a00c465d165b694",
@@ -2934,7 +2934,7 @@
     "src/lib/projects/project-files-analytics.test.ts": "559d9bebef62a7cf73a3ce4a5915e3586fcc5d6cc09f273d77f93e181ff7d9c3",
     "src/lib/projects/project-files.ts": "f6a5f2d3ef5725c71ebe9d17af5b5a5043fa1999806aa5e2fd06a45fc12c1d94",
     "src/lib/projects/project-hub.test.ts": "ce12b35be12c85e17648d96795d0d21e1ae9dd39b3b1973cea9958bf241164f0",
-    "src/lib/projects/project-hub.ts": "3d63b7a423fde88861ce96ba6d57a7bdc0fc4842ec3372da13bc6eb72b06d8fa",
+    "src/lib/projects/project-hub.ts": "1cebf8ab74af1e83078abf7c97d34485b89aa83f777a9eeca70c5fe52f4f4765",
     "src/lib/projects/project-portfolio-scale.test.ts": "94c2e983e3d3466ea6815255aeeaf212bc46a9e4e884782480b21e3ed08a2378",
     "src/lib/projects/project-portfolio-scale.ts": "bf3d4ddf0d06bca8d7a5b9d9bd6c0d3a1ab1799d7fd8a027e0182a1718e07d26",
     "src/lib/projects/project-portfolio.test.ts": "4774fe47ee24386d1f3413717628387bae0f55433ce0e07c6e43365e5d98e6d5",
@@ -3304,7 +3304,7 @@
     "src/server/actions/set-parent.ts": "2c14aa7c8266812d03b780ba31b53fdb09b7b22e14bda00d9a7b188c36717b7e",
     "src/server/actions/settings.ts": "ae879f696ae2d88b0bacc049ea12aa8f3c57c98fa87d0cfff5ad22ad37a0620d",
     "src/server/actions/share.ts": "3d52fe92f00c150c6eb94144a40263a06b51d6e4a157fc125bc045bfcff587a6",
-    "src/server/actions/sidebar-projects.ts": "adb54c1596f3e806dc96ebb534f6b63862f907362393b9aecef5d0c068621069",
+    "src/server/actions/sidebar-projects.ts": "991708d17a1b591d91085679644ee3f5e1a4879e6bbdbb478df0c1bfaa8077a8",
     "src/server/actions/sponsored-wedding-date.test.ts": "a15a132931e7d10f5d825ed5104b48f0852e56e691609d2cb3c080f4098373ff",
     "src/server/actions/sponsored-wedding-date.ts": "2faeb8b60a0b0ba10fc5ccc0c477d6b4bd6d8b181febf39030636d48ac87de0f",
     "src/server/actions/tags.ts": "2379e82da77cbffb164e91f6039a865b366e43b360c8de723b866469e054f1f5",
@@ -3598,7 +3598,7 @@
     "src/server/projects/project-console-facts.test.ts": "b6958570dcbf93e5d106da583b4bd420564fd4bcb524f0ed96311e0ff27346e2",
     "src/server/projects/project-console-facts.ts": "fe12b1cffb88985f316a64e1f347a846a1ea06de5a5348f2ebac188fe6b4861c",
     "src/server/projects/project-deletion-fence.ts": "f78a7c2c5a36eec61defdf5ec83a92acdfec1cb7e906cd58453ba4db02105f21",
-    "src/server/projects/project-deletion-meta.test.ts": "d3baff5c4c3af0873e607f9d70b50cc5fb957da93cf193f53761d8ad7a9712e3",
+    "src/server/projects/project-deletion-meta.test.ts": "7c90ff7554ef273042a69606d86f91359092e1a51eebefba5a54da2e3f9d9a8c",
     "src/server/projects/project-deletion-rows.ts": "799402ec9257207ca12229850f607537984597e320c814f926c7d1c5e654bbf0",
     "src/server/projects/project-files.test.ts": "7ac76d3e29e574e55d8d0028add3a46d325bc2a64d5609e2c025b02f0923fafd",
     "src/server/projects/project-files.ts": "b80dd110813e0ac4b0a39102a16cd7bc9122003d1024a03f5509cc25ecaaecef",
@@ -3836,6 +3836,10 @@
     "src/components/shell/header-collaboration.tsx": "1a156ec764f9440426a349b7d9c4337af789345c46ca270aab90ce1b514d4c68",
     "src/lib/projects/header-collaboration-scope.test.ts": "429cd41da36f036095cbaea3c1cf7a128ea6fa6a21f705c92c810999fd64e431",
     "src/lib/projects/header-collaboration-scope.ts": "2861f86410347d721fdfa83f98024d2a79191db3df9775444b4b3c2aefe876e3",
-    "src/server/projects/header-collaboration.ts": "f3599c6cd71dc8190eff68b2bbbfbcdd233bb22239daa082681d8763bdb10b36"
+    "src/server/projects/header-collaboration.ts": "f3599c6cd71dc8190eff68b2bbbfbcdd233bb22239daa082681d8763bdb10b36",
+    "src/lib/projects/project-appearance.ts": "f90960631052aa9be94c0c03451761ca83bba6de999af6d16ad88f4a81f0315d",
+    "src/server/actions/project-menu.ts": "08ffcc756f9ec689ddfcc81848864fc81346ff66608c8a05d6f112515318dc23",
+    "src/server/projects/project-appearance.test.ts": "ab491d6f0ab893afdd6440a6c810031f582cf40231afdda338dd7a8de912add5",
+    "src/server/projects/project-appearance.ts": "26488f5fa665a65d81f6661c15c4ae56d1d2efec941b3bd71258c7afecb63a3f"
   }
 }

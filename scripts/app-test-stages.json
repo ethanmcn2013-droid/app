@@ -401,6 +401,7 @@
     "src/server/projects/project-hub-console-demo.test.ts",
     "src/server/projects/project-console-facts.test.ts",
     "src/server/projects/project-deletion-meta.test.ts",
+    "src/server/projects/project-appearance.test.ts",
     "src/server/projects/project-files.test.ts",
     "src/server/files-sources-shelf-gate.test.ts",
     "src/components/app/files-shelf/shelf-model.test.ts",

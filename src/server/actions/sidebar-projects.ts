@@ -35,6 +35,7 @@ import { dayOrdinalIn, ordinalToIsoDate } from "@/lib/projects/project-console";
 import { projectStatusMetaKey, projectTargetDateMetaKey } from "@/lib/projects/project-hub";
 import { readWeddingIdsWith } from "@/server/wedding/guests";
 import { sidebarProjectMarks, type SidebarProjectMark } from "@/lib/projects/sidebar-projects";
+import { parseProjectColorIndex, projectColorMetaKey, type ProjectColorIndex } from "@/lib/projects/project-appearance";
 
 /** Statuses are read for at most this many Projects, as the console does. */
 const MARKS_LIMIT = 200;
@@ -44,6 +45,7 @@ export type LoadSidebarProjectsResult =
       ok: true;
       rows: readonly ChooserRow[];
       marks: Readonly<Record<string, SidebarProjectMark>>;
+      colors?: Readonly<Record<string, ProjectColorIndex>>;
       /** Projects made for a wedding: their row carries the Wedding tools. */
       weddingIds: readonly string[];
     }>
@@ -58,6 +60,7 @@ export async function loadSidebarProjectsAction(): Promise<LoadSidebarProjectsRe
   if (rows.length === 0) return { ok: true, rows, marks: {}, weddingIds: [] };
 
   let marks: Record<string, SidebarProjectMark> = {};
+  const colors: Record<string, ProjectColorIndex> = {};
   try {
     const ids = rows.map((row) => row.id as string).slice(0, MARKS_LIMIT);
     const viewerId = await getCurrentUser();
@@ -65,13 +68,18 @@ export async function loadSidebarProjectsAction(): Promise<LoadSidebarProjectsRe
       db
         .select({ key: meta.key, value: meta.value })
         .from(meta)
-        .where(inArray(meta.key, ids.flatMap((id) => [projectStatusMetaKey(id), projectTargetDateMetaKey(id)]))),
+        .where(inArray(meta.key, ids.flatMap((id) => [projectStatusMetaKey(id), projectTargetDateMetaKey(id), projectColorMetaKey(id)]))),
       getUserPreferences(viewerId).then(
         (preferences) => validTimeZone(preferences.timeZone),
         () => "UTC",
       ),
     ]);
     marks = sidebarProjectMarks(ids, metaRows, ordinalToIsoDate(dayOrdinalIn(timeZone)(Date.now())));
+    const byKey = new Map(metaRows.map(row => [row.key, row.value]));
+    for (const id of ids) {
+      const color = parseProjectColorIndex(byKey.get(projectColorMetaKey(id)));
+      if (color !== null) colors[id] = color;
+    }
   } catch {
     marks = {};
   }
@@ -81,5 +89,5 @@ export async function loadSidebarProjectsAction(): Promise<LoadSidebarProjectsRe
   } catch {
     weddingIds = [];
   }
-  return { ok: true, rows, marks, weddingIds };
+  return { ok: true, rows, marks, weddingIds, colors };
 }

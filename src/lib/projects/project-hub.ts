@@ -85,6 +85,7 @@ export function projectColumnsMetaKey(projectId: string): string {
  */
 export function projectOwnedMetaKeys(projectId: string): readonly string[] {
   return [
+    `project-color:${projectId}`,
     projectStatusMetaKey(projectId),
     projectTargetDateMetaKey(projectId),
     projectPurposeMetaKey(projectId),

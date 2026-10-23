@@ -23,6 +23,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActiveProject, type ActiveProjectContextValue } from "@/components/app/active-project-provider";
 import { projectColor } from "@/components/shell/app-sidebar";
+import { ProjectContextMenu } from "@/components/shell/project-context-menu";
 import { ShellIcon } from "@/components/shell/shell-icons";
 import { CREATE_PROJECT_READY_ATTRIBUTE, focusShellCreate, SHELL_CREATE_PROJECT_EVENT } from "@/lib/shell-create";
 import { MonthlyTemplateChoice } from "@/components/studio-bar/monthly-template-choice";
@@ -797,7 +798,7 @@ function NewProjectForm({
  */
 function ArchivedProjects({ rows }: { rows: readonly ChooserRow[] }) {
   return (
-    <details className={styles.archived}>
+    <details id="archived-projects" className={styles.archived}>
       <summary className={styles.archivedSummary}>
         <ShellIcon.chevronRight size={14} className={styles.archivedChevron} />
         <ShellIcon.archive size={14} />
@@ -806,6 +807,7 @@ function ArchivedProjects({ rows }: { rows: readonly ChooserRow[] }) {
       <ul className={styles.archivedList}>
         {rows.map((row) => (
           <li key={row.id}>
+            <ProjectContextMenu projectId={row.id} projectName={row.name} role={row.role} archived>
             <Link href={buildProjectUrl({ surface: "project" }, row.id)} className={styles.archivedRow} aria-label={row.accessibleName}>
               <span className={styles.monogram} style={{ background: projectColor(row.id) }} aria-hidden="true">
                 {row.monogram}
@@ -816,6 +818,7 @@ function ArchivedProjects({ rows }: { rows: readonly ChooserRow[] }) {
               </span>
               <ShellIcon.arrowRight size={14} />
             </Link>
+            </ProjectContextMenu>
           </li>
         ))}
       </ul>
