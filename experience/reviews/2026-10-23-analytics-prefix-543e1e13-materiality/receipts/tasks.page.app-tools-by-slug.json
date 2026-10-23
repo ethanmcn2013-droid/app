@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-tools-by-slug",
+  "source": "tasks/src/app/app/tools/[slug]/page.tsx",
+  "materialityHash": "4a1b05486b44306f",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_tasks independent Sol6.1 rendered reviewer; no founder attribution",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-80ca40c2f6977aece18c4da9-747dca59245b530e.json",
+    "attestationSha256": "aa3747ad6326b2d17401f5b4f32ab9b47dad1d2497175ae4d641234db2d8070d",
+    "runId": "tasks-playwright-80ca40c2f6977aece18c4da9",
+    "canonicalEvidenceSha256": "80ca40c2f6977aece18c4da9710345e63831e16fa5bc19e89fe16d684f9bcbb8",
+    "rawArtifactSha256": "747dca59245b530ec4e51aa618850e4cc1cf558f3c28baa750fcb2159be15e36",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-tools-by-slug",
+    "caseName": "wedding hub in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Analytics prefix543e1e13 capture40014639465 passed188/188 outcomes. Independent reviewer verified raw report, candidate source, four capture-contract bindings and all72 mapped PNG bodies against original attachments.71 images exactly match retained independently reviewed image bytes; the one new mobile Analytics loading image was individually inspected as a coherent390px single-column skeleton. No new blocking visible finding in18 supplied targets. Static/synthetic initial-state limits remain, including inherited Tasks loading width, old gated Files demo, unavailable Welcome, upload affordance and unseen interactions. This is not live/provider/history verification or Sidebar acceptance; no numerical score or quality coverage advance.",
+  "decision": "accepted for supplied synthetic initial-state materiality only; inherited, interaction and live/provider limits retained"
+}
