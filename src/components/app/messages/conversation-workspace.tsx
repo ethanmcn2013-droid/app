@@ -15,7 +15,7 @@ import type { ConversationAttachmentCache } from "./conversation-attachment-draf
 import { ConversationFilePicker, DraftConversationFiles, ConversationMessageFiles } from "./conversation-attachments";
 import { useConversationCaches } from "./conversation-session-provider";
 import { SavedDraftsPanel } from "./saved-drafts-panel";
-import { hasDraftCapacity, listSavedDrafts, type SavedConversationScope } from "./conversation-client-model";
+import { hasDraftCapacity, listSavedDrafts, validConversationDraftBody, type SavedConversationScope } from "./conversation-client-model";
 import { DirectMessageControls, DirectMessageDirectory, type DirectMessageScope } from "./direct-message-directory";
 import { resolveTaskOutcome, type TaskOutcomeSubmission } from "./task-outcome-client";
 import { TaskOutcomeForm, type TaskOutcomeRequest, type TaskOutcomeResult } from "./task-outcome-form";
@@ -520,7 +520,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
 
   async function send() {
     const audienceReady = audience !== null && audience.audienceEpoch === state.audienceEpoch;
-    if (!scope || (scope.kind === "dm" && !scope.canWrite) || !audienceReady || state.audienceEpoch === null || state.reviewedAudienceEpoch !== state.audienceEpoch || draftMentionUserIds.some((id) => !audience.members.some((member) => member.id === id)) || !(validMessageBody(state.draft) || (!state.draft.trim() && files.ready.length > 0)) || files.waiting || (files.files.length > 0 && !files.available) || sendsOff || scope.lifecycle === "archived") return;
+    if (!scope || (scope.kind === "dm" && !scope.canWrite) || !audienceReady || state.audienceEpoch === null || state.reviewedAudienceEpoch !== state.audienceEpoch || draftMentionUserIds.some((id) => !audience.members.some((member) => member.id === id)) || !validConversationDraftBody(state.draft, files.ready.length > 0) || files.waiting || (files.files.length > 0 && !files.available) || sendsOff || scope.lifecycle === "archived") return;
     const input: SendInput = { projectId: project.id, conversationId: scope.conversationId, clientRequestId: newRequestId(), expectedAudienceEpoch: state.audienceEpoch, body: files.ready.length && !state.draft.trim() ? "" : normalizeMessageBody(state.draft), rootId, mentionUserIds: draftMentionUserIds, ...(files.ready.length ? { attachmentIds: files.ready.map(file => file.id) } : {}) };
     const next = conversationReducer(state, { type: "submit", input, attachments: files.ready });
     if (next === state || (input.attachmentIds?.length && !files.reserve(input.attachmentIds, input.clientRequestId))) return;
@@ -577,7 +577,7 @@ function ProjectConversationSession({ actorId, project, projects, fixtureActor, 
   const canChange = audienceReady && !audienceNeedsReview && !sendsOff && scope?.lifecycle === "active" && (scope.kind !== "dm" || scope.canWrite);
   const unavailableMention = audienceReady && draftMentionUserIds.some((id) => !members.some((member) => member.id === id));
   const removedRoot = rootId !== null && state.messages.some((message) => message.id === rootId && message.body === null);
-  const bodyValid = validMessageBody(state.draft) || (!state.draft.trim() && files.ready.length > 0); const bodyBytes = new TextEncoder().encode(state.draft).byteLength;
+  const bodyValid = validConversationDraftBody(state.draft, files.ready.length > 0); const bodyBytes = new TextEncoder().encode(state.draft).byteLength;
   const SessionContainer = "section";
   const title = rootId ? "Replies" : scope?.kind === "dm" ? scope.other.name : project.name;
   const audienceDescription = scope?.kind === "dm" ? `Private conversation in ${project.name} · exactly two people` : audienceReady ? `Visible to ${members.length} current members · ${members.map((member) => member.name).join(", ")}` : "Visible to current Project members · membership list updating";

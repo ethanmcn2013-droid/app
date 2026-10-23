@@ -1,3 +1,4 @@
+import { validMessageBody } from "@/lib/conversations/contracts";
 import type { ConversationAttachmentCache } from "./conversation-attachment-drafts";
 import { parseProjectId, type ProjectId } from "@/lib/projects/project-ref";
 import type { PendingSend, RecoveredDraft } from "@/lib/conversations/reducer";
@@ -100,4 +101,9 @@ export function conversationHeaders(fixtureActor: string | undefined, hasBody: b
   if (hasBody) headers.set("content-type", "application/json");
   if (fixtureActor) headers.set("x-fixture-actor", fixtureActor);
   return headers;
+}
+
+/** A checked attachment can carry an otherwise empty message; text limits stay unchanged. */
+export function validConversationDraftBody(body: string, hasFiles: boolean): boolean {
+  return (hasFiles && !body.trim()) || validMessageBody(body);
 }

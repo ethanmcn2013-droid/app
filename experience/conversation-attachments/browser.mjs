@@ -12,7 +12,8 @@ await mkdir(output, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const results = []; const errors = [];
 try {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, reducedMotion: "reduce", acceptDownloads: true });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, reducedMotion: "reduce", acceptDownloads: true, extraHTTPHeaders: { "x-fixture-actor": "synthetic_alice" } });
+  await context.addCookies([{ name: "__conversation_fixture_actor", value: "synthetic_alice", url: origin, httpOnly: true, sameSite: "Strict" }]);
   const page = await context.newPage(); const requests = []; const uploadRequests = [];
   page.on("pageerror", error => errors.push(error.message));
   page.on("request", request => {

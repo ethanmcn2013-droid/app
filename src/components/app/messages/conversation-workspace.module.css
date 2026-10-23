@@ -223,3 +223,8 @@
   .workspace[data-stacked] .message:hover .messageActions, .workspace[data-stacked] .message:focus-within .messageActions { opacity: 1; }
 }
 .workspace[data-stacked] .composer textarea:focus-visible { outline: none; }
+
+/* File rows keep their own line in the compact composer; tools stay quiet. */
+.composer > ul { flex: 1 0 100%; min-width: 0; }
+.composer button[data-conversation-file-tool] { background: transparent; color: var(--cw-soft); padding: 4px 6px; }
+.composer button[data-conversation-file-tool]:hover { background: var(--v3-hover); color: var(--cw-ink); }

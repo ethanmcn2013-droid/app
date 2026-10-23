@@ -84,3 +84,13 @@ test("losing one DM clears only its root and thread drafts, preserving other roo
   forgetConversationDrafts(cache, "alice", project, "dm_a");
   assert.deepEqual([...cache.values()], ["keep project", "keep other DM", "keep other actor"]);
 });
+
+test("an empty draft needs checked files while ordinary text validation stays bounded", async () => {
+  const { validConversationDraftBody } = await import("./conversation-client-model");
+  assert.equal(validConversationDraftBody("", false), false);
+  assert.equal(validConversationDraftBody("", true), true);
+  assert.equal(validConversationDraftBody(" \n", true), true);
+  assert.equal(validConversationDraftBody("message", false), true);
+  assert.equal(validConversationDraftBody("a".repeat(8001), true), false);
+  assert.equal(validConversationDraftBody("\0", true), false);
+});
