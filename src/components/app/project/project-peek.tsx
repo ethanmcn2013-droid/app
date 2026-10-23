@@ -26,6 +26,7 @@ import type { ProjectCardStats } from "@/lib/projects/project-hub";
 import { CONSOLE_DAYS, formatConsoleDate, type ConsoleFacts, type ConsoleRow } from "@/lib/projects/project-console";
 import { Mark, type ConsoleSurface } from "./project-console";
 import styles from "./project-peek.module.css";
+import { ProjectTimelinePreview } from "./project-timeline-preview";
 
 export type ProjectPeekProps = Readonly<{
   row: ConsoleRow;
@@ -193,11 +194,8 @@ function PeekFrame({ row, stats, facts, today, position, isOpenProject, hrefFor,
             <Field label="Target date" icon={<CalendarIcon />}>
               {stats?.targetDate ? formatConsoleDate(stats.targetDate, today) : <span className={styles.quiet}>Not set</span>}
             </Field>
-            <Field label="Next big date" icon={<DiamondIcon />}>
-              <span data-quiet={row.next.quiet || undefined} className={row.next.quiet ? styles.quiet : undefined}>
-                {row.next.value}
-              </span>
-              {row.next.caption ? <span className={styles.caption}>{row.next.caption}</span> : null}
+            <Field label="Timeline" icon={<DiamondIcon />}>
+              <ProjectTimelinePreview row={row} href={hrefFor(row.id, "timeline")} onGo={() => onGo(row.id, "timeline")} />
             </Field>
             <Field label="Open tasks" icon={<CheckIcon />}>
               {row.open}

@@ -4,6 +4,21 @@
 
 Hide a conversation from the floating Chat list just for you, and paste files into Saved notes. Ping shows a character count near its existing request limit.
 
+## 2026-10-23 · Projects at a glance
+
+Projects keeps progress and ownership together in a simpler list. See timeline previews the Project's dated milestones, with a clear message when the preview is empty, unavailable or limited.
+
+## 2026-10-23 · Tasks board controls
+
+Drag task columns to reorder them, and switch between Board, List and Calendar without losing your place. Project progress keeps the whole Project in view while filters are applied. When all saved tasks are done, a restrained completion message offers Archive project; archiving still needs your click. The retired Stuck button is removed.
+
+## 2026-10-23 · App navigation and invitations
+
+Home and Inbox link to each other with tabs. The header is quieter, and switching Projects opens its Tasks board. Invite a Project member from the Tasks header without leaving your work. Toast messages stay near the bottom of the screen, with room beside an open chat.
+
+## 2026-10-23 · Analytics discovery
+
+Analytics opens with a centred search field and aligned question cards. How the numbers are calculated appears when you open an answer.
 
 ## 2026-10-23 · Ping Project and folder controls
 

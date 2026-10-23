@@ -304,7 +304,7 @@ function Ask({
       ) : (
         <Starters questions={questions} hrefs={hrefs} />
       )}
-      <Method analytics={a} acrossAll={scope.kind === "all"} />
+      {asked ? <Method analytics={a} acrossAll={scope.kind === "all"} /> : null}
     </>
   );
 }

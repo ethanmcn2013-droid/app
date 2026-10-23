@@ -27,7 +27,7 @@ test("the address names a view and a tab, and anything else is the default", () 
   assert.equal(parseConsoleView("console"), "console");
   assert.equal(parseConsoleView(undefined), "console");
   assert.equal(parseConsoleView(["cards"]), "console");
-  assert.equal(parseConsoleFilter("needs-a-look"), "attention");
+  assert.equal(parseConsoleFilter("needs-a-look"), "all");
   assert.equal(parseConsoleFilter("yours"), "mine");
   assert.equal(parseConsoleFilter("wrapped"), "wrapped");
   assert.equal(parseConsoleFilter("events"), "all");
@@ -48,7 +48,7 @@ test("how a project is doing is the owner's status plus a passed target date", (
   assert.equal(row("p-kitchen").standing, "paused");
   assert.equal(row("p-kitchen").sub, "Paused · target 15 Feb 2027");
   assert.equal(row("p-website").standing, "unset");
-  assert.equal(row("p-website").sub, "No status yet");
+  assert.equal(row("p-website").sub, "Ready for tasks");
   // A finished project whose date has passed is simply finished.
   assert.equal(row("p-oconnor").standing, "wrapped");
   assert.equal(row("p-oconnor").mark, "wrapped");
@@ -67,9 +67,9 @@ test("a passed target date leads the line under the name, and the group and coun
     const one = withStatus(status);
     assert.equal(one.rows[0]!.sub, sub);
     assert.equal(one.rows[0]!.mark, "past_date");
-    assert.deepEqual(consoleGroups(one, "all").map((group) => [group.label, group.rows.length]), [["Needs a look", 1]]);
+    assert.deepEqual(consoleGroups(one, "all").map((group) => [group.label, group.rows.length]), [["Active", 1]]);
     assert.equal(one.counts.attention, 1);
-    assert.deepEqual(one.summary[1], { text: "1 needs a look", tone: "risk" });
+    assert.ok(one.summary.every(part => !part.text.includes("a look")));
     assert.doesNotMatch(one.rows[0]!.sub, /On track/);
   }
   // Complete is simply finished, whatever its date.
@@ -93,10 +93,10 @@ test("rows are grouped by standing, the most pressing first", () => {
   assert.deepEqual(
     groups.map((group) => [group.label, group.rows.length]),
     [
-      ["Needs a look", 3],
+      ["Active", 3],
       ["On track", 4],
       ["Paused", 1],
-      ["No status yet", 2],
+      ["Task progress", 2],
     ],
   );
   // Past its date before at risk; then the soonest big date first.
@@ -163,7 +163,6 @@ test("a project that cannot be opened says why, and a wrapped one has no reminde
 test("the summary line counts active projects only", () => {
   assert.deepEqual(model.summary, [
     { text: "10 active" },
-    { text: "3 need a look", tone: "risk" },
     { text: "89 open tasks" },
     { text: "10 late", tone: "late" },
   ]);
@@ -290,4 +289,15 @@ test("finished work falls on the reader's own days", () => {
   assert.equal(utc[12], 1);
   // A finish stamped after "now" (clock skew) is not counted into a future day.
   assert.deepEqual(doneByDay([now + 3 * 86_400_000], now, "UTC").reduce((a, b) => a + b, 0), 0);
+});
+
+
+test("missing declared status uses task facts without inventing owner status", () => {
+  const base = projects[0]!;
+  const one = (total: number, complete: number) => buildConsole([{ ...base, stats: { ...base.stats!, status: null, targetDate: null, total, complete } }], today).rows[0]!;
+  assert.equal(one(0, 0).markLabel, "Ready for tasks");
+  assert.equal(one(5, 2).markLabel, "3 tasks open");
+  assert.equal(one(5, 5).markLabel, "All tasks done");
+  assert.equal(buildConsole([{ ...base, stats: null }], today).rows[0]!.markLabel, "Progress unavailable");
+  assert.ok(!CONSOLE_FILTERS.includes("attention"));
 });
