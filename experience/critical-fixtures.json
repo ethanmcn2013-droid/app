@@ -3848,7 +3848,7 @@
     "src/components/app/messages/use-conversation-attachments.ts": "d7bdd8e3611f3d1500b0458fc29281addf293c997a230ce361d7546f9f7822a2",
     "src/lib/conversations/attachment-contracts.ts": "a7214bc1613bc99c8c1d1eaa20ffd2d221ce9746dc4400f7429b3467bf37b2fd",
     "src/server/conversations/attachment-erasure.ts": "ca1f7eac0cb7846c83d3c4d52de1cfe5e4d1de316b65ee32159e2429467d1aac",
-    "src/server/conversations/attachment-http.ts": "1fff2d080bc95fbb84408da715f0724194d6011e77b0157f0d8eefd3e40e3489",
+    "src/server/conversations/attachment-http.ts": "964066ec4bc3cd86b60362f65c571fbaba1eb4c4e5ea708a77f3664a7bf8a1e6",
     "src/server/conversations/attachments.persistence.test.ts": "2aeb0d75c05c468c8590eecf2f4c16bbd8d12eef3c99e6b2fae07e383e1cc616",
     "src/server/conversations/attachments.ts": "d47d289692f1984bb2cb316df01798548a774f8d215e241669029e2aa8374550"
   }

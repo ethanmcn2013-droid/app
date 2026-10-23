@@ -51,7 +51,8 @@ export function createConversationAttachmentHttp(deps: {
       const service = await deps.service();
       if (!await service.available()) return conversationFileError("unavailable");
       const parseScope = (values: { get: (key: string) => unknown }) => {
-        const projectId = parseProjectId(values.get("projectId"));
+        const rawProjectId = values.get("projectId");
+        const projectId = typeof rawProjectId === "string" ? parseProjectId(rawProjectId) : null;
         const conversationId = values.get("conversationId");
         const root = values.get("rootId");
         const epoch = values.get("expectedAudienceEpoch");
