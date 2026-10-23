@@ -13,6 +13,7 @@ import {
   notifications,
   pendingInvites,
   projectDriveOperations,
+  projectDriveSubfolders,
   resources,
   weddingGuests,
   weddingHouseholds,
@@ -30,6 +31,7 @@ import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/na
 import { eraseEntitlementsInTransaction } from "@/server/venue-issuance/erasure";
 import { eraseProjectConversationRows } from "@/server/conversations/account-lifecycle";
 import { projectOwnedMetaKeys } from "@/lib/projects/project-hub";
+import { retireProjectDriveSubfolders } from "@/server/connections/project-drive-subfolders-lifecycle";
 
 type ProjectRowsExecutor = Pick<
   LibSQLDatabase<typeof schema>,
@@ -48,6 +50,7 @@ export async function deleteProjectRowsInTransaction(
   transaction: ProjectRowsExecutor,
   workspaceId: string,
 ): Promise<readonly string[]> {
+  await retireProjectDriveSubfolders(transaction, eq(projectDriveSubfolders.workspaceId, workspaceId));
   await eraseProjectConversationRows(transaction, workspaceId);
   const taskRows = await transaction
     .select({ id: tasks.id })

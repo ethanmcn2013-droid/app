@@ -595,6 +595,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/personal-chat-attachments-2026-10-18.json",
       "receiptSha256": "30f8399adefef545831b5217c82af1e233737add1943aa8d991b742ce4a920cf"
+    },
+    {
+      "ordinal": 46,
+      "id": "0046_project_drive_subfolders",
+      "file": "drizzle/0046_project_drive_subfolders.sql",
+      "when": 1792713600000,
+      "sha256": "0eb95bd1782173f2fb7eb5db0292e2c65d6b26ed5233bc3d8589ab332bc559e6",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/project-drive-subfolders-2026-10-23.json",
+      "receiptSha256": "33f4f547b34135c118310a58fbbb992c7ef12037e80f7a5cf804636595be58b2"
     }
   ]
 }

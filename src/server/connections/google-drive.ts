@@ -456,6 +456,22 @@ export async function findGoogleDriveFilesByAppProperty(
   });
 }
 
+/** Refuse an unrelated same-name child; a name never establishes ownership. */
+export async function findGoogleDriveChildFoldersByName(
+  accessToken: string,
+  input: Readonly<{ parentId: string; name: string }>,
+  fetchImpl: GoogleFetch = fetch,
+): Promise<GoogleDriveFilePage> {
+  const url = driveUrl("/drive/v3/files");
+  url.searchParams.set("q", `'${escapeDriveQueryValue(requireText(input.parentId, "parentId"))}' in parents and name = '${escapeDriveQueryValue(requireText(input.name, "name"))}' and mimeType = '${GOOGLE_DRIVE_FOLDER_MIME_TYPE}' and trashed = false`);
+  url.searchParams.set("spaces", "drive");
+  url.searchParams.set("pageSize", "100");
+  url.searchParams.set("fields", `nextPageToken,files(${DRIVE_FILE_FIELDS})`);
+  const body = await driveRecord("file-list", accessToken, url, { method: "GET" }, fetchImpl);
+  if (!Array.isArray(body.files)) throw malformedResponse("file-list");
+  return Object.freeze({ files: Object.freeze(body.files.map(file => parseDriveFile(recordOf(file), "file-list"))), nextPageToken: optionalString(body.nextPageToken) });
+}
+
 /** Rename metadata only; parent changes and destructive operations stay absent. */
 export async function renameGoogleDriveFile(
   accessToken: string,

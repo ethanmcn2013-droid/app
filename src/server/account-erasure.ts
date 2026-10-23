@@ -16,6 +16,7 @@ import {
   notifications,
   pendingInvites,
   projectDriveOperations,
+  projectDriveSubfolders,
   providerConnections,
   resources,
   weddingGuests,
@@ -35,6 +36,7 @@ import {
   workspaces,
 } from "./db/schema";
 import * as schema from "./db/schema";
+import { retireProjectDriveSubfolders } from "./connections/project-drive-subfolders-lifecycle";
 import {
   GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE,
   GOOGLE_DRIVE_OPERATION_ERASURE_CANCELLED_STATUS,
@@ -111,6 +113,7 @@ export type AccountErasureOptions = Readonly<{
     accountUserId: string,
     receipt: PendingDelegatedDriveUploadReceipt,
   ) => Promise<Readonly<{ outcome: "resolved" | "blocked" }>>;
+  reconcilePendingDriveSubfolder?: (accountUserId: string, operationId: string) => Promise<void>;
   /** Test-only race seam, after the atomic fence attempt and before its result is consumed. */
   afterProjectDeletionFenceAttempt?: () => Promise<void>;
   /** Test seam; production delegates every disk/blob locator to storage.ts. */
@@ -480,6 +483,20 @@ export async function eraseAccountData(
     WHERE ${meta.key} = ${accountErasureFenceKey}
       AND ${meta.value} = ${GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE}
   )`;
+  // The durable account fence now prevents any new folder dispatch. Retire
+  // untouched intents and settled provider receipts; retain ambiguous creates.
+  const subfolderScope = or(
+    eq(projectDriveSubfolders.actorUserId, userId),
+    ownedWorkspaceIds.length ? inArray(projectDriveSubfolders.workspaceId, ownedWorkspaceIds) : undefined,
+    connectionIds.length ? inArray(projectDriveSubfolders.connectionId, connectionIds) : undefined,
+    accountStorageGenerationIds.length ? inArray(projectDriveSubfolders.storageGenerationId, accountStorageGenerationIds) : undefined,
+  )!;
+  const unresolvedSubfolders = await database.select({ id: projectDriveSubfolders.id }).from(projectDriveSubfolders).where(and(subfolderScope, eq(projectDriveSubfolders.createStarted, true), isNull(projectDriveSubfolders.folderId)));
+  for (const operation of unresolvedSubfolders) {
+    if (!options.reconcilePendingDriveSubfolder) throw new Error("account erasure deferred: Drive folder creation remains unresolved; exact custody retained");
+    await options.reconcilePendingDriveSubfolder(userId, operation.id);
+  }
+  await retireProjectDriveSubfolders(database, subfolderScope);
   // Once the durable fence exists, every ordinary prepare/claim/finalize path
   // loses atomically. Freeze the account-owned operation scope and snapshot
   // exact provider receipts in one follow-up batch. Each statement is gated

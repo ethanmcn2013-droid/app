@@ -118,6 +118,7 @@ export async function deleteUnifiedAccountDataWith(
     revokeProjectDriveRefreshToken?: AccountErasureOptions["revokeProjectDriveRefreshToken"];
     /** Recovery-only resolver for pre-fence delegated upload receipts. */
     recoverPendingDelegatedDriveUpload?: AccountErasureOptions["recoverPendingDelegatedDriveUpload"];
+    reconcilePendingDriveSubfolder?: AccountErasureOptions["reconcilePendingDriveSubfolder"];
     /** Test seam; production always uses the real Tasks erasure. */
     eraseTasks?: TasksEraseFn;
   },
@@ -167,6 +168,7 @@ export async function deleteUnifiedAccountDataWith(
             opts.revokeProjectDriveRefreshToken,
           recoverPendingDelegatedDriveUpload:
             opts.recoverPendingDelegatedDriveUpload,
+          reconcilePendingDriveSubfolder: opts.reconcilePendingDriveSubfolder,
         });
     tasksGoogleTokens = tasksResult.googleRefreshTokens;
   } catch {

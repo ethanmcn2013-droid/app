@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "reviewedBy": "Implementation self-check; independent revision-bound review required before release.",
+  "authorizedBy": "Founder delegated bounded Ping Project Drive subfolder implementation; isolated preparation only.",
+  "authorizationSource": "Active coordinator task on 23 October 2026. No production migration authority.",
+  "id": "project-drive-subfolders-2026-10-23",
+  "migrations": [
+    {
+      "id": "0046_project_drive_subfolders",
+      "sha256": "0eb95bd1782173f2fb7eb5db0292e2c65d6b26ed5233bc3d8589ab332bc559e6",
+      "reviewedAt": "2026-10-23T00:00:00.000Z",
+      "risk": "Additive immediate-child folder intent, fenced lease and provider receipt. Unresolved external create blocks evidence deletion; no permission writes.",
+      "rollbackPlan": "Disable new folder entrypoints; retain all pending and accepted custody. Do not drop unresolved receipts. Production requires separate backup and execution receipt.",
+      "postconditions": [
+        "Stable operation identity and exact parent/generation/account are retained.",
+        "Unique generation/name prevents a second local request creating the same named folder.",
+        "Provider ambiguity cannot be deleted through parent cascades."
+      ],
+      "proofs": [
+        {
+          "id": "subfolder-table",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='table' AND name='project_drive_subfolders'",
+          "expected": 1
+        },
+        {
+          "id": "subfolder-indexes",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='index' AND name IN ('idx_project_drive_subfolder_name','idx_project_drive_subfolder_workspace')",
+          "expected": 2
+        },
+        {
+          "id": "subfolder-restrict",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('project_drive_subfolders') WHERE on_delete='RESTRICT'",
+          "expected": 4
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

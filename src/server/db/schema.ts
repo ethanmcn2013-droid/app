@@ -1384,6 +1384,39 @@ export const workspaceStorage = sqliteTable(
  * generation. The generation id stays distinct even for owner A → B → A or a
  * replacement folder under the same connection.
  */
+/** Immediate-child creation custody. Never reuse the root provisioning journal. */
+export const projectDriveSubfolders = sqliteTable("project_drive_subfolders", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  actorUserId: text("actor_user_id").notNull(),
+  storageGenerationId: text("storage_generation_id").notNull(),
+  connectionId: text("connection_id").notNull(),
+  providerAccountId: text("provider_account_id").notNull(),
+  parentId: text("parent_id").notNull(),
+  folderName: text("folder_name").notNull(),
+  status: text("status").$type<"pending" | "running" | "unknown" | "complete" | "attention">().notNull(),
+  attemptId: text("attempt_id"),
+  leaseUntil: integer("lease_until", { mode: "timestamp_ms" }),
+  createStarted: integer("create_started", { mode: "boolean" }).notNull().default(false),
+  folderId: text("folder_id"),
+  folderUrl: text("folder_url"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  providerDiagnostics: text("provider_diagnostics", { mode: "json" }).$type<Array<{ stage: string; outcome: string; durationMs: number }>>().notNull().default(sql`'[]'`),
+  providerCallCount: integer("provider_call_count").notNull().default(0),
+  providerDurationMs: integer("provider_duration_ms").notNull().default(0),
+}, (t) => [
+  uniqueIndex("idx_project_drive_subfolder_name").on(t.storageGenerationId, t.folderName),
+  index("idx_project_drive_subfolder_workspace").on(t.workspaceId),
+  foreignKey({ columns: [t.workspaceId], foreignColumns: [workspaces.id] }).onDelete("restrict"),
+  foreignKey({ columns: [t.storageGenerationId, t.workspaceId], foreignColumns: [workspaceStorage.id, workspaceStorage.workspaceId] }).onDelete("restrict"),
+  foreignKey({ columns: [t.connectionId], foreignColumns: [providerConnections.id] }).onDelete("restrict"),
+  check("project_drive_subfolder_status", sql`${t.status} IN ('pending','running','unknown','complete','attention')`),
+  check("project_drive_subfolder_name", sql`length(${t.folderName}) BETWEEN 1 AND 100 AND ${t.folderName} = trim(${t.folderName})`),
+  check("project_drive_subfolder_started", sql`${t.createStarted} IN (0,1)`),
+  check("project_drive_subfolder_diagnostics", sql`json_valid(${t.providerDiagnostics}) AND json_type(${t.providerDiagnostics}) = 'array'`),
+  check("project_drive_subfolder_receipt", sql`(${t.status} != 'complete' OR (${t.folderId} IS NOT NULL AND ${t.folderUrl} IS NOT NULL)) AND ((${t.folderId} IS NULL) = (${t.folderUrl} IS NULL))`),
+]);
+
 export const driveFolderGrants = sqliteTable(
   "drive_folder_grants",
   {
