@@ -910,6 +910,40 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
         }
         continue;
       }
+      if (canonicalPath(path) === "src/server/connections/project-drive-subfolders-lifecycle.ts") {
+        // These exact lifecycle helpers have no interactive caller. Recovery
+        // only searches the original marker under erased-account custody.
+        assert.equal(importsProjectDriveAuthorization(code), false);
+        const functions = exportedAsyncFunctionBlocks(code);
+        assert.deepEqual(functions.map(fn => fn.name), [
+          "assertProjectDriveSubfoldersSettled", "retireProjectDriveSubfolders", "reconcileProjectDriveSubfolderForErasure",
+        ]);
+        for (const fn of functions.slice(0, 2)) {
+          assert.match(fn.source.slice(0, 400), /scope\s*:\s*SQL/);
+          assert.doesNotMatch(fn.source, /dependencies\.|withSession|fetch\s*\(|GoogleDrive/);
+        }
+        const recovery = functions[2].source;
+        assert.match(recovery, /accountUserId\s*:\s*string/);
+        assert.match(recovery, /operationId\s*:\s*string/);
+        assert.match(recovery, /eq\(folders\.id, operationId\)/);
+        assert.match(recovery, /!row\.createStarted \|\| row\.folderId/);
+        assert.match(recovery, /googleDriveAccountErasureFenceKey\(accountUserId\)/);
+        assert.match(recovery, /if \(!held \|\| \(row\.leaseUntil/);
+        assert.match(recovery, /relation\.owner !== accountUserId && relation\.storageOwner !== accountUserId && row\.actorUserId !== accountUserId/);
+        assert.match(recovery, /withSession\(\{ workspaceId: row\.workspaceId, storageGenerationId: row\.storageGenerationId, connectionId: row\.connectionId, folderId: row\.parentId \}/);
+        assert.match(recovery, /session\.credential\.providerAccountId !== row\.providerAccountId/);
+        assert.match(recovery, /findGoogleDriveFilesByAppProperty/);
+        assert.match(recovery, /key: "signalSubfolderOperationId", value: row\.id, parentId: row\.parentId/);
+        assert.match(recovery, /matches\.nextPageToken \|\| matches\.files\.length !== 1/);
+        assert.match(recovery, /found\.parents\.length !== 1 \|\| found\.parents\[0\] !== row\.parentId \|\| found\.appProperties\.signalSubfolderOperationId !== row\.id/);
+        assert.match(recovery, /if \(!fence\) throw/);
+        assert.match(recovery, /status: "attention", folderId: file\.id, folderUrl/);
+        assert.match(recovery, /where\(and\(eq\(folders\.id, row\.id\), isNull\(folders\.folderId\), eq\(folders\.createStarted, true\)\)\)/);
+        assert.match(recovery, /behavior: "immediate"/);
+        assert.match(code, /withProjectDriveReceiptSession/);
+        assert.doesNotMatch(code, /createGoogleDrive|deleteGoogleDrive|renameGoogleDrive|Permission|\.insert\s*\(/);
+        continue;
+      }
       assert.equal(
         importsProjectDriveAuthorization(code),
         true,
