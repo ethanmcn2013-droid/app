@@ -1,5 +1,10 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Account sign-in details
+
+Account settings shows an already connected Facebook account and lists a verified phone number separately from an email address. Available connection actions still follow the enabled sign-in providers.
+
+
 ## 2026-10-23 · Ping Project and folder controls
 
 Ping can prepare archive and restore plans for named Projects, with owner or co-owner permission and Undo when the Project has not changed. Ordinary delete requests use recoverable archive. Tasks, members and history stay saved; existing published Timeline links stay published. Project lifecycle batches contain distinct Projects and stay separate from task and chat edits.
