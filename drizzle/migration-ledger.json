@@ -605,6 +605,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/project-drive-subfolders-2026-10-23.json",
       "receiptSha256": "33f4f547b34135c118310a58fbbb992c7ef12037e80f7a5cf804636595be58b2"
+    },
+    {
+      "ordinal": 47,
+      "id": "0047_conversation_chat_attachments",
+      "file": "drizzle/0047_conversation_chat_attachments.sql",
+      "when": 1792713600001,
+      "sha256": "90f51e2e6f35e069d211dc2b3743aeeda2f6f74f8c357115c653c1604f41304b",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/conversation-chat-attachments-2026-10-23.json",
+      "receiptSha256": "ae2c72e1e4ff4c4b764c260a904bf2b8876e6c61fec3ada841bdfe4541831f88"
     }
   ]
 }

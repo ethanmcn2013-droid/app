@@ -1,0 +1,1365 @@
+{
+  "schema": "corrected-shell-independent-rendered-review/1",
+  "reviewer": "Sol 6.1 independent non-author",
+  "reviewedAt": "2026-10-23T20:39:29.003Z",
+  "head": "641d2f9e2a1c3b7b017767447e4e81150dde65d8",
+  "tree": "151f5f5e04154cbefa2fe5f9cb0600f280153498",
+  "status": "rendered-review-complete-no-new-blocking-layout-finding",
+  "numericalScoresAssigned": false,
+  "provenance": {
+    "captureRun": 40015635344,
+    "runUrl": "https://github.com/ethanmcn2013-droid/app/actions/runs/40015635344",
+    "githubRunReadback": "Completed success; exact head641d2f9e; capture, attestation and sidebar capture steps successful.",
+    "artifactId": 12528398320,
+    "artifactName": "tasks-selected-candidate-641d2f9e2a1c3b7b017767447e4e81150dde65d8",
+    "githubArtifactDigest": "sha256:2c1348b042c5904fca1f866928a434e21715fb1b949a2c25603ceb9af598f9c8",
+    "archiveDigestBoundary": "Read from GitHub metadata; original archive digest not independently recomputed in this review.",
+    "candidateSource": {
+      "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\output\\candidate-source.json",
+      "sha256": "e35440b94145ffbd9b7317aa868a9caa9b29a10fd9432ca108c30fb8d6818867",
+      "captureOnly": true
+    },
+    "rawGitCommit": "641d2f9e2a1c3b7b017767447e4e81150dde65d8",
+    "ciEventMergeCommit": "88afb39a67fd1aa5ebd0f6c600d8f286cf2ccb43",
+    "ciMetadataBoundary": "Event CI merge-commit metadata differs, but explicit candidate checkout receipt and report gitCommit both bind exact641d2f9e; workflow checks checkout HEAD equality."
+  },
+  "contracts": {
+    "files": [
+      {
+        "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\browser-contract.json",
+        "sha256": "838e98594ed9b15cfa6386e15abea30ac0553727a42e77ade1badc31740870e1",
+        "attestationField": "browserContractSha256",
+        "equalsExactCommitSource": true
+      },
+      {
+        "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\critical-fixtures.json",
+        "sha256": "c4050d102d309a3b5879a71fca3cec1b0a49e072894456945adcf9b8b1adb348",
+        "attestationField": "fixtureManifestSha256",
+        "equalsExactCommitSource": true
+      },
+      {
+        "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\playwright.config.ts",
+        "sha256": "2be57e878ddb600689a2c4f29b6e6529d56cdff7a5663492c77d4b9fbe459534",
+        "attestationField": "playwrightConfigSha256",
+        "equalsExactCommitSource": true
+      },
+      {
+        "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\tests\\critical-experiences.spec.ts",
+        "sha256": "3fd479c6f663668c65e4f8a840ef6c4bf2a94d3787a82a4893d9d084d34b66a1",
+        "attestationField": "playwrightSpecSha256",
+        "equalsExactCommitSource": true
+      }
+    ],
+    "allFourHashesMatchAttestation": true,
+    "allFourFilesMatchExact641CommitNormalizedBytes": true,
+    "rawArtifact": {
+      "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\output\\critical-evidence.json",
+      "sha256": "39741545d09e7fdb8730450a5fccd7eadfce5ea670656d4f608269291523d010"
+    },
+    "attestation": {
+      "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\output\\evidence-attestation.json",
+      "sha256": "64e286a7ad3e9a176fcd521a6305ad3f4aa729e83a396d328b171ed6c3b23d97",
+      "runId": "tasks-playwright-1165ea0b0709c8efa0a670ff",
+      "canonicalEvidenceSha256": "1165ea0b0709c8efa0a670ffbe195c9b3e2a59cb87368b45d3ba8ed4ada60fd4"
+    },
+    "rawOutcomesExactlyMatchAttestation": true,
+    "canonicalDigestIndependentlyRecomputed": true,
+    "exactFixtureAndBrowserPairs": "47 canonical case titles times4 projects =188 exact expected pairs; no duplicates/missing/skipped/errors/flaky outcomes.",
+    "testCount": 188,
+    "passedCount": 188
+  },
+  "imageReview": {
+    "targetCount": 18,
+    "mappedImages": 72,
+    "reusedAfterReceiptAndOriginalHashVerification": 70,
+    "currentOriginalsVisuallyInspected": 2,
+    "allMappedImagesMatchRawReportAttachmentBytes": true,
+    "additionalHomeInboxImages": 8,
+    "additionalHomeInboxMethod": "All8 exact raw attachment bytes equal retained independently reviewed originals and recorded hashes."
+  },
+  "previousIndependentReview": {
+    "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\architecture\\shell-prefix-cloud-render-review.json",
+    "sha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+    "head": "1465f9ea806b35bfedad9dd27e5f583ae1fe7523",
+    "captureRun": "40005072954"
+  },
+  "targets": [
+    {
+      "id": "tasks.page.app-settings",
+      "caseName": "own surface in demo",
+      "path": "/app/settings",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-settings-mobile.png",
+          "sha256": "2b7823903d78c33d60fd5da776150a96a07bb56d511806ad35970dd8f9ff12a4",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-settings-mobile.png",
+            "recordedSha256": "2b7823903d78c33d60fd5da776150a96a07bb56d511806ad35970dd8f9ff12a4",
+            "actualSha256": "2b7823903d78c33d60fd5da776150a96a07bb56d511806ad35970dd8f9ff12a4"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-settings-tablet.png",
+          "sha256": "df55e66b32f8b092a45e6a2c56961ed01be57ca5e060e7b8c7039802fe900a98",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-settings-tablet.png",
+            "recordedSha256": "df55e66b32f8b092a45e6a2c56961ed01be57ca5e060e7b8c7039802fe900a98",
+            "actualSha256": "df55e66b32f8b092a45e6a2c56961ed01be57ca5e060e7b8c7039802fe900a98"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-settings-desktop.png",
+          "sha256": "770a192962727901ba645a2d91c23b0c3d444fd725b76a6cf445291ae744237e",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-settings-desktop.png",
+            "recordedSha256": "770a192962727901ba645a2d91c23b0c3d444fd725b76a6cf445291ae744237e",
+            "actualSha256": "770a192962727901ba645a2d91c23b0c3d444fd725b76a6cf445291ae744237e"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-settings-wide.png",
+          "sha256": "a5b696f712c741ba835b52d94ddf060bb14775b181de77f099ec2b859f6e50ad",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-settings-wide.png",
+            "recordedSha256": "a5b696f712c741ba835b52d94ddf060bb14775b181de77f099ec2b859f6e50ad",
+            "actualSha256": "a5b696f712c741ba835b52d94ddf060bb14775b181de77f099ec2b859f6e50ad"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-project",
+      "caseName": "own surface in demo",
+      "path": "/app/project",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-project-mobile.png",
+          "sha256": "b8785570260139883a19e93f738cdf6ed1af2a1ab6e51d629399e91869c06094",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-project-mobile.png",
+            "recordedSha256": "b8785570260139883a19e93f738cdf6ed1af2a1ab6e51d629399e91869c06094",
+            "actualSha256": "b8785570260139883a19e93f738cdf6ed1af2a1ab6e51d629399e91869c06094"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-project-tablet.png",
+          "sha256": "f13cd7478827c69a2899155b91f5b90d295bdd0c1b39a74e7f47170b7b6ba06a",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-project-tablet.png",
+            "recordedSha256": "f13cd7478827c69a2899155b91f5b90d295bdd0c1b39a74e7f47170b7b6ba06a",
+            "actualSha256": "f13cd7478827c69a2899155b91f5b90d295bdd0c1b39a74e7f47170b7b6ba06a"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-project-desktop.png",
+          "sha256": "aa3b65477275e43cb9ee75c8edf91ff63b979c29df5e80c49b6bf209c55ccf97",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-project-desktop.png",
+            "recordedSha256": "aa3b65477275e43cb9ee75c8edf91ff63b979c29df5e80c49b6bf209c55ccf97",
+            "actualSha256": "aa3b65477275e43cb9ee75c8edf91ff63b979c29df5e80c49b6bf209c55ccf97"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-project-wide.png",
+          "sha256": "1b2620d08b50e24218628828b78f41ab9050590a939c12d504fc9c98b43c7a82",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-project-wide.png",
+            "recordedSha256": "1b2620d08b50e24218628828b78f41ab9050590a939c12d504fc9c98b43c7a82",
+            "actualSha256": "1b2620d08b50e24218628828b78f41ab9050590a939c12d504fc9c98b43c7a82"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-project-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-project-loading",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-project-loading-mobile.png",
+          "sha256": "7f479ea83e16ba5a40b618ef17613b6dd576de540cfdcfbe0b9f13830aa551b3",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-project-loading-mobile.png",
+            "recordedSha256": "7f479ea83e16ba5a40b618ef17613b6dd576de540cfdcfbe0b9f13830aa551b3",
+            "actualSha256": "7f479ea83e16ba5a40b618ef17613b6dd576de540cfdcfbe0b9f13830aa551b3"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-project-loading-tablet.png",
+          "sha256": "d43c3f522ef093610b10dcbc31dadcd1e1215e3442c92494c28d1ca88880be2e",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-project-loading-tablet.png",
+            "recordedSha256": "d43c3f522ef093610b10dcbc31dadcd1e1215e3442c92494c28d1ca88880be2e",
+            "actualSha256": "d43c3f522ef093610b10dcbc31dadcd1e1215e3442c92494c28d1ca88880be2e"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-project-loading-desktop.png",
+          "sha256": "44b1ad4652f3559d78b7ca94449e8b3bb392f6a322efbf14d51dc0861ccb7967",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-project-loading-desktop.png",
+            "recordedSha256": "44b1ad4652f3559d78b7ca94449e8b3bb392f6a322efbf14d51dc0861ccb7967",
+            "actualSha256": "44b1ad4652f3559d78b7ca94449e8b3bb392f6a322efbf14d51dc0861ccb7967"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-project-loading-wide.png",
+          "sha256": "350def90d77ea237360d4f8d453614903204a756cdb2fe9a9c3f17e9d7aa9414",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-project-loading-wide.png",
+            "recordedSha256": "350def90d77ea237360d4f8d453614903204a756cdb2fe9a9c3f17e9d7aa9414",
+            "actualSha256": "350def90d77ea237360d4f8d453614903204a756cdb2fe9a9c3f17e9d7aa9414"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-home-loading",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-home-loading-mobile.png",
+          "sha256": "2e1be11bb0abd80607e25d5f5976f9447aeebca99de951b8f55f9ba35ddd80dd",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-loading-mobile.png",
+            "recordedSha256": "2e1be11bb0abd80607e25d5f5976f9447aeebca99de951b8f55f9ba35ddd80dd",
+            "actualSha256": "2e1be11bb0abd80607e25d5f5976f9447aeebca99de951b8f55f9ba35ddd80dd"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-home-loading-tablet.png",
+          "sha256": "020cde8ce77a66d9ee9b98d5e083683aaeda4e683d88c4120e74b9559159075e",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-loading-tablet.png",
+            "recordedSha256": "020cde8ce77a66d9ee9b98d5e083683aaeda4e683d88c4120e74b9559159075e",
+            "actualSha256": "020cde8ce77a66d9ee9b98d5e083683aaeda4e683d88c4120e74b9559159075e"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-home-loading-desktop.png",
+          "sha256": "1836b620784d1bfcb227c674cf4aeb6a71d3436e3d9100cf7e6d65da119303fa",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-loading-desktop.png",
+            "recordedSha256": "1836b620784d1bfcb227c674cf4aeb6a71d3436e3d9100cf7e6d65da119303fa",
+            "actualSha256": "1836b620784d1bfcb227c674cf4aeb6a71d3436e3d9100cf7e6d65da119303fa"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-home-loading-wide.png",
+          "sha256": "e787b2dbb27cef50afd64059d9b9fb52b8826c8ce9ebf3387154916fc1cdb846",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-loading-wide.png",
+            "recordedSha256": "e787b2dbb27cef50afd64059d9b9fb52b8826c8ce9ebf3387154916fc1cdb846",
+            "actualSha256": "e787b2dbb27cef50afd64059d9b9fb52b8826c8ce9ebf3387154916fc1cdb846"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-error",
+      "caseName": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-home-error",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-home-error-mobile.png",
+          "sha256": "d841b91452667f83e49d5199b8530b4e537e00b567efb5928788b7d415ccdee2",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-error-mobile.png",
+            "recordedSha256": "d841b91452667f83e49d5199b8530b4e537e00b567efb5928788b7d415ccdee2",
+            "actualSha256": "d841b91452667f83e49d5199b8530b4e537e00b567efb5928788b7d415ccdee2"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-home-error-tablet.png",
+          "sha256": "369413b5a9b9ab13501dc145ef1e5c63eb0e3b6b33770916a8ea0c9b97515a05",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-error-tablet.png",
+            "recordedSha256": "369413b5a9b9ab13501dc145ef1e5c63eb0e3b6b33770916a8ea0c9b97515a05",
+            "actualSha256": "369413b5a9b9ab13501dc145ef1e5c63eb0e3b6b33770916a8ea0c9b97515a05"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-home-error-desktop.png",
+          "sha256": "442fdec3e9a8ee0996e811895c000f99d6e742ad02465559253496b1336df889",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-error-desktop.png",
+            "recordedSha256": "442fdec3e9a8ee0996e811895c000f99d6e742ad02465559253496b1336df889",
+            "actualSha256": "442fdec3e9a8ee0996e811895c000f99d6e742ad02465559253496b1336df889"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-home-error-wide.png",
+          "sha256": "30d2f40ca50ba5f98f69477c7f1d7fd31b6dba73980534f430754c8b1d0cfcd0",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-home-error-wide.png",
+            "recordedSha256": "30d2f40ca50ba5f98f69477c7f1d7fd31b6dba73980534f430754c8b1d0cfcd0",
+            "actualSha256": "30d2f40ca50ba5f98f69477c7f1d7fd31b6dba73980534f430754c8b1d0cfcd0"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-tasks-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-tasks-loading",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-tasks-loading-mobile.png",
+          "sha256": "0dc35487606b6f227ddeb4577f1c8a20e11986311cccd34a44a3a2d7005413ce",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tasks-loading-mobile.png",
+            "recordedSha256": "0dc35487606b6f227ddeb4577f1c8a20e11986311cccd34a44a3a2d7005413ce",
+            "actualSha256": "0dc35487606b6f227ddeb4577f1c8a20e11986311cccd34a44a3a2d7005413ce"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-tasks-loading-tablet.png",
+          "sha256": "7f216114eebcb0fc0d47b35bc43ce9c5894c897c220329510931ebd26c856516",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tasks-loading-tablet.png",
+            "recordedSha256": "7f216114eebcb0fc0d47b35bc43ce9c5894c897c220329510931ebd26c856516",
+            "actualSha256": "7f216114eebcb0fc0d47b35bc43ce9c5894c897c220329510931ebd26c856516"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-tasks-loading-desktop.png",
+          "sha256": "97e5ff930760d98d68398d4c4ea870eb11cad3ed98f735a7274f84bcc13151c9",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tasks-loading-desktop.png",
+            "recordedSha256": "97e5ff930760d98d68398d4c4ea870eb11cad3ed98f735a7274f84bcc13151c9",
+            "actualSha256": "97e5ff930760d98d68398d4c4ea870eb11cad3ed98f735a7274f84bcc13151c9"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-tasks-loading-wide.png",
+          "sha256": "1b2aba01bf5a22992a6acdaa49c372595f54843c9ea6ddb3b37da0d8e7b5ed44",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tasks-loading-wide.png",
+            "recordedSha256": "1b2aba01bf5a22992a6acdaa49c372595f54843c9ea6ddb3b37da0d8e7b5ed44",
+            "actualSha256": "1b2aba01bf5a22992a6acdaa49c372595f54843c9ea6ddb3b37da0d8e7b5ed44"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.resources.drive-upload",
+      "caseName": "own surface in demo",
+      "path": "/app/tasks",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Current desktop original visually inspected against retained prior original. Dark Tasks detail panel keeps title, task fields, notes, subtasks, Files and links drop area/Attach file affordance and activity unavailable message readable. No new blocking layout finding; this is an attachment affordance, not Drive provider upload proof.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.resources.drive-upload-mobile.png",
+          "sha256": "164f99cbf99a3d9e0623fae90f9f6513a4d75cc36532b4df0078559b3fa10421",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.resources.drive-upload-mobile.png",
+            "recordedSha256": "164f99cbf99a3d9e0623fae90f9f6513a4d75cc36532b4df0078559b3fa10421",
+            "actualSha256": "164f99cbf99a3d9e0623fae90f9f6513a4d75cc36532b4df0078559b3fa10421"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.resources.drive-upload-tablet.png",
+          "sha256": "f32309b118e2c60fc59b7ec66f2e6c952ec9598322388a5d7f9632b755bd4d6d",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.resources.drive-upload-tablet.png",
+            "recordedSha256": "f32309b118e2c60fc59b7ec66f2e6c952ec9598322388a5d7f9632b755bd4d6d",
+            "actualSha256": "f32309b118e2c60fc59b7ec66f2e6c952ec9598322388a5d7f9632b755bd4d6d"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.resources.drive-upload-desktop.png",
+          "sha256": "ec3710f7fde05f4936cc274e030ae9d3cc9b961f190aa9d890c189ce8bcc05f6",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.resources.drive-upload-desktop.png",
+            "recordedSha256": "d20020602342c296aed82d18c25d400b02ade34ea22d8770dca12b64fe982a17",
+            "actualSha256": "d20020602342c296aed82d18c25d400b02ade34ea22d8770dca12b64fe982a17"
+          },
+          "method": "Current original visually inspected in this review.",
+          "identicalToRetainedOriginal": false
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.resources.drive-upload-wide.png",
+          "sha256": "4b3e2dadce14e77ec9f4217b1bc6e9946b6f6acb543f206aff8cd460aabac71f",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.resources.drive-upload-wide.png",
+            "recordedSha256": "4b3e2dadce14e77ec9f4217b1bc6e9946b6f6acb543f206aff8cd460aabac71f",
+            "actualSha256": "4b3e2dadce14e77ec9f4217b1bc6e9946b6f6acb543f206aff8cd460aabac71f"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-messages",
+      "caseName": "own surface in demo",
+      "path": "/app/messages",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-messages-mobile.png",
+          "sha256": "377bab3bf4238346b871ca32bd48705166ec31a82861dad0c12b6d208a41280c",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-messages-mobile.png",
+            "recordedSha256": "377bab3bf4238346b871ca32bd48705166ec31a82861dad0c12b6d208a41280c",
+            "actualSha256": "377bab3bf4238346b871ca32bd48705166ec31a82861dad0c12b6d208a41280c"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-messages-tablet.png",
+          "sha256": "9bb77035300427b892e20fe6719fdcccc41976581a9df6a8d18488825ee4b4f8",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-messages-tablet.png",
+            "recordedSha256": "9bb77035300427b892e20fe6719fdcccc41976581a9df6a8d18488825ee4b4f8",
+            "actualSha256": "9bb77035300427b892e20fe6719fdcccc41976581a9df6a8d18488825ee4b4f8"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-messages-desktop.png",
+          "sha256": "ec9dbfb3066119c7f464b43221a0d6efc537e37087133e797962d5b2098c5f5b",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-messages-desktop.png",
+            "recordedSha256": "ec9dbfb3066119c7f464b43221a0d6efc537e37087133e797962d5b2098c5f5b",
+            "actualSha256": "ec9dbfb3066119c7f464b43221a0d6efc537e37087133e797962d5b2098c5f5b"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-messages-wide.png",
+          "sha256": "c79ec1a44ecb71973c41e05f44117b398cc61d72e304eeb6bf3b8b7cf3de7c8f",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-messages-wide.png",
+            "recordedSha256": "c79ec1a44ecb71973c41e05f44117b398cc61d72e304eeb6bf3b8b7cf3de7c8f",
+            "actualSha256": "c79ec1a44ecb71973c41e05f44117b398cc61d72e304eeb6bf3b8b7cf3de7c8f"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-analytics",
+      "caseName": "own surface in demo",
+      "path": "/app/analytics",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-analytics-mobile.png",
+          "sha256": "521de63bb818cea426914d162fa1a364a09ffde5b1e8340cfa3087585e5274c7",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-analytics-mobile.png",
+            "recordedSha256": "521de63bb818cea426914d162fa1a364a09ffde5b1e8340cfa3087585e5274c7",
+            "actualSha256": "521de63bb818cea426914d162fa1a364a09ffde5b1e8340cfa3087585e5274c7"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-analytics-tablet.png",
+          "sha256": "99a3b4e876d79be9a2bf05d37264e52b514609d414a27ea9ba2a842549bdef0a",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-analytics-tablet.png",
+            "recordedSha256": "99a3b4e876d79be9a2bf05d37264e52b514609d414a27ea9ba2a842549bdef0a",
+            "actualSha256": "99a3b4e876d79be9a2bf05d37264e52b514609d414a27ea9ba2a842549bdef0a"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-analytics-desktop.png",
+          "sha256": "990c28d3328383ec292f9715694d8f68c1b8950c497cbe91e8febb2e927c6671",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-analytics-desktop.png",
+            "recordedSha256": "990c28d3328383ec292f9715694d8f68c1b8950c497cbe91e8febb2e927c6671",
+            "actualSha256": "990c28d3328383ec292f9715694d8f68c1b8950c497cbe91e8febb2e927c6671"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-analytics-wide.png",
+          "sha256": "e7bb6a07ae211e4d385728d1b1d702a1c752f67fda51ee5d0e0f23609e4bfc24",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-analytics-wide.png",
+            "recordedSha256": "e7bb6a07ae211e4d385728d1b1d702a1c752f67fda51ee5d0e0f23609e4bfc24",
+            "actualSha256": "e7bb6a07ae211e4d385728d1b1d702a1c752f67fda51ee5d0e0f23609e4bfc24"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-analytics-loading",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Current mobile original visually inspected against retained prior original. Light skeleton heading, search outline and stacked loading cards remain legible within the captured loading representation. No new blocking layout finding. This does not establish a real loading transition or universal zero overflow.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-analytics-loading-mobile.png",
+          "sha256": "e278396b61a2815b1795bd8ecd4a82727a1bc23e835c47733f0e00b540a6a450",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-loading-mobile.png",
+            "recordedSha256": "e912f34283a516b18b211febbbde15e62bd96c0a2f4952d89a2c12d189c4792b",
+            "actualSha256": "e912f34283a516b18b211febbbde15e62bd96c0a2f4952d89a2c12d189c4792b"
+          },
+          "method": "Current original visually inspected in this review.",
+          "identicalToRetainedOriginal": false
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-analytics-loading-tablet.png",
+          "sha256": "faffcc090b20608175a00b53e145ecd4bfc6722e5285ceddffadcad24286c128",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-loading-tablet.png",
+            "recordedSha256": "faffcc090b20608175a00b53e145ecd4bfc6722e5285ceddffadcad24286c128",
+            "actualSha256": "faffcc090b20608175a00b53e145ecd4bfc6722e5285ceddffadcad24286c128"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-analytics-loading-desktop.png",
+          "sha256": "a2095617579ed7290a98b6cc2b40e44b8a532c9fc1f784945dbde698173d77ce",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-loading-desktop.png",
+            "recordedSha256": "a2095617579ed7290a98b6cc2b40e44b8a532c9fc1f784945dbde698173d77ce",
+            "actualSha256": "a2095617579ed7290a98b6cc2b40e44b8a532c9fc1f784945dbde698173d77ce"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-analytics-loading-wide.png",
+          "sha256": "b2ee8af7b64f70d05de82eaca9ff16e298956bd0dee5e59322a50e9fa9679c7a",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-loading-wide.png",
+            "recordedSha256": "b2ee8af7b64f70d05de82eaca9ff16e298956bd0dee5e59322a50e9fa9679c7a",
+            "actualSha256": "b2ee8af7b64f70d05de82eaca9ff16e298956bd0dee5e59322a50e9fa9679c7a"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-error",
+      "caseName": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-analytics-error",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-analytics-error-mobile.png",
+          "sha256": "561715fbc926fb9d40521c8a57faa7f652e24503ab203082d50e96e5d7d2af66",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-error-mobile.png",
+            "recordedSha256": "561715fbc926fb9d40521c8a57faa7f652e24503ab203082d50e96e5d7d2af66",
+            "actualSha256": "561715fbc926fb9d40521c8a57faa7f652e24503ab203082d50e96e5d7d2af66"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-analytics-error-tablet.png",
+          "sha256": "75d6ea47666994f033bf08593a38f0730e9cbc9ca95ccda44c98c79b2b55cb15",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-error-tablet.png",
+            "recordedSha256": "75d6ea47666994f033bf08593a38f0730e9cbc9ca95ccda44c98c79b2b55cb15",
+            "actualSha256": "75d6ea47666994f033bf08593a38f0730e9cbc9ca95ccda44c98c79b2b55cb15"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-analytics-error-desktop.png",
+          "sha256": "9c10aea7cfa3ca189b5465b9dbc94ce0a8c518d4ec50ece6669c49dcab31dd46",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-error-desktop.png",
+            "recordedSha256": "9c10aea7cfa3ca189b5465b9dbc94ce0a8c518d4ec50ece6669c49dcab31dd46",
+            "actualSha256": "9c10aea7cfa3ca189b5465b9dbc94ce0a8c518d4ec50ece6669c49dcab31dd46"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-analytics-error-wide.png",
+          "sha256": "3793ec4ea61e65e985073e9ffef2358b7209dcd68652e4733a81de035ec44643",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-analytics-error-wide.png",
+            "recordedSha256": "3793ec4ea61e65e985073e9ffef2358b7209dcd68652e4733a81de035ec44643",
+            "actualSha256": "3793ec4ea61e65e985073e9ffef2358b7209dcd68652e4733a81de035ec44643"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-tools-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-tools-loading",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-tools-loading-mobile.png",
+          "sha256": "d3c1b89e8007deb384fa21d5e881da8ead5538be7727e871464aab8e8998ac77",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tools-loading-mobile.png",
+            "recordedSha256": "d3c1b89e8007deb384fa21d5e881da8ead5538be7727e871464aab8e8998ac77",
+            "actualSha256": "d3c1b89e8007deb384fa21d5e881da8ead5538be7727e871464aab8e8998ac77"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-tools-loading-tablet.png",
+          "sha256": "22b4c30abb67722384faa9aa28e5c05259ecd7a1414bb25ddb4334ed28878a52",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tools-loading-tablet.png",
+            "recordedSha256": "22b4c30abb67722384faa9aa28e5c05259ecd7a1414bb25ddb4334ed28878a52",
+            "actualSha256": "22b4c30abb67722384faa9aa28e5c05259ecd7a1414bb25ddb4334ed28878a52"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-tools-loading-desktop.png",
+          "sha256": "75ebfa491aeec3c99a0a6c58110eac4ef30b1323398a66ff6cd1440ba9c0eb74",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tools-loading-desktop.png",
+            "recordedSha256": "75ebfa491aeec3c99a0a6c58110eac4ef30b1323398a66ff6cd1440ba9c0eb74",
+            "actualSha256": "75ebfa491aeec3c99a0a6c58110eac4ef30b1323398a66ff6cd1440ba9c0eb74"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-tools-loading-wide.png",
+          "sha256": "887c3c4af88d6898b0200f7d7439b65d27c508a597579e78413177ca4fcd86a3",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-tools-loading-wide.png",
+            "recordedSha256": "887c3c4af88d6898b0200f7d7439b65d27c508a597579e78413177ca4fcd86a3",
+            "actualSha256": "887c3c4af88d6898b0200f7d7439b65d27c508a597579e78413177ca4fcd86a3"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-concepts",
+      "caseName": "own surface in demo",
+      "path": "/app/concepts",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-concepts-mobile.png",
+          "sha256": "fdd70d88fec51390a9446fc0fa88f154c21a7e80f020a9add38a1f6d442bd87b",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-concepts-mobile.png",
+            "recordedSha256": "fdd70d88fec51390a9446fc0fa88f154c21a7e80f020a9add38a1f6d442bd87b",
+            "actualSha256": "fdd70d88fec51390a9446fc0fa88f154c21a7e80f020a9add38a1f6d442bd87b"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-concepts-tablet.png",
+          "sha256": "f5a41a130208147b5cfe1ec393b64021a16872b1ea5a650552985c3ef11e221f",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-concepts-tablet.png",
+            "recordedSha256": "f5a41a130208147b5cfe1ec393b64021a16872b1ea5a650552985c3ef11e221f",
+            "actualSha256": "f5a41a130208147b5cfe1ec393b64021a16872b1ea5a650552985c3ef11e221f"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-concepts-desktop.png",
+          "sha256": "5922996bc36e206082904d3dc91330d01cf74cab7a855654547c9f485bb55ffa",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-concepts-desktop.png",
+            "recordedSha256": "5922996bc36e206082904d3dc91330d01cf74cab7a855654547c9f485bb55ffa",
+            "actualSha256": "5922996bc36e206082904d3dc91330d01cf74cab7a855654547c9f485bb55ffa"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-concepts-wide.png",
+          "sha256": "45d878d9a5a6ac329adbe74e4a68521c16fac896b0bb6e97d52e12b34e573eec",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-concepts-wide.png",
+            "recordedSha256": "45d878d9a5a6ac329adbe74e4a68521c16fac896b0bb6e97d52e12b34e573eec",
+            "actualSha256": "45d878d9a5a6ac329adbe74e4a68521c16fac896b0bb6e97d52e12b34e573eec"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-files",
+      "caseName": "own surface in demo",
+      "path": "/app/files",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-files-mobile.png",
+          "sha256": "c8f94f9fbb99a8cf5500a5f2acd60c785ca010e6d3e366be9d9ae7dca35a1ac8",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-files-mobile.png",
+            "recordedSha256": "c8f94f9fbb99a8cf5500a5f2acd60c785ca010e6d3e366be9d9ae7dca35a1ac8",
+            "actualSha256": "c8f94f9fbb99a8cf5500a5f2acd60c785ca010e6d3e366be9d9ae7dca35a1ac8"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-files-tablet.png",
+          "sha256": "b59cb727c1e7c4db2c4c813d67eb1525b5767b10b1068ce5d1f663997078c15e",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-files-tablet.png",
+            "recordedSha256": "b59cb727c1e7c4db2c4c813d67eb1525b5767b10b1068ce5d1f663997078c15e",
+            "actualSha256": "b59cb727c1e7c4db2c4c813d67eb1525b5767b10b1068ce5d1f663997078c15e"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-files-desktop.png",
+          "sha256": "292a84e70370b3b77ec866e9c1f3d4913a04261e8fdd6f4ceaa7877641a3a752",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-files-desktop.png",
+            "recordedSha256": "292a84e70370b3b77ec866e9c1f3d4913a04261e8fdd6f4ceaa7877641a3a752",
+            "actualSha256": "292a84e70370b3b77ec866e9c1f3d4913a04261e8fdd6f4ceaa7877641a3a752"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-files-wide.png",
+          "sha256": "b12dfd8e88bcb8f34f34e71cbddbf34aa8a9e2c10a32e080831deabbedffd336",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-files-wide.png",
+            "recordedSha256": "b12dfd8e88bcb8f34f34e71cbddbf34aa8a9e2c10a32e080831deabbedffd336",
+            "actualSha256": "b12dfd8e88bcb8f34f34e71cbddbf34aa8a9e2c10a32e080831deabbedffd336"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-loading",
+      "caseName": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-files-loading",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-files-loading-mobile.png",
+          "sha256": "3789a0a6f8e5d6592524c50aad4e8dffe6e68b237efbb8e388a80bd93c8192f1",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-loading-mobile.png",
+            "recordedSha256": "3789a0a6f8e5d6592524c50aad4e8dffe6e68b237efbb8e388a80bd93c8192f1",
+            "actualSha256": "3789a0a6f8e5d6592524c50aad4e8dffe6e68b237efbb8e388a80bd93c8192f1"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-files-loading-tablet.png",
+          "sha256": "95028344ea5077d1a982d16b1e82cb99d1e76cff506e3cbb161c864a5786ff2e",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-loading-tablet.png",
+            "recordedSha256": "95028344ea5077d1a982d16b1e82cb99d1e76cff506e3cbb161c864a5786ff2e",
+            "actualSha256": "95028344ea5077d1a982d16b1e82cb99d1e76cff506e3cbb161c864a5786ff2e"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-files-loading-desktop.png",
+          "sha256": "4f4f73a7eaf098ee7367c7a2a8ea94a9ae292d8c72f17d70981658614ff95394",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-loading-desktop.png",
+            "recordedSha256": "4f4f73a7eaf098ee7367c7a2a8ea94a9ae292d8c72f17d70981658614ff95394",
+            "actualSha256": "4f4f73a7eaf098ee7367c7a2a8ea94a9ae292d8c72f17d70981658614ff95394"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-files-loading-wide.png",
+          "sha256": "0937026623d4e35ebc1a6c74ff7a84bd3e2b17dc33a8045eb512cca904a230ff",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-loading-wide.png",
+            "recordedSha256": "0937026623d4e35ebc1a6c74ff7a84bd3e2b17dc33a8045eb512cca904a230ff",
+            "actualSha256": "0937026623d4e35ebc1a6c74ff7a84bd3e2b17dc33a8045eb512cca904a230ff"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-error",
+      "caseName": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-files-error",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-files-error-mobile.png",
+          "sha256": "a248472e3d74296e3829c084fdcde572c26d16466ba2562d63590f3038dfd283",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-error-mobile.png",
+            "recordedSha256": "a248472e3d74296e3829c084fdcde572c26d16466ba2562d63590f3038dfd283",
+            "actualSha256": "a248472e3d74296e3829c084fdcde572c26d16466ba2562d63590f3038dfd283"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-files-error-tablet.png",
+          "sha256": "62b7c93355ad890b8d53a789d7dddc6bb51fa36e33dce0cc6cc448a665dc5977",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-error-tablet.png",
+            "recordedSha256": "62b7c93355ad890b8d53a789d7dddc6bb51fa36e33dce0cc6cc448a665dc5977",
+            "actualSha256": "62b7c93355ad890b8d53a789d7dddc6bb51fa36e33dce0cc6cc448a665dc5977"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-files-error-desktop.png",
+          "sha256": "64910ff4f60b0b922a048c5aa44e7cbc83491fd9692b56fca67021f32758bb6a",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-error-desktop.png",
+            "recordedSha256": "64910ff4f60b0b922a048c5aa44e7cbc83491fd9692b56fca67021f32758bb6a",
+            "actualSha256": "64910ff4f60b0b922a048c5aa44e7cbc83491fd9692b56fca67021f32758bb6a"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.state.app-files-error-wide.png",
+          "sha256": "070cd8c3783f39d68c16a12022c00fece08bfd75807c47cc3737705588f22b35",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.state.app-files-error-wide.png",
+            "recordedSha256": "070cd8c3783f39d68c16a12022c00fece08bfd75807c47cc3737705588f22b35",
+            "actualSha256": "070cd8c3783f39d68c16a12022c00fece08bfd75807c47cc3737705588f22b35"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.welcome",
+      "caseName": "unavailable explicit project recovery",
+      "path": "/welcome?workspaceId=",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.welcome-mobile.png",
+          "sha256": "46e268b66f6442abe7de4ed673fafe4d95232f53273ee4e65eff15d873e4a09b",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.welcome-mobile.png",
+            "recordedSha256": "46e268b66f6442abe7de4ed673fafe4d95232f53273ee4e65eff15d873e4a09b",
+            "actualSha256": "46e268b66f6442abe7de4ed673fafe4d95232f53273ee4e65eff15d873e4a09b"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.welcome-tablet.png",
+          "sha256": "41b4bfc12fef40254b4acbc98d0d2aba623cb865c09972bca199044f0e404678",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.welcome-tablet.png",
+            "recordedSha256": "41b4bfc12fef40254b4acbc98d0d2aba623cb865c09972bca199044f0e404678",
+            "actualSha256": "41b4bfc12fef40254b4acbc98d0d2aba623cb865c09972bca199044f0e404678"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.welcome-desktop.png",
+          "sha256": "3e964893ac2d953857f9644f77da5d815e94e8147549d63a78a27d9189541a8f",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.welcome-desktop.png",
+            "recordedSha256": "3e964893ac2d953857f9644f77da5d815e94e8147549d63a78a27d9189541a8f",
+            "actualSha256": "3e964893ac2d953857f9644f77da5d815e94e8147549d63a78a27d9189541a8f"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.welcome-wide.png",
+          "sha256": "f3cc0ef71514cf97b4a5b6432d26a03a5e5f46a84dfbc0febe711310f55548ca",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.welcome-wide.png",
+            "recordedSha256": "f3cc0ef71514cf97b4a5b6432d26a03a5e5f46a84dfbc0febe711310f55548ca",
+            "actualSha256": "f3cc0ef71514cf97b4a5b6432d26a03a5e5f46a84dfbc0febe711310f55548ca"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-tools-by-slug",
+      "caseName": "wedding hub in demo",
+      "path": "/app/tools/wedding-planner",
+      "decision": "No new blocking layout finding within captured state.",
+      "observation": "Retained independently reviewed image observations reused by exact verified byte identity.",
+      "images": [
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-tools-by-slug-mobile.png",
+          "sha256": "1cb4d08361591c8817570fe3ede9d21deb0056e74d7f5c67ba982859c31ac8de",
+          "project": "mobile",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-tools-by-slug-mobile.png",
+            "recordedSha256": "1cb4d08361591c8817570fe3ede9d21deb0056e74d7f5c67ba982859c31ac8de",
+            "actualSha256": "1cb4d08361591c8817570fe3ede9d21deb0056e74d7f5c67ba982859c31ac8de"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-tools-by-slug-tablet.png",
+          "sha256": "827da0f50c33e05c93be79f149624ce86864130d62c8e07edd61d19e304a9309",
+          "project": "tablet",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-tools-by-slug-tablet.png",
+            "recordedSha256": "827da0f50c33e05c93be79f149624ce86864130d62c8e07edd61d19e304a9309",
+            "actualSha256": "827da0f50c33e05c93be79f149624ce86864130d62c8e07edd61d19e304a9309"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-tools-by-slug-desktop.png",
+          "sha256": "9a666ca68f802f618236b861667d6e8d9dde47fee3ac7404883747a8d1f23fd1",
+          "project": "desktop",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-tools-by-slug-desktop.png",
+            "recordedSha256": "9a666ca68f802f618236b861667d6e8d9dde47fee3ac7404883747a8d1f23fd1",
+            "actualSha256": "9a666ca68f802f618236b861667d6e8d9dde47fee3ac7404883747a8d1f23fd1"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        },
+        {
+          "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-641d2f9e\\review-images\\tasks.page.app-tools-by-slug-wide.png",
+          "sha256": "d2a450ddf32681c6c720efe60b5b75bfef0069cca09dd9b65e37b1437a703fac",
+          "project": "wide",
+          "rawAttachmentSha256Verified": true,
+          "previousReviewSha256": "73c378ce4604d468d3a86cfaa06b8d153d9fa940b88db07f4e0d8f40640a666b",
+          "previousOriginal": {
+            "path": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\tasks.page.app-tools-by-slug-wide.png",
+            "recordedSha256": "d2a450ddf32681c6c720efe60b5b75bfef0069cca09dd9b65e37b1437a703fac",
+            "actualSha256": "d2a450ddf32681c6c720efe60b5b75bfef0069cca09dd9b65e37b1437a703fac"
+          },
+          "method": "Exact PNG bytes reused from retained independent review; both old receipt and original bytes verified.",
+          "identicalToRetainedOriginal": true
+        }
+      ]
+    }
+  ],
+  "additionalRouteImages": [
+    {
+      "title": "tasks.page.app-inbox / demo digest with empty direct alerts",
+      "project": "mobile",
+      "sha256": "27efaed30bcfbf8e7e30affe92dabab8f42d3e96743ac701c6bf976b41830db9",
+      "rawArtifactAttachment": "tasks.page.app-inbox-demo digest with empty direct alerts-mobile",
+      "previousOriginal": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\a9098b2723a4b1b91644a85f723b63656d74791a.app-inbox-demo-digest-with-empty-direct-alerts-mobile.png",
+      "previousRecordedSha256": "27efaed30bcfbf8e7e30affe92dabab8f42d3e96743ac701c6bf976b41830db9",
+      "previousOriginalActualSha256": "27efaed30bcfbf8e7e30affe92dabab8f42d3e96743ac701c6bf976b41830db9",
+      "method": "Exact raw PNG bytes reused from retained independent Home/Inbox review after receipt/original verification.",
+      "observation": "Inbox tab active; stuck item and digest readable; narrow layout stacks, wide layout exposes weekly summary and explanation alongside digest."
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "mobile",
+      "sha256": "a84980483aea55abc38c1ac3d3afea9cd4b008d9f3e2a463ebb8856f6f478d5b",
+      "rawArtifactAttachment": "tasks.page.app-home-home front door-mobile",
+      "previousOriginal": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\c3dd907879fdafa04dbf6a423e32507d6cf07052.app-home-home-front-door-mobile.png",
+      "previousRecordedSha256": "a84980483aea55abc38c1ac3d3afea9cd4b008d9f3e2a463ebb8856f6f478d5b",
+      "previousOriginalActualSha256": "a84980483aea55abc38c1ac3d3afea9cd4b008d9f3e2a463ebb8856f6f478d5b",
+      "method": "Exact raw PNG bytes reused from retained independent Home/Inbox review after receipt/original verification.",
+      "observation": "Home tab active; greeting, countdown card, chart and controls remain readable. Narrow controls wrap; wide weekly card sits beside countdown."
+    },
+    {
+      "title": "tasks.page.app-inbox / demo digest with empty direct alerts",
+      "project": "tablet",
+      "sha256": "15d6692d0e57d075f135a0774bb554f630c1a7d4f02300f0bb82c8e060b9c9b6",
+      "rawArtifactAttachment": "tasks.page.app-inbox-demo digest with empty direct alerts-tablet",
+      "previousOriginal": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\f2ac67b85dba8da756860d3432560c5aad045e49.app-inbox-demo-digest-with-empty-direct-alerts-tablet.png",
+      "previousRecordedSha256": "15d6692d0e57d075f135a0774bb554f630c1a7d4f02300f0bb82c8e060b9c9b6",
+      "previousOriginalActualSha256": "15d6692d0e57d075f135a0774bb554f630c1a7d4f02300f0bb82c8e060b9c9b6",
+      "method": "Exact raw PNG bytes reused from retained independent Home/Inbox review after receipt/original verification.",
+      "observation": "Inbox tab active; stuck item and digest readable; narrow layout stacks, wide layout exposes weekly summary and explanation alongside digest."
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "tablet",
+      "sha256": "1903197b181ff68c88776739c18b3eaa15dec8156dd55c7053aa395ac5cca2ea",
+      "rawArtifactAttachment": "tasks.page.app-home-home front door-tablet",
+      "previousOriginal": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\db352d194252c4a15c2c3a27515af660716a6cb6.app-home-home-front-door-tablet.png",
+      "previousRecordedSha256": "1903197b181ff68c88776739c18b3eaa15dec8156dd55c7053aa395ac5cca2ea",
+      "previousOriginalActualSha256": "1903197b181ff68c88776739c18b3eaa15dec8156dd55c7053aa395ac5cca2ea",
+      "method": "Exact raw PNG bytes reused from retained independent Home/Inbox review after receipt/original verification.",
+      "observation": "Home tab active; greeting, countdown card, chart and controls remain readable. Narrow controls wrap; wide weekly card sits beside countdown."
+    },
+    {
+      "title": "tasks.page.app-inbox / demo digest with empty direct alerts",
+      "project": "desktop",
+      "sha256": "f031f5b36eac0cc43025306c1334473aec3c17352f7758623d61d743dedff319",
+      "rawArtifactAttachment": "tasks.page.app-inbox-demo digest with empty direct alerts-desktop",
+      "previousOriginal": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\4772747ee6d61d1ac32e2a4e96566527cffe0761.app-inbox-demo-digest-with-empty-direct-alerts-desktop.png",
+      "previousRecordedSha256": "f031f5b36eac0cc43025306c1334473aec3c17352f7758623d61d743dedff319",
+      "previousOriginalActualSha256": "f031f5b36eac0cc43025306c1334473aec3c17352f7758623d61d743dedff319",
+      "method": "Exact raw PNG bytes reused from retained independent Home/Inbox review after receipt/original verification.",
+      "observation": "Inbox tab active; stuck item and digest readable; narrow layout stacks, wide layout exposes weekly summary and explanation alongside digest."
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "desktop",
+      "sha256": "ddbe884b22843289bb531f3a0d85ba278c8a1db3f7488413fa1f5253637f62c7",
+      "rawArtifactAttachment": "tasks.page.app-home-home front door-desktop",
+      "previousOriginal": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\10574953d0df495deae606082395f55864a61fa7.app-home-home-front-door-desktop.png",
+      "previousRecordedSha256": "ddbe884b22843289bb531f3a0d85ba278c8a1db3f7488413fa1f5253637f62c7",
+      "previousOriginalActualSha256": "ddbe884b22843289bb531f3a0d85ba278c8a1db3f7488413fa1f5253637f62c7",
+      "method": "Exact raw PNG bytes reused from retained independent Home/Inbox review after receipt/original verification.",
+      "observation": "Home tab active; greeting, countdown card, chart and controls remain readable. Narrow controls wrap; wide weekly card sits beside countdown."
+    },
+    {
+      "title": "tasks.page.app-inbox / demo digest with empty direct alerts",
+      "project": "wide",
+      "sha256": "9e7ec8cd17ebf75265f49e380a23d3e77797a197a4ad5cb207d7ea9e6be5f514",
+      "rawArtifactAttachment": "tasks.page.app-inbox-demo digest with empty direct alerts-wide",
+      "previousOriginal": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\2b0e94c67e79240ca5370307ca1fc00f87a65137.app-inbox-demo-digest-with-empty-direct-alerts-wide.png",
+      "previousRecordedSha256": "9e7ec8cd17ebf75265f49e380a23d3e77797a197a4ad5cb207d7ea9e6be5f514",
+      "previousOriginalActualSha256": "9e7ec8cd17ebf75265f49e380a23d3e77797a197a4ad5cb207d7ea9e6be5f514",
+      "method": "Exact raw PNG bytes reused from retained independent Home/Inbox review after receipt/original verification.",
+      "observation": "Inbox tab active; stuck item and digest readable; narrow layout stacks, wide layout exposes weekly summary and explanation alongside digest."
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "wide",
+      "sha256": "b39a52a48b02c8bf6958ef491683fa56db349b42fb01f64602f0f5d7c921d4fa",
+      "rawArtifactAttachment": "tasks.page.app-home-home front door-wide",
+      "previousOriginal": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\shell-1465f9ea\\review-images\\c0b91cad84031120611fc37cb6bb47f524dfb3b3.app-home-home-front-door-wide.png",
+      "previousRecordedSha256": "b39a52a48b02c8bf6958ef491683fa56db349b42fb01f64602f0f5d7c921d4fa",
+      "previousOriginalActualSha256": "b39a52a48b02c8bf6958ef491683fa56db349b42fb01f64602f0f5d7c921d4fa",
+      "method": "Exact raw PNG bytes reused from retained independent Home/Inbox review after receipt/original verification.",
+      "observation": "Home tab active; greeting, countdown card, chart and controls remain readable. Narrow controls wrap; wide weekly card sits beside countdown."
+    }
+  ],
+  "sidebar": {
+    "status": "Not independently visually reviewed in this receipt.",
+    "observed": "GitHub sidebar capture step succeeded and PNG files exist. Their visual quality, interaction claims and owning source attribution are outside this receipt; no sidebar image acceptance granted."
+  },
+  "limits": [
+    "Synthetic capture only; no live account, data, permissions, invitation delivery or deployment acceptance proved.",
+    "Home/Inbox screenshots prove visible selected tabs, not click or keyboard navigation behavior.",
+    "Development notice overlays lower content in some captures; focused skip link is visible in Home/Inbox capture state. Neither is treated as new successful functionality.",
+    "Tasks loading retains horizontal board lanes; this review does not claim universal zero overflow.",
+    "Files capture remains gated sample UI, Welcome is unavailable-Project recovery, Drive image shows a task attachment affordance rather than provider upload proof.",
+    "Images do not demonstrate A2 invite submission or toast timing/action behavior; source and dedicated interaction evidence remain separately required.",
+    "No metadata receipts, scores or production files were changed by this reviewer.",
+    "Images captured with reduced motion/animations disabled do not prove the corrected HomeTabs motion token duration; separate source/token/component proof remains required.",
+    "Mapped materiality images do not prove toast placement, timing, Undo or queued action behavior. Dedicated exact1b13 component evidence and source rebind in architecture/toast-correction-review-1b13-sol.json remain separate.",
+    "Corrected641 capture has188 passing canonical outcomes, but this review does not grant full product, provider, invitation, permissions, history, guest, live-account or production acceptance.",
+    "No new source, registry, receipt links, audit scores, deployment state or historical evidence was changed. Only this independent review JSON was written."
+  ]
+}
