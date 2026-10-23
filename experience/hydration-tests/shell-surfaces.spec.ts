@@ -188,11 +188,27 @@ for (const theme of ["dark", "light"] as const) {
         expect(same(stat.background, sheet.background), "the card is a step away from the page").toBe(false);
       }
 
-      // The top bar's search trigger keeps its label on one line.
-      const search = page.locator('header button[aria-label="Search or jump to"]');
+      // A1 removes duplicate header search; the sidebar remains the single
+      // reachable search entry and keeps its label on one line.
+      await expect(page.locator('header button[aria-label="Search or jump to"]')).toHaveCount(0);
+      const search = page.locator('[data-shell="v3"] > aside').getByRole("button", { name: "Search or jump to", exact: true });
+      await expect(search).toHaveCount(1);
+      await expect(search).toBeVisible();
+      await expect(search).toBeEnabled();
       const box = await search.boundingBox();
+      expect(box, "the sidebar search has measurable bounds").not.toBeNull();
+      expect(box!.height).toBeGreaterThan(0);
       expect(box?.height ?? 0, "the search trigger is one line tall").toBeLessThanOrEqual(34);
       expect(box?.width ?? 0).toBeGreaterThanOrEqual(200);
+      const label = search.locator("span");
+      expect(await label.evaluate((element) => getComputedStyle(element).whiteSpace)).toBe("nowrap");
+      await search.focus();
+      await expect(search).toBeFocused();
+      await search.press("Enter");
+      const palette = page.getByRole("dialog", { name: "Command palette", exact: true });
+      await expect(palette).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(palette).toBeHidden();
     });
 
     test("the board's columns are surfaces", async ({ page }) => {
