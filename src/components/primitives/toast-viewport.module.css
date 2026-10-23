@@ -1,0 +1,32 @@
+/* Closed Chat leaves confirmations above its launcher. Open Chat reserves its controls. */
+.viewport {
+  right: calc(16px + env(safe-area-inset-right));
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  max-height: max(0px, calc(100dvh - 100px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Wide screens have room to keep confirmations beside the floating panel. */
+@media (min-width: 1201px) {
+  :global(html[data-floating-chat-open="true"]) .viewport {
+    right: calc(var(--signal-floating-chat-width, 0px) + 40px + env(safe-area-inset-right));
+  }
+}
+
+/* Narrow layouts reserve the measured space above Chat for a scrollable queue. */
+@media (max-width: 1200px) {
+  :global(html[data-floating-chat-open="true"]) .viewport {
+    top: calc(16px + env(safe-area-inset-top));
+    bottom: auto;
+    max-height: max(0px, calc(var(--signal-floating-chat-top, 0px) - 24px - env(safe-area-inset-top)));
+  }
+}
+
+@media (max-width: 679px) {
+  .viewport {
+    right: calc(8px + env(safe-area-inset-right));
+    left: calc(8px + env(safe-area-inset-left));
+    width: auto;
+  }
+}

@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import styles from "./toast-viewport.module.css";
 import { EASE_OUT_EXPO, MOTION_BASE } from "@/lib/motion";
 
 type ToastAction = {
@@ -17,7 +18,7 @@ type ToastAction = {
   label: string;
   /** Open in a new tab, required for cross-product links to roadmap/notes/etc. */
   external?: boolean;
-};
+} | { label: string; onClick: () => void; href?: never; external?: never };
 
 type Toast = {
   id: string;
@@ -131,7 +132,7 @@ function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ toast }}>
       <ToastBridge />
       {children}
-      <div className="signal-toast-viewport pointer-events-none fixed z-[80] flex w-[min(380px,calc(100vw-32px))] flex-col gap-2">
+      <div data-toast-viewport="" className={`${styles.viewport} pointer-events-none fixed z-[80] flex w-[min(380px,calc(100vw-32px))] flex-col gap-2`}>
         <AnimatePresence initial={false}>
           {toasts.map((t) => (
             <ToastCard
@@ -193,7 +194,9 @@ function ToastCard({ t, onDismiss, onPause, onResume }: { t: Toast; onDismiss: (
           {t.body}
         </div>
       ) : null}
-      {t.action ? (
+      {t.action && "onClick" in t.action ? (
+        <button type="button" onClick={() => { if (t.action && "onClick" in t.action) t.action.onClick(); onDismiss(); }} className="mt-2 inline-flex min-h-[32px] items-center text-[12.5px] font-medium text-ink underline underline-offset-[3px]">{t.action.label}</button>
+      ) : t.action ? (
         <a
           href={t.action.href}
           target={t.action.external ? "_blank" : undefined}

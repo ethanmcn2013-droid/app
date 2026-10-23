@@ -149,7 +149,7 @@ test("tab-local drafts, files and notifications retain a reachable compact Chat"
   for (const path of ["/app/analytics", "/app/tasks", "/app/files"]) {
     await navigate(page, path);
     expect(await page.evaluate(() => window.__personalChatBrowserDocumentId)).toBe(documentId);
-    await expect(page.locator(".signal-toast-viewport")).toHaveCount(1);
+    await expect(page.locator("[data-toast-viewport]")).toHaveCount(1);
     await emit(page, `UI-only bridge ${path}`);
     await expect(toastsOf(page)).toHaveCount(1);
     await dismissAll(page);
@@ -210,7 +210,7 @@ test("tab-local drafts, files and notifications retain a reachable compact Chat"
       await reachable(page, dismiss);
       if (open) await controls(); else await reachable(page, launcher);
     }
-    const axe = new AxeBuilder({ page }).include(".signal-toast-viewport");
+    const axe = new AxeBuilder({ page }).include("[data-toast-viewport]");
     if (open) axe.include('[aria-label="Chat"][role]');
     expect((await axe.analyze()).violations).toEqual([]);
     await testInfo.attach(open ? "chat-and-notifications" : "launcher-and-notifications", { body: await page.screenshot(), contentType: "image/png" });
