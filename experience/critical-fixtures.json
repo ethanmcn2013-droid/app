@@ -3837,7 +3837,6 @@
     "src/lib/projects/project-appearance.ts": "f90960631052aa9be94c0c03451761ca83bba6de999af6d16ad88f4a81f0315d",
     "src/server/actions/project-menu.ts": "08ffcc756f9ec689ddfcc81848864fc81346ff66608c8a05d6f112515318dc23",
     "src/server/projects/project-appearance.test.ts": "ab491d6f0ab893afdd6440a6c810031f582cf40231afdda338dd7a8de912add5",
-    "src/server/projects/project-appearance.ts": "26488f5fa665a65d81f6661c15c4ae56d1d2efec941b3bd71258c7afecb63a3f",
-    "experience/product-project-menu-browser.mjs": "be06989670cbf04c014c87956ab92097d78e0bd0e9bb678d75b766830bff0388"
+    "src/server/projects/project-appearance.ts": "26488f5fa665a65d81f6661c15c4ae56d1d2efec941b3bd71258c7afecb63a3f"
   }
 }
