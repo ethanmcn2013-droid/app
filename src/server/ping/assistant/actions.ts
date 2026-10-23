@@ -7,6 +7,7 @@ import type {BoundAssistantTaskTarget} from './plan-targets';
 import {taskSnapshot,taskSnapshotHash} from './task-snapshot';
 import {assistantPayloadHash} from './store';
 import { isAssistantInternalHref, resolveAssistantDate } from "@/lib/ping/assistant/contract";
+import { setProjectArchivedInTransaction, ProjectArchiveRefusal } from "@/server/projects/archive-project-core";
 import { activities, pendingInvites, tasks, workspaceEvents } from "@/server/db/schema";
 import { prepareCanonicalTaskCreate } from "@/server/tasks/create-task-core";
 import { insertOwnedProjectInTransaction, nextOwnedProjectPositionInTransaction } from "@/server/projects/create-project-core";
@@ -23,6 +24,8 @@ import { assistantLocalDayTime, instantFromAssistantDayTime } from "./calendar-t
 import { prepareAssistantInvitations, prepareAssistantNudges, revalidateAssistantDelivery,
   type AssistantDeliveryIntent, type AssistantDeliveryPort, type AssistantDispatcher } from "./delivery";
 import type { ActivityPayload } from "@/lib/data";
+import { executeAssistantDriveFolder } from "./drive-folder";
+import type { projectDriveSubfolderServiceFromEnv, ProjectDriveSubfolderResult } from "@/server/connections/project-drive-subfolders";
 import { AssistantActionRefusal, assertAssistantActor, assistantTaskCatalog, assistantTasksByIds,
   authorizeAssistantProject, resolveAssistantMember, resolveAssistantProjectName, type AssistantActionTransaction } from "./context";
 
@@ -42,6 +45,10 @@ export type AssistantActionInput = Readonly<{
   prepareTimeline?: (input: { actorId: string; runId: string; stepId: string; projectId: string;
     kind: "preview_timeline" | "read_timeline" }) => Promise<{ href: string; items?: readonly AssistantResultItem[]; summary?: string }>;
   settleTimelineResult?: (actorId: string, runId: string, stepId: string, result: AssistantActionResult) => Promise<unknown>;
+  driveFolders?: ReturnType<typeof projectDriveSubfolderServiceFromEnv>;
+  guardDriveFolderAttempt?: (transaction?: AssistantActionTransaction) => Promise<void>;
+  driveFolderRecoveryOnly?: boolean;
+  settleDriveFolderResult?: (actorId: string, runId: string, stepId: string, result: ProjectDriveSubfolderResult) => Promise<AssistantActionResult>;
 }>;
 const stableId = (prefix: string, parts: readonly unknown[]) => `${prefix}-${createHash("sha256").update(JSON.stringify(parts)).digest("hex").slice(0, 32)}`;
 const ordinary = (row: typeof tasks.$inferSelect) => row.parentTaskId === null && row.recurrence === null;
@@ -146,6 +153,7 @@ function taskDay(row:typeof tasks.$inferSelect,input:AssistantActionInput):strin
 
 /** Effects and the completed step result share the store's fenced immediate transaction. */
 export async function executeAssistantAction(input: AssistantActionInput): Promise<AssistantActionResult> {
+  if (input.step.kind === "create_drive_subfolder") return executeAssistantDriveFolder(input);
   let outbound: AssistantDeliveryIntent[] = [];
   const result = await input.commitStep(input.stepId, input.fence, async tx => {
     const step = input.step;
@@ -162,6 +170,20 @@ export async function executeAssistantAction(input: AssistantActionInput): Promi
         description: step.description });
       return { ...base, summary: `Created ${name}.`, affectedCount: 1, projectId: id, createdProjectId: id, createdProjectName: name,
         href: `/app/tasks?workspaceId=${encodeURIComponent(id)}` };
+    }
+    if(step.kind==='archive_project'){
+      const binding=input.boundTaskTargets?.[step.id];
+      if(!binding?.projectState)throw new AssistantActionRefusal('stale');
+      const before=await authorizeAssistantProject(tx,input.actorId,binding.projectId,'manageProject');
+      if(before.revision!==binding.projectState.revision||(before.archivedAt?.toISOString()??null)!==binding.projectState.archivedAt)
+        throw new AssistantActionRefusal('stale');
+      const after=await setProjectArchivedInTransaction(tx,{actorUserId:input.actorId,projectId:before.id,archived:step.archived,
+        expectedRevision:before.revision,expectedArchivedAt:before.archivedAt,now}).catch(error=>{if(error instanceof ProjectArchiveRefusal)throw new AssistantActionRefusal(error.code);throw error;});
+      const changed=after.revision!==before.revision;
+      return {...base,projectId:before.id,affectedCount:changed?1:0,
+        summary:`${step.archived?'Archived':'Restored'} ${before.name}. Tasks, members and history are retained. Existing published Timeline links are unchanged.`,
+        ...(changed?{reversal:{kind:'project_archive' as const,projectId:before.id,beforeArchivedAt:before.archivedAt?.toISOString()??null,
+          afterArchivedAt:after.archivedAt?.toISOString()??null,afterRevision:after.revision}}:{})};
     }
     const writing = ["create_tasks", "update_tasks", "archive_tasks", "add_comment", "nudge_tasks", "invite_members", "send_message"].includes(step.kind);
     const project = await projectFor(tx, input, step.project, writing);

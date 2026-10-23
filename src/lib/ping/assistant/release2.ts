@@ -19,5 +19,5 @@ export type AssistantReversal = Readonly<{kind:'tasks';projectId:string;rows:rea
   id:string;before:AssistantTaskSnapshot|null;after:AssistantTaskSnapshot;
 }>[]}> | Readonly<{kind:'messages';projectId:string;items:readonly Readonly<{
   kind:'conversation'|'task_discussion';scopeId:string;itemId:string;revision:number;audienceEpoch:number;
-}>[]}>;
+}>[]}> | Readonly<{kind:'project_archive';projectId:string;beforeArchivedAt:string|null;afterArchivedAt:string|null;afterRevision:number}>;
 export type AssistantUndoResult = Readonly<{status:'reverted'|'conflict'|'unavailable';summary:string;affectedCount:number}>;

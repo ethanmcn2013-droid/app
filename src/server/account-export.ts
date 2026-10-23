@@ -17,6 +17,7 @@ import {
   notifications,
   pendingInvites,
   projectDriveOperations,
+  projectDriveSubfolders,
   providerConnections,
   resources,
   shareLinks,
@@ -432,6 +433,18 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     clerkId,
     user,
     assistant:{runs:privateAssistantRuns,steps:privateAssistantSteps},
+    driveSubfolders: await database.select({
+      operationId: projectDriveSubfolders.id,
+      projectId: projectDriveSubfolders.workspaceId,
+      folderName: projectDriveSubfolders.folderName,
+      status: projectDriveSubfolders.status,
+      folderUrl: projectDriveSubfolders.folderUrl,
+      createdAt: projectDriveSubfolders.createdAt,
+    }).from(projectDriveSubfolders).where(or(
+      eq(projectDriveSubfolders.actorUserId, userId),
+      slugs.length ? inArray(projectDriveSubfolders.workspaceId, slugs) : undefined,
+      accountConnectionIds.length ? inArray(projectDriveSubfolders.connectionId, accountConnectionIds) : undefined,
+    )),
     eventPurchases: myEventPurchases,
     ownedWorkspaces: {
       workspaces: ownedWorkspaces,

@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Ping Project and folder controls
+
+Ping can prepare archive and restore plans for named Projects, with owner or co-owner permission and Undo when the Project has not changed. Ordinary delete requests use recoverable archive. Tasks, members and history stay saved; existing published Timeline links stay published. Project lifecycle batches contain distinct Projects and stay separate from task and chat edits.
+
+Ping can also create a named folder inside an existing, ready Project Google Drive folder. It uses the existing connection and folder access, with no new sharing or automatic setup. The original request is tracked through interrupted replies, and Check status recovers that same request. Folder creation has no Undo; uncertain creation is never blindly repeated. All changes still wait for Apply plan, and the approved Chat design and private access remain in force.
+
 ## 2026-10-23 · Ping plan preparation
 
 Ping saves a prepared plan's result once before showing it, removing one redundant database transaction. The plan, access checks, source references and checklist warning are preserved. Changes still wait for Apply plan. Production speed gains have not yet been measured.

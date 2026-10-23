@@ -76,3 +76,19 @@ export async function assertProjectNotDeleting(
     .limit(1);
   if (deletion) throw new ProjectDeletionInProgressError();
 }
+
+/** Batched catalog read of the canonical durable Project deletion fence. */
+export async function projectsBeingDeleted(
+  executor: ProjectDeletionFenceExecutor,
+  workspaceIds: readonly string[],
+): Promise<Set<string>> {
+  const ids = [...new Set(workspaceIds.map(canonicalProjectId))];
+  if (!ids.length) return new Set();
+  const rows = await executor.select({ workspaceId: projectDriveOperations.workspaceId })
+    .from(projectDriveOperations).where(and(
+      inArray(projectDriveOperations.workspaceId, ids),
+      eq(projectDriveOperations.operationKind, "project_delete"),
+      inArray(projectDriveOperations.status, NONTERMINAL_DELETE_STATUSES),
+    ));
+  return new Set(rows.map(row => row.workspaceId));
+}

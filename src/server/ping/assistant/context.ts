@@ -4,8 +4,9 @@ import type { db } from "@/server/db";
 import { meta, tasks, users, workspaceMembers, workspaces } from "@/server/db/schema";
 import { proveProjectCapability, type ProjectCapabilityKey } from "@/server/actions/project-authz";
 import { parseProjectId } from "@/lib/projects/project-ref";
-import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
+import { assertProjectNotDeleting, projectsBeingDeleted } from "@/server/projects/project-deletion-fence";
 import { accountDeletionTombstoneKey } from "@/server/account-deletion-key";
+import { projectCapabilities, resolveProjectRole } from "@/server/projects/capabilities";
 import { pingMemberNameKey } from "@/lib/ping/command";
 
 export type AssistantActionTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -90,16 +91,41 @@ export async function assistantTaskCatalog(tx: AssistantActionTransaction, actor
 /** Bounded account catalog. No foreign Project names or member addresses are projected. */
 export async function getAssistantContext(tx: AssistantActionTransaction, actorId: string, projectId?: string | null) {
   await assertAssistantActor(tx, actorId);
-  const projects = await tx.select({ id: workspaces.id, name: workspaces.name, archivedAt: workspaces.archivedAt })
+  const projects = await tx.select({ id: workspaces.id, name: workspaces.name, archivedAt: workspaces.archivedAt, role: workspaceMembers.role, ownerUserId: workspaces.ownerUserId })
     .from(workspaceMembers).innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
     .where(eq(workspaceMembers.userId, actorId)).orderBy(asc(workspaces.id)).limit(201);
   if (projects.length > 200) throw new AssistantActionRefusal("unsupported");
-  if (!projectId) return { projects, project: null, members: [], tasks: [] };
+  async function visibleProjects() {
+    // Catalog hints only. Apply and Undo still reauthorize each chosen Project.
+    const archived = projects.filter(project => project.archivedAt !== null && parseProjectId(project.id) &&
+      projectCapabilities({ role: resolveProjectRole({ membershipRole: project.role === "owner" ? "owner" : "member",
+        workspaceOwnerUserId: project.ownerUserId, actorUserId: actorId }), archived: true,
+        ownsPlanningPeriod: false }).manageProject && project.ownerUserId);
+    const ownerIds = [...new Set(archived.map(project => project.ownerUserId!))];
+    const owners = ownerIds.length ? await tx.select({ id: users.id, clerkId: users.clerkId }).from(users)
+      .where(inArray(users.id, ownerIds)) : [];
+    const ownerKeys = owners.map(owner => accountDeletionTombstoneKey(owner.clerkId ?? owner.id));
+    const tombstones = ownerKeys.length ? await tx.select({ key: meta.key }).from(meta)
+      .where(inArray(meta.key, ownerKeys)) : [];
+    const erased = new Set(tombstones.map(row => row.key));
+    const liveOwners = new Set(owners.filter(owner => !erased.has(accountDeletionTombstoneKey(owner.clerkId ?? owner.id)))
+      .map(owner => owner.id));
+    const deleting = await projectsBeingDeleted(tx, archived.map(project => project.id));
+    const visibleArchived = new Set(archived.filter(project => liveOwners.has(project.ownerUserId!) && !deleting.has(project.id))
+      .map(project => project.id));
+    return projects.filter(project => project.archivedAt === null || visibleArchived.has(project.id))
+      .map(({ id, name, archivedAt, role }) => ({ id, name, archivedAt, role }));
+  }
+  if (!projectId) return { projects: await visibleProjects(), project: null, members: [], tasks: [] };
   const project = await authorizeAssistantProject(tx, actorId, projectId);
+  if(project.archivedAt!==null){
+    await authorizeAssistantProject(tx,actorId,projectId,'manageProject');
+    return {projects:await visibleProjects(),project:{id:project.id,name:project.name,archived:true},members:[],tasks:[]};
+  }
   const members = await assistantMemberRoster(tx, actorId, projectId);
   const catalog = await assistantTaskCatalog(tx, actorId, projectId);
   if (catalog.length > 1000) throw new AssistantActionRefusal("unsupported");
-  return { projects, project: { id: project.id, name: project.name }, members,
+  return { projects: await visibleProjects(), project: { id: project.id, name: project.name }, members,
     tasks: catalog.map(row => ({ id: row.id, title: row.title, status: row.boardColumnKey ?? row.lane,
       milestone: row.isMilestone, seq: row.seq })) };
 }

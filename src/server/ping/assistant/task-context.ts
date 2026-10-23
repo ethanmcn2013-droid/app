@@ -61,7 +61,7 @@ async function activeProjectCandidates(tx: AssistantActionTransaction, actorId: 
   return context.projects.filter(project => project.archivedAt === null);
 }
 
-function orderedAccountProjects(projects: readonly {id:string;name:string;archivedAt:Date|null}[], requestText: string,
+function orderedAccountProjects<T extends {id:string;name:string;archivedAt:Date|null}>(projects: readonly T[], requestText: string,
   needsYouProjectIds: readonly string[]): typeof projects[number][] {
   const text = projectNameKey(requestText);
   const mentions = projects.flatMap((project, index) => {
@@ -87,7 +87,7 @@ export async function loadAssistantTaskContext(tx: AssistantActionTransaction, a
   coverage: string;
 }> {
   const projects = await activeProjectCandidates(tx, actorId, request.scope.kind === "project" ? request.scope.projectId : undefined);
-  let chosen: readonly {id:string;name:string;archivedAt:Date|null}[];
+  let chosen: typeof projects;
   let needsYouProjectIds: string[] = [];
   if (request.scope.kind === "project") {
     const projectId = request.scope.projectId;

@@ -63,3 +63,13 @@ test("only app navigation links are displayed", () => {
   assert.equal(isAssistantInternalHref("/app/tasks?workspaceId=synthetic"), true);
   for (const href of ["https://evil.example/app/tasks", "//evil.example/app/tasks", "/app/\\evil", "/app/\nsecret", "javascript:alert(1)", "/api/admin"]) assert.equal(isAssistantInternalHref(href), false, href);
 });
+
+
+test('Project lifecycle plans allow batches but reject mixed work and created references',()=>{
+  const archive={id:'archive',kind:'archive_project',project:{kind:'name',name:'Summer'},archived:true};
+  const plan={version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[archive]};
+  assert.ok(parseAssistantPlan(plan));
+  assert.ok(parseAssistantPlan({...plan,actions:[archive,{...archive,id:'restore',project:{kind:'name',name:'Winter'},archived:false}]}));
+  assert.equal(parseAssistantPlan({...plan,actions:[archive,{id:'create',kind:'create_project',name:'Other'}]}),null);
+  assert.equal(parseAssistantPlan({...plan,actions:[{...archive,project:{kind:'created',stepId:'create'}}]}),null);
+});

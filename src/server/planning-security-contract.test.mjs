@@ -79,7 +79,6 @@ test("every consolidated Project mutation proves a capability, then writes with 
   for (const [name, end] of [
     ["renameProject", "export async function reorderProject"],
     ["reorderProject", "export async function setProjectArchived"],
-    ["setProjectArchived", "export async function moveProjectToPeriod"],
     ["moveProjectToPeriod", "type WorkspaceRow"],
   ]) {
     const source = serviceSource(`export async function ${name}`, end);
@@ -90,6 +89,20 @@ test("every consolidated Project mutation proves a capability, then writes with 
     assert.match(source, /\.returning\(\{ id: workspaces\.id/);
     assert.match(source, /throw new Error\(RECEIPT_MISSING\)/);
   }
+  // Archive shares its transaction-aware effect with Ping; both callers retain the same capability and receipt boundary.
+  const archive = serviceSource("export async function setProjectArchived", "export async function moveProjectToPeriod");
+  const archiveCore = readFileSync(new URL("./projects/archive-project-core.ts", import.meta.url), "utf8");
+  assert.ok(archive.indexOf("provedProject(") < archive.indexOf("setProjectArchivedInTransaction("));
+  assert.match(archive, /db\.transaction/);
+  assert.match(archive, /throw new Error\(RECEIPT_MISSING\)/);
+  const coreProof = archiveCore.indexOf("proveProjectCapability(");
+  const coreWrite = archiveCore.indexOf(".update(workspaces)");
+  assert.ok(coreProof >= 0 && coreWrite > coreProof);
+  assert.match(archiveCore, /'manageProject', 'enforce', tx/);
+  assert.match(archiveCore, /assertProjectNotDeleting\(tx, id\)/);
+  assert.match(archiveCore, /eq\(workspaces\.revision, before\.revision\)/);
+  assert.match(archiveCore, /\.returning\(\)/);
+  assert.match(archiveCore, /if \(!after\) throw new ProjectArchiveRefusal\('stale'\)/);
   // Delete keeps authorization in the consolidated service, then delegates
   // to the durable Project Drive lifecycle. Its workspace receipt sits in
   // that lifecycle's final immediate transaction.

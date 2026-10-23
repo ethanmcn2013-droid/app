@@ -2,6 +2,8 @@ import { createBrowserPingTelemetry, createPingTelemetryRequest, pingTelemetryBe
 import type { PingTelemetryRecorder, PingTelemetryEnd, PingTelemetryOutcome } from "@/lib/ping/telemetry";
 import { ASSISTANT_VERSION, isAssistantInternalHref, parseAssistantPlan, type AssistantAction, type AssistantApiCommand, type AssistantApiResponse, type AssistantRunView, type AssistantScope, type AssistantStepView, type AssistantStepStatus, type AssistantMemberRef } from "@/lib/ping/assistant/contract";
 import type { AssistantSourceScope } from "@/lib/ping/assistant/release2";
+import { isAssistantDriveFolderPending } from "@/lib/ping/assistant/drive-folder";
+export { isAssistantDriveFolderHref } from "@/lib/ping/assistant/drive-folder";
 export type PendingAssistantRequest = Readonly<{ version: 1; requestId: string; runId?: string }>;
 const requestId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$/.test(value);
 const runId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9_-]{8,160}$/.test(value);
@@ -85,11 +87,11 @@ export function assistantWaitingPlanAncestor(runs: readonly AssistantRunView[], 
   return null;
 }
 export const assistantIsWorking = (run: AssistantRunView) => run.status === "planning" || run.status === "running";
-export const assistantNeedsRecovery = (run: AssistantRunView) => run.status !== "cancelled" && (assistantIsWorking(run) || run.status === "unknown" || run.steps.some(step => step.status === "unknown" || step.status === "running"));
+export const assistantNeedsRecovery = (run: AssistantRunView) => run.steps.some(step=>isAssistantDriveFolderPending(step.result)) || run.status !== "cancelled" && (assistantIsWorking(run) || run.status === "unknown" || run.steps.some(step => step.status === "unknown" || step.status === "running"));
 export const assistantCanContinue = (run: AssistantRunView) => run.mode !== "draft" && !assistantNeedsRecovery(run) &&
   (run.status === "ready" || run.status === "partial" && run.steps.some(step => step.result?.code === "timeline_pending"));
 export const assistantRunLabel = (run: AssistantRunView): string => ({ planning: "Understanding your request", ready: run.mode === "draft" ? "Draft ready" : "Ready to continue", running: "Working on your request", completed: "Done", partial: "Some work is saved", clarification: "A detail is needed", failed: "Could not finish", cancelled: "Remaining work cancelled", unknown: "Result not confirmed" })[run.status];
-export const assistantStepLabel = (kind: string): string => ({ create_project: "Create Project", create_tasks: "Create tasks", update_tasks: "Update tasks", archive_tasks: "Archive or restore tasks", add_comment: "Add comments", nudge_tasks: "Send nudges", invite_members: "Invite members", send_message: "Send message", set_checklist_item: "Update checklist item", create_checklist_items: "Add checklist items", open_project: "Open Project", open_chat: "Open chat", read_timeline: "Read Timeline", preview_timeline: "Prepare private preview", read_chat: "Read chat", list_tasks: "Find tasks" } as Record<string, string>)[kind] ?? "Task";
+export const assistantStepLabel = (kind: string): string => ({ create_project: "Create Project", create_drive_subfolder: "Create Drive folder", archive_project: "Archive or restore Project", create_tasks: "Create tasks", update_tasks: "Update tasks", archive_tasks: "Archive or restore tasks", add_comment: "Add comments", nudge_tasks: "Send nudges", invite_members: "Invite members", send_message: "Send message", set_checklist_item: "Update checklist item", create_checklist_items: "Add checklist items", open_project: "Open Project", open_chat: "Open chat", read_timeline: "Read Timeline", preview_timeline: "Prepare private preview", read_chat: "Read chat", list_tasks: "Find tasks" } as Record<string, string>)[kind] ?? "Task";
 
 const projectName = (action: AssistantAction) => {
   if(!("project" in action))return "the Project";
@@ -104,6 +106,10 @@ export function assistantPlanDescription(action: AssistantAction): string {
   const destination=projectName(action);
   switch(action.kind){
     case "create_project":return `Create Project “${action.name}”${action.description?` · ${action.description}`:""}`;
+    case "create_drive_subfolder":return `Create folder “${action.folderName}” in ${destination}’s existing Drive folder. It uses existing folder access; there is no Undo.`;
+    case "archive_project":return action.archived
+      ? `Archive ${destination}. Tasks, members and history stay saved. Any published Timeline stays published.`
+      : `Restore ${destination} to your active Projects. Tasks, members and history stay saved.`;
     case "create_tasks":return `${action.tasks?`Create ${action.tasks.length} task${action.tasks.length===1?"":"s"}`:`Create ${action.template.count} task${action.template.count===1?"":"s"}`} in ${destination}${action.tasks?`: ${action.tasks.slice(0,5).map(task=>task.title).join("; ")}${action.tasks.length>5?`; and ${action.tasks.length-5} more (view full list)`:""}`:""}`;
     case "update_tasks":return `Update ${action.targets.kind==="titles"?action.targets.titles.join(", "):"selected tasks"}${action.changes.assignees?` · assign to ${memberNames(action.changes.assignees)}`:""}${action.changes.dueDate!==undefined?` · due ${dateText(action.changes.dueDate)}`:""}${action.changes.dueTime!==undefined?` · at ${action.changes.dueTime??"no time"}`:""}`;
     case "archive_tasks":return `${action.archived?"Archive":"Restore"} ${action.targets.kind==="titles"?action.targets.titles.join(", "):"selected tasks"}`;
@@ -132,7 +138,7 @@ export const sameAssistantSource=(a:AssistantSourceScope|undefined,b:AssistantSo
 export function assistantVisibleStepStatus(step: AssistantStepView): AssistantStepStatus {
   if (step.result && step.result.status !== "completed") return step.result.status;
   if (step.result?.delivery?.unknown) return "unknown";
-  if (step.result?.code === "timeline_pending" || step.result?.delivery?.queued) return "queued";
+  if (step.result?.code === "timeline_pending" || isAssistantDriveFolderPending(step.result) || step.result?.delivery?.queued) return "queued";
   return step.status;
 }
 /** Navigation belongs to the direct command reply, never history or recovery reads. */
@@ -249,7 +255,7 @@ export function assistantCreatedProjects(run: AssistantRunView): readonly { id: 
 export type AssistantTaskRefreshState = { actorId: string | null; receipts: Set<string> };
 export function refreshAssistantTasks(options: {
   state: AssistantTaskRefreshState; actorId: string; operation: AssistantApiCommand["operation"] | "read";
-  response: AssistantApiResponse; pendingRequestId?: string; invalidate: () => void;
+  response: AssistantApiResponse; pendingRequestId?: string; invalidate: () => void; refreshProjects?: () => void;
 }): boolean {
   const { state, actorId, operation, response } = options;
   if (state.actorId !== actorId) { state.actorId = actorId; state.receipts.clear(); }
@@ -257,14 +263,18 @@ export function refreshAssistantTasks(options: {
   const run = response.run;
   if (operation === "read" && (!options.pendingRequestId || options.pendingRequestId !== run.requestId)) return false;
   if (run.status === "ready" || run.status === "clarification" || run.status === "planning") return false;
-  const keys = run.steps.filter(step =>
-    ["create_tasks", "update_tasks", "archive_tasks", "set_checklist_item", "create_checklist_items"].includes(step.kind) && step.status === "completed" &&
+  const saved = run.steps.filter(step =>
+    ["create_tasks", "update_tasks", "archive_tasks", "set_checklist_item", "create_checklist_items", "archive_project"].includes(step.kind) && step.status === "completed" &&
     step.result?.status === "completed" && step.result.kind === step.kind &&
     Number.isSafeInteger(step.result.affectedCount) && step.result.affectedCount > 0 &&
     (operation !== "undo" || step.undoResult?.status === "reverted")
-  ).map(step => JSON.stringify([actorId, run.id, step.id, step.undoResult?.status === "reverted" ? "undo" : "apply"])).filter(key => !state.receipts.has(key));
+  ).map(step => ({step,key:JSON.stringify([actorId, run.id, step.id, step.undoResult?.status === "reverted" ? "undo" : "apply"])})).filter(({key}) => !state.receipts.has(key));
+  const keys=saved.map(({key})=>key);
   if (!keys.length) return false;
-  try { options.invalidate(); } catch { return false; }
+  try {
+    options.invalidate();
+    if(saved.some(({step})=>step.kind==="archive_project"))options.refreshProjects?.();
+  } catch { return false; }
   for (const key of keys) {
     state.receipts.add(key);
     if (state.receipts.size > 2000) state.receipts.delete(state.receipts.values().next().value!);

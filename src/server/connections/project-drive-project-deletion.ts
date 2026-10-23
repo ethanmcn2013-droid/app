@@ -13,6 +13,7 @@ import {
   driveFolderGrants,
   meta,
   projectDriveOperations,
+  projectDriveSubfolders,
   providerConnections,
   workspaceMembers,
   workspaceStorage,
@@ -20,6 +21,7 @@ import {
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
 import { deleteProjectRowsInTransaction } from "@/server/projects/project-deletion-rows";
+import { assertProjectDriveSubfoldersSettled } from "./project-drive-subfolders-lifecycle";
 import { createNativeByteCleanupService } from "@/server/attachments/native-byte-cleanup";
 import {
   assertNoPendingNativeUploads,
@@ -305,6 +307,7 @@ async function readProjectState(
   transaction: ProjectDeletionTransaction,
   workspaceId: string,
 ): Promise<ProjectState> {
+  await assertProjectDriveSubfoldersSettled(transaction, eq(projectDriveSubfolders.workspaceId, workspaceId));
   const workspaceRows = await transaction
     .select()
     .from(workspaces)

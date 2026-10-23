@@ -1,4 +1,5 @@
 "use client";
+import { isAssistantDriveFolderHref, isAssistantDriveFolderPending } from '@/lib/ping/assistant/drive-folder';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -77,11 +78,11 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
       const response = await assistantRequest(queryFor(pendingRef.current), undefined, controller.signal, timing);
       if (!mounted.current || epoch !== generation.current) return;
       const accepted = receive(response);
-      refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "read", response: accepted, pendingRequestId, invalidate: invalidateTaskSnapshotEpoch });
+      refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "read", response: accepted, pendingRequestId, invalidate: invalidateTaskSnapshotEpoch, refreshProjects: () => router.refresh() });
       if (!accepted.run) { setAbsent(true); setError("The original request is not recorded yet. Check again before starting another request."); }
     } catch (failure) { finishAssistantTiming(timing, "unknown"); if (mounted.current && epoch === generation.current) setError(failure instanceof Error ? failure.message : "The original result could not be checked."); }
     finally { if (lookupAbort.current === controller) lookupAbort.current = null; if (epoch === generation.current) { latch.current = false; if (mounted.current) setBusy(false); } }
-  }, [receive, actorId]);
+  }, [receive, actorId, router]);
   useEffect(() => {
     mounted.current = true;
     const epoch = ++generation.current;
@@ -99,7 +100,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
           const response = await assistantRequest(queryFor(saved), undefined, controller.signal);
           if (!mounted.current || epoch !== generation.current) return;
           const accepted = receive(response);
-          refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "read", response: accepted, pendingRequestId: saved.requestId, invalidate: invalidateTaskSnapshotEpoch });
+          refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "read", response: accepted, pendingRequestId: saved.requestId, invalidate: invalidateTaskSnapshotEpoch, refreshProjects: () => router.refresh() });
           if (!accepted.run) { setAbsent(true); setError("The original request is not recorded yet. Check its status before starting another request."); }
         }
         setReady(true);
@@ -110,7 +111,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
       finishAssistantTiming(visibleTiming.current, "context_invalidated");
       visibleTiming.current = null;
     };
-  }, [actorId, receive, pendingKey]);
+  }, [actorId, receive, pendingKey, router]);
   const active = pending ? runs.find(run => run.requestId === pending.requestId) : undefined;
   useEffect(() => {
     if (!visible || !ready || !pending || !active || !assistantIsWorking(active)) return;
@@ -156,7 +157,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
       original.current = request; setHasOriginal(true);
       const response = await assistantRequest("", { operation: "submit", request }, undefined, timing);
       if (mounted.current && epoch === generation.current) {
-        receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "submit", response, invalidate: invalidateTaskSnapshotEpoch }); openCommandResult("submit", response);
+        receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation: "submit", response, invalidate: invalidateTaskSnapshotEpoch, refreshProjects: () => router.refresh() }); openCommandResult("submit", response);
         const waitingPlan=response.ok&&response.run?.status==="ready"?assistantWaitingPlanAncestor(runs,response.run.replyToRunId,response.run):null;
         if(waitingPlan){
           const recovery={version:1 as const,requestId:waitingPlan.requestId,runId:waitingPlan.id};
@@ -199,7 +200,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
     try {
       keepPending({ version: 1, requestId: run.requestId, runId: run.id });
       const response = await assistantRequest("", { operation, runId: run.id }, undefined, timing);
-      if (mounted.current && epoch === generation.current) { receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation, response, invalidate: invalidateTaskSnapshotEpoch }); openCommandResult(operation, response); }
+      if (mounted.current && epoch === generation.current) { receive(response); refreshAssistantTasks({ state: taskRefresh.current, actorId, operation, response, invalidate: invalidateTaskSnapshotEpoch, refreshProjects: () => router.refresh() }); openCommandResult(operation, response); }
     } catch { finishAssistantTiming(timing, "unknown"); if (mounted.current && epoch === generation.current) setError("The latest result is not confirmed. Check status; work already saved stays saved."); }
     finally { if (epoch === generation.current) { latch.current = false; if (mounted.current) setBusy(false); } }
   }
@@ -207,7 +208,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
     if(latch.current||pendingRef.current&&pendingRef.current.requestId!==run.requestId)return;
     latch.current=true;setBusy(true);setError(null);const timing=beginVisibleTiming(run.requestId);const epoch=generation.current;
     try{keepPending({version:1,requestId:run.requestId,runId:run.id});const response=await assistantRequest("",{operation:"undo",runId:run.id,stepId},undefined,timing);
-      if(mounted.current&&epoch===generation.current){receive(response);refreshAssistantTasks({state:taskRefresh.current,actorId,operation:"undo",response,invalidate:invalidateTaskSnapshotEpoch});}}
+      if(mounted.current&&epoch===generation.current){receive(response);refreshAssistantTasks({state:taskRefresh.current,actorId,operation:"undo",response,invalidate:invalidateTaskSnapshotEpoch,refreshProjects:()=>router.refresh()});}}
     catch{finishAssistantTiming(timing,"unknown");if(mounted.current&&epoch===generation.current)setError("The take-back result is not confirmed. Check status before trying again.");}
     finally{if(epoch===generation.current){latch.current=false;if(mounted.current)setBusy(false);}}
   }
@@ -240,7 +241,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
               {step.plan ? <><p>{assistantPlanDescription(step.plan)}</p>{step.plan.kind==="create_tasks"&&step.plan.tasks?<details><summary>View details for all {step.plan.tasks.length} tasks</summary><ol className={styles.items}>{step.plan.tasks.map((task,index)=><li key={`${step.id}:${index}`}><span>{task.title}</span><p>Assigned to {task.assignees?.length?task.assignees.map(member=>member.kind==="self"?"you":member.name).join(", "):"No assignee"}</p><p>Due {task.dueDate??"date not set"}{task.dueTime?` · ${task.dueTime}`:" · no time"}</p>{task.status?<p>Status: {task.status}</p>:null}{task.milestone!==undefined?<p>{task.milestone?"Milestone":"Not a milestone"}</p>:null}{task.description?<p>{task.description}</p>:null}</li>)}</ol></details>:null}{step.plan.kind==="create_tasks"&&step.plan.template?<p className={styles.note}>Template: “{step.plan.template.titlePrefix}” · {step.plan.template.distribution==="all"?"assign all":step.plan.template.distribution==="round_robin"?"round-robin":"distribution not specified"} · {step.plan.template.assignees?.length?step.plan.template.assignees.map(member=>member.kind==="self"?"you":member.name).join(", "):"unassigned"} · due {step.plan.template.dueDate??"date not set"}{step.plan.template.dueTime?` at ${step.plan.template.dueTime}`:" · no time"}{step.plan.template.milestoneCount!==undefined?` · ${step.plan.template.milestoneCount} milestones`:""}</p>:null}{step.plan.kind==="invite_members"?<p className={styles.note}>Invitations cannot be recalled after delivery.</p>:null}
               {step.plan.kind==="nudge_tasks"?<p className={styles.note}>A nudge cannot be taken back after delivery.</p>:null}</>:null}
               {step.result ? <><p>{step.result.summary}</p>{step.result.status === "completed" && step.result.affectedCount > 0 && ["create_tasks", "update_tasks", "archive_tasks","set_checklist_item","create_checklist_items"].includes(step.kind) ? <p className={styles.note}>{step.result.affectedCount} {step.result.affectedCount === 1 ? "task" : "tasks"}</p> : null}
-                <div className={styles.resultLinks}>{isAssistantInternalHref(step.result.href) ? <Link href={step.result.href}>{step.kind === "preview_timeline" ? "Open private preview" : step.kind === "open_project" ? "Open tasks" : step.kind === "open_chat" || step.kind === "send_message" ? "Open chat" : step.kind === "read_timeline" ? "Open Timeline" : "Open result"}</Link> : null}
+                <div className={styles.resultLinks}>{step.kind==='create_drive_subfolder'&&step.result.code==='drive_folder_ready'&&step.result.status==='completed'&&isAssistantDriveFolderHref(step.result.href)?<a href={step.result.href} target="_blank" rel="noopener noreferrer">Open Drive folder</a>:null}{isAssistantInternalHref(step.result.href) ? <Link href={step.result.href}>{step.kind === "preview_timeline" ? "Open private preview" : step.kind === "open_project" ? "Open tasks" : step.kind === "open_chat" || step.kind === "send_message" ? "Open chat" : step.kind === "read_timeline" ? "Open Timeline" : "Open result"}</Link> : null}
                 {step.result.status === "completed" && step.result.projectId && ["create_tasks", "update_tasks", "archive_tasks"].includes(step.kind) ? <Link href={`${PRODUCT_APP_PATHS.tasks}?workspaceId=${encodeURIComponent(step.result.projectId)}`}>Open tasks</Link> : null}</div>
                 {step.result.delivery ? <p className={styles.note}>Delivery: {step.result.delivery.queued} queued / {step.result.delivery.accepted} accepted / {step.result.delivery.unknown} unconfirmed / {step.result.delivery.suppressed} suppressed</p> : null}
                 {step.undoResult ? <p role="status">{step.undoResult.summary}</p>:null}
@@ -251,6 +252,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
             <div className={styles.actions}>
               {plan ? <span className={styles.hint}>Nothing changes until you apply</span> : null}
               {["planning", "ready", "running", "partial", "unknown"].includes(run.status) ? <button type="button" className={styles.secondary} disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("cancel", run)}>{plan ? "Cancel" : "Cancel remaining work"}</button> : null}
+              {!pending&&run.steps.some(step=>isAssistantDriveFolderPending(step.result))?<button type="button" className={styles.secondary} disabled={busy} onClick={()=>void operate("resume",run)}>Check folder status</button>:null}
               {assistantCanContinue(run) ? <button type="button" className={styles.secondary} disabled={busy || !!pending && pending.requestId !== run.requestId} onClick={() => void operate("resume", run)}>{run.status === "partial" ? "Retry private preview" : "Continue remaining work"}</button> : null}
               {plan ? <button type="button" className={styles.primary} disabled={busy || !!pending} onClick={() => void operate("apply", run)}>Apply plan</button> : null}
             </div>
@@ -259,7 +261,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
       </li>; })}</ol>
     </div>
     {error ? <div className={styles.error} role="alert">{error}</div> : null}
-    {pending ? <div className={styles.recovery} role="status"><span>{busy ? "Waiting for the latest result..." : "Your request is kept until its result is confirmed."}</span><button type="button" onClick={() => void checkOriginal()} disabled={busy}>Check status</button>{absent && !hasOriginal && !reentering ? <button type="button" disabled={busy} onClick={() => setReentering(true)}>Re-enter original request</button> : null}{absent && hasOriginal ? <button type="button" onClick={() => void submit(true)} disabled={busy}>Retry original request</button> : null}</div> : null}
+    {pending ? <div className={styles.recovery} role="status"><span>{busy ? "Waiting for the latest result..." : "Your request is kept until its result is confirmed."}</span><button type="button" onClick={() => void (active?.steps.some(step=>isAssistantDriveFolderPending(step.result))?operate("resume",active):checkOriginal())} disabled={busy}>Check status</button>{absent && !hasOriginal && !reentering ? <button type="button" disabled={busy} onClick={() => setReentering(true)}>Re-enter original request</button> : null}{absent && hasOriginal ? <button type="button" onClick={() => void submit(true)} disabled={busy}>Retry original request</button> : null}</div> : null}
     <div className={styles.compose}>
       {reentering ? <><p className={styles.note}>Re-enter the exact original request and choose its original scope. Ping will use the saved request ID to check for duplicate work.</p>
         <span className={styles.mode}>Every request is a plan first. Nothing changes until you apply it.</span></> : null}
