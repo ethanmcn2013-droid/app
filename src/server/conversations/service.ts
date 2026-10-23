@@ -20,6 +20,8 @@ import {
 import { isProjectId, type ProjectId } from "@/lib/projects/project-ref";
 import type { ConversationDatabaseAdapter, ConversationSqlExecutor } from "./database";
 import { executeConversationBatch, type ConversationSqlStatement } from "./database";
+import { validConversationAttachmentIds } from "@/lib/conversations/attachment-contracts";
+import { bindConversationMessageFiles, validateConversationMessageFiles, conversationMessageAttachments, conversationMessagesWithFiles, conversationAttachmentSchema, ConversationAttachmentBindingError } from "./attachments";
 import { conversationWriteFencesClear } from "./write-fences";
 
 export type ProjectConversationScope = Readonly<{
@@ -214,6 +216,29 @@ async function authorizeConversation(
     ...(results.length === 2 ? { priorReceipt: results[1].rows[0] ?? null } : {}) } };
 }
 
+
+/** Shared file admission uses the exact canonical conversation proof and write fences. */
+export async function authorizeConversationAttachment(executor: ConversationSqlExecutor, input: ActorConversation & {
+  expectedAudienceEpoch?: number; rootId?: string | null;
+}, directMessagesEnabled: boolean, mode: "read" | "write") {
+  const authorized = await authorizeConversation(executor, input, directMessagesEnabled);
+  if (!authorized.ok) return authorized;
+  const { scope, row } = authorized.value;
+  if (scope.kind === "dm" && !scope.canRead) return failure("unavailable");
+  if (mode === "write") {
+    const gate = writeGate(scope, input.expectedAudienceEpoch!);
+    if (!gate.ok) return gate;
+    if (!await conversationWriteFencesClear(executor, input.actorId, input.projectId, {
+      actor_id: row.actor_id, actor_clerk_id: row.actor_clerk_id, owner_id: row.owner_id, owner_clerk_id: row.owner_clerk_id,
+    })) return failure("unavailable");
+    if (input.rootId) {
+      const root = await executor.execute({ sql: "SELECT id FROM conversation_messages WHERE id=? AND conversation_id=? AND workspace_id=? AND root_id IS NULL AND deleted_at IS NULL", args: [input.rootId, input.conversationId, input.projectId] });
+      if (root.rows.length !== 1) return failure("unavailable");
+    }
+  }
+  return { ok: true as const, value: scope };
+}
+
 function writeGate(
   scope: ProjectConversationScope | DirectMessageScope,
   expectedAudienceEpoch: number,
@@ -285,7 +310,7 @@ function isTransientDatabaseError(error: unknown): boolean {
 
 export function createConversationService(
   adapter: ConversationDatabaseAdapter,
-  options: Readonly<{ directMessagesEnabled?: boolean }> = {},
+  options: Readonly<{ directMessagesEnabled?: boolean; attachmentsEnabled?: boolean; attachmentCleanup?: (ownerId: string) => Promise<unknown> }> = {},
 ) {
   // Fixtures opt in by default; the real runtime supplies the independent DM flag.
   const directMessagesEnabled = options.directMessagesEnabled ?? false;
@@ -299,9 +324,20 @@ export function createConversationService(
     try {
       return await adapter.transaction(mode, operation);
     } catch (error) {
+      if (error instanceof ConversationAttachmentBindingError) return failure("unavailable");
       if (isTransientDatabaseError(error)) return failure("temporarily_unavailable");
       throw error;
     }
+  }
+
+  async function receiptWithFiles(executor: ConversationSqlExecutor, conversationId: string, receipt: MessageReceipt): Promise<MessageReceipt> {
+    if (!options.attachmentsEnabled) return receipt;
+    const attachments = await conversationMessageAttachments(executor, conversationId, receipt.messageId);
+    return attachments.length ? { ...receipt, attachments } : receipt;
+  }
+  async function messagesWithFiles(executor: ConversationSqlExecutor, conversationId: string, messages: MessageRecord[]) {
+    if (!options.attachmentsEnabled) return messages;
+    return conversationMessagesWithFiles(executor, conversationId, messages);
   }
 
   async function resolveActor(clerkId: string): Promise<string | null> {
@@ -533,22 +569,24 @@ export function createConversationService(
     const { actorId, input } = args;
     const body = typeof input?.body === "string" ? normalizeMessageBody(input.body) : "";
     const mentions = normalizedMentions(input?.mentionUserIds ?? []);
+    const attachmentIds = input?.attachmentIds === undefined ? [] : input.attachmentIds;
     if (!validIdentity(actorId) || !input || !isProjectId(input.projectId) ||
         !validIdentity(input.conversationId) || !validRequestId(input.clientRequestId) ||
-        !validMessageBody(body) || mentions === null ||
+        !validConversationAttachmentIds(attachmentIds) || (!validMessageBody(body) && !(body === "" && attachmentIds.length > 0)) || mentions === null ||
         (input.rootId !== null && !validIdentity(input.rootId))) return failure("invalid_input");
-    const payloadHash = hashTuple(["send", actorId, input.conversationId, body, input.rootId, mentions]);
+    const legacyTuple = ["send", actorId, input.conversationId, body, input.rootId, mentions];
+    const payloadHash = hashTuple(attachmentIds.length ? [...legacyTuple, ["conversation-files-v1", attachmentIds]] : legacyTuple);
 
     return inTransaction("write", async (executor) => {
-      const authorized = await authorizeConversation(executor, { actorId, ...input }, directMessagesEnabled, input.clientRequestId);
+      const authorized = await authorizeConversation(executor, { ...input, actorId }, directMessagesEnabled, input.clientRequestId);
       if (!authorized.ok) return authorized;
       if (authorized.value.scope.kind === "dm" && !authorized.value.scope.canRead &&
           !["pending", "declined"].includes(authorized.value.scope.pairState)) return failure("unavailable");
       const prior = authorized.value.priorReceipt !== undefined
-        ? authorized.value.priorReceipt : await findReceipt(executor, { actorId, ...input });
+        ? authorized.value.priorReceipt : await findReceipt(executor, { ...input, actorId });
       if (prior) {
         return prior.operation === "send" && prior.payload_hash === payloadHash
-          ? { ok: true, value: sendReceipt(prior) }
+          ? { ok: true, value: await receiptWithFiles(executor, input.conversationId, sendReceipt(prior)) }
           : failure("request_conflict");
       }
       const gate = writeGate(authorized.value.scope, input.expectedAudienceEpoch);
@@ -561,11 +599,12 @@ export function createConversationService(
       if (input.rootId !== null) {
         const root = await executor.execute({
           sql: `SELECT id FROM conversation_messages
-            WHERE id = ? AND conversation_id = ? AND workspace_id = ? AND root_id IS NULL`,
+            WHERE id = ? AND conversation_id = ? AND workspace_id = ? AND root_id IS NULL ${attachmentIds.length ? "AND deleted_at IS NULL" : ""}`,
           args: [input.rootId, input.conversationId, input.projectId],
         });
         if (root.rows.length !== 1) return failure("invalid_input");
       }
+      if (attachmentIds.length && (!options.attachmentsEnabled || !await validateConversationMessageFiles(executor, { ...input, ownerId: actorId, attachmentIds, now: Date.now() }))) return failure("unavailable");
       // Authorization selected c.* on this write transaction; intervening
       // replay/fence/root checks are reads, so these counters are still current.
       const createSeq = integer(authorized.value.row.next_create_seq);
@@ -619,7 +658,8 @@ export function createConversationService(
         args: [input.conversationId, actorId, input.clientRequestId, payloadHash, id, createSeq, changeSeq, committedAt],
       });
       await executeConversationBatch(executor, writes);
-      return { ok: true, value: { messageId: id, clientRequestId: input.clientRequestId, createSeq, changeSeq, revision: 1, committedAt } };
+      if (attachmentIds.length) await bindConversationMessageFiles(executor, { ...input, ownerId: actorId, attachmentIds, messageId: id, now: committedAt });
+      return { ok: true, value: await receiptWithFiles(executor, input.conversationId, { messageId: id, clientRequestId: input.clientRequestId, createSeq, changeSeq, revision: 1, committedAt }) };
     });
   }
 
@@ -634,7 +674,7 @@ export function createConversationService(
       );
       const prior = await findReceipt(executor, input);
       if (!prior || prior.operation !== "send") return { ok: true, value: { state: "absent" } };
-      return { ok: true, value: { state: "committed", receipt: sendReceipt(prior) } };
+      return { ok: true, value: { state: "committed", receipt: await receiptWithFiles(executor, input.conversationId, sendReceipt(prior)) } };
     });
   }
 
@@ -660,7 +700,7 @@ export function createConversationService(
           ORDER BY create_seq DESC LIMIT ?`,
         args: [input.conversationId, ...(input.rootId ? [input.rootId,input.rootId] : []), input.beforeCreateSeq ?? null, input.beforeCreateSeq ?? null, limit + 1],
       });
-      const messages = result.rows.slice(0, limit).reverse().map(messageFromRow);
+      const messages = await messagesWithFiles(executor, input.conversationId, result.rows.slice(0, limit).reverse().map(messageFromRow));
       return { ok: true, value: {
         audienceEpoch: authorized.value.scope.audienceEpoch, throughChangeSeq: integer(sequence.rows[0].cursor),
         messages, hasOlder: result.rows.length > limit, beforeCreateSeq: messages[0]?.createSeq ?? null,
@@ -701,7 +741,7 @@ export function createConversationService(
             ORDER BY create_seq`,
           args: [input.conversationId, ...ids],
         });
-        messages = source.rows.map(messageFromRow);
+        messages = await messagesWithFiles(executor, input.conversationId, source.rows.map(messageFromRow));
       }
       return {
         ok: true,
@@ -730,7 +770,9 @@ export function createConversationService(
     if (!validIdentity(args.actorId) || !isProjectId(args.projectId) || !validIdentity(args.conversationId) ||
         !validIdentity(args.messageId) || !validRequestId(args.clientRequestId) ||
         !validSequence(args.expectedRevision) || args.expectedRevision < 1) return failure("invalid_input");
-    return mutateMessage("delete", args, hashTuple(["delete", args.actorId, args.conversationId, args.messageId]), null, []);
+    const result = await mutateMessage("delete", args, hashTuple(["delete", args.actorId, args.conversationId, args.messageId]), null, []);
+    if (result.ok && options.attachmentCleanup) await options.attachmentCleanup(args.actorId).catch(() => undefined);
+    return result;
   }
 
   async function mutateMessage(
@@ -788,6 +830,9 @@ export function createConversationService(
             WHERE id = ? AND revision = ?`,
           args: [revision, committedAt, args.messageId, args.expectedRevision],
         });
+      }
+      if (operation === "delete" && await conversationAttachmentSchema(executor)) {
+        await executor.execute({ sql: "UPDATE conversation_chat_attachments SET state='cleanup' WHERE message_id=? AND conversation_id=? AND owner_id=? AND state='bound'", args: [args.messageId,args.conversationId,args.actorId] });
       }
       await executor.execute({
         sql: `INSERT INTO conversation_changes
