@@ -1,5 +1,7 @@
 "use server";
 
+import { assertNotesWritable } from "@/modules/notes/lib/notes-retirement";
+
 import { and, desc, eq, isNull, isNotNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import {
@@ -168,6 +170,7 @@ export async function createNote(
   body: string,
   requestedWorkspaceId?: string | null,
 ): Promise<NoteRead> {
+  assertNotesWritable();
   // demo mode never touches the DB — return a fabricated note so the client
   // can merge optimistically without a real write.
   if (isDemoMode()) {
@@ -345,6 +348,7 @@ export async function searchNotes(query: string): Promise<NoteRead[]> {
  * Server action: delete a note the user owns.
  */
 export async function deleteNote(id: string): Promise<void> {
+  assertNotesWritable();
   // demo mode never touches the DB — silently no-op; in-memory seed is unchanged.
   if (isDemoMode()) return;
   const userId = await requireUser();
@@ -394,6 +398,7 @@ export async function setNoteWorkspace(
   noteId: string,
   requestedWorkspaceId: string | null,
 ): Promise<NoteRead> {
+  assertNotesWritable();
   // demo mode never touches the DB — return a fabricated note reflecting the requested change.
   if (isDemoMode()) {
     const now = Date.now();
@@ -456,6 +461,7 @@ export async function setNoteExtract(
   id: string,
   body: string
 ): Promise<NoteRead> {
+  assertNotesWritable();
   // demo mode never touches the DB — return a fabricated note with the extract applied.
   if (isDemoMode()) {
     const now = Date.now();
@@ -513,6 +519,7 @@ export async function setNoteExtract(
  * Notes owns the extract draft, not the resulting Task.
  */
 export async function clearNoteExtract(id: string): Promise<NoteRead> {
+  assertNotesWritable();
   // demo mode never touches the DB — return a fabricated note with the extract cleared.
   if (isDemoMode()) {
     return makeDemoNote({ id, extractBody: null, updatedAt: Date.now() });
@@ -570,6 +577,7 @@ export async function sendExtractToTasks(
   noteId: string,
   workspaceId: string,
 ): Promise<{ note: NoteRead; result: ExtractSendResult }> {
+  assertNotesWritable();
   refuseLegacyTasksSendWhenHybridEnabled();
   // demo mode never touches the DB — cross-repo sends are unavailable in demo.
   refuseDemoMutation();
@@ -731,6 +739,7 @@ export async function promoteNoteToTasks(
   noteId: string,
   workspaceId: string,
 ): Promise<{ note: NoteRead; result: ExtractSendResult }> {
+  assertNotesWritable();
   refuseLegacyTasksSendWhenHybridEnabled();
   // demo mode never touches the DB — cross-repo sends are unavailable in demo.
   refuseDemoMutation();
@@ -921,6 +930,7 @@ export async function listArchivedNotes(): Promise<NoteRead[]> {
  * into the model.
  */
 export async function unPromoteNote(noteId: string): Promise<NoteRead> {
+  assertNotesWritable();
   // demo mode never touches the DB — return a fabricated note with archive state cleared.
   if (isDemoMode()) {
     return makeDemoNote({ id: noteId, archivedAt: null, promotedTaskId: null, updatedAt: Date.now() });
@@ -1299,6 +1309,7 @@ async function clearTasksSendLease(
 export async function createNoteIdempotent(
   input: CreateNoteIdempotentInput,
 ): Promise<NoteRead> {
+  assertNotesWritable();
   refuseDemoMutation();
   const id = validateStableNoteId(input.id);
   const body = validateNoteBody(input.body);
@@ -1390,6 +1401,7 @@ export async function createNoteIdempotent(
 export async function updateNoteWithVersion(
   input: UpdateNoteWithVersionInput,
 ): Promise<UpdateNoteWithVersionResult> {
+  assertNotesWritable();
   refuseDemoMutation();
   const id = validateStableNoteId(input.id);
   const attempted = createAttemptedVersion(input.body, input.expectedUpdatedAt);
@@ -1466,6 +1478,7 @@ export async function updateNoteWithVersion(
 export async function deleteNoteWithVersion(
   input: DeleteNoteWithVersionInput,
 ): Promise<DeleteNoteWithVersionResult> {
+  assertNotesWritable();
   refuseDemoMutation();
   const id = validateStableNoteId(input.id);
   const expectedUpdatedAt = validateExpectedUpdatedAt(input.expectedUpdatedAt);
@@ -1546,6 +1559,7 @@ export async function deleteNoteWithVersion(
 export async function setNoteReviewed(
   input: SetNoteReviewedInput,
 ): Promise<NoteRead> {
+  assertNotesWritable();
   refuseDemoMutation();
   const noteId = validateStableNoteId(input.id);
   const userId = await requireUser();
@@ -1565,6 +1579,7 @@ export async function setNoteReviewed(
 export async function restoreArchivedNoteForHybrid(
   noteIdInput: string,
 ): Promise<NoteRead> {
+  assertNotesWritable();
   refuseDemoMutation();
   const noteId = validateStableNoteId(noteIdInput);
   const userId = await requireUser();
@@ -1684,6 +1699,7 @@ export async function getApprovedTaskSendRecoveryForHybrid(
 export async function sendApprovedExtractToTasks(
   input: SendApprovedExtractInput,
 ): Promise<SendApprovedExtractResult> {
+  assertNotesWritable();
   refuseDemoMutation();
   const noteId = validateStableNoteId(input.noteId);
   const sourceSelection = validateSourceSelection(input.sourceSelection);
