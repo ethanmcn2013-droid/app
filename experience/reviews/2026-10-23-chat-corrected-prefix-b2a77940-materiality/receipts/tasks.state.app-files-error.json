@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-files-error",
+  "source": "tasks/src/app/app/files/error.tsx",
+  "materialityHash": "83d088f7615c6a6b",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_shell independent Sol6.1 rendered reviewer; no founder attribution",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-8c04ba9d2883f7a65eb3e117-02c572807618d1e5.json",
+    "attestationSha256": "e68190e8a470f73e0d953cdf7cc30417f699d622b48dd79a6f87e6c360ebe9df",
+    "runId": "tasks-playwright-8c04ba9d2883f7a65eb3e117",
+    "canonicalEvidenceSha256": "8c04ba9d2883f7a65eb3e117489f0694c2bdc73f963cd08df390470956abd8c2",
+    "rawArtifactSha256": "02c572807618d1e513aeecf87e4deb008d51e2dcc9c367d88e269f8214519030",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-files-error",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Corrected Chat b2a capture40015966915 passed188/188 outcomes. Independent reviewer verified exact source, all2071 source hashes, four capture contracts, canonical raw digest and all72 mapped PNG bodies against original attachments.71 images verified identical to retained independently reviewed bytes; one changed wide upload drawer image was individually viewed without blocking finding. Initial Chat images match previous reviewed states. No hide, paste, Ping limits, G5, send or provider behavior is certified. Static initial-state limits include inherited664px Tasks loading width, old Files demo, unavailable Welcome, upload-affordance and unseen interactions. No live claim, numerical score or coverage advance.",
+  "decision": "accepted for supplied synthetic initial-state materiality only; interaction and live/provider limits retained"
+}
