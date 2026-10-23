@@ -3812,7 +3812,7 @@
     "src/server/ping/assistant/drive-folder.ts": "b77c33a85bd735dc42c8ebbdd4e84c420a95569dfd4f4f9ad28f4d0edc1f2ec5",
     "src/server/projects/archive-project-core.ts": "64fce47f368c52d52b9782fc8a1a3c794f7ff672401c15ea441e28e5f5eb2565",
     "src/server/ping/assistant/context.test.ts": "7bd969dc1e379c822eea6a1b8dbe928f43aebb14ac27bdbba76eec3c76121403",
-    "src/components/app/project/project-timeline-preview.module.css": "32f91646fafa8dfb6bbff959438d0035a48c32b1a2205009646506979cea4fcf",
-    "src/components/app/project/project-timeline-preview.tsx": "da46332cddb1a95afb26f318822ddbee181778e2c2bf441485177b8284443e83"
+    "src/components/app/project/project-timeline-preview.module.css": "9692ff476f2819d35d835777dc3188f0195c23780d1ab9fbe3dc668c72fa5b59",
+    "src/components/app/project/project-timeline-preview.tsx": "346ac497f74bb39c849acad172c266179146d2214284c9f0cbd8c72909435259"
   }
 }
