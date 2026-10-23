@@ -7,6 +7,8 @@ import { FilesShelfView } from "@/components/app/files-shelf/files-shelf-view";
 import { parseShelfSource } from "@/components/app/files-shelf/shelf-model";
 import { filesSourcesShelfEnabled } from "@/server/files-sources-shelf-gate";
 import { isDemoMode } from "@/lib/access-mode";
+import { HeaderCollaborationPublisher } from "@/components/shell/header-collaboration-context";
+import { loadHeaderCollaboration } from "@/server/projects/header-collaboration";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Files · Signal Studio" };
@@ -35,12 +37,14 @@ export default async function FilesPage({ searchParams }: {
       <FilesUnavailable />
     </main>;
   }
-  const [read, shelf] = await Promise.all([
+  const [read, shelf, collaboration] = await Promise.all([
     loadProjectFiles(decision.workspaceId, { includeArchived: params.archived === "1" }),
     filesSourcesShelfEnabled(),
+    loadHeaderCollaboration(decision, "/app/files", params),
   ]);
   return <main id="app-main-content" tabIndex={-1} className="flex min-h-0 flex-1 flex-col">
     <ActiveProjectRouteSync project={decision.project} requestedProjectId={requested} />
+    <HeaderCollaborationPublisher data={collaboration} />
     {shelf ? (
       <FilesShelfView
         projectName={decision.name}

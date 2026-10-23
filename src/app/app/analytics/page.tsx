@@ -14,6 +14,8 @@ import { parseQuestion, type ProjectStanding } from "@/lib/projects/project-anal
 import { parseWallSort } from "@/lib/projects/project-analytics-wall";
 import { isActiveProjectV3Enabled } from "@/lib/projects/flags";
 import type { ProjectCardStats } from "@/lib/projects/project-hub";
+import { HeaderCollaborationPublisher } from "@/components/shell/header-collaboration-context";
+import { loadHeaderCollaboration } from "@/server/projects/header-collaboration";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Analytics · Signal Studio" };
@@ -81,15 +83,17 @@ export default async function AnalyticsPage({ searchParams }: {
     </>;
   }
 
-  const [analytics, standing] = await Promise.all([
+  const [analytics, standing, collaboration] = await Promise.all([
     loadProjectAnalytics(decision.workspaceId, range),
     loadProjectStanding(decision.workspaceId),
+    !wantsAll && part === "ask" ? loadHeaderCollaboration(decision, "/app/analytics", params) : Promise.resolve(null),
   ]);
   const wall = part === "projects"
     ? await loadAnalyticsWall({ id: decision.workspaceId, stats: cardStats(analytics, standing) })
     : null;
   return <>
     <ActiveProjectRouteSync project={decision.project} requestedProjectId={requested} />
+    <HeaderCollaborationPublisher data={collaboration} />
     <AnalyticsView
       {...shared}
       scope={{ kind: "one", projectId: decision.workspaceId, name: decision.name, standing }}
