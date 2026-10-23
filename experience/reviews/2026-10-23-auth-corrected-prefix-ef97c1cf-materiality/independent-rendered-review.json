@@ -1,0 +1,1240 @@
+{
+  "schema": "signal-independent-rendered-review/1",
+  "reviewedAt": "2026-10-23T20:40:11.876Z",
+  "reviewer": {
+    "agent": "product_tasks",
+    "model": "Sol6.1",
+    "authoredAuthChange": false,
+    "scope": "Read-only verification of72 mappedPNG images across18targets:70 exact-byte prior independent review reuse;2images actually inspected. No source/artifact modifications."
+  },
+  "source": {
+    "schemaVersion": "signal-experience-candidate-source/1",
+    "head": "ef97c1cf40484e6e8e07c61a76b6252fd1517df5",
+    "tree": "1e00fe0749d32ae6cffbf76d88003b419475ecee",
+    "captureOnly": true,
+    "reviewedRegistryOrReceipts": false,
+    "boundary": "Synthetic Preview browser capture only. Existing required registry, fixture, review, quality and release gates remain required. A capture or candidate attestation does not establish receiving acceptance.",
+    "workflowRunId": "40016080224"
+  },
+  "artifact": {
+    "independentZipDigestVerified": false,
+    "scope": "Extracted supplied bundle verified; no independent ZIP-provider digest claim"
+  },
+  "bindings": {
+    "rawSha256": "19c9396c88c4a2a7ee6f49292fbacf8bed5d24c8410675d4bb14330fef77c6e0",
+    "attestationFileSha256": "d2e1de7f6c6fc027f93397af89c4418f92ec6888ee9dfd9d57d06b02c1491c49",
+    "candidateSourceSha256": "af69bd6ee7e5725d5000c91b56242e1370677c0c1240f787af431b2abb5d96c0",
+    "mappingSha256": "02612ec375085a8fe68f1c4f8da22c43ee77a69806b78f13c6b64c67537cb4c4",
+    "canonicalEvidenceSha256": "e7a5e1555e9e7e18a1f6bc45aab3c997f041c62b96d75ba9621c1a6de7204ab8",
+    "browserContractSha256": "838e98594ed9b15cfa6386e15abea30ac0553727a42e77ade1badc31740870e1",
+    "fixtureManifestSha256": "6ddaae8dc59dc4166eb47dfe0dcc6f608d16aa741ce52f83a44629c8d6871c2c",
+    "playwrightConfigSha256": "2be57e878ddb600689a2c4f29b6e6529d56cdff7a5663492c77d4b9fbe459534",
+    "playwrightSpecSha256": "3fd479c6f663668c65e4f8a840ef6c4bf2a94d3787a82a4893d9d084d34b66a1",
+    "contractFilesEqualImmutableSource": true,
+    "allDeclaredSourceInputsMatchImmutableGit": true,
+    "sourceInputCount": 2073,
+    "rawMetadataSourceEqual": true,
+    "expectedTitleProjectPairsExact": true,
+    "allMappedImagesBoundToRawEmbeddedPngAndOriginalAttachment": true
+  },
+  "priorReview": {
+    "path": "work/product-notes-oct23/reviews/projects-da86f499-independent-rendered-review-sol.json",
+    "sha256": "cc74173505c4c9f69770ec7067d0af12636d1fec2cb9728f6fb9610568ba3102",
+    "priorSource": "da86f49952961b65b7dc883ac70e65e2103d2331",
+    "priorRawAndAll72ReviewedImageHashesVerified": true,
+    "exactByteReused": 70,
+    "newImagesInspected": 2
+  },
+  "reportedAutomation": {
+    "testCount": 188,
+    "passedCount": 188,
+    "unexpectedCount": 0,
+    "note": "Saved report verified; no test suite rerun by reviewer."
+  },
+  "verdict": "No newly introduced blocking visual issue found in these18 mapped synthetic materiality targets for exact Auth source ef97c1cf; scoped screenshot review only.",
+  "blockingFindings": [],
+  "actualImageObservations": [
+    {
+      "target": "tasks.resources.drive-upload",
+      "viewports": [
+        "desktop"
+      ],
+      "detail": "Actual images inspected: task drawer text, metadata controls, Notes/Subtasks/Files and links sections remain readable with no new collision. Export/upload success or Project menu interaction is not shown. Dark scrim and wider full-page lower blank area retained; not a zero-overflow claim."
+    },
+    {
+      "target": "tasks.state.app-analytics-loading",
+      "viewport": "mobile",
+      "detail": "Actual390px-wide light skeleton inspected: aligned single-column rounded placeholders and consistent gutters; no new visible collision. No loaded content or transition claim."
+    }
+  ],
+  "nonBlockingObservations": [
+    {
+      "id": "existing-tasks-loading-mobile-width",
+      "target": "tasks.state.app-tasks-loading",
+      "detail": "The mobile Tasks loading PNG remains exactly byte-identical to the previously reviewed 664px-wide full-page capture for a nominal 390px viewport. Retain as inherited fixture/layout observation, not a zero-overflow claim."
+    }
+  ],
+  "limitations": [
+    "Only supplied screenshot states and pixel area were reviewed; below-viewport content, pointer/keyboard behavior, motion, accessibility semantics and real touch cannot be proven by still images.",
+    "Full-shell demo pages are dark; isolated materiality loading/error fixtures are light. This is not paired full-app light/dark acceptance for every target.",
+    "Files captures use the older demo/review implementation; do not substitute for member Sources+shelf production verification.",
+    "Welcome is unavailable-project fallback, not successful onboarding. Drive-upload shows attachment affordance, not upload/provider completion. Chat is preview, not send/persistence/voice verification.",
+    "The current Analytics screenshots show unasked discovery only; this review does not visually certify opened detail cards or the retained counting-method section after a question.",
+    "Tasks local Board/List/Calendar switching, keyboard/drag column reordering and persistence, collapsed-column interaction, invite-popover behavior and all-done completion/confetti/archive prompt are not exercised in these 18 materiality stills. Owning behavior tests and separate rendered interaction evidence remain required.",
+    "The light Tasks board material and final-state completion controls are not shown by these dark initial full-shell captures; isolated light skeletons do not substitute for a light rendered board.",
+    "Global settings floating-card behavior, Home Inbox tab and toast placement/timing are not shown in their activated state by these initial materiality screenshots.",
+    "No authentication/account-settings patch was visually reviewed or accepted here; reviewer authored K1 and explicitly excludes self-review of it.",
+    "No production deployment, user Chrome interaction, source edit, data mutation or original output-artifact change occurred. Review receipt only; release owner retains qualification authority.",
+    "69 PNGs reused only after independently verifying exact equality and prior raw/image binding; prior source verdict was not substituted for current source/contract verification.",
+    "Provider artifact digest is supplied metadata; reviewer did not download or independently hash the ZIP. Sidebar supplemental captures and opened Project-menu interactions are outside this18target/72image verdict.",
+    "Settings capture is General, not Security. No SignIn/SignUp, connected-method detail, account-link interaction, provider enablement or live auth/session proof is supplied by these18targets.",
+    "70 PNGs reused only after independently verifying exact equality and prior raw/image binding; prior source verdict was not substituted for current source/contract verification.",
+    "Provider artifact digest is supplied metadata; reviewer did not download or independently hash the ZIP. Sidebar supplemental captures and opened Project-menu interactions are outside this18target/72image verdict."
+  ],
+  "targets": [
+    {
+      "id": "tasks.page.app-settings",
+      "case": "own surface in demo",
+      "path": "/app/settings",
+      "observation": "Project settings preserve readable controls, explicit read-only review notice, responsive tab/side navigation, and separation of General and Money groups. Mobile content continues below the capture; no hidden-section functionality is certified. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-settings-mobile.png",
+          "sha256": "2b7823903d78c33d60fd5da776150a96a07bb56d511806ad35970dd8f9ff12a4",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/549dae049b08302d265e3a0be9504ba01663c223.app-settings-own-surface-in-demo-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-settings",
+            "viewport": "mobile",
+            "observation": "Project settings preserve readable controls, explicit read-only review notice, responsive tab/side navigation, and separation of General and Money groups. Mobile content continues below the capture; no hidden-section functionality is certified. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-settings-tablet.png",
+          "sha256": "df55e66b32f8b092a45e6a2c56961ed01be57ca5e060e7b8c7039802fe900a98",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/4fb725ccdef7450989cf9fd7302f331b7367fd61.app-settings-own-surface-in-demo-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-settings",
+            "viewport": "tablet",
+            "observation": "Project settings preserve readable controls, explicit read-only review notice, responsive tab/side navigation, and separation of General and Money groups. Mobile content continues below the capture; no hidden-section functionality is certified. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-settings-desktop.png",
+          "sha256": "bed95cfea0358e4d44f63c177c78210f9e7d150a4dbde82f9c2fd466de169639",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/91c2c75dc5423d140d6cc4688a5d986ee5cb9f9f.app-settings-own-surface-in-demo-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-settings",
+            "viewport": "desktop",
+            "observation": "Project settings preserve readable controls, explicit read-only review notice, responsive tab/side navigation, and separation of General and Money groups. Mobile content continues below the capture; no hidden-section functionality is certified. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-settings-wide.png",
+          "sha256": "2b5823114aa4d91236fcba3e1cbac1f748543d383f090e9954bae111026cbbee",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/0615018d03e9e076e2aba9254e8c9da9b93ffaac.app-settings-own-surface-in-demo-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-settings",
+            "viewport": "wide",
+            "observation": "Project settings preserve readable controls, explicit read-only review notice, responsive tab/side navigation, and separation of General and Money groups. Mobile content continues below the capture; no hidden-section functionality is certified. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-project",
+      "case": "own surface in demo",
+      "path": "/app/project",
+      "observation": "Project title/status/target, one completion bar, milestones, owner/team and details remain legible; one-column mobile/tablet and paired desktop/wide composition preserve hierarchy. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-project-mobile.png",
+          "sha256": "b8785570260139883a19e93f738cdf6ed1af2a1ab6e51d629399e91869c06094",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/726b4aa6213e41ffc1bcbc738b917e41bb156fa1.app-project-own-surface-in-demo-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-project",
+            "viewport": "mobile",
+            "observation": "Project title/status/target, one completion bar, milestones, owner/team and details remain legible; one-column mobile/tablet and paired desktop/wide composition preserve hierarchy. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-project-tablet.png",
+          "sha256": "f13cd7478827c69a2899155b91f5b90d295bdd0c1b39a74e7f47170b7b6ba06a",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/581ee8e3122d5b8445fb5c8b89618391077d0bba.app-project-own-surface-in-demo-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-project",
+            "viewport": "tablet",
+            "observation": "Project title/status/target, one completion bar, milestones, owner/team and details remain legible; one-column mobile/tablet and paired desktop/wide composition preserve hierarchy. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-project-desktop.png",
+          "sha256": "8fd8b67944e58911a4c1568ddbbc6b11fde43ad0554db38844d4f876ef842bbd",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/59d6d18fb1dd697ef1a64a62b6fcda91d71b7af9.app-project-own-surface-in-demo-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-project",
+            "viewport": "desktop",
+            "observation": "Project title/status/target, one completion bar, milestones, owner/team and details remain legible; one-column mobile/tablet and paired desktop/wide composition preserve hierarchy. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-project-wide.png",
+          "sha256": "ec28583a38b6bfc9f441fa90833761b7a3ae16798bfc1bd1c0c7bbe0c01e8cd4",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/9229b37ad8ec55dd62fd3c2801dfeaa50905bf0d.app-project-own-surface-in-demo-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-project",
+            "viewport": "wide",
+            "observation": "Project title/status/target, one completion bar, milestones, owner/team and details remain legible; one-column mobile/tablet and paired desktop/wide composition preserve hierarchy. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-project-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-project-loading",
+      "observation": "Isolated light loading component preserves the project avatar/title, tabs, progress and milestone/team placeholder groups; desktop splits columns while mobile stacks them. Static capture does not certify loading animation or transition timing.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-project-loading-mobile.png",
+          "sha256": "7f479ea83e16ba5a40b618ef17613b6dd576de540cfdcfbe0b9f13830aa551b3",
+          "pixelWidth": 390,
+          "pixelHeight": 920,
+          "originalAttachment": "output/playwright-report/data/cb67bdae78c901a07c0f3b562f1e86a030e17c1c.app-project-loading-actual-component-with-deterministic-local-inputs-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-project-loading",
+            "viewport": "mobile",
+            "observation": "Isolated light loading component preserves the project avatar/title, tabs, progress and milestone/team placeholder groups; desktop splits columns while mobile stacks them. Static capture does not certify loading animation or transition timing."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-project-loading-tablet.png",
+          "sha256": "d43c3f522ef093610b10dcbc31dadcd1e1215e3442c92494c28d1ca88880be2e",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/9dc57b7138b2066ecadaaab9d5203398694c51d7.app-project-loading-actual-component-with-deterministic-local-inputs-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-project-loading",
+            "viewport": "tablet",
+            "observation": "Isolated light loading component preserves the project avatar/title, tabs, progress and milestone/team placeholder groups; desktop splits columns while mobile stacks them. Static capture does not certify loading animation or transition timing."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-project-loading-desktop.png",
+          "sha256": "44b1ad4652f3559d78b7ca94449e8b3bb392f6a322efbf14d51dc0861ccb7967",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "originalAttachment": "output/playwright-report/data/c4327db35c72aab13f2b7dba2020832ad731cf05.app-project-loading-actual-component-with-deterministic-local-inputs-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-project-loading",
+            "viewport": "desktop",
+            "observation": "Isolated light loading component preserves the project avatar/title, tabs, progress and milestone/team placeholder groups; desktop splits columns while mobile stacks them. Static capture does not certify loading animation or transition timing."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-project-loading-wide.png",
+          "sha256": "350def90d77ea237360d4f8d453614903204a756cdb2fe9a9c3f17e9d7aa9414",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "originalAttachment": "output/playwright-report/data/f680d46615e23001d25e06142ceb743659bc4316.app-project-loading-actual-component-with-deterministic-local-inputs-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-project-loading",
+            "viewport": "wide",
+            "observation": "Isolated light loading component preserves the project avatar/title, tabs, progress and milestone/team placeholder groups; desktop splits columns while mobile stacks them. Static capture does not certify loading animation or transition timing."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-home-loading",
+      "observation": "Isolated light Home placeholders retain primary blocks and responsive shortcut cards; wide uses a four-card row and narrower captures two columns. Static skeleton appearance only.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-home-loading-mobile.png",
+          "sha256": "2e1be11bb0abd80607e25d5f5976f9447aeebca99de951b8f55f9ba35ddd80dd",
+          "pixelWidth": 390,
+          "pixelHeight": 1342,
+          "originalAttachment": "output/playwright-report/data/c109de9d361651053e7575331b5c66e7d27eb7c2.app-home-loading-actual-component-with-deterministic-local-inputs-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-home-loading",
+            "viewport": "mobile",
+            "observation": "Isolated light Home placeholders retain primary blocks and responsive shortcut cards; wide uses a four-card row and narrower captures two columns. Static skeleton appearance only."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-home-loading-tablet.png",
+          "sha256": "020cde8ce77a66d9ee9b98d5e083683aaeda4e683d88c4120e74b9559159075e",
+          "pixelWidth": 768,
+          "pixelHeight": 1370,
+          "originalAttachment": "output/playwright-report/data/071f50854b2122300496d157c2b9c16125a4a40c.app-home-loading-actual-component-with-deterministic-local-inputs-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-home-loading",
+            "viewport": "tablet",
+            "observation": "Isolated light Home placeholders retain primary blocks and responsive shortcut cards; wide uses a four-card row and narrower captures two columns. Static skeleton appearance only."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-home-loading-desktop.png",
+          "sha256": "1836b620784d1bfcb227c674cf4aeb6a71d3436e3d9100cf7e6d65da119303fa",
+          "pixelWidth": 1280,
+          "pixelHeight": 1370,
+          "originalAttachment": "output/playwright-report/data/549dfe69d0888bcf61afc9c72ff361d2e9bda6db.app-home-loading-actual-component-with-deterministic-local-inputs-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-home-loading",
+            "viewport": "desktop",
+            "observation": "Isolated light Home placeholders retain primary blocks and responsive shortcut cards; wide uses a four-card row and narrower captures two columns. Static skeleton appearance only."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-home-loading-wide.png",
+          "sha256": "e787b2dbb27cef50afd64059d9b9fb52b8826c8ce9ebf3387154916fc1cdb846",
+          "pixelWidth": 1440,
+          "pixelHeight": 970,
+          "originalAttachment": "output/playwright-report/data/05a9cab7f5464df6e6f1f1af80f6569ae6535818.app-home-loading-actual-component-with-deterministic-local-inputs-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-home-loading",
+            "viewport": "wide",
+            "observation": "Isolated light Home placeholders retain primary blocks and responsive shortcut cards; wide uses a four-card row and narrower captures two columns. Static skeleton appearance only."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-error",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-home-error",
+      "observation": "Error heading, plain no-change message, synthetic reference and separate Try again/Open Tasks recovery controls remain readable at all four sizes.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-home-error-mobile.png",
+          "sha256": "d841b91452667f83e49d5199b8530b4e537e00b567efb5928788b7d415ccdee2",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/52d9258dce6d0ea614c30295e2803717fcf81983.app-home-error-actual-component-with-deterministic-local-inputs-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-home-error",
+            "viewport": "mobile",
+            "observation": "Error heading, plain no-change message, synthetic reference and separate Try again/Open Tasks recovery controls remain readable at all four sizes."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-home-error-tablet.png",
+          "sha256": "369413b5a9b9ab13501dc145ef1e5c63eb0e3b6b33770916a8ea0c9b97515a05",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/e92b9b6e97c433ce9142f292b913359d7511812f.app-home-error-actual-component-with-deterministic-local-inputs-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-home-error",
+            "viewport": "tablet",
+            "observation": "Error heading, plain no-change message, synthetic reference and separate Try again/Open Tasks recovery controls remain readable at all four sizes."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-home-error-desktop.png",
+          "sha256": "442fdec3e9a8ee0996e811895c000f99d6e742ad02465559253496b1336df889",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "originalAttachment": "output/playwright-report/data/8e37d5a6aa47f90229ba0ba9612a8025fc9aa60b.app-home-error-actual-component-with-deterministic-local-inputs-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-home-error",
+            "viewport": "desktop",
+            "observation": "Error heading, plain no-change message, synthetic reference and separate Try again/Open Tasks recovery controls remain readable at all four sizes."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-home-error-wide.png",
+          "sha256": "30d2f40ca50ba5f98f69477c7f1d7fd31b6dba73980534f430754c8b1d0cfcd0",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "originalAttachment": "output/playwright-report/data/ba41780918b0b75f999df308ce7656c89ab3f5d6.app-home-error-actual-component-with-deterministic-local-inputs-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-home-error",
+            "viewport": "wide",
+            "observation": "Error heading, plain no-change message, synthetic reference and separate Try again/Open Tasks recovery controls remain readable at all four sizes."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-tasks-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-tasks-loading",
+      "observation": "Board skeleton retains top controls and column/card hierarchy; mobile full-page capture expands wider than the nominal viewport and leaves a blank right region. This source is unchanged by the Analytics patch; no paired before/after pixel or interaction proof was supplied.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-tasks-loading-mobile.png",
+          "sha256": "0dc35487606b6f227ddeb4577f1c8a20e11986311cccd34a44a3a2d7005413ce",
+          "pixelWidth": 664,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/38d8ae6c7d509f5c13d21709d8672236b40af107.app-tasks-loading-actual-component-with-deterministic-local-inputs-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-tasks-loading",
+            "viewport": "mobile",
+            "observation": "Board skeleton retains top controls and column/card hierarchy; mobile full-page capture expands wider than the nominal viewport and leaves a blank right region. This source is unchanged by the Analytics patch; no paired before/after pixel or interaction proof was supplied."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-tasks-loading-tablet.png",
+          "sha256": "7f216114eebcb0fc0d47b35bc43ce9c5894c897c220329510931ebd26c856516",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/f153b52aa6073fbe728d7b1d839fea3b255b785b.app-tasks-loading-actual-component-with-deterministic-local-inputs-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-tasks-loading",
+            "viewport": "tablet",
+            "observation": "Board skeleton retains top controls and column/card hierarchy; mobile full-page capture expands wider than the nominal viewport and leaves a blank right region. This source is unchanged by the Analytics patch; no paired before/after pixel or interaction proof was supplied."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-tasks-loading-desktop.png",
+          "sha256": "97e5ff930760d98d68398d4c4ea870eb11cad3ed98f735a7274f84bcc13151c9",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "originalAttachment": "output/playwright-report/data/fca7f01910e63806f313b7139d96e0f507cc2da7.app-tasks-loading-actual-component-with-deterministic-local-inputs-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-tasks-loading",
+            "viewport": "desktop",
+            "observation": "Board skeleton retains top controls and column/card hierarchy; mobile full-page capture expands wider than the nominal viewport and leaves a blank right region. This source is unchanged by the Analytics patch; no paired before/after pixel or interaction proof was supplied."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-tasks-loading-wide.png",
+          "sha256": "1b2aba01bf5a22992a6acdaa49c372595f54843c9ea6ddb3b37da0d8e7b5ed44",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "originalAttachment": "output/playwright-report/data/6db14e327e8c1b1babbf8b30512b1bdfbbc95ca9.app-tasks-loading-actual-component-with-deterministic-local-inputs-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-tasks-loading",
+            "viewport": "wide",
+            "observation": "Board skeleton retains top controls and column/card hierarchy; mobile full-page capture expands wider than the nominal viewport and leaves a blank right region. This source is unchanged by the Analytics patch; no paired before/after pixel or interaction proof was supplied."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.resources.drive-upload",
+      "case": "own surface in demo",
+      "path": "/app/tasks",
+      "observation": "Task detail drawer retains task title, properties, notes, subtasks, attach-file/drop-link affordances and close/open controls; mobile uses full width and tablet/desktop/wide use a side drawer. Screenshot does not show uploaded content or provider success; mobile attachment area continues below viewport. New Tasks prefix: visible background board adds 5 of 13 done, 38% progress, and column grip controls without crowding the task drawer; global top search/bell are absent where visible. Drawer covers most board content, so this is only partial initial-board evidence.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.resources.drive-upload-mobile.png",
+          "sha256": "23039254d52761d16ef3c857cd6d79fc8bfe73af052b70b24a71b93c58783e57",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/04f447b04d36dc33ecb5c30fe9c271b0486ea5a0.drive-upload-own-surface-in-demo-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.resources.drive-upload",
+            "viewport": "mobile",
+            "observation": "Task detail drawer retains task title, properties, notes, subtasks, attach-file/drop-link affordances and close/open controls; mobile uses full width and tablet/desktop/wide use a side drawer. Screenshot does not show uploaded content or provider success; mobile attachment area continues below viewport. New Tasks prefix: visible background board adds 5 of 13 done, 38% progress, and column grip controls without crowding the task drawer; global top search/bell are absent where visible. Drawer covers most board content, so this is only partial initial-board evidence."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.resources.drive-upload-tablet.png",
+          "sha256": "9740f6509b37ac544c37eb34faed38467bdb7942e4c4dbb6f4ca7f83c3e77679",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/0bd120f8bdaeffd0286f0e0e43a0c01898c88f68.drive-upload-own-surface-in-demo-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.resources.drive-upload",
+            "viewport": "tablet",
+            "observation": "Task detail drawer retains task title, properties, notes, subtasks, attach-file/drop-link affordances and close/open controls; mobile uses full width and tablet/desktop/wide use a side drawer. Screenshot does not show uploaded content or provider success; mobile attachment area continues below viewport. New Tasks prefix: visible background board adds 5 of 13 done, 38% progress, and column grip controls without crowding the task drawer; global top search/bell are absent where visible. Drawer covers most board content, so this is only partial initial-board evidence."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.resources.drive-upload-desktop.png",
+          "sha256": "709bd0f20baf4d7ef197ef57ce390a904029911f076368e7e5f5955f5875107f",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/f455a673c2aeb656bccaf698f37930bb142e9ed9.drive-upload-own-surface-in-demo-desktop",
+          "reviewMethod": "Actual new PNG inspected with view_image in this review",
+          "prior": null
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.resources.drive-upload-wide.png",
+          "sha256": "e003209ae47be3f65f6d4706355904cc1860c50e03ba98257a23e06ca0472495",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/0e442eef7c00d8c6fe136bdd95933b23df772d94.drive-upload-own-surface-in-demo-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.resources.drive-upload",
+            "viewport": "wide",
+            "observation": "Task detail drawer retains task title, properties, notes, subtasks, attach-file/drop-link affordances and close/open controls; mobile uses full width and tablet/desktop/wide use a side drawer. Screenshot does not show uploaded content or provider success; mobile attachment area continues below viewport. New Tasks prefix: visible background board adds 5 of 13 done, 38% progress, and column grip controls without crowding the task drawer; global top search/bell are absent where visible. Drawer covers most board content, so this is only partial initial-board evidence."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-messages",
+      "case": "own surface in demo",
+      "path": "/app/messages",
+      "observation": "Team chat preview retains channel identity, authors/time, threaded/linked context, mention highlight, unread divider and composer with dictation control; narrow content wraps without text collision. Screenshot represents preview data, not persistence, dictation or message-send proof. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-messages-mobile.png",
+          "sha256": "377bab3bf4238346b871ca32bd48705166ec31a82861dad0c12b6d208a41280c",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/10abbfd8aa2c8273111979422e0b1944dd90da85.app-messages-own-surface-in-demo-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-messages",
+            "viewport": "mobile",
+            "observation": "Team chat preview retains channel identity, authors/time, threaded/linked context, mention highlight, unread divider and composer with dictation control; narrow content wraps without text collision. Screenshot represents preview data, not persistence, dictation or message-send proof. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-messages-tablet.png",
+          "sha256": "9bb77035300427b892e20fe6719fdcccc41976581a9df6a8d18488825ee4b4f8",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/e6482fcfb97209ec6c9f04c671c419a709890efa.app-messages-own-surface-in-demo-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-messages",
+            "viewport": "tablet",
+            "observation": "Team chat preview retains channel identity, authors/time, threaded/linked context, mention highlight, unread divider and composer with dictation control; narrow content wraps without text collision. Screenshot represents preview data, not persistence, dictation or message-send proof. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-messages-desktop.png",
+          "sha256": "0a2ab8804191a840e666fd1be3cc450386aad9d1a45bbcc041b10d15b99a5437",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/2fdfea0b4322b14a270e0aaac3fdcff278735148.app-messages-own-surface-in-demo-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-messages",
+            "viewport": "desktop",
+            "observation": "Team chat preview retains channel identity, authors/time, threaded/linked context, mention highlight, unread divider and composer with dictation control; narrow content wraps without text collision. Screenshot represents preview data, not persistence, dictation or message-send proof. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-messages-wide.png",
+          "sha256": "a6390ee575bccc3aec095ace5f0bebe51f62cdd9ce4cbe833cec09dacef51b68",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/9053e1411c8bf1a0f274ca7cbe80d8f512115727.app-messages-own-surface-in-demo-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-messages",
+            "viewport": "wide",
+            "observation": "Team chat preview retains channel identity, authors/time, threaded/linked context, mention highlight, unread divider and composer with dictation control; narrow content wraps without text collision. Screenshot represents preview data, not persistence, dictation or message-send proof. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-analytics",
+      "case": "own surface in demo",
+      "path": "/app/analytics",
+      "observation": "Changed discovery view: question field is centered on desktop/wide; category cards have consistent icon/title/helper spacing, with helper copy aligned to card bottoms. Tablet has two categories across and mobile stacks compact cards. Project summary remains present; counting-method block is absent on unasked discovery capture. Opened answer details are not shown. Updated global header has no search/bell; centered discovery and category composition remain visually intact.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-analytics-mobile.png",
+          "sha256": "521de63bb818cea426914d162fa1a364a09ffde5b1e8340cfa3087585e5274c7",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/5220e1074fca9129833e97697962ea2b9153b0e4.app-analytics-own-surface-in-demo-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-analytics",
+            "viewport": "mobile",
+            "observation": "Changed discovery view: question field is centered on desktop/wide; category cards have consistent icon/title/helper spacing, with helper copy aligned to card bottoms. Tablet has two categories across and mobile stacks compact cards. Project summary remains present; counting-method block is absent on unasked discovery capture. Opened answer details are not shown. Updated global header has no search/bell; centered discovery and category composition remain visually intact."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-analytics-tablet.png",
+          "sha256": "99a3b4e876d79be9a2bf05d37264e52b514609d414a27ea9ba2a842549bdef0a",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/497affef6f28c852584d94c1ce1a33081bcc1095.app-analytics-own-surface-in-demo-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-analytics",
+            "viewport": "tablet",
+            "observation": "Changed discovery view: question field is centered on desktop/wide; category cards have consistent icon/title/helper spacing, with helper copy aligned to card bottoms. Tablet has two categories across and mobile stacks compact cards. Project summary remains present; counting-method block is absent on unasked discovery capture. Opened answer details are not shown. Updated global header has no search/bell; centered discovery and category composition remain visually intact."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-analytics-desktop.png",
+          "sha256": "6e96c2fcd0170235987b5fcaf562c4fff9b0e1fd57d61b4fa85211056555c50b",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/5e22503e526ccba1dbd2627e3b24b0f49c9746a8.app-analytics-own-surface-in-demo-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-analytics",
+            "viewport": "desktop",
+            "observation": "Changed discovery view: question field is centered on desktop/wide; category cards have consistent icon/title/helper spacing, with helper copy aligned to card bottoms. Tablet has two categories across and mobile stacks compact cards. Project summary remains present; counting-method block is absent on unasked discovery capture. Opened answer details are not shown. Updated global header has no search/bell; centered discovery and category composition remain visually intact."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-analytics-wide.png",
+          "sha256": "957d8574ba7d1fdab1980991ec980e7d6a96cc038ffc046022e53ed08ebbc0f5",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/302d62a10dd1d45b3affb620df3009d0d532007f.app-analytics-own-surface-in-demo-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-analytics",
+            "viewport": "wide",
+            "observation": "Changed discovery view: question field is centered on desktop/wide; category cards have consistent icon/title/helper spacing, with helper copy aligned to card bottoms. Tablet has two categories across and mobile stacks compact cards. Project summary remains present; counting-method block is absent on unasked discovery capture. Opened answer details are not shown. Updated global header has no search/bell; centered discovery and category composition remain visually intact."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-analytics-loading",
+      "observation": "Loading view retains centered outlined search placeholder and coherent responsive question-card grid. Mobile uses one column; tablet two; isolated desktop/wide fixture four. This fixture is not a pixel-identical full-shell discovery viewport and does not certify actual transition behavior.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-analytics-loading-mobile.png",
+          "sha256": "e912f34283a516b18b211febbbde15e62bd96c0a2f4952d89a2c12d189c4792b",
+          "pixelWidth": 390,
+          "pixelHeight": 1694,
+          "originalAttachment": "output/playwright-report/data/450cf9a84e1b5efe4ca0fbde1455f4fb9a816422.app-analytics-loading-actual-component-with-deterministic-local-inputs-mobile",
+          "reviewMethod": "Actual new PNG inspected with view_image in this review",
+          "prior": null
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-analytics-loading-tablet.png",
+          "sha256": "faffcc090b20608175a00b53e145ecd4bfc6722e5285ceddffadcad24286c128",
+          "pixelWidth": 768,
+          "pixelHeight": 1028,
+          "originalAttachment": "output/playwright-report/data/66725b51af5618092ad4a006ab31a3888e76e4e0.app-analytics-loading-actual-component-with-deterministic-local-inputs-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-analytics-loading",
+            "viewport": "tablet",
+            "observation": "Loading view retains centered outlined search placeholder and coherent responsive question-card grid. Mobile uses one column; tablet two; isolated desktop/wide fixture four. This fixture is not a pixel-identical full-shell discovery viewport and does not certify actual transition behavior."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-analytics-loading-desktop.png",
+          "sha256": "a2095617579ed7290a98b6cc2b40e44b8a532c9fc1f784945dbde698173d77ce",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "originalAttachment": "output/playwright-report/data/43c1cb4a74ecb99fbe35ac006232e6cd962a54fc.app-analytics-loading-actual-component-with-deterministic-local-inputs-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-analytics-loading",
+            "viewport": "desktop",
+            "observation": "Loading view retains centered outlined search placeholder and coherent responsive question-card grid. Mobile uses one column; tablet two; isolated desktop/wide fixture four. This fixture is not a pixel-identical full-shell discovery viewport and does not certify actual transition behavior."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-analytics-loading-wide.png",
+          "sha256": "b2ee8af7b64f70d05de82eaca9ff16e298956bd0dee5e59322a50e9fa9679c7a",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "originalAttachment": "output/playwright-report/data/7e76f994d2de0b2b93c56f8ef37ce178ce045936.app-analytics-loading-actual-component-with-deterministic-local-inputs-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-analytics-loading",
+            "viewport": "wide",
+            "observation": "Loading view retains centered outlined search placeholder and coherent responsive question-card grid. Mobile uses one column; tablet two; isolated desktop/wide fixture four. This fixture is not a pixel-identical full-shell discovery viewport and does not certify actual transition behavior."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-error",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-analytics-error",
+      "observation": "Analytics error panel keeps clear title, unchanged-data reassurance, synthetic reference and two distinct recovery controls; wrapping stays within the panel at mobile width.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-analytics-error-mobile.png",
+          "sha256": "561715fbc926fb9d40521c8a57faa7f652e24503ab203082d50e96e5d7d2af66",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/a4baa47a9dc7465cd5907d8ce8c8fb7542f2dd8d.app-analytics-error-actual-component-with-deterministic-local-inputs-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-analytics-error",
+            "viewport": "mobile",
+            "observation": "Analytics error panel keeps clear title, unchanged-data reassurance, synthetic reference and two distinct recovery controls; wrapping stays within the panel at mobile width."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-analytics-error-tablet.png",
+          "sha256": "75d6ea47666994f033bf08593a38f0730e9cbc9ca95ccda44c98c79b2b55cb15",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/02baedee154cb4b4617d4c00931b48d833244028.app-analytics-error-actual-component-with-deterministic-local-inputs-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-analytics-error",
+            "viewport": "tablet",
+            "observation": "Analytics error panel keeps clear title, unchanged-data reassurance, synthetic reference and two distinct recovery controls; wrapping stays within the panel at mobile width."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-analytics-error-desktop.png",
+          "sha256": "9c10aea7cfa3ca189b5465b9dbc94ce0a8c518d4ec50ece6669c49dcab31dd46",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "originalAttachment": "output/playwright-report/data/17d78277328aa94d9904e05b5ccd8cb087f8108a.app-analytics-error-actual-component-with-deterministic-local-inputs-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-analytics-error",
+            "viewport": "desktop",
+            "observation": "Analytics error panel keeps clear title, unchanged-data reassurance, synthetic reference and two distinct recovery controls; wrapping stays within the panel at mobile width."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-analytics-error-wide.png",
+          "sha256": "3793ec4ea61e65e985073e9ffef2358b7209dcd68652e4733a81de035ec44643",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "originalAttachment": "output/playwright-report/data/418fe1d1468d7cda7fa59fe555a75763757e1660.app-analytics-error-actual-component-with-deterministic-local-inputs-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-analytics-error",
+            "viewport": "wide",
+            "observation": "Analytics error panel keeps clear title, unchanged-data reassurance, synthetic reference and two distinct recovery controls; wrapping stays within the panel at mobile width."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-tools-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-tools-loading",
+      "observation": "Tools loading placeholders retain heading/subheading/search and ordered responsive tile grid at each size; no visual collision in the supplied isolated fixture.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-tools-loading-mobile.png",
+          "sha256": "d3c1b89e8007deb384fa21d5e881da8ead5538be7727e871464aab8e8998ac77",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/ffdcdd3e3336ecad10a1ef53aaeb14a59399b59e.app-tools-loading-actual-component-with-deterministic-local-inputs-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-tools-loading",
+            "viewport": "mobile",
+            "observation": "Tools loading placeholders retain heading/subheading/search and ordered responsive tile grid at each size; no visual collision in the supplied isolated fixture."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-tools-loading-tablet.png",
+          "sha256": "22b4c30abb67722384faa9aa28e5c05259ecd7a1414bb25ddb4334ed28878a52",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/9d84edb4bbc849e1a46a8c751de2e82cc46342a6.app-tools-loading-actual-component-with-deterministic-local-inputs-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-tools-loading",
+            "viewport": "tablet",
+            "observation": "Tools loading placeholders retain heading/subheading/search and ordered responsive tile grid at each size; no visual collision in the supplied isolated fixture."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-tools-loading-desktop.png",
+          "sha256": "75ebfa491aeec3c99a0a6c58110eac4ef30b1323398a66ff6cd1440ba9c0eb74",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "originalAttachment": "output/playwright-report/data/bf3d43e93828bf6bf5c95c0b0e2257dbd919afd4.app-tools-loading-actual-component-with-deterministic-local-inputs-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-tools-loading",
+            "viewport": "desktop",
+            "observation": "Tools loading placeholders retain heading/subheading/search and ordered responsive tile grid at each size; no visual collision in the supplied isolated fixture."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-tools-loading-wide.png",
+          "sha256": "887c3c4af88d6898b0200f7d7439b65d27c508a597579e78413177ca4fcd86a3",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "originalAttachment": "output/playwright-report/data/adc488692d255a6c01197d7c0b6acb7d559efea4.app-tools-loading-actual-component-with-deterministic-local-inputs-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-tools-loading",
+            "viewport": "wide",
+            "observation": "Tools loading placeholders retain heading/subheading/search and ordered responsive tile grid at each size; no visual collision in the supplied isolated fixture."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-concepts",
+      "case": "own surface in demo",
+      "path": "/app/concepts",
+      "observation": "Concept catalogue keeps explicit unpicked/sample-data language, clear group headings and readable cards as the grid grows from one to four columns. In-progress placeholder content remains visibly placeholder content. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-concepts-mobile.png",
+          "sha256": "fdd70d88fec51390a9446fc0fa88f154c21a7e80f020a9add38a1f6d442bd87b",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/0b66d45ac023e1a68fabf68bfbe830b2e8eb8ff7.app-concepts-own-surface-in-demo-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-concepts",
+            "viewport": "mobile",
+            "observation": "Concept catalogue keeps explicit unpicked/sample-data language, clear group headings and readable cards as the grid grows from one to four columns. In-progress placeholder content remains visibly placeholder content. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-concepts-tablet.png",
+          "sha256": "f5a41a130208147b5cfe1ec393b64021a16872b1ea5a650552985c3ef11e221f",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/de7d74aa0d190942ba7a8023766a33ed8e64efc4.app-concepts-own-surface-in-demo-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-concepts",
+            "viewport": "tablet",
+            "observation": "Concept catalogue keeps explicit unpicked/sample-data language, clear group headings and readable cards as the grid grows from one to four columns. In-progress placeholder content remains visibly placeholder content. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-concepts-desktop.png",
+          "sha256": "06638523b11ee046e9e4fcf740353d3447562095d3f99646091b91adf045cd49",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/2fac9cbc202f226d0d5972c136f0cbfedc8c6f95.app-concepts-own-surface-in-demo-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-concepts",
+            "viewport": "desktop",
+            "observation": "Concept catalogue keeps explicit unpicked/sample-data language, clear group headings and readable cards as the grid grows from one to four columns. In-progress placeholder content remains visibly placeholder content. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-concepts-wide.png",
+          "sha256": "f63145ebfcbd300c84f49e8d0ff43dde49c8d49100c7febe3565e2ec80f8124d",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/52577311c8ec6d968f234b66370718206638c8f6.app-concepts-own-surface-in-demo-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-concepts",
+            "viewport": "wide",
+            "observation": "Concept catalogue keeps explicit unpicked/sample-data language, clear group headings and readable cards as the grid grows from one to four columns. In-progress placeholder content remains visibly placeholder content. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-files",
+      "case": "own surface in demo",
+      "path": "/app/files",
+      "observation": "Demo Files preserves search/filter chips, selected task-folder breadcrumb/file row and sample-file wording; desktop/wide retain the right-hand preview with file metadata. Narrow preview is not shown open. This is the older demo/review Files view, not production member Sources+shelf rollout proof. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-files-mobile.png",
+          "sha256": "c8f94f9fbb99a8cf5500a5f2acd60c785ca010e6d3e366be9d9ae7dca35a1ac8",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/0a1c9282ae190222014f557e54e9ef7f95140bf3.app-files-own-surface-in-demo-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-files",
+            "viewport": "mobile",
+            "observation": "Demo Files preserves search/filter chips, selected task-folder breadcrumb/file row and sample-file wording; desktop/wide retain the right-hand preview with file metadata. Narrow preview is not shown open. This is the older demo/review Files view, not production member Sources+shelf rollout proof. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-files-tablet.png",
+          "sha256": "b59cb727c1e7c4db2c4c813d67eb1525b5767b10b1068ce5d1f663997078c15e",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/380baafe2b1f562907ab69ec2279c95259b5cab2.app-files-own-surface-in-demo-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-files",
+            "viewport": "tablet",
+            "observation": "Demo Files preserves search/filter chips, selected task-folder breadcrumb/file row and sample-file wording; desktop/wide retain the right-hand preview with file metadata. Narrow preview is not shown open. This is the older demo/review Files view, not production member Sources+shelf rollout proof. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-files-desktop.png",
+          "sha256": "a6660663fb08824d6d0ab420283be7f34214a24c01534c91d37c58e39f615f1a",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/b49654c9a284dbc2fed55de00aa6fc2625b9140e.app-files-own-surface-in-demo-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-files",
+            "viewport": "desktop",
+            "observation": "Demo Files preserves search/filter chips, selected task-folder breadcrumb/file row and sample-file wording; desktop/wide retain the right-hand preview with file metadata. Narrow preview is not shown open. This is the older demo/review Files view, not production member Sources+shelf rollout proof. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-files-wide.png",
+          "sha256": "7c30cb6ef95c3e7e088888544f2f472e645c26bfa04b115081a99d9f171cb959",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/74e9c4600bc2781733907c4816be266e7500b89d.app-files-own-surface-in-demo-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-files",
+            "viewport": "wide",
+            "observation": "Demo Files preserves search/filter chips, selected task-folder breadcrumb/file row and sample-file wording; desktop/wide retain the right-hand preview with file metadata. Narrow preview is not shown open. This is the older demo/review Files view, not production member Sources+shelf rollout proof. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-files-loading",
+      "observation": "Files loading component preserves search/filter/file-row placeholders and reserves a preview column only at desktop/wide; narrow layouts remain coherent.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-files-loading-mobile.png",
+          "sha256": "3789a0a6f8e5d6592524c50aad4e8dffe6e68b237efbb8e388a80bd93c8192f1",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/3f1c30178eb2addda02969c2a4c2cde5f95408ec.app-files-loading-actual-component-with-deterministic-local-inputs-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-files-loading",
+            "viewport": "mobile",
+            "observation": "Files loading component preserves search/filter/file-row placeholders and reserves a preview column only at desktop/wide; narrow layouts remain coherent."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-files-loading-tablet.png",
+          "sha256": "95028344ea5077d1a982d16b1e82cb99d1e76cff506e3cbb161c864a5786ff2e",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/6da742bde42eb33a7280ad0a8395bded621a700d.app-files-loading-actual-component-with-deterministic-local-inputs-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-files-loading",
+            "viewport": "tablet",
+            "observation": "Files loading component preserves search/filter/file-row placeholders and reserves a preview column only at desktop/wide; narrow layouts remain coherent."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-files-loading-desktop.png",
+          "sha256": "4f4f73a7eaf098ee7367c7a2a8ea94a9ae292d8c72f17d70981658614ff95394",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "originalAttachment": "output/playwright-report/data/0a07aed560fa458791321d5d0a0b5558a389ac29.app-files-loading-actual-component-with-deterministic-local-inputs-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-files-loading",
+            "viewport": "desktop",
+            "observation": "Files loading component preserves search/filter/file-row placeholders and reserves a preview column only at desktop/wide; narrow layouts remain coherent."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-files-loading-wide.png",
+          "sha256": "0937026623d4e35ebc1a6c74ff7a84bd3e2b17dc33a8045eb512cca904a230ff",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "originalAttachment": "output/playwright-report/data/5e4c5831c5a86f7c64d7b6cdd487a453f0698c29.app-files-loading-actual-component-with-deterministic-local-inputs-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-files-loading",
+            "viewport": "wide",
+            "observation": "Files loading component preserves search/filter/file-row placeholders and reserves a preview column only at desktop/wide; narrow layouts remain coherent."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-error",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-files-error",
+      "observation": "Files error panel keeps no-change/file-location reassurance, synthetic reference and Try again/Open Tasks recovery controls visible and legible at all sizes.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-files-error-mobile.png",
+          "sha256": "a248472e3d74296e3829c084fdcde572c26d16466ba2562d63590f3038dfd283",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/8f64bfce7e231878d39fc9786665f9140a671323.app-files-error-actual-component-with-deterministic-local-inputs-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-files-error",
+            "viewport": "mobile",
+            "observation": "Files error panel keeps no-change/file-location reassurance, synthetic reference and Try again/Open Tasks recovery controls visible and legible at all sizes."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-files-error-tablet.png",
+          "sha256": "62b7c93355ad890b8d53a789d7dddc6bb51fa36e33dce0cc6cc448a665dc5977",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/daefe7025113797427ceb5f1a67462fb89c60249.app-files-error-actual-component-with-deterministic-local-inputs-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-files-error",
+            "viewport": "tablet",
+            "observation": "Files error panel keeps no-change/file-location reassurance, synthetic reference and Try again/Open Tasks recovery controls visible and legible at all sizes."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-files-error-desktop.png",
+          "sha256": "64910ff4f60b0b922a048c5aa44e7cbc83491fd9692b56fca67021f32758bb6a",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "originalAttachment": "output/playwright-report/data/a525baff25b61c763c7c2bf0ec0f6aba57adfa6e.app-files-error-actual-component-with-deterministic-local-inputs-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-files-error",
+            "viewport": "desktop",
+            "observation": "Files error panel keeps no-change/file-location reassurance, synthetic reference and Try again/Open Tasks recovery controls visible and legible at all sizes."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-files-error-wide.png",
+          "sha256": "070cd8c3783f39d68c16a12022c00fece08bfd75807c47cc3737705588f22b35",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "originalAttachment": "output/playwright-report/data/762fe7c628d3210fd3a4dc612a7c039c5da3a7d7.app-files-error-actual-component-with-deterministic-local-inputs-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.state.app-files-error",
+            "viewport": "wide",
+            "observation": "Files error panel keeps no-change/file-location reassurance, synthetic reference and Try again/Open Tasks recovery controls visible and legible at all sizes."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.welcome",
+      "case": "unavailable explicit project recovery",
+      "path": "/welcome?workspaceId=",
+      "observation": "Captured route shows unavailable-project fallback with Open Home recovery at every size. Layout is readable, but this is not successful welcome/onboarding or project-setup acceptance.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.welcome-mobile.png",
+          "sha256": "46e268b66f6442abe7de4ed673fafe4d95232f53273ee4e65eff15d873e4a09b",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/fd3f02d396ca1ecbdab13652f94f4fda8fd7ce10.welcome-unavailable-explicit-project-recovery-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.welcome",
+            "viewport": "mobile",
+            "observation": "Captured route shows unavailable-project fallback with Open Home recovery at every size. Layout is readable, but this is not successful welcome/onboarding or project-setup acceptance."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.welcome-tablet.png",
+          "sha256": "41b4bfc12fef40254b4acbc98d0d2aba623cb865c09972bca199044f0e404678",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/e22e875210d885fec00cb38ba32f65cdf72737d7.welcome-unavailable-explicit-project-recovery-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.welcome",
+            "viewport": "tablet",
+            "observation": "Captured route shows unavailable-project fallback with Open Home recovery at every size. Layout is readable, but this is not successful welcome/onboarding or project-setup acceptance."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.welcome-desktop.png",
+          "sha256": "3e964893ac2d953857f9644f77da5d815e94e8147549d63a78a27d9189541a8f",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "originalAttachment": "output/playwright-report/data/5915e2b2fb6dbbcc5e318aac75693e719815337a.welcome-unavailable-explicit-project-recovery-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.welcome",
+            "viewport": "desktop",
+            "observation": "Captured route shows unavailable-project fallback with Open Home recovery at every size. Layout is readable, but this is not successful welcome/onboarding or project-setup acceptance."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.welcome-wide.png",
+          "sha256": "f3cc0ef71514cf97b4a5b6432d26a03a5e5f46a84dfbc0febe711310f55548ca",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "originalAttachment": "output/playwright-report/data/4a29d60d8f704062ffbcdd559eb2d4f432cc1ade.welcome-unavailable-explicit-project-recovery-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.welcome",
+            "viewport": "wide",
+            "observation": "Captured route shows unavailable-project fallback with Open Home recovery at every size. Layout is readable, but this is not successful welcome/onboarding or project-setup acceptance."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-tools-by-slug",
+      "case": "wedding hub in demo",
+      "path": "/app/tools/wedding-planner",
+      "observation": "Wedding hub retains choose/create action, one accessible project with guest-list destination, and clearly marked Coming soon tools; layout stacks on mobile and separates columns above mobile. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide.",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-tools-by-slug-mobile.png",
+          "sha256": "1cb4d08361591c8817570fe3ede9d21deb0056e74d7f5c67ba982859c31ac8de",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "originalAttachment": "output/playwright-report/data/e0e8fcdc8e99ce67918d1850e66255925f24d9c4.app-tools-by-slug-wedding-hub-in-demo-mobile",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-tools-by-slug",
+            "viewport": "mobile",
+            "observation": "Wedding hub retains choose/create action, one accessible project with guest-list destination, and clearly marked Coming soon tools; layout stacks on mobile and separates columns above mobile. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-tools-by-slug-tablet.png",
+          "sha256": "827da0f50c33e05c93be79f149624ce86864130d62c8e07edd61d19e304a9309",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "originalAttachment": "output/playwright-report/data/681817640f70442fe574e2a3734eb50bb3b8f410.app-tools-by-slug-wedding-hub-in-demo-tablet",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-tools-by-slug",
+            "viewport": "tablet",
+            "observation": "Wedding hub retains choose/create action, one accessible project with guest-list destination, and clearly marked Coming soon tools; layout stacks on mobile and separates columns above mobile. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-tools-by-slug-desktop.png",
+          "sha256": "f266104861b245ed847bb9855247551eb117632733af0d5c9fe0bc362562f8a9",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/8662c8f8c4c8067f1ac213375048683ee3efacb7.app-tools-by-slug-wedding-hub-in-demo-desktop",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-tools-by-slug",
+            "viewport": "desktop",
+            "observation": "Wedding hub retains choose/create action, one accessible project with guest-list destination, and clearly marked Coming soon tools; layout stacks on mobile and separates columns above mobile. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-tools-by-slug-wide.png",
+          "sha256": "cb42f78c598f2a7a8fc140eb076965db91863dae3de590ff15748cb2bcf33078",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "originalAttachment": "output/playwright-report/data/6394f109285d202596ad4eccf7baa810c0dd10a4.app-tools-by-slug-wedding-hub-in-demo-wide",
+          "reviewMethod": "Exact PNG-byte equality to independently reviewed prior image; prior raw-report image binding also verified",
+          "prior": {
+            "target": "tasks.page.app-tools-by-slug",
+            "viewport": "wide",
+            "observation": "Wedding hub retains choose/create action, one accessible project with guest-list destination, and clearly marked Coming soon tools; layout stacks on mobile and separates columns above mobile. Newly inspected full-shell captures show removed global top search/bell and preserved content layout; sidebar search remains on desktop/wide."
+          }
+        }
+      ]
+    }
+  ]
+}
