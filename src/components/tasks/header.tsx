@@ -4,7 +4,7 @@
  * The Tasks header, the same on the board, the list and the calendar: the
  * title and the project, one summary line counted from the whole project,
  * one sentence about stuck work that ends in the thing to do, then the
- * team, Stuck, Share and the overflow pinned top right.
+ * team, Share and the overflow pinned top right.
  *
  * There is no create button here. A screen has one, the top bar's New, and
  * the C key opens the same composer (add-task-context.tsx). The actions
@@ -28,7 +28,7 @@ import { withActiveProject } from "@/lib/projects/project-url";
 import { floorProjectName } from "@/lib/projects/floor-project-name";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { useSurface } from "./surface";
-import { STUCK_AFTER_DAYS, dayWords, donePercent } from "./tasks-pulse";
+import { dayWords, donePercent } from "./tasks-pulse";
 import { identityHue } from "./identity-hue";
 import { TIcon } from "./icons";
 import { Kbd } from "./atoms";
@@ -73,7 +73,6 @@ export function TasksHeader() {
       </div>
       <div className={styles.headerActions} data-new-task-anchor="">
         <TaskCollaborators />
-        <StuckButton />
         <span className={styles.shareSlot}>
           <ShareButton view={surface.view} variant="band" />
         </span>
@@ -295,25 +294,6 @@ const hourglass = (
     <path d="M4.5 2.5h7M4.5 13.5h7M5.25 2.5c0 3 5.5 3.25 5.5 5.5s-5.5 2.5-5.5 5.5M10.75 2.5c0 3-5.5 3.25-5.5 5.5s5.5 2.5 5.5 5.5" />
   </svg>
 );
-
-function StuckButton() {
-  const surface = useSurface();
-  const count = surface.pulse.stuck.length;
-  if (count === 0) return null;
-  return (
-    <button
-      type="button"
-      className={styles.stuckChip}
-      aria-pressed={surface.stuckOnly}
-      title={surface.stuckOnly ? "Show everything" : `Show only started work that has not changed in ${STUCK_AFTER_DAYS} days or more`}
-      onClick={() => surface.setStuckOnly(!surface.stuckOnly)}
-    >
-      {hourglass}
-      Stuck
-      <span className={styles.stuckCount}>{count}</span>
-    </button>
-  );
-}
 
 /**
  * One sentence about the work that ends in the thing to do: the task that
