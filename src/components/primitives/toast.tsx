@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import styles from "./toast-viewport.module.css";
 import { EASE_OUT_EXPO, MOTION_BASE } from "@/lib/motion";
 
 type ToastAction = {
@@ -131,7 +132,7 @@ function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ toast }}>
       <ToastBridge />
       {children}
-      <div className="signal-toast-viewport pointer-events-none fixed z-[80] flex w-[min(380px,calc(100vw-32px))] flex-col gap-2">
+      <div className={`${styles.viewport} pointer-events-none fixed z-[80] flex w-[min(380px,calc(100vw-32px))] flex-col gap-2`}>
         <AnimatePresence initial={false}>
           {toasts.map((t) => (
             <ToastCard

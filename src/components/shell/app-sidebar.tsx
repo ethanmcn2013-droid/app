@@ -242,7 +242,7 @@ export function AppSidebar({
       // work); a new-tab click follows the link.
       if (!activeProject || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
       event.preventDefault();
-      activeProject.selectProject(row.project, { surface: "project" });
+      activeProject.selectProject(row.project, { surface: "tasks", view: "board" });
     },
     [activeProject, setMobileOpen],
   );
@@ -360,7 +360,7 @@ export function AppSidebar({
     return (
       <ProjectContextMenu key={row.id} projectId={row.id} projectName={row.name}>
         <SidebarIntentLink
-          href={buildProjectUrl({ surface: "project" }, row.id, readableName)}
+          href={buildProjectUrl({ surface: "tasks", view: "board" }, row.id, readableName)}
           className={styles.item}
           data-project-row=""
           data-current-project={current ? "" : undefined}

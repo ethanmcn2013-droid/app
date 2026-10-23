@@ -24,6 +24,7 @@ import { weeklyDigestNarrationAction } from "@/server/actions/ai";
 import { ShareThisWeekButton } from "@/components/app/share-this-week-button";
 import { CopySlackSummary } from "@/components/app/copy-slack-summary";
 import { RollForwardButton } from "@/components/app/inbox/roll-forward-button";
+import { HomeTabs } from "@/components/app/home/home-tabs";
 import { AppPageHeader } from "@/components/app/page-header";
 import { ShellIcon } from "@/components/shell/shell-icons";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -129,6 +130,7 @@ export function InboxApp({
 
   return (
     <MotionConfig reducedMotion="user">
+      <HomeTabs active="inbox" />
       <AppPageHeader
         description={greeting ?? "Anything that needs you, plus one summary a day."}
         actions={
