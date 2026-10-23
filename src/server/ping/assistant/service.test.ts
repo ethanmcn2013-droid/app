@@ -1,12 +1,35 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
 import type {AssistantActionResult,AssistantPlan,AssistantPlannerContext} from "@/lib/ping/assistant/contract";
+import type {AssistantSource} from "@/lib/ping/assistant/release2";
 import {createAssistantService} from './service';
 import {assistantPayloadHash,createAssistantStore} from './store';
 import {assistantFixture} from './store-fixture';
 const context:AssistantPlannerContext={actorName:'Alice',projectName:'Synthetic',projects:[{name:'Synthetic'}],members:[{name:'Alice'}],selectedTaskCount:0,previousTaskCount:0,referenceDate:'2026-10-18',timeZone:'Europe/Dublin'};
 const plan:AssistantPlan={version:'ping.assistant.v1',outcome:'plan',mode:'execute',actions:[{id:'one',kind:'open_project',project:{kind:'current'}}]};
 const request={requestId:'request0001',text:'Open Synthetic',scope:{kind:'project' as const,projectId:'synthetic'},mode:'execute' as const};
+
+test('draft readiness uses one durable result write and retains its authorized recovery metadata',async()=>{
+ const f=await assistantFixture();let readyWrites=0,plans=0,effects=0,clock=1000;
+ const source:AssistantSource={ref:'source1',kind:'conversation',projectId:'synthetic',scopeId:'chat_1',itemId:'message_1',revision:1,audienceEpoch:1,body:'The checklist is still open.',authorName:'Alice',createdAt:'2026-10-18T09:00:00.000Z',href:'/app/messages?projectId=synthetic&messageId=message_1'};
+ try{
+  const store={...f.store,async finishRun(...args:Parameters<typeof f.store.finishRun>){if(args[2]==='ready')readyWrites++;return f.store.finishRun(...args);}};
+  const service=createAssistantService({store,requireApproval:true,now:()=>++clock,context:async()=>({...context,sources:[source]}),validateSources:async()=>true,
+   authorizePlan:async()=>['authorized-target'],bindTargets:async()=>({one:{projectId:'synthetic',taskIds:[],taskHashes:{},priorActionIds:[],hasOpenChecklist:true}}),
+   planner:{plan:async()=>{plans++;return {plan,model:'synthetic-sonnet'};}},execute:async()=>{effects++;throw Error('must wait for Apply');}});
+  const draft=await service.submit('alice',request);
+  assert.equal(draft.status,'ready');assert.equal(draft.mode,'draft');assert.equal(readyWrites,1);assert.equal(effects,0);
+  assert.match(draft.message??'',/Draft prepared\. No actions were executed\./);assert.match(draft.message??'',/checklist items are still open/);
+  assert.equal(draft.model,'synthetic-sonnet');assert.ok((draft.timing?.planningMs??0)>0);
+  const saved=await f.store.getRun('alice',draft.id),metadata=JSON.parse(saved.resultJson!);
+  assert.deepEqual(metadata.authorizationProjects,['authorized-target','synthetic']);assert.deepEqual(metadata.planSources,[source]);
+  assert.equal(metadata.message,draft.message);assert.equal(metadata.model,draft.model);assert.deepEqual(metadata.timing,draft.timing);
+  assert.doesNotMatch(JSON.stringify(draft),/authorizationProjects|authorized-target|planSources|message_1/);
+  assert.deepEqual(await service.view('alice',draft.id),draft);
+  await service.submit('alice',request);await service.resume('alice',draft.id);
+  assert.equal(readyWrites,1);assert.equal(plans,1);assert.equal(effects,0);
+ }finally{await f.close();}
+});
 test('execute is automatic; lost response lookup/repeated submit/resume never replans or reexecutes',async()=>{
  const f=await assistantFixture();let plans=0,effects=0;try{const service=createAssistantService({store:f.store,context:async()=>context,planner:{plan:async()=>{plans++;return {plan};}},execute:async input=>input.commitStep(input.stepId,input.fence,async()=>{effects++;return {stepId:input.stepId,kind:input.step.kind,status:'completed',summary:'Opened',affectedCount:0} as AssistantActionResult;})});
   const result=await service.submit('alice',request);assert.equal(result.status,'completed');assert.equal((await service.lookup('alice',request.requestId))?.id,result.id);

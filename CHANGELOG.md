@@ -1,5 +1,9 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Ping plan preparation
+
+Ping saves a prepared plan's result once before showing it, removing one redundant database transaction. The plan, access checks, source references and checklist warning are preserved. Changes still wait for Apply plan. Production speed gains have not yet been measured.
+
 ## 2026-10-22 · Files presentation rollout
 
 The approved Files layout can now be enabled for signed-in members without making them administrators. Source folders, latest additions, search and previews use the same authorized Project files as before. Demo and review builds retain their existing view.
