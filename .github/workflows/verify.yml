@@ -91,6 +91,8 @@ jobs:
       - name: Task Provider ordering and snapshot freshness
         run: node --test src/lib/tasks/task-provider-ordering.test.mjs src/lib/tasks/authoritative-refresh.browser.test.mjs
       - run: pnpm build
+      - name: Project menu explicit actions and archive recovery
+        run: pnpm test:project-menu:browser
       # E08.10 — performance budgets, measured from the build above so this
       # costs no extra build time. The check ratchets: it fails when a
       # measured value exceeds the ceiling recorded in

@@ -1,5 +1,9 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Project menus keep management close to the work
+
+Project owners can change a Project’s dot colour, rename it, invite people or archive it from the sidebar menu. Archive keeps its tasks and history, with Undo and Restore available. Permanent deletion requires the primary owner to type the Project’s name. Open drafts hold navigation, archive and deletion until they are saved.
+
 ## 2026-10-23 · Project sharing in Files and Analytics
 
 Files and one-Project Analytics show the current Project's members and a Share control. Copy a page link for people who already have Project access, or invite a member when you manage that Project. Portfolio Analytics stays separate.
