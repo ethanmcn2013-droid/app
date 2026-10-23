@@ -1,5 +1,11 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Prepared · Files in Project conversations
+
+Project conversations, private messages and replies can hold up to three checked images or files. Pasted files stay in the draft until Send. A changed audience pauses sending and asks for a new upload after review; uncertain sends check their original receipt before retrying.
+
+This runtime is off by default behind `SIGNAL_CONVERSATION_ATTACHMENTS_ENABLED`. The additive 0047 data migration is reviewed separately in PR #323. Storage reuses the existing private upload adapter; activation and production receiving remain separate release steps.
+
 ## 2026-10-23 · Project menus keep management close to the work
 
 Project owners can change a Project’s dot colour, rename it, invite people or archive it from the sidebar menu. Archive keeps its tasks and history, with Undo and Restore available. Permanent deletion requires the primary owner to type the Project’s name. Open drafts hold navigation, archive and deletion until they are saved.

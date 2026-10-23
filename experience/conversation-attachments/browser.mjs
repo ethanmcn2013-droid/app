@@ -1,19 +1,33 @@
 /** Actual client against the local synthetic conversation harness; no provider credentials. */
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium, expect } from "@playwright/test";
 
-const origin = process.argv[2]; const output = process.argv[3];
-if (!origin || !output) throw new Error("Pass explicit loopback fixture origin and evidence directory");
-const parsed = new URL(origin);
+const requestedOrigin = process.argv[2]; const output = process.argv[3];
+if (!requestedOrigin || !output) throw new Error("Pass explicit loopback fixture origin and evidence directory");
+const parsed = new URL(requestedOrigin);
+const origin = parsed.origin;
 if (parsed.protocol !== "http:" || parsed.hostname !== "127.0.0.1" || parsed.pathname !== "/" || !parsed.port) throw new Error("Only the explicit loopback synthetic fixture is allowed");
 await mkdir(output, { recursive: true });
+const rootDirectory = fileURLToPath(new URL("../../", import.meta.url));
+const revision = execFileSync("git", ["rev-parse", "HEAD"], { cwd: rootDirectory, encoding: "utf8" }).trim();
+const sourceDirty = execFileSync("git", ["status", "--short"], { cwd: rootDirectory, encoding: "utf8" }).trim();
+const sourceFiles = ["src/components/app/messages/conversation-workspace.tsx", "src/components/app/messages/conversation-workspace.module.css", "src/components/app/messages/conversation-client-model.ts", "src/components/app/messages/conversation-session-provider.tsx", "src/components/app/messages/conversation-attachment-client.ts", "src/components/app/messages/conversation-attachment-drafts.ts", "src/components/app/messages/use-conversation-attachments.ts", "src/components/app/messages/conversation-attachments.tsx", "src/lib/conversations/contracts.ts", "src/lib/conversations/reducer.ts", "src/server/conversations/attachments.ts", "src/server/conversations/attachment-http.ts", "src/server/conversations/service.ts", "scripts/conversations/preview-server.ts", "experience/conversation-attachments/browser.mjs", "experience/conversation-attachments/run.mjs", "experience/conversation-attachments/run.test.mjs"];
+const sourceInputs = Object.fromEntries(await Promise.all(sourceFiles.map(async file => [file, createHash("sha256").update(await readFile(path.join(rootDirectory, file))).digest("hex")])));
+
 const browser = await chromium.launch({ headless: true });
-const results = []; const errors = [];
+const results = []; const errors = []; const externalRequests = [];
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, reducedMotion: "reduce", acceptDownloads: true, extraHTTPHeaders: { "x-fixture-actor": "synthetic_alice" } });
   await context.addCookies([{ name: "__conversation_fixture_actor", value: "synthetic_alice", url: origin, httpOnly: true, sameSite: "Strict" }]);
+  await context.route("**/*", route => {
+    if (new URL(route.request().url()).origin === origin) return route.continue();
+    externalRequests.push(route.request().url()); return route.abort("blockedbyclient");
+  });
   const page = await context.newPage(); const requests = []; const uploadRequests = [];
   page.on("pageerror", error => errors.push(error.message));
   page.on("request", request => {
@@ -107,8 +121,8 @@ try {
   await page.screenshot({ path: path.join(output, "desktop-dm.png"), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(privateText).toBeVisible(); await page.screenshot({ path: path.join(output, "phone-dm.png"), fullPage: true });
-  assert.deepEqual(errors, []);
-  await writeFile(path.join(output, "receipt.json"), JSON.stringify({ origin, synthetic: true, results, errors, sends: requests.map(({ projectId, conversationId, rootId, clientRequestId, expectedAudienceEpoch, attachmentIds }) => ({ projectId, conversationId, rootId, clientRequestId, expectedAudienceEpoch, attachmentIds })) }, null, 2));
+  assert.deepEqual(errors, []); assert.deepEqual(externalRequests, []);
+  await writeFile(path.join(output, "receipt.json"), JSON.stringify({ revision, sourceDirty, sourceInputs, origin, synthetic: true, results, errors, externalRequests, sends: requests.map(({ projectId, conversationId, rootId, clientRequestId, expectedAudienceEpoch, attachmentIds }) => ({ projectId, conversationId, rootId, clientRequestId, expectedAudienceEpoch, attachmentIds })) }, null, 2));
   await context.close();
   process.stdout.write(JSON.stringify({ passed: results.length, results, output }) + "\n");
 } finally { await browser.close(); }

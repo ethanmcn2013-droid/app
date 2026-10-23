@@ -85,6 +85,10 @@ jobs:
         if: always() && steps.browser.outcome == 'success'
         run: node experience/sidebar/fixture-run.mjs --capture experience/output/sidebar-fixture
 
+      - name: Capture Project and private conversation files
+        if: always() && steps.browser.outcome == 'success'
+        run: pnpm test:conversation-attachments:browser
+
       - name: Upload candidate evidence, including unsuccessful runs
         if: always()
         uses: actions/upload-artifact@v4
@@ -99,6 +103,7 @@ jobs:
             experience/output/playwright-results
             experience/output/sidebar-fixture
             experience/output/project-menu-fixture
+            experience/output/conversation-attachments
             experience/evidence-runs
             experience/critical-fixtures.json
             experience/browser-contract.json
