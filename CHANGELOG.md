@@ -1,5 +1,9 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Projects at a glance
+
+Projects keeps progress and ownership together in a simpler list. See timeline previews the Project's dated milestones, with a clear message when the preview is empty, unavailable or limited.
+
 ## 2026-10-23 · Tasks board controls
 
 Drag task columns to reorder them, and switch between Board, List and Calendar without losing your place. Project progress keeps the whole Project in view while filters are applied. When all saved tasks are done, a restrained completion message offers Archive project; archiving still needs your click. The retired Stuck button is removed.

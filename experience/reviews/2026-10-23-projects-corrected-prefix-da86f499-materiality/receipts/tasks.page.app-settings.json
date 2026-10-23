@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-settings",
+  "source": "tasks/src/app/app/settings/page.tsx",
+  "materialityHash": "3fcba4d3b2bb4dcf",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_tasks independent Sol6.1 rendered reviewer; no founder attribution",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-372ddd1322ca02beffd3e3e7-6e0364093e662afc.json",
+    "attestationSha256": "bf9fb4489bc438db5d1c4a3690f5357aab7bbfcb66fd6571ac9d931ea57f785a",
+    "runId": "tasks-playwright-372ddd1322ca02beffd3e3e7",
+    "canonicalEvidenceSha256": "372ddd1322ca02beffd3e3e7d1e5000a58861efc62144486bea6152c77dc7176",
+    "rawArtifactSha256": "6e0364093e662afc72d06135f8f91733ca81b6b8a22ba48da2c872b96fe85822",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-settings",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Corrected Projects da86 capture40015832739 passed188/188 outcomes. Independent reviewer verified exact source, four contracts, canonical digest and all72 mapped PNG bodies against original attachments.69 images verified identical to previously independently reviewed retained bytes; three new resource desktop/wide and Analytics loading mobile images individually inspected. No new blocking visible finding in supplied initial states. Project menus and interactions are not certified by initial screenshots. Inherited Tasks loading width, Files demo, Welcome fallback, upload-affordance, static and unseen-interaction limits retained. No live/provider proof, numerical score or quality coverage advance.",
+  "decision": "accepted for supplied synthetic initial-state materiality only; interaction and live/provider limits retained"
+}

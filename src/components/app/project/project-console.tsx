@@ -34,9 +34,9 @@ import {
   type ConsoleMark,
   type ConsoleModel,
   type ConsoleRow,
-  type ConsoleSegment,
 } from "@/lib/projects/project-console";
 import c from "./project-console.module.css";
+import { ProjectTimelinePreview } from "./project-timeline-preview";
 
 export type ConsoleSurface = "project" | "tasks" | "timeline";
 
@@ -89,7 +89,6 @@ export function ProjectConsole({
   openProjectId,
   pendingProjectId,
   hrefFor,
-  taskHref,
   weekHref,
   onGo,
   onPeek,
@@ -120,11 +119,7 @@ export function ProjectConsole({
         <FilterTabs filter={filter} counts={model.counts} onPick={setFilter} tabId={tabId} panelId={panelId} />
         <Cards
           model={model}
-          hrefFor={hrefFor}
-          taskHref={taskHref}
           weekHref={weekHref}
-          onGo={onGo}
-          onShowAttention={() => setFilter("attention")}
         />
         <div className={c.list} role="tabpanel" id={panelId} aria-labelledby={tabId(filter)}>
           {groups.length === 0 ? (
@@ -211,95 +206,9 @@ function FilterTabs({
 
 /* ── The figures ─────────────────────────────────────────────────── */
 
-function Cards({
-  model,
-  hrefFor,
-  taskHref,
-  weekHref,
-  onGo,
-  onShowAttention,
-}: {
-  model: ConsoleModel;
-  hrefFor: ProjectConsoleProps["hrefFor"];
-  taskHref: ProjectConsoleProps["taskHref"];
-  weekHref: string | null;
-  onGo: ProjectConsoleProps["onGo"];
-  onShowAttention: () => void;
-}) {
-  const { attention, nextDate, late, week } = model.cards;
-  const cards: ReactNode[] = [
-    <Card
-      key="attention"
-      href={`?show=${CONSOLE_FILTER_PARAM.attention}`}
-      onPlainClick={onShowAttention}
-      title="Needs a look"
-      meta={`${attention.active} active`}
-      figure={attention.count}
-      unit={attention.count === 1 ? "project at risk or past its date" : "projects at risk or past their date"}
-      bar={<Segments parts={attention.segments} label={attention.segmentsLabel} />}
-      caption={
-        attention.caption ? (
-          <>
-            <strong>{attention.caption.strong}</strong> {attention.caption.rest}
-          </>
-        ) : attention.active === 0 ? (
-          "No active projects"
-        ) : (
-          "Nothing is flagged"
-        )
-      }
-    />,
-  ];
-  if (nextDate) {
-    cards.push(
-      <Card
-        key="next"
-        href={hrefFor(nextDate.projectId, "project")}
-        onPlainClick={() => onGo(nextDate.projectId, "project")}
-        title="Next big date"
-        meta={nextDate.projectName}
-        figure={nextDate.days}
-        unit={nextDate.days === 0 ? "days to go, it is today" : nextDate.days === 1 ? "day to go" : "days to go"}
-        bar={
-          <Bar
-            value={nextDate.total ? nextDate.complete / nextDate.total : 0}
-            label={`${nextDate.complete} of ${nextDate.total} tasks done in ${nextDate.projectName}`}
-          />
-        }
-        caption={
-          <>
-            <strong>{nextDate.title}</strong> · {nextDate.dateLabel}
-            {nextDate.total > 0 ? ` · ${nextDate.complete} of ${nextDate.total} done` : ""}
-          </>
-        }
-      />,
-    );
-  }
-  if (late) {
-    cards.push(
-      <Card
-        key="late"
-        href={late.oldest ? taskHref(late.oldest.projectId, late.oldest.taskId) : undefined}
-        title="Late across your projects"
-        meta={late.projects === 1 ? "1 project" : `${late.projects} projects`}
-        figure={late.total}
-        unit={late.total === 1 ? "task past its date" : "tasks past their date"}
-        tone={late.total ? "late" : undefined}
-        bar={<Segments parts={late.segments} label={late.segmentsLabel} />}
-        caption={
-          late.oldest ? (
-            <>
-              Oldest: <strong>{late.oldest.title}</strong> · {late.oldest.age}
-            </>
-          ) : late.total ? (
-            "Open a project to see which"
-          ) : (
-            "Nothing is late"
-          )
-        }
-      />,
-    );
-  }
+function Cards({ model, weekHref }: { model: ConsoleModel; weekHref: string | null }) {
+  const { week } = model.cards;
+  const cards: ReactNode[] = [];
   if (week) {
     cards.push(
       <Card
@@ -386,17 +295,6 @@ function Card({
     >
       {body}
     </a>
-  );
-}
-
-function Segments({ parts, label }: { parts: readonly ConsoleSegment[]; label: string }) {
-  return (
-    <span className={c.segments} role="img" aria-label={label}>
-      {parts.length === 0 ? <span className={c.segment} data-tone="empty" /> : null}
-      {parts.map((part) => (
-        <span key={part.key} className={c.segment} data-tone={part.tone} title={part.title} style={{ flexGrow: part.weight }} />
-      ))}
-    </span>
   );
 }
 
@@ -580,8 +478,7 @@ function Row({
         </div>
       )}
       <Cell label="Done" cell={row.done} />
-      <Cell label="Next big date" cell={row.next} />
-      <Cell label="Late" cell={row.lateCell} />
+      {row.selectable ? <ProjectTimelinePreview row={row} href={hrefFor(row.id, "timeline")} onGo={() => onGo(row.id, "timeline")} /> : <span />}
       <div className={c.lead}>
         <span className={c.avatar} aria-hidden="true" data-you={row.ledByYou || undefined}>
           {row.lead.initials ?? <PersonGlyph />}
