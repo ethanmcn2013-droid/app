@@ -3353,7 +3353,7 @@
     "src/server/connections/google-oauth-state.ts": "9e46599c54ee544cd62373a6e0cc97ac8e791fda5f0ca161a5d7fd809f65ebef",
     "src/server/connections/project-drive-access.test.ts": "c17001f6b5f50b3b444c6246e6031325f904fadbbd349441fe65f26c87d0fb37",
     "src/server/connections/project-drive-access.ts": "9974f1ad8c1663b4f41124e931ce4fbce526d6e6471a7f60053a79bc7bd3b370",
-    "src/server/connections/project-drive-authz.ts": "f023de3c3ba75435e727056663288a151c6737debd3d20fd9a06a0f62dfed2a8",
+    "src/server/connections/project-drive-authz.ts": "5207a882a86ff8ec6e538f01c713c92ba487d30678eada4a948e4fca9561bbb9",
     "src/server/connections/project-drive-core.test.helpers.ts": "4decf7d12fb9b89bc216d0c80512c6eebd7a054841b1817913e291f8f0e3dcfb",
     "src/server/connections/project-drive-erasure-grants.test.ts": "122f72b25cb763c94efc1aab31afde8e55c01d2828720b784fde5c4667edb68d",
     "src/server/connections/project-drive-erasure-grants.ts": "6bdb2a4c6d09fa197c5624a0689d3aed563c440848fc2894a1167b832c3bd8b6",
@@ -3578,7 +3578,7 @@
     "src/server/premium-p1-integrity.test.ts": "8db902379cf288d95b05c56a3684aa3b314220ec3e1e4fd8663923aeb7a81f50",
     "src/server/premium-p1-storage.test.ts": "fb2f0fe1f7dbf98ef52809306a1666d8efa84ff91e3ffc70916c9c28b277e869",
     "src/server/project-drive-csp-contract.test.mjs": "4fab60847d6b65e0d9baf4543b63c057e6a8712380300f82a16c6d8a525a3743",
-    "src/server/project-drive-hard-rules.test.ts": "aee009fc4c61826d0fd7fa3b483f04f6da8a4a7e7701c6ebc76489f012206a02",
+    "src/server/project-drive-hard-rules.test.ts": "664d0a37f2897b599c210720e3b300a731c7b72f84af03a6b625c76153418cf1",
     "src/server/project-drive-ui-contract.test.mjs": "1124d37a6a69f96af9e8410b3d6c17d01ae5e72fe8b7fb15dd1ad2bd70838507",
     "src/server/project-recovery-core.ts": "a7962ff9e6176921c36774b4588d973e9cbe9c1dd009a45045e2d3d91cfd3605",
     "src/server/project-recovery.ts": "96747fbf2800842310c643360cfeade729a08805d07c6789fb0e501081f6f126",
@@ -3806,11 +3806,14 @@
     "src/lib/ping/assistant/drive-folder.ts": "c36665087fd6ab75c2aa38f76f40ae7f18271ec3043694930792526bdec07448",
     "src/server/connections/project-drive-subfolders-lifecycle.ts": "f90c618e1d739d783d954734c44c5730056354ff0a53605a2a79470b95b5ec31",
     "src/server/connections/project-drive-subfolders-provider.ts": "5f4910aa671a5465d094bfcabc1829e6c1f4ee06a84527df735a743dc4432c7e",
-    "src/server/connections/project-drive-subfolders.test.ts": "a183aacadb5862ecca339f37091c4d16062dc3fa9fdabfbc622e9b47a87445a2",
-    "src/server/connections/project-drive-subfolders.ts": "87205e1323a7c46164ec6ea19b02c014085625836b37be04a4178d74d7154246",
-    "src/server/ping/assistant/drive-folder.test.ts": "274966b99d8e5753e3962f58067e28c98c0695931633dd835f90e4f2fb057ecb",
+    "src/server/connections/project-drive-subfolders.test.ts": "4555a1aa1b72f2314301e168a194747071dbe9b89f164d73a44310a726a69a3b",
+    "src/server/connections/project-drive-subfolders.ts": "114d42af03cfbbb238e9906e4b6dc0319e178e582ddc2770e5771c78a072245a",
+    "src/server/ping/assistant/drive-folder.test.ts": "ad448fd99d65fc05ba2ec9ba2b1fa18d445c14e434dbbe350cf2d9c513650345",
     "src/server/ping/assistant/drive-folder.ts": "b77c33a85bd735dc42c8ebbdd4e84c420a95569dfd4f4f9ad28f4d0edc1f2ec5",
     "src/server/projects/archive-project-core.ts": "64fce47f368c52d52b9782fc8a1a3c794f7ff672401c15ea441e28e5f5eb2565",
-    "src/server/ping/assistant/context.test.ts": "7bd969dc1e379c822eea6a1b8dbe928f43aebb14ac27bdbba76eec3c76121403"
+    "src/server/ping/assistant/context.test.ts": "7bd969dc1e379c822eea6a1b8dbe928f43aebb14ac27bdbba76eec3c76121403",
+    "src/server/ping/assistant/runtime.ts": "fc6486d2a0ebb3b95f099b792870284098735274dcb6672b50f7d04061e4020c",
+    "src/server/ping/assistant/service.test.ts": "da16cb78d03751ab81b9c18e9db1ab1a96e1f05bd3bb5abac58a7a9e7c5f5068",
+    "src/server/ping/assistant/service.ts": "15b27cca0082356568927d43b9e8ebd4987575d54771698ad573e36d08276495"
   }
 }
