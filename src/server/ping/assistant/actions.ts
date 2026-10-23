@@ -24,6 +24,8 @@ import { assistantLocalDayTime, instantFromAssistantDayTime } from "./calendar-t
 import { prepareAssistantInvitations, prepareAssistantNudges, revalidateAssistantDelivery,
   type AssistantDeliveryIntent, type AssistantDeliveryPort, type AssistantDispatcher } from "./delivery";
 import type { ActivityPayload } from "@/lib/data";
+import { executeAssistantDriveFolder } from "./drive-folder";
+import type { projectDriveSubfolderServiceFromEnv, ProjectDriveSubfolderResult } from "@/server/connections/project-drive-subfolders";
 import { AssistantActionRefusal, assertAssistantActor, assistantTaskCatalog, assistantTasksByIds,
   authorizeAssistantProject, resolveAssistantMember, resolveAssistantProjectName, type AssistantActionTransaction } from "./context";
 
@@ -43,6 +45,10 @@ export type AssistantActionInput = Readonly<{
   prepareTimeline?: (input: { actorId: string; runId: string; stepId: string; projectId: string;
     kind: "preview_timeline" | "read_timeline" }) => Promise<{ href: string; items?: readonly AssistantResultItem[]; summary?: string }>;
   settleTimelineResult?: (actorId: string, runId: string, stepId: string, result: AssistantActionResult) => Promise<unknown>;
+  driveFolders?: ReturnType<typeof projectDriveSubfolderServiceFromEnv>;
+  guardDriveFolderAttempt?: (transaction?: AssistantActionTransaction) => Promise<void>;
+  driveFolderRecoveryOnly?: boolean;
+  settleDriveFolderResult?: (actorId: string, runId: string, stepId: string, result: ProjectDriveSubfolderResult) => Promise<AssistantActionResult>;
 }>;
 const stableId = (prefix: string, parts: readonly unknown[]) => `${prefix}-${createHash("sha256").update(JSON.stringify(parts)).digest("hex").slice(0, 32)}`;
 const ordinary = (row: typeof tasks.$inferSelect) => row.parentTaskId === null && row.recurrence === null;
@@ -147,6 +153,7 @@ function taskDay(row:typeof tasks.$inferSelect,input:AssistantActionInput):strin
 
 /** Effects and the completed step result share the store's fenced immediate transaction. */
 export async function executeAssistantAction(input: AssistantActionInput): Promise<AssistantActionResult> {
+  if (input.step.kind === "create_drive_subfolder") return executeAssistantDriveFolder(input);
   let outbound: AssistantDeliveryIntent[] = [];
   const result = await input.commitStep(input.stepId, input.fence, async tx => {
     const step = input.step;

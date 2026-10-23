@@ -90,7 +90,7 @@ export async function assistantTaskCatalog(tx: AssistantActionTransaction, actor
 /** Bounded account catalog. No foreign Project names or member addresses are projected. */
 export async function getAssistantContext(tx: AssistantActionTransaction, actorId: string, projectId?: string | null) {
   await assertAssistantActor(tx, actorId);
-  const projects = await tx.select({ id: workspaces.id, name: workspaces.name, archivedAt: workspaces.archivedAt })
+  const projects = await tx.select({ id: workspaces.id, name: workspaces.name, archivedAt: workspaces.archivedAt, role: workspaceMembers.role })
     .from(workspaceMembers).innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
     .where(eq(workspaceMembers.userId, actorId)).orderBy(asc(workspaces.id)).limit(201);
   if (projects.length > 200) throw new AssistantActionRefusal("unsupported");

@@ -22,6 +22,7 @@ async function fixture() {
   let missingSearch = false;
   let throwAfterCreate = false;
   let afterProvider: (() => Promise<void>) | undefined;
+  let beforeCreate: (() => Promise<void>) | undefined;
   const providerFolders: Record<string, unknown>[] = [];
   const calls: string[] = [];
   const deps: ProjectDriveSubfolderDependencies = {
@@ -46,6 +47,7 @@ async function fixture() {
         return jsonResponse(child);
       }
       assert.ok(parsed.searchParams.get("q")?.includes("'folder-current' in parents"));
+      if(parsed.searchParams.get('q')?.includes('name ='))await beforeCreate?.();
       return jsonResponse({ files: missingSearch ? [] : duplicate ? [...providerFolders, ...providerFolders] : providerFolders });
     },
   };
@@ -57,7 +59,7 @@ async function fixture() {
     await service.prepare(bound, operationId);
     return { ...actor, operationId };
   }
-  return { ...core, service, deps, actor, prepared, calls, providerFolders, get creates() { return creates; }, advance: () => { clock += 61_000; }, setDuplicate: () => { duplicate = true; }, setMissing: () => { missingSearch = true; }, setThrow: () => { throwAfterCreate = true; }, afterProvider: (callback: () => Promise<void>) => { afterProvider = callback; } };
+  return { ...core, service, deps, actor, prepared, calls, providerFolders, get creates() { return creates; }, advance: () => { clock += 61_000; }, setDuplicate: () => { duplicate = true; }, setMissing: () => { missingSearch = true; }, setThrow: () => { throwAfterCreate = true; }, afterProvider: (callback: () => Promise<void>) => { afterProvider = callback; }, beforeCreate:(callback:()=>Promise<void>)=>{beforeCreate=callback;} };
 }
 
 test("creates exactly one immediate child and durable receipt; retries are idempotent and measured", async () => {
@@ -85,6 +87,7 @@ test("ambiguous create adopts original marker; absent search never blindly repea
     const locator = await f.prepared(); f.setThrow();
     assert.equal((await f.service.execute(locator)).status, "unknown");
     assert.equal(f.creates, 1);
+    assert.equal(await f.service.retireUnattempted(locator),false);
     await assert.rejects(assertProjectDriveSubfoldersSettled(f.db, eq(projectDriveSubfolders.workspaceId, "ws-a")), /unresolved/);
     assert.equal((await f.service.execute(locator)).status, "complete");
     assert.equal(f.creates, 1);
@@ -164,6 +167,8 @@ test("rejects paths and foreign bindings", async () => {
       await assert.rejects(f.service.bind({ ...f.actor, folderName }));
     }
     const bound = await f.service.bind({ ...f.actor, folderName: "Contracts" });
+    await assert.rejects(f.service.prepare(bound,randomUUID(),async()=>{throw new Error('caller cancelled before prepare');}));
+    assert.equal((await f.db.select().from(projectDriveSubfolders)).length,0);
     await assert.rejects(f.service.prepare({ ...bound, parentId: "foreign-parent" }, randomUUID()));
     assert.equal(f.calls.length, 0);
   } finally { f.cleanup(); }
@@ -207,4 +212,30 @@ test("provider deadline aborts its request without pretending the physical promi
   assert.equal(await physical, "accepted later");
   assert.equal(canonicalSubfolderUrl("safe_123"), "https://drive.google.com/drive/folders/safe_123");
   assert.throws(() => canonicalSubfolderUrl("https://attacker.test"));
+});
+
+test("calling surface can atomically fence a new mutation after metadata reads; recovery-only never creates", async () => {
+  const f = await fixture(); try {
+    const locator=await f.prepared();
+    assert.equal((await f.service.execute({...locator,assertMutationAllowed:async()=>{throw new Error('caller cancelled');}})).status,'unknown');
+    assert.equal(f.creates,0);
+    const [row]=await f.db.select().from(projectDriveSubfolders);
+    assert.equal(row.createStarted,false);
+    assert.equal((await f.service.execute({...locator,recoveryOnly:true})).status,'unknown');
+    assert.equal(f.creates,0);
+    assert.equal(await f.service.retireUnattempted(locator),true);
+    const replacement=await f.prepared();
+    assert.equal((await f.service.execute(replacement)).status,'complete');
+    assert.equal(f.creates,1);
+  } finally { f.cleanup(); }
+});
+
+test('retiring an exact untouched operation during provider metadata reads fences its late POST',async()=>{
+  const f=await fixture();try{
+    const locator=await f.prepared();
+    f.beforeCreate(async()=>{assert.equal(await f.service.retireUnattempted(locator),true);});
+    await assert.rejects(f.service.execute(locator));
+    assert.equal(f.creates,0);
+    assert.equal((await f.db.select().from(projectDriveSubfolders)).length,0);
+  }finally{f.cleanup();}
 });

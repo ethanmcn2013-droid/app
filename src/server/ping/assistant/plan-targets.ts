@@ -6,9 +6,10 @@ import {readWorkspaceColumnConfig} from '@/server/db/board-config-read';
 import {resolveDoneKeys} from '@/lib/board-columns';
 import {taskSnapshotHash} from './task-snapshot';
 import {AssistantActionRefusal,assistantTaskCatalog,assistantTasksByIds,authorizeAssistantProject,resolveAssistantProjectName,type AssistantActionTransaction} from './context';
+import type { ProjectDriveSubfolderBinding } from '@/server/connections/project-drive-subfolders';
 
 /** Canonical targets selected while the plan is bound. IDs never get re-resolved from mutable titles during apply. */
-export type BoundAssistantTaskTarget=Readonly<{projectId:string;taskIds:readonly string[];taskHashes:Readonly<Record<string,string>>;priorActionIds:readonly string[];checklistItemId?:string;hasOpenChecklist?:boolean;projectState?:Readonly<{revision:number;archivedAt:string|null}>}>;
+export type BoundAssistantTaskTarget=Readonly<{projectId:string;taskIds:readonly string[];taskHashes:Readonly<Record<string,string>>;priorActionIds:readonly string[];checklistItemId?:string;hasOpenChecklist?:boolean;projectState?:Readonly<{revision:number;archivedAt:string|null}>;driveFolder?:ProjectDriveSubfolderBinding}>;
 export type AssistantPlanTargetBindingInput=Readonly<{
   actorId:string;plan:AssistantPlan;currentProjectId?:string|null;selectedTaskIds?:readonly string[];
   priorTaskResult?:AssistantActionResult;
@@ -68,14 +69,15 @@ export async function bindAssistantPlanTargets(tx:AssistantActionTransaction,inp
   for(const action of input.plan.actions){
     const earlier=[...priorActionIds];priorActionIds.push(action.id);
     if(!('project'in action))continue;
-    if(action.kind==='archive_project'){
+    if(action.kind==='archive_project'||action.kind==='create_drive_subfolder'){
       if(action.project.kind==='created')throw new AssistantActionRefusal('unsupported');
       const project=action.project.kind==='name'
         ?await resolveAssistantProjectName(tx,input.actorId,action.project.name,'manageProject')
         :input.currentProjectId?await authorizeAssistantProject(tx,input.actorId,input.currentProjectId,'manageProject'):null;
       if(!project)throw new AssistantActionRefusal('unavailable');
-      if(lifecycleProjects.has(project.id))throw new AssistantActionRefusal('ambiguous');
-      lifecycleProjects.add(project.id);
+      const lifecycleKey=action.kind==='archive_project'?project.id:`${project.id}:folder:${action.folderName}`;
+      if(lifecycleProjects.has(lifecycleKey))throw new AssistantActionRefusal('ambiguous');
+      lifecycleProjects.add(lifecycleKey);
       bound[action.id]={projectId:project.id,taskIds:[],taskHashes:{},priorActionIds:[],
         projectState:{revision:project.revision,archivedAt:project.archivedAt?.toISOString()??null}};
       continue;

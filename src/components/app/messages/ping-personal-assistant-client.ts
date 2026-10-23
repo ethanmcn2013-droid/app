@@ -2,6 +2,8 @@ import { createBrowserPingTelemetry, createPingTelemetryRequest, pingTelemetryBe
 import type { PingTelemetryRecorder, PingTelemetryEnd, PingTelemetryOutcome } from "@/lib/ping/telemetry";
 import { ASSISTANT_VERSION, isAssistantInternalHref, parseAssistantPlan, type AssistantAction, type AssistantApiCommand, type AssistantApiResponse, type AssistantRunView, type AssistantScope, type AssistantStepView, type AssistantStepStatus, type AssistantMemberRef } from "@/lib/ping/assistant/contract";
 import type { AssistantSourceScope } from "@/lib/ping/assistant/release2";
+import { isAssistantDriveFolderPending } from "@/lib/ping/assistant/drive-folder";
+export { isAssistantDriveFolderHref } from "@/lib/ping/assistant/drive-folder";
 export type PendingAssistantRequest = Readonly<{ version: 1; requestId: string; runId?: string }>;
 const requestId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$/.test(value);
 const runId = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9_-]{8,160}$/.test(value);
@@ -85,11 +87,11 @@ export function assistantWaitingPlanAncestor(runs: readonly AssistantRunView[], 
   return null;
 }
 export const assistantIsWorking = (run: AssistantRunView) => run.status === "planning" || run.status === "running";
-export const assistantNeedsRecovery = (run: AssistantRunView) => run.status !== "cancelled" && (assistantIsWorking(run) || run.status === "unknown" || run.steps.some(step => step.status === "unknown" || step.status === "running"));
+export const assistantNeedsRecovery = (run: AssistantRunView) => run.steps.some(step=>isAssistantDriveFolderPending(step.result)) || run.status !== "cancelled" && (assistantIsWorking(run) || run.status === "unknown" || run.steps.some(step => step.status === "unknown" || step.status === "running"));
 export const assistantCanContinue = (run: AssistantRunView) => run.mode !== "draft" && !assistantNeedsRecovery(run) &&
   (run.status === "ready" || run.status === "partial" && run.steps.some(step => step.result?.code === "timeline_pending"));
 export const assistantRunLabel = (run: AssistantRunView): string => ({ planning: "Understanding your request", ready: run.mode === "draft" ? "Draft ready" : "Ready to continue", running: "Working on your request", completed: "Done", partial: "Some work is saved", clarification: "A detail is needed", failed: "Could not finish", cancelled: "Remaining work cancelled", unknown: "Result not confirmed" })[run.status];
-export const assistantStepLabel = (kind: string): string => ({ create_project: "Create Project", archive_project: "Archive or restore Project", create_tasks: "Create tasks", update_tasks: "Update tasks", archive_tasks: "Archive or restore tasks", add_comment: "Add comments", nudge_tasks: "Send nudges", invite_members: "Invite members", send_message: "Send message", set_checklist_item: "Update checklist item", create_checklist_items: "Add checklist items", open_project: "Open Project", open_chat: "Open chat", read_timeline: "Read Timeline", preview_timeline: "Prepare private preview", read_chat: "Read chat", list_tasks: "Find tasks" } as Record<string, string>)[kind] ?? "Task";
+export const assistantStepLabel = (kind: string): string => ({ create_project: "Create Project", create_drive_subfolder: "Create Drive folder", archive_project: "Archive or restore Project", create_tasks: "Create tasks", update_tasks: "Update tasks", archive_tasks: "Archive or restore tasks", add_comment: "Add comments", nudge_tasks: "Send nudges", invite_members: "Invite members", send_message: "Send message", set_checklist_item: "Update checklist item", create_checklist_items: "Add checklist items", open_project: "Open Project", open_chat: "Open chat", read_timeline: "Read Timeline", preview_timeline: "Prepare private preview", read_chat: "Read chat", list_tasks: "Find tasks" } as Record<string, string>)[kind] ?? "Task";
 
 const projectName = (action: AssistantAction) => {
   if(!("project" in action))return "the Project";
@@ -104,6 +106,7 @@ export function assistantPlanDescription(action: AssistantAction): string {
   const destination=projectName(action);
   switch(action.kind){
     case "create_project":return `Create Project “${action.name}”${action.description?` · ${action.description}`:""}`;
+    case "create_drive_subfolder":return `Create folder “${action.folderName}” in ${destination}’s existing Drive folder. It uses existing folder access; there is no Undo.`;
     case "archive_project":return action.archived
       ? `Archive ${destination}. Tasks, members and history stay saved. Any published Timeline stays published.`
       : `Restore ${destination} to your active Projects. Tasks, members and history stay saved.`;
@@ -135,7 +138,7 @@ export const sameAssistantSource=(a:AssistantSourceScope|undefined,b:AssistantSo
 export function assistantVisibleStepStatus(step: AssistantStepView): AssistantStepStatus {
   if (step.result && step.result.status !== "completed") return step.result.status;
   if (step.result?.delivery?.unknown) return "unknown";
-  if (step.result?.code === "timeline_pending" || step.result?.delivery?.queued) return "queued";
+  if (step.result?.code === "timeline_pending" || isAssistantDriveFolderPending(step.result) || step.result?.delivery?.queued) return "queued";
   return step.status;
 }
 /** Navigation belongs to the direct command reply, never history or recovery reads. */

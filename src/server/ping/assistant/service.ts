@@ -2,17 +2,21 @@ import { ASSISTANT_VERSION, parseAssistantPlan, parseAssistantRequest, type Assi
 import { assistantPayloadHash, assistantDeliverySummary, AssistantStoreError, type AssistantDeliveryPort, type AssistantStore, type AssistantTransaction } from "./store";
 import type { AssistantSource, AssistantVisibleCitation, AssistantUndoResult } from '@/lib/ping/assistant/release2';
 import { loadAssistantMemory, editAssistantPlan } from './conversation-memory';
+import { isAssistantDriveFolderPending } from '@/lib/ping/assistant/drive-folder';
+import type { BoundAssistantTaskTarget } from './plan-targets';
 
 export type AssistantPlanner = {
   plan(input: { runId: string; requestId: string; text: string; context: AssistantPlannerContext; mode?:"execute"|"draft" }, signal?: AbortSignal): Promise<{ plan: AssistantPlan; model?: string; usage?: { estimatedMicroUsd: number } | null }>;
 };
-export type AssistantBoundTaskTargets=Readonly<Record<string,Readonly<{projectId:string;taskIds:readonly string[];taskHashes:Readonly<Record<string,string>>;priorActionIds:readonly string[];checklistItemId?:string;hasOpenChecklist?:boolean;projectState?:Readonly<{revision:number;archivedAt:string|null}>}>>>;
+export type AssistantBoundTaskTargets=Readonly<Record<string,BoundAssistantTaskTarget>>;
 export type AssistantExecuteInput = {
   actorId: string; runId: string; step: AssistantAction; stepId: string; fence: number;
   commitStep: (stepId: string, fence: number, callback: (tx: AssistantTransaction) => Promise<AssistantActionResult>) => Promise<AssistantActionResult>;
   results: Record<string, AssistantActionResult>; currentProjectId?: string; selectedTaskIds?: readonly string[]; referenceDate: string; timeZone?:string; directMessagesEnabled?:boolean; authorizationProjects?:readonly string[]; authorizationSources?:readonly AssistantSource[]; boundTaskTargets?:AssistantBoundTaskTargets; actionOrder?:readonly string[];
   delivery?:AssistantDeliveryPort;
   settleTimelineResult?:AssistantStore['settleTimelineResult'];
+  settleDriveFolderResult?:AssistantStore['settleDriveFolderResult'];
+  driveFolderRecoveryOnly?:boolean;
 };
 /** A task changed by an earlier committed step is no longer compared with its pre-plan revision.
  * Its Project permission and the step's own domain guards still apply. Chat sources never get this exemption.
@@ -84,6 +88,9 @@ export function createAssistantService(deps: {
     const rows = await store.getSteps(actorId, runId);
     for (const row of rows) {
       if (row.status === "completed") {
+        if (row.resultJson && isAssistantDriveFolderPending(JSON.parse(row.resultJson))) {
+          await store.finishRun(actorId,runId,'partial',{message:'The original folder request needs a status check. It has not been repeated.'});return view(actorId,runId);
+        }
         const delivery=row.deliveryJson?assistantDeliverySummary(JSON.parse(row.deliveryJson)):(row.resultJson?JSON.parse(row.resultJson).delivery:null);
         if(delivery){if(delivery.queued||delivery.unknown){
           await store.finishRun(actorId,runId,'partial',{message:delivery.unknown?'Local changes are saved. Some delivery outcomes are unconfirmed; messages have not been repeated.':'Local changes are saved. Message delivery is still queued or in progress.'});return view(actorId,runId);
@@ -104,7 +111,13 @@ export function createAssistantService(deps: {
       try {
         const result = await deps.execute({actorId,runId,step,stepId:row.id,fence,commitStep:store.commitStep,
           results:{...(bound.priorTaskResult?{__previous:bound.priorTaskResult}:{}),...await store.getStepResults<AssistantActionResult>(actorId,runId)},referenceDate:bound.referenceDate,timeZone:bound.timeZone??'UTC',authorizationProjects:bound.authorizationProjects,authorizationSources:bound.authorizationSources,boundTaskTargets:bound.boundTaskTargets,actionOrder:bound.plan.actions.map(action=>action.id),
-          ...(request.scope.kind === "project" ? {currentProjectId:request.scope.projectId} : {}),selectedTaskIds:request.selectedTaskIds,delivery:store,settleTimelineResult:store.settleTimelineResult});
+          ...(request.scope.kind === "project" ? {currentProjectId:request.scope.projectId} : {}),selectedTaskIds:request.selectedTaskIds,delivery:store,settleTimelineResult:store.settleTimelineResult,settleDriveFolderResult:store.settleDriveFolderResult});
+        if(isAssistantDriveFolderPending(result)){
+          const saved=(await store.getSteps(actorId,runId)).find(value=>value.id===row.id);
+          const settled=saved?.resultJson?JSON.parse(saved.resultJson) as AssistantActionResult:null;
+          if(settled?.code==='drive_folder_ready'&&settled.status==='completed')continue;
+          await store.finishRun(actorId,runId,'partial',{message:settled?.summary??result.summary});return view(actorId,runId);
+        }
         if (result.status !== "completed") {
           await store.finishRun(actorId,runId,result.status === "unknown" ? "unknown" : "partial",{message:result.summary});return view(actorId,runId);
         }
@@ -119,7 +132,7 @@ export function createAssistantService(deps: {
         if(saved?.status==='completed'&&saved.resultJson){
           const original=JSON.parse(saved.resultJson) as AssistantActionResult;
           const delivery=saved.deliveryJson?assistantDeliverySummary(JSON.parse(saved.deliveryJson)):original.delivery;
-          if(original.code==='timeline_pending'||delivery&&(delivery.queued||delivery.unknown)){
+          if(original.code==='timeline_pending'||isAssistantDriveFolderPending(original)||delivery&&(delivery.queued||delivery.unknown)){
             await store.finishRun(actorId,runId,'partial',{message:'Local changes are saved. A follow-up result or delivery still needs recovery.'});return view(actorId,runId);
           }
           // A committed original receipt resolves a lost adapter response. Never invoke again.
@@ -219,17 +232,26 @@ export function createAssistantService(deps: {
     },
     async resume(actorId:string,runId:string){
       const run=await store.expirePlanning(actorId,runId);
-      if(run.requestJson&&run.planJson&&run.cancelledAt===null){
+      if(run.requestJson&&run.planJson){
         if((await view(actorId,runId)).accessUnavailable)throw new AssistantStoreError('unavailable');
         const request=parseAssistantRequest(JSON.parse(run.requestJson)),bound=JSON.parse(run.planJson) as {plan?:AssistantPlan;referenceDate:string;timeZone?:string;authorizationProjects?:readonly string[];authorizationSources?:readonly AssistantSource[];boundTaskTargets?:AssistantBoundTaskTargets;priorTaskResult?:AssistantActionResult};
         for(const row of await store.getSteps(actorId,runId)){
           const prior=row.resultJson?JSON.parse(row.resultJson) as AssistantActionResult:null;
-          if(!request||prior?.code!=='timeline_pending'||!['preview_timeline','read_timeline'].includes(prior.kind)||row.status!=='completed')continue;
-          const result=await deps.execute({actorId,runId,step:JSON.parse(row.payloadJson),stepId:row.id,fence:row.fence,commitStep:store.commitStep,
+          if(!prior&&JSON.parse(row.payloadJson).kind==='create_drive_subfolder'&&run.cancelledAt===null&&run.executionAuthorizedAt!==null){
+            await store.recoverUncommittedDriveFolderStep(actorId,runId,row.id);continue;
+          }
+          const folderPending=isAssistantDriveFolderPending(prior);
+          if(!request||row.status!=='completed'||(!folderPending&&(run.cancelledAt!==null||prior?.code!=='timeline_pending'||!['preview_timeline','read_timeline'].includes(prior.kind))))continue;
+          if(folderPending&&run.executionAuthorizedAt===null)continue;
+          let result=await deps.execute({actorId,runId,step:JSON.parse(row.payloadJson),stepId:row.id,fence:row.fence,commitStep:store.commitStep,
             results:{...(bound.priorTaskResult?{__previous:bound.priorTaskResult}:{}),...await store.getStepResults<AssistantActionResult>(actorId,runId)},referenceDate:bound.referenceDate,timeZone:bound.timeZone??'UTC',authorizationProjects:bound.authorizationProjects,authorizationSources:bound.authorizationSources,boundTaskTargets:bound.boundTaskTargets,actionOrder:bound.plan?.outcome==='plan'?bound.plan.actions.map(action=>action.id):[],delivery:store,settleTimelineResult:store.settleTimelineResult,
-            ...(request.scope.kind==='project'?{currentProjectId:request.scope.projectId}:{}),selectedTaskIds:request.selectedTaskIds});
+            ...(request.scope.kind==='project'?{currentProjectId:request.scope.projectId}:{}),selectedTaskIds:request.selectedTaskIds,settleDriveFolderResult:store.settleDriveFolderResult,driveFolderRecoveryOnly:run.cancelledAt!==null});
+          if(folderPending&&isAssistantDriveFolderPending(result)){
+            const saved=(await store.getSteps(actorId,runId)).find(value=>value.id===row.id);if(saved?.resultJson)result=JSON.parse(saved.resultJson) as AssistantActionResult;
+          }
+          if(isAssistantDriveFolderPending(result)||result.status!=='completed')return view(actorId,runId);
           if(result.status!=='completed')return view(actorId,runId);
-          await store.finishRun(actorId,runId,'ready',{message:'Timeline is ready.'});
+          await store.finishRun(actorId,runId,'ready',{message:folderPending?'The original folder request is complete.':'Timeline is ready.'});
         }
       }
       return executeRun(actorId,runId);

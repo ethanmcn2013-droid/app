@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import * as schema from "@/server/db/schema";
 import { isDemoMode } from "@/lib/access-mode";
 import { assistantTarget, assistantTargetAdmits, createAssistantAuthentication } from "./controls";
@@ -12,7 +12,7 @@ import { createAssistantService,assistantUnchangedSources } from "./service";
 import type { AssistantSource } from '@/lib/ping/assistant/release2';
 import { createPingAssistantPlanner } from "./claude-planner";
 import { pingAssistantApiKey } from "./provider-key";
-import { assertAssistantActor, authorizeAssistantProject, getAssistantContext,resolveAssistantProjectName,AssistantActionRefusal } from "./context";
+import { assertAssistantActor, authorizeAssistantProject, getAssistantContext,resolveAssistantProjectName,AssistantActionRefusal,type AssistantActionTransaction } from "./context";
 import { assistantConversationAdapter } from './conversation-transaction';
 import { createAssistantConversationContext } from './conversation-context';
 import { executeAssistantUndo } from './undo';
@@ -26,6 +26,8 @@ import { guardAssistantCommitStep } from "./runtime-admission";
 import { resolveConversationControls } from '@/lib/conversations/flags';
 import { loadAssistantTaskContext, validateAssistantTaskSources } from './task-context';
 import { bindAssistantPlanTargets } from './plan-targets';
+import { projectDriveSubfolderServiceFromEnv } from '@/server/connections/project-drive-subfolders';
+import type { AssistantExecuteInput } from './service';
 import {validateAssistantTaskPostImages} from './task-snapshot';
 
 type Target = NonNullable<ReturnType<typeof assistantTarget>>;
@@ -50,7 +52,7 @@ function createInstance(target: Target) {
   // credentials requires restart; old result reads remain available meanwhile.
   const planner = key ? createPingAssistantPlanner({ apiKey: key, fetch, budget: store.budget, retainCompletion: completion => after(() => completion) }) : null;
   const dispatcher = createAssistantDispatcher(database);
-  async function validateSources(tx:Parameters<Parameters<typeof transact>[0]>[0],actorId:string,sources:readonly AssistantSource[]){
+  async function validateSources(tx:AssistantActionTransaction,actorId:string,sources:readonly AssistantSource[]){
     const chat=sources.filter(source=>source.kind!=='task'),task=sources.filter(source=>source.kind==='task');
     if(chat.length&&!await createAssistantConversationContext(assistantConversationAdapter(tx),{directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled}).validate(actorId,chat))return false;
     for(const zone of new Set(task.map(source=>source.timeZone??'UTC'))){
@@ -58,6 +60,16 @@ function createInstance(target: Target) {
     }
     return true;
   }
+  const authorizeExecution = async (input: AssistantExecuteInput, tx: AssistantActionTransaction) => {
+    if(!stillCurrent())throw new AssistantActionRefusal('unavailable');
+        const selector='targets' in input.step?input.step.targets:'parent' in input.step?input.step.parent:undefined;
+        if(selector&&selector.kind!=='created'&&'project' in input.step&&input.step.project.kind!=='created'&&!input.boundTaskTargets?.[input.step.id])throw new AssistantActionRefusal('stale');
+        for(const projectId of input.authorizationProjects??[])await authorizeAssistantProject(tx,input.actorId,projectId);
+        const ordered=(input.actionOrder??[]).flatMap(id=>input.results[id]?[input.results[id]]:[]);
+        if(!await validateAssistantTaskPostImages(tx,input.actorId,input.authorizationSources??[],ordered))throw new AssistantActionRefusal('stale');
+        const sources=assistantUnchangedSources(input.authorizationSources??[],Object.values(input.results));
+        if(sources.length&&!await validateSources(tx,input.actorId,sources))throw new AssistantActionRefusal('stale');
+  };
   const service = createAssistantService({ store,requireApproval:true,
     planner: { plan: (input, signal) => {
       if (!planner || !stillCurrent() || pingAssistantApiKey(process.env) !== key) throw new Error("planner_unavailable");
@@ -87,7 +99,7 @@ function createInstance(target: Target) {
       if(context.project&&'archived' in context.project&&context.project.archived){
         if(request.source)throw new AssistantActionRefusal('unavailable');
         return {actorName:actor.name??'You',projectName:context.project.name,
-          projects:context.projects.map(project=>({name:project.name,archived:project.archivedAt!==null})),members:[],
+          projects:context.projects.map(project=>({name:project.name,archived:project.archivedAt!==null,canManageProject:project.role==='owner'})),members:[],
           selectedTaskCount:0,previousTaskCount:0,referenceDate:new Date().toISOString().slice(0,10),timeZone:'UTC',
           sources:[],tasks:[],coverage:'Archived Project management only. Task and chat content has not been read.',needsYouState:'not_checked' as const};
       }
@@ -100,10 +112,13 @@ function createInstance(target: Target) {
         timeZone = period?.timeZone ?? timeZone;
       }
       try { new Intl.DateTimeFormat("en", { timeZone }).format(); } catch { timeZone = "UTC"; }
+      const folderContext=/\b(?:folder|folders|drive|directory)\b/i.test(request.text);
+      const configured=folderContext&&context.projects.length?await tx.select({projectId:schema.workspaceStorage.workspaceId}).from(schema.workspaceStorage).where(and(eq(schema.workspaceStorage.isCurrent,true),inArray(schema.workspaceStorage.workspaceId,context.projects.map(project=>project.id)))):[];
+      const configuredIds=new Set(configured.map(row=>row.projectId));
       const taskContext=await loadAssistantTaskContext(tx,actorId,request,timeZone);
       const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
       const day = (kind: Intl.DateTimeFormatPartTypes) => parts.find(p => p.type === kind)!.value;
-      return { actorName: actor.name ?? "You", projectName: context.project?.name ?? null, projects: context.projects.map(p => ({ name: p.name, archived: p.archivedAt!==null })),
+      return { actorName: actor.name ?? "You", projectName: context.project?.name ?? null, projects: context.projects.map(p => ({ name: p.name, archived: p.archivedAt!==null,canManageProject:p.role==='owner',...(folderContext?{driveFolder:configuredIds.has(p.id)?'configured' as const:'unavailable' as const}:{}) })),
         members: taskContext.members, selectedTaskCount: request.selectedTaskIds?.length ?? 0,
         previousTaskCount: 0, referenceDate: `${day("year")}-${day("month")}-${day("day")}`, timeZone,
         sources:[...conversations.sources,...taskContext.sources],coverage:`${taskContext.coverage} ${conversations.coverage}`.slice(0,1000),
@@ -126,13 +141,22 @@ function createInstance(target: Target) {
         if(!('project' in step)||step.project.kind==='created')continue;
         if(step.project.kind==='current'){
           if(request.scope.kind!=='project')throw new Error('assistant_project_unavailable');
-          await authorizeAssistantProject(tx,actorId,request.scope.projectId,step.kind==='archive_project'?'manageProject':'open');ids.add(request.scope.projectId);
+          await authorizeAssistantProject(tx,actorId,request.scope.projectId,['archive_project','create_drive_subfolder'].includes(step.kind)?'manageProject':'open');ids.add(request.scope.projectId);
         }else ids.add((await resolveAssistantProjectName(tx,actorId,step.project.name,step.kind==='archive_project'?'manageProject':'open')).id);
       }
       return [...ids];
     }),
-    bindTargets:(actorId,request,plan,priorTaskResult)=>transact(tx=>bindAssistantPlanTargets(tx,{actorId,plan,
-      currentProjectId:request.scope.kind==='project'?request.scope.projectId:undefined,selectedTaskIds:request.selectedTaskIds,priorTaskResult})),
+    bindTargets:async(actorId,request,plan,priorTaskResult)=>{
+      const bound=await transact(tx=>bindAssistantPlanTargets(tx,{actorId,plan,currentProjectId:request.scope.kind==='project'?request.scope.projectId:undefined,selectedTaskIds:request.selectedTaskIds,priorTaskResult}));
+      const result={...bound};
+      for(const step of plan.actions){
+        if(step.kind!=='create_drive_subfolder')continue;
+        const target=result[step.id];if(!target)throw new AssistantActionRefusal('stale');
+        const driveFolder=await projectDriveSubfolderServiceFromEnv().bind({projectId:target.projectId,actorUserId:actorId,folderName:step.folderName});
+        result[step.id]={...target,driveFolder};
+      }
+      return result;
+    },
     authorizeView: (actorId, run,authorizationProjects=[]) => transact(async tx => {
       try {
         await assertAssistantActor(tx, actorId);
@@ -148,14 +172,21 @@ function createInstance(target: Target) {
     }),
     execute: input => pingTelemetrySpan("execute", () => executeAssistantAction({ ...input,directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled,
       commitStep:guardAssistantCommitStep(input.commitStep,stillCurrent,async tx=>{
-        const selector='targets' in input.step?input.step.targets:'parent' in input.step?input.step.parent:undefined;
-        if(selector&&selector.kind!=='created'&&'project' in input.step&&input.step.project.kind!=='created'&&!input.boundTaskTargets?.[input.step.id])throw new AssistantActionRefusal('stale');
-        for(const projectId of input.authorizationProjects??[])await authorizeAssistantProject(tx,input.actorId,projectId);
-        const ordered=(input.actionOrder??[]).flatMap(id=>input.results[id]?[input.results[id]]:[]);
-        if(!await validateAssistantTaskPostImages(tx,input.actorId,input.authorizationSources??[],ordered))throw new AssistantActionRefusal('stale');
-        const sources=assistantUnchangedSources(input.authorizationSources??[],Object.values(input.results));
-        if(sources.length&&!await validateSources(tx,input.actorId,sources))throw new AssistantActionRefusal('stale');
+        await authorizeExecution(input,tx);
       }), dispatch: dispatcher, deliveryTransaction: transact,
+      driveFolders: projectDriveSubfolderServiceFromEnv(),
+      guardDriveFolderAttempt: async transaction => {
+        const guard = async (tx: AssistantActionTransaction) => {
+          await authorizeExecution(input,tx);
+          const [run]=await tx.select().from(schema.assistantRuns).where(eq(schema.assistantRuns.id,input.runId)).limit(1);
+          if(!run||run.actorId!==input.actorId||run.cancelledAt!==null||run.executionAuthorizedAt===null)throw new AssistantActionRefusal('unavailable');
+          const binding=input.boundTaskTargets?.[input.step.id];
+          if(!binding?.projectState)throw new AssistantActionRefusal('stale');
+          const project=await authorizeAssistantProject(tx,input.actorId,binding.projectId,'manageProject');
+          if(project.revision!==binding.projectState.revision||project.archivedAt!==null)throw new AssistantActionRefusal('stale');
+        };
+        if(transaction)await guard(transaction);else await transact(guard);
+      },
       prepareTimeline: action => prepareAssistantTimeline(action, (actorId, projectId) => transact(async tx => {
         const actor = await assertAssistantActor(tx, actorId), project = await authorizeAssistantProject(tx, actorId, projectId);
         const owner = await assertAssistantActor(tx, project.ownerUserId!);

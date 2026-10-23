@@ -2,7 +2,10 @@ import { parsePlannerAttemptMetadata, type PlannerAttemptMetadata } from "./plan
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, gte, sql } from "drizzle-orm";
 import type { db } from "@/server/db";
-import { assistantRuns, assistantSteps } from "@/server/db/schema";
+import { assistantRuns, assistantSteps, projectDriveSubfolders } from "@/server/db/schema";
+import { isAssistantDriveFolderHref, isAssistantDriveFolderPending } from "@/lib/ping/assistant/drive-folder";
+import { assistantDriveFolderOperationId } from "./drive-folder";
+import type { ProjectDriveSubfolderResult } from "@/server/connections/project-drive-subfolders";
 import {isAssistantInternalHref,type AssistantActionResult} from "@/lib/ping/assistant/contract";
 
 export type AssistantDatabase = typeof db;
@@ -258,6 +261,42 @@ export function createAssistantStore(database: AssistantDatabase, options: { now
         await tx.update(assistantSteps).set({status:'completed',resultJson:json(recovered),leaseUntil:null,fence:step.fence+1,updatedAt:now()}).where(eq(assistantSteps.id,stepId));
         if(run.cancelledAt===null)await tx.update(assistantRuns).set({status:'ready',updatedAt:now()}).where(eq(assistantRuns.id,runId));
         return recovered;
+      });
+    },
+    async recoverUncommittedDriveFolderStep(actorId:string,runId:string,stepId:string){
+      return transaction(async tx=>{
+        const run=await ownRun(tx,actorId,runId);
+        if(run.executionAuthorizedAt===null||run.cancelledAt!==null)return false;
+        const [step]=await tx.select().from(assistantSteps).where(and(eq(assistantSteps.id,stepId),eq(assistantSteps.runId,runId))).limit(1);
+        if(!step||step.resultJson||JSON.parse(step.payloadJson).kind!=='create_drive_subfolder'||!['running','uncertain'].includes(step.status)||(step.leaseUntil??0)>now())return false;
+        const [domain]=await tx.select({id:projectDriveSubfolders.id}).from(projectDriveSubfolders).where(eq(projectDriveSubfolders.id,assistantDriveFolderOperationId(actorId,runId,stepId)));
+        if(domain)throw new AssistantStoreError('request_conflict');
+        await tx.update(assistantSteps).set({status:'pending',fence:step.fence+1,leaseUntil:null,errorCode:null,updatedAt:now()}).where(eq(assistantSteps.id,stepId));
+        await tx.update(assistantRuns).set({status:'ready',updatedAt:now()}).where(eq(assistantRuns.id,runId));return true;
+      });
+    },
+    async settleDriveFolderResult(actorId:string,runId:string,stepId:string,result:ProjectDriveSubfolderResult):Promise<AssistantActionResult> {
+      return transaction(async tx => {
+        const run = await ownRun(tx,actorId,runId);
+        const [step] = await tx.select().from(assistantSteps).where(and(eq(assistantSteps.id,stepId),eq(assistantSteps.runId,runId))).limit(1);
+        if (!step?.resultJson || step.status !== "completed") throw new AssistantStoreError("unavailable");
+        const prior=JSON.parse(step.resultJson) as AssistantActionResult;
+        if (prior.kind !== "create_drive_subfolder" || prior.stepId !== stepId) throw new AssistantStoreError("request_conflict");
+        if (!isAssistantDriveFolderPending(prior)) return prior;
+        const [domain] = await tx.select().from(projectDriveSubfolders).where(eq(projectDriveSubfolders.id,assistantDriveFolderOperationId(actorId,runId,stepId)));
+        const bound=run.planJson?JSON.parse(run.planJson).boundTaskTargets?.[step.stepKey]:null;
+        if(run.cancelledAt!==null&&(!domain||!domain.createStarted)){
+          if(!bound?.driveFolder||prior.projectId!==bound.projectId||result.operationId!==assistantDriveFolderOperationId(actorId,runId,stepId))throw new AssistantStoreError('request_conflict');
+          const stopped:AssistantActionResult={stepId,kind:'create_drive_subfolder',status:'cancelled',projectId:prior.projectId,affectedCount:0,code:'drive_folder_cancelled',summary:'Stopped before folder creation. Existing folders are unchanged.'};
+          await tx.update(assistantSteps).set({resultJson:json(stopped),updatedAt:now()}).where(eq(assistantSteps.id,stepId));return stopped;
+        }
+        if (!domain || !bound?.driveFolder || domain.actorUserId!==actorId || domain.workspaceId!==prior.projectId || bound.projectId!==prior.projectId || domain.folderName!==bound.driveFolder.folderName || domain.storageGenerationId!==bound.driveFolder.storageGenerationId || domain.connectionId!==bound.driveFolder.connectionId || domain.providerAccountId!==bound.driveFolder.providerAccountId || domain.parentId!==bound.driveFolder.parentId || result.operationId!==domain.id || result.status!==domain.status || result.folderName!==domain.folderName || result.folderUrl!==(domain.status==='complete'?domain.folderUrl:null)) throw new AssistantStoreError("request_conflict");
+        if (domain.status!=="complete"&&domain.status!=="attention") return prior;
+        if (domain.status==='complete'&&(!isAssistantDriveFolderHref(domain.folderUrl)||domain.folderUrl!==`https://drive.google.com/drive/folders/${domain.folderId}`)) throw new AssistantStoreError("request_conflict");
+        const settled:AssistantActionResult={stepId,kind:'create_drive_subfolder',projectId:prior.projectId,status:domain.status==='complete'?'completed':'blocked',affectedCount:domain.status==='complete'?1:0,
+          code:domain.status==='complete'?'drive_folder_ready':'drive_folder_attention',summary:domain.status==='complete'?`Created ${domain.folderName}. It uses existing folder access; there is no Undo.`:'This folder request needs attention. Check the original Project Drive folder before trying again.',...(domain.status==='complete'?{href:domain.folderUrl!}:{})};
+        await tx.update(assistantSteps).set({resultJson:json(settled),updatedAt:now()}).where(eq(assistantSteps.id,stepId));
+        return settled;
       });
     },
     async settleTimelineResult(actorId:string,runId:string,stepId:string,result:AssistantActionResult) {

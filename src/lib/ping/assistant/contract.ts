@@ -35,6 +35,7 @@ export type AssistantAction =
   | ProjectStep & Readonly<{ kind: "create_tasks"; template: AssistantTaskTemplate; tasks?: never }>
   | ProjectStep & Readonly<{ kind: "update_tasks"; targets: AssistantTaskSelector; changes: AssistantTaskFields }>
   | ProjectStep & Readonly<{ kind: "archive_project"; archived: boolean }>
+  | Step & Readonly<{ kind: "create_drive_subfolder"; project: Exclude<AssistantProjectRef, { kind: "created" }>; folderName: string }>
   | ProjectStep & Readonly<{ kind: "archive_tasks"; targets: AssistantTaskSelector; archived: boolean }>
   | ProjectStep & Readonly<{ kind: "add_comment"; targets: AssistantTaskSelector; body: string }>
   | ProjectStep & Readonly<{ kind: "nudge_tasks"; targets: AssistantTaskSelector }>
@@ -50,7 +51,7 @@ export type AssistantPlan = Readonly<{ version: typeof ASSISTANT_VERSION; outcom
   Readonly<{ version: typeof ASSISTANT_VERSION; outcome: 'edit'; edits: readonly AssistantPlanEdit[] }> |
   Readonly<{ version: typeof ASSISTANT_VERSION; outcome: "clarification" | "unsupported"; message: string }>;
 export type AssistantPlannerContext = Readonly<{
-  actorName: string; projectName: string | null; projects: readonly Readonly<{ name: string; archived?: boolean }>[];
+  actorName: string; projectName: string | null; projects: readonly Readonly<{ name: string; archived?: boolean; canManageProject?: boolean; driveFolder?: "configured" | "unavailable" }>[];
   members: readonly Readonly<{ name: string }>[]; selectedTaskCount: number; previousTaskCount: number;
   referenceDate: string; timeZone: string;
   sources?: readonly AssistantSource[]; memory?: readonly AssistantMemoryTurn[];
@@ -120,6 +121,7 @@ export const ASSISTANT_ACTION_SCHEMA: Schema = either(
   action("create_tasks", { project, tasks: array(task, 100, 1) }), action("create_tasks", { project, template }),
   action("update_tasks", { project, targets: selector, changes: object(fields, []) }),
   action("archive_project", { project, archived: { type: "boolean" } }),
+  action("create_drive_subfolder", { project: { anyOf: [object({kind:enumeration("current")}), object({kind:enumeration("name"),name:string()})] }, folderName: string(100) }),
   action("archive_tasks", { project, targets: selector, archived: { type: "boolean" } }),
   action("add_comment", { project, targets: selector, body: string(5000) }),
   action("nudge_tasks", { project, targets: selector }),
@@ -177,6 +179,7 @@ export function parseAssistantPlan(value: unknown): AssistantPlan | null {
     // Lifecycle plans may batch distinct Projects, but never invalidate sibling task/chat steps.
     if (plan.actions.some(item => item.kind === "archive_project") &&
         plan.actions.some(item => item.kind !== "archive_project" || item.project.kind === "created")) return null;
+    if (plan.actions.some(item => item.kind === "create_drive_subfolder" && (item.folderName !== item.folderName.trim() || /[\\/\u0000-\u001f\u007f]/.test(item.folderName) || [".", ".."].includes(item.folderName)))) return null;
     const earlier = new Map<string, AssistantAction>(); let created = 0;
     for (const item of plan.actions) {
       if (earlier.has(item.id)) return null;

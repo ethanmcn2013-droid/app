@@ -107,11 +107,12 @@ export function createProjectDriveSubfolderService(deps: ProjectDriveSubfolderDe
     return deps.database.transaction(async tx => ({ ...await fence(tx, authorization), folderName }), { behavior: "immediate" });
   }
 
-  async function prepare(expected: ProjectDriveSubfolderBinding, operationId: string): Promise<ProjectDriveSubfolderResult> {
+  async function prepare(expected: ProjectDriveSubfolderBinding, operationId: string, assertPreparationAllowed?: (transaction: Transaction) => Promise<void>): Promise<ProjectDriveSubfolderResult> {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId) || name(expected.folderName) !== expected.folderName) throw new ProjectDriveSubfolderConflict();
     const authorization = await proof(expected.projectId, expected.actorUserId);
     return deps.database.transaction(async tx => {
       await fence(tx, authorization, expected);
+      await assertPreparationAllowed?.(tx);
       const [existing] = await tx.select().from(folders).where(eq(folders.id, operationId));
       if (existing) {
         if (!sameBinding(binding(existing), expected)) throw new ProjectDriveSubfolderConflict();
@@ -130,7 +131,7 @@ export function createProjectDriveSubfolderService(deps: ProjectDriveSubfolderDe
     return row ? result(row) : null;
   }
 
-  async function execute(input: { projectId: string; actorUserId: string; operationId: string }): Promise<ProjectDriveSubfolderResult> {
+  async function execute(input: { projectId: string; actorUserId: string; operationId: string; recoveryOnly?: boolean; assertMutationAllowed?: (transaction: Transaction) => Promise<void> }): Promise<ProjectDriveSubfolderResult> {
     const authorization = await proof(input.projectId, input.actorUserId);
     const claim = await deps.database.transaction(async tx => {
       const [row] = await tx.select().from(folders).where(and(eq(folders.id, input.operationId), eq(folders.workspaceId, input.projectId), eq(folders.actorUserId, input.actorUserId)));
@@ -173,13 +174,14 @@ export function createProjectDriveSubfolderService(deps: ProjectDriveSubfolderDe
         if (!received) {
           // A dispatched create can become visible later. Absence from search
           // is never permission to issue another create after timeout/crash.
-          if (row.createStarted) throw new Error("unknown-provider-result");
+          if (row.createStarted || input.recoveryOnly) throw new Error("unknown-provider-result");
           await fresh();
           const sameName = await measured("name_search", fetchImpl => findGoogleDriveChildFoldersByName(session.accessToken, { parentId: row.parentId, name: row.folderName }, fetchImpl));
           if (sameName.files.length || sameName.nextPageToken) throw new ProjectDriveSubfolderConflict();
           const current = await proof(input.projectId, input.actorUserId);
           await deps.database.transaction(async tx => {
             await fence(tx, current, binding(row));
+            await input.assertMutationAllowed?.(tx);
             const changed = await tx.update(folders).set({ createStarted: true }).where(and(eq(folders.id, row.id), eq(folders.attemptId, row.attemptId!), eq(folders.status, "running"), gt(folders.leaseUntil, now()))).returning({ id: folders.id });
             if (!changed.length) throw new ProjectDriveSubfolderConflict();
           }, { behavior: "immediate" });
@@ -207,7 +209,18 @@ export function createProjectDriveSubfolderService(deps: ProjectDriveSubfolderDe
       return result(saved);
     }
   }
-  return { bind, prepare, execute, read };
+  async function retireUnattempted(input: { projectId: string; actorUserId: string; operationId: string }): Promise<boolean> {
+    const authorization=await proof(input.projectId,input.actorUserId);
+    return deps.database.transaction(async tx=>{
+      const [row]=await tx.select().from(folders).where(and(eq(folders.id,input.operationId),eq(folders.workspaceId,input.projectId),eq(folders.actorUserId,input.actorUserId)));
+      await fence(tx,authorization,row?binding(row):undefined);
+      if(!row)return true;
+      if(row.createStarted||row.folderId!==null)return false;
+      const retired=await tx.delete(folders).where(and(eq(folders.id,row.id),eq(folders.createStarted,false))).returning({id:folders.id});
+      return retired.length===1;
+    },{behavior:'immediate'});
+  }
+  return { bind, prepare, execute, read, retireUnattempted };
 }
 
 export function projectDriveSubfolderServiceFromEnv() {
