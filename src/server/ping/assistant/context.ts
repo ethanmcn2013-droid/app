@@ -94,12 +94,24 @@ export async function getAssistantContext(tx: AssistantActionTransaction, actorI
     .from(workspaceMembers).innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
     .where(eq(workspaceMembers.userId, actorId)).orderBy(asc(workspaces.id)).limit(201);
   if (projects.length > 200) throw new AssistantActionRefusal("unsupported");
-  if (!projectId) return { projects, project: null, members: [], tasks: [] };
+  async function visibleProjects(){
+    const visible:typeof projects=[];
+    for(const project of projects){
+      if(project.archivedAt===null){visible.push(project);continue;}
+      try{await authorizeAssistantProject(tx,actorId,project.id,'manageProject');visible.push(project);}catch{}
+    }
+    return visible;
+  }
+  if (!projectId) return { projects: await visibleProjects(), project: null, members: [], tasks: [] };
   const project = await authorizeAssistantProject(tx, actorId, projectId);
+  if(project.archivedAt!==null){
+    await authorizeAssistantProject(tx,actorId,projectId,'manageProject');
+    return {projects:await visibleProjects(),project:{id:project.id,name:project.name,archived:true},members:[],tasks:[]};
+  }
   const members = await assistantMemberRoster(tx, actorId, projectId);
   const catalog = await assistantTaskCatalog(tx, actorId, projectId);
   if (catalog.length > 1000) throw new AssistantActionRefusal("unsupported");
-  return { projects, project: { id: project.id, name: project.name }, members,
+  return { projects: await visibleProjects(), project: { id: project.id, name: project.name }, members,
     tasks: catalog.map(row => ({ id: row.id, title: row.title, status: row.boardColumnKey ?? row.lane,
       milestone: row.isMilestone, seq: row.seq })) };
 }

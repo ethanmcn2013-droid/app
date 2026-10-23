@@ -1,4 +1,5 @@
 import "server-only";
+import { setProjectArchivedInTransaction, ProjectArchiveRefusal } from "./archive-project-core";
 
 /**
  * The consolidated Project lifecycle service — WP6 lane D.
@@ -413,24 +414,14 @@ export async function setProjectArchived(input: {
     "manageProject",
     refusal,
   );
-  const updated = await db.transaction(
-    async (transaction) => {
-      await assertProjectNotDeleting(transaction, grant.projectId);
-      return transaction
-        .update(workspaces)
-        .set({
-          archivedAt: input.archived ? new Date() : null,
-          revision: sql`${workspaces.revision} + 1`,
-          updatedAt: new Date(),
-        })
-        .where(eq(workspaces.id, grant.projectId))
-        .returning({ id: workspaces.id, contextType: workspaces.contextType });
-    },
-    { behavior: "immediate" },
-  );
-  if (!updated[0]) throw new Error(RECEIPT_MISSING);
+  const updated = await db.transaction(transaction => setProjectArchivedInTransaction(transaction, {
+    actorUserId: input.actorUserId, projectId: grant.projectId, archived: input.archived,
+  }), { behavior: "immediate" }).catch(error=>{
+    if(error instanceof ProjectArchiveRefusal)throw new Error(RECEIPT_MISSING);
+    throw error;
+  });
   revalidatePath("/app", "layout");
-  return { id: grant.projectId, contextType: updated[0].contextType };
+  return { id: grant.projectId, contextType: updated.contextType };
 }
 
 /**

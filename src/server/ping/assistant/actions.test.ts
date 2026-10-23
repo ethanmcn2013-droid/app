@@ -460,3 +460,99 @@ test('completing a parent warns about open checklist items without completing or
   assert.equal(child.lane,'todo');assert.equal(child.completed_at,null);assert.deepEqual(JSON.parse(String(child.assignees)),['bob']);
  }finally{f.client.close();}
 });
+
+
+test("Project archive/restore binds a canonical owner target, retains tasks and supports guarded Undo", async()=>{
+  const f=await fixture();
+  try{
+    await f.client.execute("UPDATE workspace_members SET role='owner' WHERE workspace_id='synthetic-ping-project' AND user_id='alice'");
+    await seedProofTask(f.client,'retained-project-task');
+    const step:AssistantAction={id:'archiveProject',kind:'archive_project',project:{kind:'current'},archived:true};
+    const bound=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[step]},currentProjectId:PROOF_PROJECT}));
+    assert.equal((await f.client.execute("SELECT archived_at FROM workspaces WHERE id='synthetic-ping-project'")).rows[0].archived_at,null);
+    const result=await f.run(step,{boundTaskTargets:bound});assert.equal(result.affectedCount,1);
+    assert.equal((await f.client.execute("SELECT COUNT(*) n FROM tasks WHERE id='retained-project-task'")).rows[0].n,1);
+    assert.deepEqual(await f.run(step,{boundTaskTargets:bound}),result);
+    const {executeAssistantUndo}=await import('./undo');
+    await f.database.transaction(tx=>executeAssistantUndo(tx,'alice',result.reversal!));
+    assert.equal((await f.client.execute("SELECT archived_at FROM workspaces WHERE id='synthetic-ping-project'")).rows[0].archived_at,null);
+    await assert.rejects(f.database.transaction(tx=>executeAssistantUndo(tx,'alice',result.reversal!)),{code:'stale'});
+    await f.client.execute("UPDATE workspaces SET archived_at=1234,revision=revision+1 WHERE id='synthetic-ping-project'");
+    const restore:AssistantAction={...step,id:'restoreProject',archived:false};
+    const restoreBinding=await f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[restore]},currentProjectId:PROOF_PROJECT}));
+    const restored=await f.run(restore,{boundTaskTargets:restoreBinding});assert.equal(restored.affectedCount,1);
+    await f.database.transaction(tx=>executeAssistantUndo(tx,'alice',restored.reversal!));
+    assert.equal((await f.client.execute("SELECT archived_at FROM workspaces WHERE id='synthetic-ping-project'")).rows[0].archived_at,1234);
+  }finally{f.client.close();}
+});
+
+test("Project archive refuses member, lost permission, stale revision/state, duplicate names and duplicate targets",async()=>{
+  const f=await fixture();
+  try{
+    const step:AssistantAction={id:'archiveProject',kind:'archive_project',project:{kind:'current'},archived:true};
+    const bind=()=>f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[step]},currentProjectId:PROOF_PROJECT}));
+    await assert.rejects(bind(),{code:'unavailable'});
+    await f.client.execute("UPDATE workspace_members SET role='owner' WHERE workspace_id='synthetic-ping-project' AND user_id='alice'");
+    const binding=await bind();
+    await f.client.execute("UPDATE workspaces SET revision=revision+1 WHERE id='synthetic-ping-project'");
+    await assert.rejects(f.run(step,{boundTaskTargets:binding}),{code:'stale'});
+    const fresh=await bind();
+    await f.client.execute("UPDATE workspaces SET archived_at=2345 WHERE id='synthetic-ping-project'");
+    await assert.rejects(f.run(step,{boundTaskTargets:fresh}),{code:'stale'});
+    const stateBinding=await bind();
+    await f.client.execute("UPDATE workspace_members SET role='member' WHERE workspace_id='synthetic-ping-project' AND user_id='alice'");
+    await assert.rejects(f.run(step,{boundTaskTargets:stateBinding}),{code:'unavailable'});
+    await f.client.execute("UPDATE workspace_members SET role='owner' WHERE workspace_id='synthetic-ping-project' AND user_id='alice'");
+    const byName:AssistantAction={...step,project:{kind:'name',name:PROOF_PROJECT}};
+    await assert.rejects(f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[step,{...byName,id:'again'}]},currentProjectId:PROOF_PROJECT})),{code:'ambiguous'});
+    await f.client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES('duplicate-project','duplicate-project','synthetic-ping-project','owner')");
+    await f.client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES('duplicate-project','alice','owner')");
+    await assert.rejects(f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId:'alice',plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[byName]}})),{code:'ambiguous'});
+    const context=await f.database.transaction(tx=>getAssistantContext(tx,'alice',PROOF_PROJECT));
+    assert.equal(context.tasks.length,0);assert.equal(context.members.length,0);
+    await f.client.execute("UPDATE workspace_members SET role='member' WHERE workspace_id='synthetic-ping-project' AND user_id='alice'");
+    const memberContext=await f.database.transaction(tx=>getAssistantContext(tx,'alice'));
+    assert.ok(!memberContext.projects.some(project=>project.id===PROOF_PROJECT));
+  }finally{f.client.close();}
+});
+
+
+test('Project lifecycle batch stays inert until Apply, survives history/Undo, and does not waive unrelated sources',async()=>{
+  const f=await fixture();
+  try{
+    await f.client.execute("UPDATE workspace_members SET role='owner' WHERE workspace_id='synthetic-ping-project' AND user_id='alice'");
+    await f.client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES('second-project','second-project','Second','owner')");
+    await f.client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES('second-project','alice','owner')");
+    const {createAssistantStore}=await import('./store');
+    const {createAssistantService}=await import('./service');
+    const {executeAssistantUndo}=await import('./undo');
+    const {authorizeAssistantProject}=await import('./context');
+    const source={ref:'task_source_1',kind:'task' as const,projectId:PROOF_PROJECT,scopeId:'one',itemId:'one',revision:1,audienceEpoch:1,body:'Source',authorName:'Signal task record',createdAt:'2026-10-23',href:'/app/tasks'};
+    const actions:AssistantAction[]=[{id:'first',kind:'archive_project',project:{kind:'current'},archived:true},
+      {id:'second',kind:'archive_project',project:{kind:'name',name:'Second'},archived:true}];
+    const store=createAssistantStore(f.database);
+    const service=createAssistantService({store,requireApproval:true,
+      context:async()=>({actorName:'Alice',projectName:'Test',projects:[{name:'Test'}],members:[],selectedTaskCount:0,previousTaskCount:0,referenceDate:'2026-10-23',timeZone:'UTC',sources:[source]}),
+      planner:{plan:async()=>({plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions}})},
+      bindTargets:(actorId,request,plan)=>f.database.transaction(tx=>bindAssistantPlanTargets(tx,{actorId,plan,currentProjectId:request.scope.kind==='project'?request.scope.projectId:undefined})),
+      validateSources:async(_actorId,sources)=>!sources.length||(await f.client.execute("SELECT archived_at FROM workspaces WHERE id='synthetic-ping-project'")).rows[0].archived_at===null,
+      authorizeView:async(actorId,run)=>{try{for(const step of run.steps){if(step.result?.projectId)await f.database.transaction(tx=>authorizeAssistantProject(tx,actorId,step.result!.projectId!,'manageProject'));}return true;}catch{return false;}},
+      execute:input=>executeAssistantAction(input),undo:(tx,actorId,result)=>executeAssistantUndo(tx,actorId,result.reversal!)});
+    const request={requestId:'archive_batch_0001',text:'Archive both projects',scope:{kind:'project' as const,projectId:PROOF_PROJECT},mode:'draft' as const};
+    const ready=await service.submit('alice',request);assert.equal(ready.status,'ready');
+    assert.equal((await f.client.execute("SELECT COUNT(*) n FROM workspaces WHERE archived_at IS NOT NULL")).rows[0].n,0);
+    const applied=await service.apply('alice',ready.id);assert.equal(applied.status,'completed');assert.equal(applied.accessUnavailable,undefined);
+    assert.equal(applied.steps.length,2);assert.ok(applied.steps.every(step=>step.canUndo));
+    assert.doesNotMatch(JSON.stringify(applied),/afterRevision|beforeArchivedAt|projectState/);
+    assert.equal((await service.history('alice')).find(run=>run.id===ready.id)?.steps[0].canUndo,true);
+    await service.undo('alice',ready.id,applied.steps[0].id);
+    const final=await service.view('alice',ready.id);assert.equal(final.steps[0].undoResult?.status,'reverted');
+    assert.equal((await f.client.execute("SELECT archived_at FROM workspaces WHERE id='synthetic-ping-project'")).rows[0].archived_at,null);
+    assert.notEqual((await f.client.execute("SELECT archived_at FROM workspaces WHERE id='second-project'")).rows[0].archived_at,null);
+    const {assistantUnchangedSources}=await import('./service');
+    const persisted=Object.values(await store.getStepResults<AssistantActionResult>('alice',ready.id));
+    assert.deepEqual(assistantUnchangedSources([source,{...source,projectId:'unrelated'}],persisted).map(item=>item.projectId),['unrelated']);
+    await f.client.execute("UPDATE workspace_members SET role='member' WHERE workspace_id='second-project' AND user_id='alice'");
+    assert.equal((await service.view('alice',ready.id)).accessUnavailable,true);
+  }finally{f.client.close();}
+});

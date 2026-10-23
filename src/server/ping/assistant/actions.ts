@@ -7,6 +7,7 @@ import type {BoundAssistantTaskTarget} from './plan-targets';
 import {taskSnapshot,taskSnapshotHash} from './task-snapshot';
 import {assistantPayloadHash} from './store';
 import { isAssistantInternalHref, resolveAssistantDate } from "@/lib/ping/assistant/contract";
+import { setProjectArchivedInTransaction, ProjectArchiveRefusal } from "@/server/projects/archive-project-core";
 import { activities, pendingInvites, tasks, workspaceEvents } from "@/server/db/schema";
 import { prepareCanonicalTaskCreate } from "@/server/tasks/create-task-core";
 import { insertOwnedProjectInTransaction, nextOwnedProjectPositionInTransaction } from "@/server/projects/create-project-core";
@@ -162,6 +163,20 @@ export async function executeAssistantAction(input: AssistantActionInput): Promi
         description: step.description });
       return { ...base, summary: `Created ${name}.`, affectedCount: 1, projectId: id, createdProjectId: id, createdProjectName: name,
         href: `/app/tasks?workspaceId=${encodeURIComponent(id)}` };
+    }
+    if(step.kind==='archive_project'){
+      const binding=input.boundTaskTargets?.[step.id];
+      if(!binding?.projectState)throw new AssistantActionRefusal('stale');
+      const before=await authorizeAssistantProject(tx,input.actorId,binding.projectId,'manageProject');
+      if(before.revision!==binding.projectState.revision||(before.archivedAt?.toISOString()??null)!==binding.projectState.archivedAt)
+        throw new AssistantActionRefusal('stale');
+      const after=await setProjectArchivedInTransaction(tx,{actorUserId:input.actorId,projectId:before.id,archived:step.archived,
+        expectedRevision:before.revision,expectedArchivedAt:before.archivedAt,now}).catch(error=>{if(error instanceof ProjectArchiveRefusal)throw new AssistantActionRefusal(error.code);throw error;});
+      const changed=after.revision!==before.revision;
+      return {...base,projectId:before.id,affectedCount:changed?1:0,
+        summary:`${step.archived?'Archived':'Restored'} ${before.name}. Tasks, members and history are retained. Existing published Timeline links are unchanged.`,
+        ...(changed?{reversal:{kind:'project_archive' as const,projectId:before.id,beforeArchivedAt:before.archivedAt?.toISOString()??null,
+          afterArchivedAt:after.archivedAt?.toISOString()??null,afterRevision:after.revision}}:{})};
     }
     const writing = ["create_tasks", "update_tasks", "archive_tasks", "add_comment", "nudge_tasks", "invite_members", "send_message"].includes(step.kind);
     const project = await projectFor(tx, input, step.project, writing);

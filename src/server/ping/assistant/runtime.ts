@@ -84,6 +84,13 @@ function createInstance(target: Target) {
     context: (actorId, request) => transact(async tx => {
       const actor = await assertAssistantActor(tx, actorId);
       const context = await getAssistantContext(tx, actorId, request.scope.kind === "project" ? request.scope.projectId : null);
+      if(context.project&&'archived' in context.project&&context.project.archived){
+        if(request.source)throw new AssistantActionRefusal('unavailable');
+        return {actorName:actor.name??'You',projectName:context.project.name,
+          projects:context.projects.map(project=>({name:project.name,archived:project.archivedAt!==null})),members:[],
+          selectedTaskCount:0,previousTaskCount:0,referenceDate:new Date().toISOString().slice(0,10),timeZone:'UTC',
+          sources:[],tasks:[],coverage:'Archived Project management only. Task and chat content has not been read.',needsYouState:'not_checked' as const};
+      }
       const conversations=await createAssistantConversationContext(assistantConversationAdapter(tx),{directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled}).load(actorId,request);
       const [preferences] = await tx.select({ timeZone: schema.userPreferences.timeZone }).from(schema.userPreferences).where(eq(schema.userPreferences.userId, actorId)).limit(1);
       let timeZone = preferences?.timeZone ?? "UTC";
@@ -96,7 +103,7 @@ function createInstance(target: Target) {
       const taskContext=await loadAssistantTaskContext(tx,actorId,request,timeZone);
       const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
       const day = (kind: Intl.DateTimeFormatPartTypes) => parts.find(p => p.type === kind)!.value;
-      return { actorName: actor.name ?? "You", projectName: context.project?.name ?? null, projects: context.projects.map(p => ({ name: p.name })),
+      return { actorName: actor.name ?? "You", projectName: context.project?.name ?? null, projects: context.projects.map(p => ({ name: p.name, archived: p.archivedAt!==null })),
         members: taskContext.members, selectedTaskCount: request.selectedTaskIds?.length ?? 0,
         previousTaskCount: 0, referenceDate: `${day("year")}-${day("month")}-${day("day")}`, timeZone,
         sources:[...conversations.sources,...taskContext.sources],coverage:`${taskContext.coverage} ${conversations.coverage}`.slice(0,1000),
@@ -119,8 +126,8 @@ function createInstance(target: Target) {
         if(!('project' in step)||step.project.kind==='created')continue;
         if(step.project.kind==='current'){
           if(request.scope.kind!=='project')throw new Error('assistant_project_unavailable');
-          await authorizeAssistantProject(tx,actorId,request.scope.projectId);ids.add(request.scope.projectId);
-        }else ids.add((await resolveAssistantProjectName(tx,actorId,step.project.name)).id);
+          await authorizeAssistantProject(tx,actorId,request.scope.projectId,step.kind==='archive_project'?'manageProject':'open');ids.add(request.scope.projectId);
+        }else ids.add((await resolveAssistantProjectName(tx,actorId,step.project.name,step.kind==='archive_project'?'manageProject':'open')).id);
       }
       return [...ids];
     }),
@@ -132,7 +139,10 @@ function createInstance(target: Target) {
         const projects = new Set([...authorizationProjects,...run.steps.flatMap(s => s.result?.projectId ? [s.result.projectId] : [])]);
         if (run.scope.kind === "project") projects.add(run.scope.projectId);
         for(const {plan} of run.steps)if(plan&&'project' in plan&&plan.project.kind==='name')projects.add((await resolveAssistantProjectName(tx,actorId,plan.project.name)).id);
-        for (const projectId of projects) await authorizeAssistantProject(tx, actorId, projectId);
+        for (const projectId of projects) {
+          const lifecycle=run.steps.some(step=>step.kind==='archive_project'&&step.result?.projectId===projectId);
+          await authorizeAssistantProject(tx,actorId,projectId,lifecycle?'manageProject':'open');
+        }
         return true;
       } catch { return false; }
     }),

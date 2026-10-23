@@ -8,7 +8,7 @@ import {taskSnapshotHash} from './task-snapshot';
 import {AssistantActionRefusal,assistantTaskCatalog,assistantTasksByIds,authorizeAssistantProject,resolveAssistantProjectName,type AssistantActionTransaction} from './context';
 
 /** Canonical targets selected while the plan is bound. IDs never get re-resolved from mutable titles during apply. */
-export type BoundAssistantTaskTarget=Readonly<{projectId:string;taskIds:readonly string[];taskHashes:Readonly<Record<string,string>>;priorActionIds:readonly string[];checklistItemId?:string;hasOpenChecklist?:boolean}>;
+export type BoundAssistantTaskTarget=Readonly<{projectId:string;taskIds:readonly string[];taskHashes:Readonly<Record<string,string>>;priorActionIds:readonly string[];checklistItemId?:string;hasOpenChecklist?:boolean;projectState?:Readonly<{revision:number;archivedAt:string|null}>}>;
 export type AssistantPlanTargetBindingInput=Readonly<{
   actorId:string;plan:AssistantPlan;currentProjectId?:string|null;selectedTaskIds?:readonly string[];
   priorTaskResult?:AssistantActionResult;
@@ -64,9 +64,22 @@ export async function bindAssistantPlanTargets(tx:AssistantActionTransaction,inp
   if(input.plan.outcome!=='plan')return{};
   const bound:Record<string,BoundAssistantTaskTarget>={};
   const priorActionIds:string[]=[];
+  const lifecycleProjects=new Set<string>();
   for(const action of input.plan.actions){
     const earlier=[...priorActionIds];priorActionIds.push(action.id);
     if(!('project'in action))continue;
+    if(action.kind==='archive_project'){
+      if(action.project.kind==='created')throw new AssistantActionRefusal('unsupported');
+      const project=action.project.kind==='name'
+        ?await resolveAssistantProjectName(tx,input.actorId,action.project.name,'manageProject')
+        :input.currentProjectId?await authorizeAssistantProject(tx,input.actorId,input.currentProjectId,'manageProject'):null;
+      if(!project)throw new AssistantActionRefusal('unavailable');
+      if(lifecycleProjects.has(project.id))throw new AssistantActionRefusal('ambiguous');
+      lifecycleProjects.add(project.id);
+      bound[action.id]={projectId:project.id,taskIds:[],taskHashes:{},priorActionIds:[],
+        projectState:{revision:project.revision,archivedAt:project.archivedAt?.toISOString()??null}};
+      continue;
+    }
     const selector=action.kind==='set_checklist_item'||action.kind==='create_checklist_items'?action.parent:
       'targets'in action?action.targets:null;
     if(!selector)continue;

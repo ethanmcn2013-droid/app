@@ -6,7 +6,7 @@ import { loadAssistantMemory, editAssistantPlan } from './conversation-memory';
 export type AssistantPlanner = {
   plan(input: { runId: string; requestId: string; text: string; context: AssistantPlannerContext; mode?:"execute"|"draft" }, signal?: AbortSignal): Promise<{ plan: AssistantPlan; model?: string; usage?: { estimatedMicroUsd: number } | null }>;
 };
-export type AssistantBoundTaskTargets=Readonly<Record<string,Readonly<{projectId:string;taskIds:readonly string[];taskHashes:Readonly<Record<string,string>>;priorActionIds:readonly string[];checklistItemId?:string;hasOpenChecklist?:boolean}>>>;
+export type AssistantBoundTaskTargets=Readonly<Record<string,Readonly<{projectId:string;taskIds:readonly string[];taskHashes:Readonly<Record<string,string>>;priorActionIds:readonly string[];checklistItemId?:string;hasOpenChecklist?:boolean;projectState?:Readonly<{revision:number;archivedAt:string|null}>}>>>;
 export type AssistantExecuteInput = {
   actorId: string; runId: string; step: AssistantAction; stepId: string; fence: number;
   commitStep: (stepId: string, fence: number, callback: (tx: AssistantTransaction) => Promise<AssistantActionResult>) => Promise<AssistantActionResult>;
@@ -19,7 +19,8 @@ export type AssistantExecuteInput = {
  */
 export function assistantUnchangedSources(sources:readonly AssistantSource[],results:readonly AssistantActionResult[],forDisplay=false){
   const changed=new Set(results.filter(result=>result.status==='completed'&&(forDisplay||result.undoResult?.status!=='reverted')&&result.reversal?.kind==='tasks').flatMap(result=>result.reversal?.kind==='tasks'?result.reversal.rows.map(row=>row.id):[]));
-  return sources.filter(source=>source.kind!=='task'||!changed.has(source.itemId));
+  const lifecycleProjects=new Set(results.filter(result=>result.kind==='archive_project'&&result.status==='completed'&&result.reversal?.kind==='project_archive').map(result=>result.projectId));
+  return sources.filter(source=>!lifecycleProjects.has(source.projectId)&&(source.kind!=='task'||!changed.has(source.itemId)));
 }
 export function createAssistantService(deps: {
   store: AssistantStore; planner: AssistantPlanner;
@@ -59,7 +60,7 @@ export function createAssistantService(deps: {
           const delivery=assistantDeliverySummary(JSON.parse(row.deliveryJson));
           return {...safe,delivery:{...delivery,suppressed:delivery.suppressed+(original.delivery?.suppressed??0)}};
         })() : null,
-        ...(row.resultJson?(()=>{const result=JSON.parse(row.resultJson) as AssistantActionResult;const reversal=result.reversal;return {canUndo:!!reversal&&(reversal.kind==='tasks'?reversal.rows.length>0:reversal.items.length>0)&&result.status==='completed'&&result.undoResult?.status!=='reverted',...(result.undoResult?{undoResult:result.undoResult}:{})};})():{}) })),
+        ...(row.resultJson?(()=>{const result=JSON.parse(row.resultJson) as AssistantActionResult;const reversal=result.reversal;return {canUndo:!!reversal&&(reversal.kind==='tasks'?reversal.rows.length>0:reversal.kind==='project_archive'?true:reversal.items.length>0)&&result.status==='completed'&&result.undoResult?.status!=='reverted',...(result.undoResult?{undoResult:result.undoResult}:{})};})():{}) })),
       createdAt: new Date(run.createdAt).toISOString(), updatedAt: new Date(run.updatedAt).toISOString() };
     const authorizationProjects=metadata.authorizationProjects??(run.planJson?JSON.parse(run.planJson).authorizationProjects:undefined);
     const planSources:AssistantSource[]=metadata.planSources??(run.planJson?JSON.parse(run.planJson).authorizationSources:undefined)??[];

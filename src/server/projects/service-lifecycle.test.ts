@@ -590,6 +590,16 @@ describe("reorderProject", () => {
 // ── setProjectArchived ──────────────────────────────────────────────────────
 
 describe("setProjectArchived", () => {
+  it("retains owner/member/task state and leaves published output untouched",async()=>{
+    await seedFixture(full.client);
+    const before=await full.client.execute("SELECT user_id,role FROM workspace_members WHERE workspace_id='"+WS+"'");
+    await service.setProjectArchived({actorUserId:CO_OWNER,projectId:WS,archived:true,refusal:REFUSAL});
+    const after=await full.client.execute("SELECT user_id,role FROM workspace_members WHERE workspace_id='"+WS+"'");
+    assert.deepEqual(after.rows,before.rows);
+    assert.deepEqual(driveExecutions,[]);
+    assert.ok(!revalidated.includes('/p/'+SLUG));
+  });
+
   it("archives, and restore stays reachable on the archived Project", async () => {
     await seedFixture(full.client);
     await service.setProjectArchived({

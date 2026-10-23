@@ -1,4 +1,5 @@
 import "server-only";
+import { setProjectArchivedInTransaction, ProjectArchiveRefusal } from "@/server/projects/archive-project-core";
 import { createHash } from "node:crypto";
 import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import { AssistantActionRefusal, assertAssistantActor, authorizeAssistantProject, type AssistantActionTransaction } from "./context";
@@ -145,10 +146,20 @@ async function undoMessages(tx: AssistantActionTransaction, actorId: string, rev
 export async function executeAssistantUndo(tx: AssistantActionTransaction, actorId: string, reversal: AssistantReversal,options:{directMessagesEnabled?:boolean}={}): Promise<AssistantUndoResult> {
   try {
     await assertAssistantActor(tx, actorId);
+    if(reversal.kind==='project_archive'){
+      await authorizeAssistantProject(tx,actorId,reversal.projectId,'manageProject');
+      if(!Number.isSafeInteger(reversal.afterRevision)||reversal.afterRevision<1)throw new AssistantUndoConflict('unsupported');
+      const before=reversal.beforeArchivedAt===null?null:dateValue(reversal.beforeArchivedAt);
+      const after=reversal.afterArchivedAt===null?null:dateValue(reversal.afterArchivedAt);
+      await setProjectArchivedInTransaction(tx,{actorUserId:actorId,projectId:reversal.projectId,archived:before!==null,
+        expectedRevision:reversal.afterRevision,expectedArchivedAt:after,restoreArchivedAt:before});
+      return {status:'reverted',summary:'Undid the Project archive or restore.',affectedCount:1};
+    }
     const affectedCount = reversal.kind === "tasks" ? await undoTasks(tx, actorId, reversal) : await undoMessages(tx, actorId, reversal,options.directMessagesEnabled);
     return { status: "reverted", summary: reversal.kind === "tasks" ? `Undid ${affectedCount} task change${affectedCount === 1 ? "" : "s"}.` : `Took back ${affectedCount} message${affectedCount === 1 ? "" : "s"}.`, affectedCount };
   } catch (error) {
     // Throwing is required so the caller's transaction rolls back any earlier reversal in this batch.
+    if (error instanceof ProjectArchiveRefusal) throw new AssistantUndoConflict(error.code);
     if (error instanceof AssistantUndoConflict) throw error;
     if (error instanceof AssistantActionRefusal) throw new AssistantUndoConflict(error.code === "stale" ? "stale" : "unavailable");
     throw error;
