@@ -51,6 +51,9 @@ test("canonical App suite discovers every shared attachment test and required br
   assert.match(quality, /run: pnpm test:conversation-attachments:browser/);
   assert.match(quality, /experience\/output\/conversation-attachments/);
   const candidate = readFileSync(new URL(".github/workflows/experience-candidate-capture.yml", root), "utf8");
+  const candidateJobCondition = candidate.split("\n").find(line => line.trimStart().startsWith("if: contains(fromJSON("));
+  assert.ok(candidateJobCondition?.includes('"feat/conversation-files-runtime-release-oct23"'));
+  assert.ok(candidateJobCondition.includes("github.event.pull_request.head.repo.full_name == github.repository"));
   assert.match(candidate, /run: pnpm test:conversation-attachments:browser/);
   assert.match(candidate, /experience\/output\/conversation-attachments/);
 });
