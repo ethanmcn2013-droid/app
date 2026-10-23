@@ -111,7 +111,7 @@ export async function prepareNotesBackup(options, spawn = spawnSync) {
   // This path was explicitly named, newly created by this call and checked
   // outside the repository. Recheck its resolved identity before recursive cleanup.
   need(fs.realpathSync(privateDir) === privateDir, 'PRIVATE_PATH_CHANGED');
-  fs.rmSync(privateDir,{ recursive: true, force: false });
+  await fs.promises.rm(privateDir,{ recursive: true, force: false, maxRetries: 10, retryDelay: 100 });
   return receipt;
 }
 

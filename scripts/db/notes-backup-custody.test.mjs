@@ -19,10 +19,10 @@ async function fixture() {
     return await takeBackup(client,{ label:'notes-production',url:'file::memory:' });
   } finally { client.close(); }
 }
-function cleanup(directory) {
+async function cleanup(directory) {
   assert.ok(path.resolve(directory).startsWith(`${path.resolve(os.tmpdir())}${path.sep}`));
   assert.equal(fs.realpathSync(directory),path.resolve(directory));
-  fs.rmSync(directory,{ recursive:true,force:true });
+  await fs.promises.rm(directory,{ recursive:true,force:true,maxRetries:10,retryDelay:100 });
 }
 
 test('Notes binding refuses wrong identity, another module and altered body before local restore', async () => {
@@ -42,7 +42,7 @@ test('complete Notes local restore verifies every table and preserves source bod
   try {
     assert.deepEqual(await verifyNotesRestore(backup,path.join(directory,'restored.db')),{rows:'verified',ddl:'verified',integrity:'ok',foreignKeys:'ok'});
     assert.equal(backup.body,before);
-  } finally { cleanup(directory); }
+  } finally { await cleanup(directory); }
 });
 
 test('offline custody delegates to approved encryption, emits only ciphertext/receipt and verifies recovery', async () => {
@@ -74,7 +74,7 @@ test('offline custody delegates to approved encryption, emits only ciphertext/re
     assert.equal(fs.readFileSync(path.join(directory,'recovery/backup.jsonl'),'utf8'),backup.body);
     await assert.rejects(prepareNotesBackup({...options,ageSha256:'0'.repeat(64)},spawn),/AGE_BINARY_CHECKSUM_MISMATCH/);
     await assert.rejects(recoverNotesBackup({...options,cipher:path.join(options.cipherDir,'backup.age'),cipherSha256:'0'.repeat(64)},spawn),/CIPHER_CHECKSUM_MISMATCH/);
-  } finally { cleanup(directory); }
+  } finally { await cleanup(directory); }
 });
 
 test('CLI refuses live connection arguments without reading credentials or creating output', () => {
