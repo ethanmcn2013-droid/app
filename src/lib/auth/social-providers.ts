@@ -2,6 +2,7 @@ export const SOCIAL_PROVIDER_DEFINITIONS = [
   { id: "oauth_google", label: "Google" },
   { id: "oauth_github", label: "GitHub" },
   { id: "oauth_apple", label: "Apple" },
+  { id: "oauth_facebook", label: "Facebook" },
 ] as const;
 
 export type SocialProviderId =

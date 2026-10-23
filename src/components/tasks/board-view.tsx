@@ -34,8 +34,9 @@ import { useTasksFlight } from "./use-tasks-flight";
 import { useBoardDrag, type DropTarget } from "./use-board-drag";
 import { useCollapsedLanes, useDoneMode, useTaskNumbers } from "./display-prefs";
 import { AddColumnButton, ColumnMenu } from "./column-menu";
+import { useColumnActions } from "./column-config";
 import { boardOrder } from "./view-order";
-import { STUCK_AFTER_DAYS, dayWords } from "./tasks-pulse";
+import { STUCK_AFTER_DAYS, dayWords, donePercent } from "./tasks-pulse";
 import { setVisibleTaskOrder } from "./sheet-bridge";
 import { TIcon } from "./icons";
 import styles from "./board.module.css";
@@ -100,6 +101,9 @@ export function BoardView({ onCompose }: { onCompose: (columnKey: string, anchor
   const [composing, setComposing] = useState<string | null>(null);
   const [expandedDone, setExpandedDone] = useState(false);
   const [lifted, setLifted] = useState<string | null>(null);
+  const columnActions = useColumnActions();
+  const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
+  const [columnTarget, setColumnTarget] = useState<string | null>(null);
   const dropFrom = useRef<DOMRect | null>(null);
 
   const columns = surface.columns;
@@ -349,6 +353,23 @@ export function BoardView({ onCompose }: { onCompose: (columnKey: string, anchor
   const personalization = usePersonalization();
   const blank = surface.all.length === 0;
   const filteredEmpty = !blank && surface.filtering && surface.visible.length === 0;
+  const percent = donePercent(surface.pulse);
+  const columnDropProps = (key: string) => ({
+    "data-column-target": columnTarget === key ? "" : undefined,
+    onDragOver: (event: React.DragEvent<HTMLElement>) => {
+      if (!draggedColumn || surface.readOnly || !surface.canManage || columnActions.pending) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      setColumnTarget(key);
+    },
+    onDrop: (event: React.DragEvent<HTMLElement>) => {
+      if (!draggedColumn || surface.readOnly || !surface.canManage || columnActions.pending) return;
+      event.preventDefault();
+      columnActions.reorder(draggedColumn, key);
+      setDraggedColumn(null);
+      setColumnTarget(null);
+    },
+  });
 
   return (
     <div
@@ -361,6 +382,13 @@ export function BoardView({ onCompose }: { onCompose: (columnKey: string, anchor
       onKeyDown={onKeyDown}
       style={{ "--lanes": columns.length } as CSSProperties}
     >
+      <div className={styles.projectProgress}>
+        <span>{surface.pulse.done} of {surface.pulse.total} done</span>
+        <div className={styles.progressTrack} role="progressbar" aria-label="Project completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-valuetext={`${percent}% complete, ${surface.pulse.done} of ${surface.pulse.total} tasks done`}>
+          <span style={{ width: `${percent}%` }} />
+        </div>
+        <strong>{percent}%</strong>
+      </div>
       {blank ? <FirstRunGuide onAdd={(title) => surface.addInline(columns[0]?.key ?? "todo", title)} personalization={personalization} /> : null}
       {filteredEmpty ? <FilteredEmpty /> : null}
       <PhonePager
@@ -405,6 +433,7 @@ export function BoardView({ onCompose }: { onCompose: (columnKey: string, anchor
                 className={styles.collapsed}
                 data-lane={column.key}
                 data-collapsed=""
+                {...columnDropProps(column.key)}
                 aria-label={`${column.name}, ${rows.length} ${rows.length === 1 ? "task" : "tasks"}, folded`}
               >
                 <button
@@ -437,10 +466,24 @@ export function BoardView({ onCompose }: { onCompose: (columnKey: string, anchor
               data-compact-done={compactDone ? "" : undefined}
               data-over={over ? "" : undefined}
               data-empty={rows.length === 0 && composing !== column.key ? "" : undefined}
+              {...columnDropProps(column.key)}
               aria-labelledby={`lane-${column.key}`}
             >
               <header className={styles.laneHead}>
                 <div className={styles.laneTop}>
+                  {!surface.readOnly && surface.canManage ? (
+                    <button type="button" className={styles.columnGrip} draggable={!columnActions.pending}
+                      disabled={columnActions.pending} aria-label={`Drag ${column.name} column to reorder; use its menu to move with the keyboard`}
+                      title="Drag to reorder. Column menu also has Move left and Move right."
+                      onDragStart={(event) => {
+                        event.dataTransfer.setData("text/plain", column.key);
+                        event.dataTransfer.effectAllowed = "move";
+                        setDraggedColumn(column.key);
+                      }}
+                      onDragEnd={() => { setDraggedColumn(null); setColumnTarget(null); }}>
+                      <svg width="10" height="16" viewBox="0 0 10 16" aria-hidden="true"><path d="M3 4h.01M7 4h.01M3 8h.01M7 8h.01M3 12h.01M7 12h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                    </button>
+                  ) : null}
                   <StatusGlyph column={column} size={15} />
                   <h2 className={styles.laneName} id={`lane-${column.key}`}>{column.name}</h2>
                   <span className={styles.laneCount} data-over={over ? "" : undefined} title={over ? `Over the limit of ${column.limit}` : undefined}>
