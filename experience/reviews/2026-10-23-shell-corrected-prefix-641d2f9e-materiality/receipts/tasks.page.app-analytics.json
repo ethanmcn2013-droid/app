@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-analytics",
+  "source": "tasks/src/app/app/analytics/page.tsx",
+  "materialityHash": "d89f2a4abd38ee57",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_review_sol independent Sol6.1 rendered reviewer; no founder attribution",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-1165ea0b0709c8efa0a670ff-39741545d09e7fdb.json",
+    "attestationSha256": "64e286a7ad3e9a176fcd521a6305ad3f4aa729e83a396d328b171ed6c3b23d97",
+    "runId": "tasks-playwright-1165ea0b0709c8efa0a670ff",
+    "canonicalEvidenceSha256": "1165ea0b0709c8efa0a670ffbe195c9b3e2a59cb87368b45d3ba8ed4ada60fd4",
+    "rawArtifactSha256": "39741545d09e7fdb8730450a5fccd7eadfce5ea670656d4f608269291523d010",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-analytics",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Corrected Shell641 capture40015635344 passed188/188 canonical outcomes. Independent reviewer verified exact source, four contracts, raw canonical digest and all72 mapped PNGs against original attachments.70 images were independently verified identical to retained previously reviewed bytes; both new images were visually inspected. No new blocking layout finding within supplied synthetic initial states. Home/Inbox originals were also verified identical. Sidebar, motion, toast interactions, invite, provider and live behavior remain outside this materiality acceptance; inherited Tasks loading width, Files demo, Welcome fallback and upload-affordance limits remain. No score or coverage advance.",
+  "decision": "accepted for supplied synthetic initial-state materiality only; interaction and live/provider limits retained"
+}
