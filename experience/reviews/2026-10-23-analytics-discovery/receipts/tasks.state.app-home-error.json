@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-home-error",
+  "source": "tasks/src/app/app/home/error.tsx",
+  "materialityHash": "f0e4960b366e6091",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_timeline_files independent rendered reviewer; Codex root changed-Analytics inspector (not founder attribution)",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-dcef557c8d93d63e02cf6964-a9f71f3e2b501a0a.json",
+    "attestationSha256": "eecfdaad14125e3d1c598e2f1e58d850699edc0bd64a9a531481df65d397c41b",
+    "runId": "tasks-playwright-dcef557c8d93d63e02cf6964",
+    "canonicalEvidenceSha256": "dcef557c8d93d63e02cf696435fb56d71dcc5a8c6823b7529a36e5b22d587b05",
+    "rawArtifactSha256": "a9f71f3e2b501a0ac349e2b8e8777ff6c524ed486af8f4b7f0c143cafafff4a7",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-home-error",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Independent product_timeline_files review of all 72 actual PNGs (18 own targets x four breakpoints), receipt analytics-7c75fded-independent-rendered-review.json; root separately inspected changed Analytics at all four breakpoints. Analytics discovery changes only; other target source unchanged. Inherited Tasks loading mobile full-page width is disclosed, not a zero-overflow claim. Files demo is old gated view, welcome is unavailable-project fallback, Drive upload proves affordance only, and Analytics initial view does not prove opened-answer interaction. Synthetic preview capture; no production, provider or numerical design rating claim.",
+  "decision": "accepted for current synthetic captured states; inherited limits retained"
+}
