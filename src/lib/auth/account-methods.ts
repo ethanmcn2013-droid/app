@@ -4,7 +4,7 @@ type ExternalAccount = Readonly<{
   provider: string;
   emailAddress?: string | null;
   username?: string | null;
-  verification?: { status: string } | null;
+  verification?: { status: string | null } | null;
 }>;
 
 /** Linked identities remain visible when offering new connections is disabled. */
@@ -40,7 +40,7 @@ export function primaryAccountPhone(user: Readonly<{
   phoneNumbers?: readonly Readonly<{
     id: string;
     phoneNumber: string;
-    verification?: { status: string } | null;
+    verification?: { status: string | null } | null;
   }>[];
 }>): AccountPhone | null {
   const phone = user.phoneNumbers?.find((item) => item.id === user.primaryPhoneNumberId);
