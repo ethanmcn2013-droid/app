@@ -166,7 +166,7 @@ try {
       await page.getByRole("heading", { name: "Projects", level: 1 }).waitFor();
 
       // Tabs carry the fixture's counts and show exactly that many rows.
-      for (const [name, count] of [["All", 10], ["Needs a look", 3], ["Led by you", 3], ["Wrapped", 2]]) {
+      for (const [name, count] of [["All", 10], ["Led by you", 3], ["Wrapped", 2]]) {
         await tab(page, name).click();
         assert.equal(await tab(page, name).getAttribute("aria-selected"), "true", `${label}: ${name} is chosen`);
         assert.equal((await tab(page, name).innerText()).replace(/\s+/g, " ").trim(), `${name} ${count}`);
@@ -181,19 +181,23 @@ try {
       // The order: needs a look first, then on track, paused, no status.
       assert.deepEqual(await rowIds(page), ["p-winter", "p-mara", "p-barn", "p-keane", "p-garden", "p-newyear", "p-harvest", "p-kitchen", "p-website", "p-shared"]);
       assert.deepEqual(await page.locator("[role=tabpanel] h2").allInnerTexts().then((list) => list.map((text) => text.replace(/\s+/g, " ").trim())), [
-        "Needs a look 3",
+        "Active 3",
         "On track 4",
         "Paused 1",
-        "No status yet 2",
+        "Task progress 2",
       ]);
 
-      // Four figures, each from the fixture.
-      const figures = await page.locator("[data-count='4'] > *").allInnerTexts();
-      assert.equal(figures.length, 4);
-      assert.match(figures[0].replace(/\s+/g, " "), /Needs a look .*3 projects at risk or past their date .*Winter season launch first/);
-      assert.match(figures[1].replace(/\s+/g, " "), /Next big date .*0 days to go, it is today .*Menu tasting · Mon 5 Oct · 23 of 44 done/);
-      assert.match(figures[2].replace(/\s+/g, " "), /Late across your projects .*10 tasks past their date .*Oldest: Agree the winter price list · 7 days/);
-      assert.match(figures[3].replace(/\s+/g, " "), /This week .*32 tasks done in the last 7 days .*42 the week before · most in Mara & Finn’s wedding \(15\)/);
+      // One weekly figure; risk and overdue facts stay attached to their Project.
+      const figures = await page.locator("[data-count='1'] > *").allInnerTexts();
+      assert.equal(figures.length, 1);
+      assert.match(figures[0].replace(/\s+/g, " "), /This week .*32 tasks done in the last 7 days .*42 the week before · most in Mara & Finn’s wedding \(15\)/);
+      assert.equal(await tab(page, "Needs a look").count(), 0);
+      assert.equal(await page.getByText("No status yet", { exact: true }).count(), 0);
+      for (const row of await rows(page).all()) assert.equal(await row.getByRole("img").count(), 1, `${label}: one Done bar per Project`);
+      assert.match(await page.locator('[data-row="p-winter"]').innerText(), /Past its date/);
+      assert.match(await page.locator('[data-row="p-mara"]').innerText(), /At risk/);
+      assert.match(await page.locator('[data-row="p-mara"]').innerText(), /Aoife Brennan/);
+      assert.match(await page.locator('[data-row="p-website"]').innerText(), /Ready for tasks/);
 
       // Plain words only, and figures that line up.
       const words = await page.locator("#root").innerText();
@@ -243,7 +247,7 @@ try {
     // Tabs: one stop, arrows move and choose.
     await tab(page, "All").focus();
     await page.keyboard.press("ArrowRight");
-    assert.equal(await focused(), "attention");
+    assert.equal(await focused(), "mine");
     assert.equal(await rows(page).count(), 3);
     await page.keyboard.press("End");
     assert.equal(await focused(), "wrapped");
@@ -264,7 +268,9 @@ try {
     await page.keyboard.press("Home");
     assert.equal(await focused(), "p-winter");
     await shot(page, "keyboard-row-focus-desk-dark");
-    // Only the current row is a tab stop, so Tab reaches its own actions next.
+    // The current row reaches its timeline preview, then its Open and More actions.
+    await page.keyboard.press("Tab");
+    assert.equal(await page.evaluate(() => document.activeElement?.textContent), "See timeline");
     await page.keyboard.press("Tab");
     assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Open Winter season launch");
     await page.keyboard.press("Tab");
@@ -286,7 +292,7 @@ try {
     await peek.waitFor();
     assert.equal(await page.evaluate(() => window.consoleProbe.selected.length), 1, "the peek does not switch");
     assert.equal(await peek.getByText("3 of 10", { exact: true }).count(), 1);
-    for (const label of ["Status", "Lead", "Target date", "Next big date", "Open tasks", "Late"]) {
+    for (const label of ["Status", "Lead", "Target date", "Timeline", "Open tasks", "Late"]) {
       assert.equal(await peek.locator("dt", { hasText: label }).count(), 1, `peek field ${label}`);
     }
     assert.ok(await peek.getByRole("heading", { name: "What it is for" }).count());
@@ -332,10 +338,7 @@ try {
     assert.equal(await page.getByRole("menuitem", { name: /Nudge/ }).count(), 0);
     await page.keyboard.press("Escape");
 
-    // "Needs a look" on the first figure is a way to that tab.
-    await page.getByRole("link", { name: /Needs a look/ }).click();
-    assert.equal(await tab(page, "Needs a look").getAttribute("aria-selected"), "true");
-    await tab(page, "All").click();
+    assert.equal(await page.getByRole("link", { name: /Needs a look/ }).count(), 0);
 
     // Search narrows the rows; a miss says so and offers the way back.
     const search = page.getByRole("searchbox", { name: "Find a project" });
@@ -388,7 +391,7 @@ try {
       await table.waitFor();
       assert.equal(await table.locator("[data-list-row]").count(), 10, `${label}: a line per project`);
       const groupLabels = await table.getByRole("rowgroup").evaluateAll((groups) => groups.map((group) => group.getAttribute("aria-label") ?? ""));
-      assert.equal(groupLabels[0], "Needs a look, 3", `${label}: the first group is what needs a look`);
+      assert.equal(groupLabels[0], "Active, 3", `${label}: the first group preserves risk and overdue Projects`);
       assert.equal(groupLabels.reduce((sum, text) => sum + Number(text.split(", ").at(-1)), 0), 10, `${label}: the groups hold every project once`);
       assert.match((await table.locator("p").last().innerText()).replace(/\s+/g, " "), /^10 projects · \d+ open tasks/);
       assert.doesNotMatch(await table.innerText(), BANNED, `${label}: words`);
@@ -426,13 +429,12 @@ try {
   for (const [viewport, theme] of [["desk", "dark"], ["desk", "light"], ["phone", "dark"], ["phone", "light"]]) {
     {
       const { page, context, errors, label } = await open(browser, { viewport, theme, state: "calm" });
-      await tab(page, "Needs a look").click();
-      await page.getByText("Nothing needs a look.").waitFor();
-      assert.equal(await rows(page).count(), 0);
-      await axe(page, `${label} empty tab`);
-      await shot(page, `empty-tab-${viewport}-${theme}`);
-      await page.getByRole("button", { name: "See all projects" }).click();
-      assert.equal(await tab(page, "All").getAttribute("aria-selected"), "true");
+      await tab(page, "All").click();
+      assert.equal(await rows(page).count(), 4);
+      assert.equal(await tab(page, "Needs a look").count(), 0);
+      assert.doesNotMatch(await rows(page).allInnerTexts().then(text => text.join(" ")), /At risk|Past its date/);
+      await axe(page, `${label} calm account`);
+      await shot(page, `calm-${viewport}-${theme}`);
       assert.deepEqual(errors, []);
       await context.close();
     }
@@ -440,7 +442,7 @@ try {
       const { page, context, errors, label } = await open(browser, { viewport, theme, state: "partial" });
       await page.locator("[data-row]").first().waitFor();
       // No finished-work read, so no "This week"; the rest still stands.
-      assert.equal(await page.locator("[data-count='3'] > *").count(), 3);
+      assert.equal(await page.locator("[data-count='0'] > *").count(), 0);
       assert.equal(await page.getByText("This week").count(), 0);
       assert.equal(await page.locator("[data-row='p-mara']").getByText("Owner not shown").count(), 1);
       await axe(page, label);
