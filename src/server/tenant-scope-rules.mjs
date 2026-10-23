@@ -175,6 +175,7 @@ export const TENANT_SURFACES = [
       "workspaceStorage",
       "driveFolderGrants",
       "projectDriveOperations",
+      "projectDriveSubfolders",
       // Not workspace-keyed, but user-keyed and tenant-bearing: a
       // planning period groups a person's workspaces.
       "planningPeriods",

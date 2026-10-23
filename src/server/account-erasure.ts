@@ -491,6 +491,9 @@ export async function eraseAccountData(
     connectionIds.length ? inArray(projectDriveSubfolders.connectionId, connectionIds) : undefined,
     accountStorageGenerationIds.length ? inArray(projectDriveSubfolders.storageGenerationId, accountStorageGenerationIds) : undefined,
   )!;
+  // isolation-ok: subfolderScope above restricts this read to the erasing actor,
+  // owned Projects, account connections or account storage generations. The same
+  // predicate also bounds retirement below while the durable account fence is held.
   const unresolvedSubfolders = await database.select({ id: projectDriveSubfolders.id }).from(projectDriveSubfolders).where(and(subfolderScope, eq(projectDriveSubfolders.createStarted, true), isNull(projectDriveSubfolders.folderId)));
   for (const operation of unresolvedSubfolders) {
     if (!options.reconcilePendingDriveSubfolder) throw new Error("account erasure deferred: Drive folder creation remains unresolved; exact custody retained");
