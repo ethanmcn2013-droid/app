@@ -10,6 +10,7 @@ import { claimPrivatePingForwardOnce, privatePingForwardKey, type PrivatePingFor
 import { createBrowserPingTelemetry, pingTelemetryBegin } from "@/lib/ping/telemetry-client";
 import { invalidateTaskSnapshotEpoch } from "@/lib/tasks/task-snapshot-epoch";
 import { ChatHeader, Composer } from "./chat-ui";
+import { assistantDraftNearLimit } from "./chat-composer-model";
 import { PingTile } from "./chat-marks";
 import { refreshAssistantTasks, type AssistantTaskRefreshState, assistantRequest, finishAssistantTiming, assistantNavigationTarget, assistantVisibleStepStatus, assistantCanContinue, assistantCreatedProjects, assistantReentryId, assistantIsWorking, assistantNeedsRecovery, assistantRunLabel, assistantStepLabel, assistantPlanDescription, assistantFollowUpRequest, sameAssistantSource, sameOptionalAssistantSource, sameAssistantScope, assistantWaitingPlanAncestor, parsePendingAssistantRequest, pendingAssistantKey, observeAssistantResultCommit, mergeAssistantRun, type AssistantVisibleTiming, type PendingAssistantRequest } from "./ping-personal-assistant-client";
 import styles from "./ping-personal-assistant.module.css";
@@ -265,7 +266,7 @@ export function PingPersonalAssistant({ actorId, projects, visible, onBack, back
     <div className={styles.compose}>
       {reentering ? <><p className={styles.note}>Re-enter the exact original request and choose its original scope. Ping will use the saved request ID to check for duplicate work.</p>
         <span className={styles.mode}>Every request is a plan first. Nothing changes until you apply it.</span></> : null}
-      <Composer value={draft} onChange={setDraft} onSend={() => void submit()} label="Request for Ping" placeholder="Ask Ping to get something done" people={[]} selfId={actorId} mentionIds={[]} disabled={!ready || !available || !!pending && !reentering || busy} sendDisabled={!draft.trim() || draft.length > ASSISTANT_LIMITS.text} showHint={false} autoFocus={Boolean(source)} count={<span className={styles.note}>{draft.length.toLocaleString()} / {ASSISTANT_LIMITS.text.toLocaleString()}</span>} />
+      <Composer maxLength={ASSISTANT_LIMITS.text} value={draft} onChange={setDraft} onSend={() => void submit()} label="Request for Ping" placeholder="Ask Ping to get something done" people={[]} selfId={actorId} mentionIds={[]} disabled={!ready || !available || !!pending && !reentering || busy} sendDisabled={!draft.trim() || draft.length > ASSISTANT_LIMITS.text} showHint={false} autoFocus={Boolean(source)} count={assistantDraftNearLimit(draft, ASSISTANT_LIMITS.text) ? <span className={styles.note} role="status">{draft.length.toLocaleString()} / {ASSISTANT_LIMITS.text.toLocaleString()}</span> : undefined} />
     </div>
   </section>;
 }

@@ -131,6 +131,17 @@ test("tab-local drafts, files and notifications retain a reachable compact Chat"
   expect(rect.x).toBeGreaterThanOrEqual(0);
   expect(rect.y + rect.height).toBeLessThanOrEqual(page.viewportSize()!.height);
   await expect(panel.getByRole("navigation", { name: "Conversations", exact: true })).toBeVisible();
+  const team = panel.getByRole("button", { name: "Team chat", exact: true });
+  await team.click({ button: "right" });
+  await panel.getByRole("button", { name: "Hide for me", exact: true }).click();
+  await expect(team).toHaveCount(0);
+  await panel.getByRole("button", { name: "Close chat", exact: true }).click();
+  await launcher.click();
+  await expect(team).toHaveCount(0);
+  await expect(panel.getByRole("heading", { name: "Hidden conversations", exact: true })).toBeVisible();
+  await panel.getByRole("button", { name: "Show Team chat", exact: true }).click();
+  await expect(team).toBeVisible();
+  await expect(panel.getByRole("heading", { name: "Hidden conversations", exact: true })).toHaveCount(0);
   await panel.getByRole("button", { name: /Saved notes/ }).click();
   const self = panel.getByRole("region", { name: "Your private conversation" });
   const composer = self.getByRole("textbox", { name: "Message yourself" });
@@ -160,6 +171,24 @@ test("tab-local drafts, files and notifications retain a reachable compact Chat"
   const bytes = (number: number) => Buffer.from(`Synthetic private Chat file ${number}\nExact sample bytes.\n`);
   const sample = (number: number) => ({ name: `small-${number}.txt`, mimeType: "text/plain", buffer: bytes(number) });
   const input = self.locator('input[type="file"]');
+  // Exercise the real clipboard event with a synthetic image; upload remains
+  // in this credential-free preview and does not send a message automatically.
+  await composer.evaluate(element => {
+    const clipboardData = new DataTransfer();
+    clipboardData.items.add(new File([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII="), character => character.charCodeAt(0))], "clipboard.png", { type: "image/png" }));
+    element.dispatchEvent(new ClipboardEvent("paste", { clipboardData, bubbles: true, cancelable: true }));
+  });
+  await expect(self.getByRole("button", { name: "Remove clipboard.png", exact: true })).toBeVisible();
+  await expect(composer).toHaveValue("");
+  await self.getByRole("button", { name: "Remove clipboard.png", exact: true }).click();
+  if (testInfo.project.name === "desktop-light") {
+    await page.evaluate(() => navigator.clipboard.writeText("Ordinary text paste stays text"));
+    await composer.focus();
+    await composer.press("Control+V");
+    await expect(composer).toHaveValue("Ordinary text paste stays text");
+    await composer.fill("");
+  }
+
   const drafts = self.getByRole("list", { name: "Files in your draft" });
   await input.setInputFiles([sample(1), sample(2), sample(3)]);
   await expect(drafts.getByRole("listitem")).toHaveCount(3);
