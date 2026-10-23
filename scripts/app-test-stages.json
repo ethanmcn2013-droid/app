@@ -201,6 +201,7 @@
     "src/lib/projects/project-ref.test.ts",
     "src/lib/projects/project-url.test.ts",
     "src/lib/projects/route-snapshot.test.ts",
+    "src/lib/projects/header-collaboration-scope.test.ts",
     "src/lib/projects/project-switch-redirect.test.ts",
     "src/lib/projects/active-project-machine.test.ts",
     "src/lib/projects/unsaved-work.test.ts",

@@ -48,6 +48,8 @@ import { updateUserPreferencesAction } from "@/server/actions/preferences";
 import { ShellIcon } from "./shell-icons";
 import { crumbsForPath } from "./shell-nav";
 import { AppsLauncher } from "./launcher/apps-launcher";
+import { HeaderCollaborationProvider } from "./header-collaboration-context";
+import { HeaderCollaboration } from "./header-collaboration";
 import styles from "./shell.module.css";
 
 type ShellState = {
@@ -173,6 +175,7 @@ export function AppShell({
 
   return (
     <ShellContext.Provider value={state}>
+      <HeaderCollaborationProvider>
       <div
         className={`${styles.shell} v3-focus`}
         data-shell="v3"
@@ -188,6 +191,7 @@ export function AppShell({
           </div>
         </div>
       </div>
+      </HeaderCollaborationProvider>
     </ShellContext.Provider>
   );
 }
@@ -245,6 +249,7 @@ function Topbar() {
         })}
       </nav>
       <div className={styles.topActions}>
+        <HeaderCollaboration />
         <AppsLauncher />
         <NewMenu />
         <AccountMenu />

@@ -1,5 +1,13 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Project sharing in Files and Analytics
+
+Files and one-Project Analytics show the current Project's members and a Share control. Copy a page link for people who already have Project access, or invite a member when you manage that Project. Portfolio Analytics stays separate.
+
+## 2026-10-23 · App navigation and invitations
+
+Home and Inbox link to each other with tabs. The header is quieter, and switching Projects opens its Tasks board. Invite a Project member from the Tasks header without leaving your work. Toast messages stay near the bottom of the screen, with room beside an open chat.
+
 ## 2026-10-23 · Account sign-in details
 
 Account settings shows an already connected Facebook account and lists a verified phone number separately from an email address. Available connection actions still follow the enabled sign-in providers.
@@ -15,10 +23,6 @@ Projects keeps progress and ownership together in a simpler list. See timeline p
 ## 2026-10-23 · Tasks board controls
 
 Drag task columns to reorder them, and switch between Board, List and Calendar without losing your place. Project progress keeps the whole Project in view while filters are applied. When all saved tasks are done, a restrained completion message offers Archive project; archiving still needs your click. The retired Stuck button is removed.
-
-## 2026-10-23 · App navigation and invitations
-
-Home and Inbox link to each other with tabs. The header is quieter, and switching Projects opens its Tasks board. Invite a Project member from the Tasks header without leaving your work. Toast messages stay near the bottom of the screen, with room beside an open chat.
 
 ## 2026-10-23 · Analytics discovery
 
