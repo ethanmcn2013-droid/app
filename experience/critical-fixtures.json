@@ -3578,7 +3578,7 @@
     "src/server/premium-p1-integrity.test.ts": "8db902379cf288d95b05c56a3684aa3b314220ec3e1e4fd8663923aeb7a81f50",
     "src/server/premium-p1-storage.test.ts": "fb2f0fe1f7dbf98ef52809306a1666d8efa84ff91e3ffc70916c9c28b277e869",
     "src/server/project-drive-csp-contract.test.mjs": "4fab60847d6b65e0d9baf4543b63c057e6a8712380300f82a16c6d8a525a3743",
-    "src/server/project-drive-hard-rules.test.ts": "6d96cec9376e988bd210beb8026b8714eeaec0eb7a8bb0f3c1497d98217dd793",
+    "src/server/project-drive-hard-rules.test.ts": "aee009fc4c61826d0fd7fa3b483f04f6da8a4a7e7701c6ebc76489f012206a02",
     "src/server/project-drive-ui-contract.test.mjs": "1124d37a6a69f96af9e8410b3d6c17d01ae5e72fe8b7fb15dd1ad2bd70838507",
     "src/server/project-recovery-core.ts": "a7962ff9e6176921c36774b4588d973e9cbe9c1dd009a45045e2d3d91cfd3605",
     "src/server/project-recovery.ts": "96747fbf2800842310c643360cfeade729a08805d07c6789fb0e501081f6f126",
