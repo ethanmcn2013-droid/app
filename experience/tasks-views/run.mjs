@@ -37,7 +37,9 @@ const outDir = path.resolve(root, captureArg && !captureArg.startsWith("--") ? c
 
 /** Everything the page reaches for that only exists on a server or in the shell. */
 const stubs = new Map([
-  ["next/navigation", `export const useRouter=()=>({push:u=>window.tasksProbe.pushed.push(u),replace:u=>window.tasksProbe.pushed.push(u),refresh:()=>{}});export const usePathname=()=>"/app/tasks";export const useSearchParams=()=>new URLSearchParams();`],
+  // Local view checks have no signed-in Ping/provider session.
+  ["@clerk/nextjs", `export const useAuth=()=>({isLoaded:true,userId:null,sessionId:null});`],
+  ["next/navigation", `export const useRouter=()=>({push:u=>window.tasksProbe.pushed.push(u),replace:u=>window.tasksProbe.pushed.push(u),refresh:()=>{}});export const usePathname=()=>({board:"/app/tasks",list:"/app/tasks/list",calendar:"/app/tasks/calendar"}[new URLSearchParams(window.location.search).get("view")??"board"]);export const useSearchParams=()=>new URLSearchParams();`],
   ["next/link", `import {createElement} from "react";export default function Link({href,prefetch,scroll,...rest}){return createElement("a",{href,...rest})}`],
   ["next/dynamic", `import {createElement,lazy,Suspense} from "react";export default function dynamic(load,options={}){const View=lazy(()=>load().then(m=>({default:m.default??m})));const Loading=options.loading;return function Dynamic(props){return createElement(Suspense,{fallback:Loading?createElement(Loading):null},createElement(View,props))}}`],
   [
@@ -51,13 +53,17 @@ const personalization={headline:"Start with the first thing that needs doing",bo
 const money={currency:null,budgetCents:null};
 export const useWorkspaceMembers=()=>members;export const useTagDefs=()=>tags;export const useActiveWorkspace=()=>workspace;export const useDomain=()=>domain;export const useColumnConfig=()=>null;export const usePersonalization=()=>personalization;export const useProjectMoney=()=>money;export const useWorkspaceAnchor=()=>({anchor:null});`,
   ],
-  ["@/lib/tasks/tasks-context", `const noop=new Proxy({}, {get:()=>()=>{}});export const useTasksState=()=>({tasks:window.tasksFixture.records});export const useTasksDispatch=()=>noop;export const useTasks=()=>({state:{tasks:window.tasksFixture.records},...noop});`],
+  ["@/lib/tasks/tasks-context", `const authoritative=new Map();const noop=new Proxy({}, {get:()=>()=>{}});export const useAuthoritativeTaskVersions=()=>authoritative;export const useTasksState=()=>({tasks:window.tasksFixture.records});export const useTasksDispatch=()=>noop;export const useTasks=()=>({state:{tasks:window.tasksFixture.records},...noop});`],
   ["@/lib/tasks/use-task-panel", `export const useTaskPanel=()=>({taskId:null,openTask:id=>window.tasksProbe.opened.push(id),closeTask:()=>{}});`],
   ["@/components/app/add-task/add-task-context", `const api={open:false,defaults:{},openDialog:d=>window.tasksProbe.composed.push(d??null),closeDialog:()=>{},setDefaultsProvider:()=>{}};export const useAddTask=()=>api;`],
   ["@/components/app/share/share-button", `import {createElement} from "react";export const ShareButton=()=>createElement("button",{type:"button","data-band-action":"",style:{height:28,padding:"0 8px",fontSize:12,fontWeight:500,color:"var(--v3-text-2)"}},"Share");`],
   ["@/components/primitives/toast", `export const useToast=()=>({toast:(title)=>window.tasksProbe.toasts.push(title)});`],
   ["@/components/app/active-project-provider", `export const useActiveProject=()=>null;`],
   ["@/components/app/done-dopamine/first-completion-moment", `export const maybeFireFirstCompletion=()=>{};`],
+  // The actual header is mounted, but this fixture grants no invitation authority.
+  ["@/server/actions/settings", `export const inviteMemberByEmailAction=async()=>{throw new Error("Invitations are outside this local view fixture")};`],
+  // This fixture proves view/filter behavior, never persisted completion or archive.
+  ["@/server/actions/planning", `export const archiveProjectAction=async()=>{throw new Error("Archive is outside this local view fixture")};`],
   ["@/server/actions/board", `const done=async()=>({ok:true});export const addColumnAction=done,deleteColumnAction=done,renameColumnAction=done,reorderColumnsAction=done,setColumnColorAction=done,setColumnDescriptionAction=done,setColumnDoneAction=done,setColumnLimitAction=done;`],
 ]);
 const plugin = {
@@ -233,17 +239,19 @@ try {
     }
   }
 
-  // 2. Stuck: the control, the sentence, the filter, on the board.
+  // 2. The retained Stuck sentence opens and filters work without the retired header chip.
   {
     const { page, context, errors, label } = await open(browser, { viewport: "desk", theme: "dark", view: "board" });
-    const stuck = page.getByRole("button", { name: /^Stuck/ });
-    equal((await stuck.innerText()).replace(/\s+/g, " ").trim(), "Stuck 3", `${label}: three stuck`);
+    equal(await page.getByRole("button", { name: /^Stuck/ }).count(), 0, `${label}: retired Stuck header chip stays absent`);
+    const stuck = page.getByRole("button", { name: "2 more stuck", exact: true });
+    equal(await stuck.count(), 1, `${label}: retained sentence offers the stuck filter`);
     const sentence = (await page.locator("[data-floor-head] p").nth(1).innerText()).replace(/\s+/g, " ").trim();
     ok(/has not changed in 9 days\. Open it ?· ?2 more stuck$/.test(sentence), `${label}: the sentence reads "${sentence}"`);
     equal(await page.locator("[data-board] [data-stuck]").count(), 3, `${label}: three cards carry how long they have sat`);
     const all = await page.locator("[data-board] [data-id]").count();
     await stuck.click();
-    equal(await stuck.getAttribute("aria-pressed"), "true", `${label}: Stuck is pressed`);
+    const showEverything = page.getByRole("button", { name: "Show everything", exact: true });
+    equal(await showEverything.getAttribute("aria-pressed"), "true", `${label}: sentence filter is pressed`);
     equal(await page.locator("[data-board] [data-id]").count(), 3, `${label}: only stuck work shows`);
     ok(await page.getByRole("button", { name: "Remove filter Stuck" }).count(), `${label}: the filter is named as a chip`);
     await shot(page, "board-stuck-only-desk-dark");
