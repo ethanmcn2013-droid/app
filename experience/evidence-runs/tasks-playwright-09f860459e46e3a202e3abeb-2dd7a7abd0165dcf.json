@@ -1,0 +1,1539 @@
+{
+  "schemaVersion": "signal-playwright-attestation/2",
+  "runId": "tasks-playwright-09f860459e46e3a202e3abeb",
+  "canonicalEvidenceSha256": "09f860459e46e3a202e3abeb8f50c723dea19920d5a5475ab47056407259860e",
+  "rawArtifactSha256": "2dd7a7abd0165dcfd175cefd15a414ee562051fe8cd3ecfcf6a869f5f4c7e780",
+  "artifactPath": "experience/output/critical-evidence.json",
+  "browserContractSha256": "838e98594ed9b15cfa6386e15abea30ac0553727a42e77ade1badc31740870e1",
+  "fixtureManifestSha256": "83d1dcc11c6eae5f8b27a21882839651761391b1745a917b26530b20fe98da64",
+  "playwrightConfigSha256": "2be57e878ddb600689a2c4f29b6e6529d56cdff7a5663492c77d4b9fbe459534",
+  "playwrightSpecSha256": "3fd479c6f663668c65e4f8a840ef6c4bf2a94d3787a82a4893d9d084d34b66a1",
+  "outcomes": [
+    {
+      "title": "tasks.page.app / front door lands on Home",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app / front door lands on Home",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app / front door lands on Home",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app / front door lands on Home",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-analytics / own surface in demo",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-analytics / own surface in demo",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-analytics / own surface in demo",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-analytics / own surface in demo",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-concepts / own surface in demo",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-concepts / own surface in demo",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-concepts / own surface in demo",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-concepts / own surface in demo",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-files / own surface in demo",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-files / own surface in demo",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-files / own surface in demo",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-files / own surface in demo",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-home / home front door",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-home-briefing-by-rest / retired briefing link lands on Home",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-home-briefing-by-rest / retired briefing link lands on Home",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-home-briefing-by-rest / retired briefing link lands on Home",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-home-briefing-by-rest / retired briefing link lands on Home",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-import / empty CSV import start",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-import / empty CSV import start",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-import / empty CSV import start",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-import / empty CSV import start",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-inbox / demo digest with empty direct alerts",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-inbox / demo digest with empty direct alerts",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-inbox / demo digest with empty direct alerts",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-inbox / demo digest with empty direct alerts",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-messages / own surface in demo",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-messages / own surface in demo",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-messages / own surface in demo",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-messages / own surface in demo",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-notes / canonical populated private notebook",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-notes / canonical populated private notebook",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-notes / canonical populated private notebook",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-notes / canonical populated private notebook",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-project / own surface in demo",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-project / own surface in demo",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-project / own surface in demo",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-project / own surface in demo",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-settings / own surface in demo",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-settings / own surface in demo",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-settings / own surface in demo",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-settings / own surface in demo",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-signal-by-rest / retired Signal link lands on Home",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-signal-by-rest / retired Signal link lands on Home",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-signal-by-rest / retired Signal link lands on Home",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-signal-by-rest / retired Signal link lands on Home",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-tasks / canonical populated Tasks workspace",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-tasks / canonical populated Tasks workspace",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-tasks / canonical populated Tasks workspace",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-tasks / canonical populated Tasks workspace",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-timeline / project-first owner artifact",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-timeline / project-first owner artifact",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-timeline / project-first owner artifact",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-timeline / project-first owner artifact",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-timeline-audience-by-publication-id / owner artifact and live phone preview",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-timeline-audience-by-publication-id / owner artifact and live phone preview",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-timeline-audience-by-publication-id / owner artifact and live phone preview",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-timeline-audience-by-publication-id / owner artifact and live phone preview",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-tools-by-slug / wedding hub in demo",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-tools-by-slug / wedding hub in demo",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-tools-by-slug / wedding hub in demo",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.app-tools-by-slug / wedding hub in demo",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.invite-by-token / expired invite",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.invite-by-token / expired invite",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.invite-by-token / expired invite",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.invite-by-token / expired invite",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.invite-by-token / valid invite without mutation",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.invite-by-token / valid invite without mutation",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.invite-by-token / valid invite without mutation",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.invite-by-token / valid invite without mutation",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.p-by-slug / published demo workspace",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.p-by-slug / published demo workspace",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.p-by-slug / published demo workspace",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.p-by-slug / published demo workspace",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / expired code",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / expired code",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / expired code",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / expired code",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / successful wedding entitlement",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / successful wedding entitlement",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / successful wedding entitlement",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / successful wedding entitlement",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / unconfirmed redemption",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / unconfirmed redemption",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / unconfirmed redemption",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.redeem-by-code / unconfirmed redemption",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.root / customer-facing homepage",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.root / customer-facing homepage",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.root / customer-facing homepage",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.root / customer-facing homepage",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.s-by-token / invalid bearer link",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.s-by-token / invalid bearer link",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.s-by-token / invalid bearer link",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.s-by-token / invalid bearer link",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.s-by-token / link-only wedding artifact",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.s-by-token / link-only wedding artifact",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.s-by-token / link-only wedding artifact",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.s-by-token / link-only wedding artifact",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-by-token / read-only shared board",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-by-token / read-only shared board",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-by-token / read-only shared board",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-by-token / read-only shared board",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-target / captured page and link",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-target / captured page and link",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-target / captured page and link",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-target / captured page and link",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-target / empty share payload",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-target / empty share payload",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-target / empty share payload",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.share-target / empty share payload",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.sign-in-by-sign-in / review-mode sign in",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.sign-in-by-sign-in / review-mode sign in",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.sign-in-by-sign-in / review-mode sign in",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.sign-in-by-sign-in / review-mode sign in",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.sign-up-by-sign-up / review-mode sign up",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.sign-up-by-sign-up / review-mode sign up",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.sign-up-by-sign-up / review-mode sign up",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.sign-up-by-sign-up / review-mode sign up",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.welcome / unavailable explicit project recovery",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.welcome / unavailable explicit project recovery",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.welcome / unavailable explicit project recovery",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.page.welcome / unavailable explicit project recovery",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.resources.drive-upload / own surface in demo",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.resources.drive-upload / own surface in demo",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.resources.drive-upload / own surface in demo",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.resources.drive-upload / own surface in demo",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-analytics-error / actual component with deterministic local inputs",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-analytics-error / actual component with deterministic local inputs",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-analytics-error / actual component with deterministic local inputs",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-analytics-error / actual component with deterministic local inputs",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-analytics-loading / actual component with deterministic local inputs",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-analytics-loading / actual component with deterministic local inputs",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-analytics-loading / actual component with deterministic local inputs",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-analytics-loading / actual component with deterministic local inputs",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-files-error / actual component with deterministic local inputs",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-files-error / actual component with deterministic local inputs",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-files-error / actual component with deterministic local inputs",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-files-error / actual component with deterministic local inputs",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-files-loading / actual component with deterministic local inputs",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-files-loading / actual component with deterministic local inputs",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-files-loading / actual component with deterministic local inputs",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-files-loading / actual component with deterministic local inputs",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-home-error / actual component with deterministic local inputs",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-home-error / actual component with deterministic local inputs",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-home-error / actual component with deterministic local inputs",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-home-error / actual component with deterministic local inputs",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-home-loading / actual component with deterministic local inputs",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-home-loading / actual component with deterministic local inputs",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-home-loading / actual component with deterministic local inputs",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-home-loading / actual component with deterministic local inputs",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-project-loading / actual component with deterministic local inputs",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-project-loading / actual component with deterministic local inputs",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-project-loading / actual component with deterministic local inputs",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-project-loading / actual component with deterministic local inputs",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-tasks-loading / actual component with deterministic local inputs",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-tasks-loading / actual component with deterministic local inputs",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-tasks-loading / actual component with deterministic local inputs",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-tasks-loading / actual component with deterministic local inputs",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-tools-loading / actual component with deterministic local inputs",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-tools-loading / actual component with deterministic local inputs",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-tools-loading / actual component with deterministic local inputs",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.app-tools-loading / actual component with deterministic local inputs",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.root-not-found / unknown route",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.root-not-found / unknown route",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.root-not-found / unknown route",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.root-not-found / unknown route",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.share-by-token-not-found / unknown share token",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.share-by-token-not-found / unknown share token",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.share-by-token-not-found / unknown share token",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.state.share-by-token-not-found / unknown share token",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.command-palette / keyboard search",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.command-palette / keyboard search",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.command-palette / keyboard search",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.command-palette / keyboard search",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.quick-create / long natural-language task",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.quick-create / long natural-language task",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.quick-create / long natural-language task",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.quick-create / long natural-language task",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.task-detail-panel / populated task",
+      "project": "desktop",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.task-detail-panel / populated task",
+      "project": "mobile",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.task-detail-panel / populated task",
+      "project": "tablet",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    },
+    {
+      "title": "tasks.surface.task-detail-panel / populated task",
+      "project": "wide",
+      "expectedStatus": "passed",
+      "status": "expected",
+      "finalResultStatus": "passed",
+      "errorCount": 0
+    }
+  ],
+  "projects": [
+    {
+      "name": "mobile",
+      "tests": 47
+    },
+    {
+      "name": "tablet",
+      "tests": 47
+    },
+    {
+      "name": "desktop",
+      "tests": 47
+    },
+    {
+      "name": "wide",
+      "tests": 47
+    }
+  ],
+  "testCount": 188,
+  "passedCount": 188,
+  "unexpectedCount": 0,
+  "startedAt": "2026-10-23T18:40:40.245Z"
+}
