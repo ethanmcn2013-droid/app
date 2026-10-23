@@ -36,7 +36,7 @@ export function parseConsoleView(raw: unknown): ConsoleView {
 
 export type ConsoleFilter = "all" | "attention" | "mine" | "wrapped";
 
-export const CONSOLE_FILTERS: readonly ConsoleFilter[] = ["all", "attention", "mine", "wrapped"];
+export const CONSOLE_FILTERS: readonly ConsoleFilter[] = ["all", "mine", "wrapped"];
 
 export const CONSOLE_FILTER_LABEL: Readonly<Record<ConsoleFilter, string>> = {
   all: "All",
@@ -60,6 +60,9 @@ export function parseConsoleFilter(raw: unknown): ConsoleFilter {
 // ── What the server reads beyond the card stats ────────────────────────────
 
 export type ConsoleFacts = Readonly<{
+  /** Dated Project milestones, oldest first; absent on a failed/older read. */
+  timeline?: readonly Readonly<{ id: string; title: string; date: string; done: boolean }>[];
+  timelineTruncated?: boolean;
   /** The Project's owner. Null when the owner could not be read. */
   lead: Readonly<{ name: string; initials: string }> | null;
   /** Earliest unfinished task marked as a big date. `date` is `YYYY-MM-DD`. */
@@ -100,10 +103,10 @@ export type ConsoleMark = "past_date" | "at_risk" | "on_track" | "paused" | "uns
 export type ConsoleTone = "late" | "risk" | "calm" | "quiet";
 
 export const CONSOLE_GROUPS: ReadonlyArray<Readonly<{ id: ConsoleStanding; label: string }>> = [
-  { id: "attention", label: "Needs a look" },
+  { id: "attention", label: "Active" },
   { id: "on_track", label: "On track" },
   { id: "paused", label: "Paused" },
-  { id: "unset", label: "No status yet" },
+  { id: "unset", label: "Task progress" },
   { id: "wrapped", label: "Wrapped" },
 ];
 
@@ -112,7 +115,7 @@ export const CONSOLE_MARK_LABEL: Readonly<Record<ConsoleMark, string>> = {
   at_risk: "At risk",
   on_track: "On track",
   paused: "Paused",
-  unset: "No status yet",
+  unset: "In progress",
   wrapped: "Wrapped",
 };
 
@@ -129,6 +132,8 @@ export type ConsoleCell = Readonly<{
 }>;
 
 export type ConsoleRow = Readonly<{
+  timeline?: ConsoleFacts["timeline"];
+  timelineTruncated?: boolean;
   id: string;
   name: string;
   standing: ConsoleStanding;
@@ -313,7 +318,7 @@ function buildRow(input: ConsoleProjectInput, today: string): ConsoleRow {
         ? "On track"
         : status === "paused"
           ? "Paused"
-          : "No status yet";
+          : !stats ? "Progress unavailable" : stats.total === 0 ? "Ready for tasks" : stats.complete === stats.total ? "All tasks done" : `${Math.max(0, stats.total - stats.complete)} tasks open`;
   const dateLabel = targetDate ? formatConsoleDate(targetDate, today) : null;
   const ownLine = pastDate
     ? status === "at-risk" || status === "paused"
@@ -408,7 +413,9 @@ function buildRow(input: ConsoleProjectInput, today: string): ConsoleRow {
     name: input.name,
     standing,
     mark,
-    markLabel: CONSOLE_MARK_LABEL[mark],
+    markLabel: mark === "unset" ? statusWord : CONSOLE_MARK_LABEL[mark],
+    timeline: facts?.timeline,
+    timelineTruncated: facts?.timelineTruncated,
     sub,
     ledByYou,
     selectable: input.selectable,
@@ -473,7 +480,6 @@ export function buildConsole(projects: readonly ConsoleProjectInput[], today: st
   const openTotal = active.reduce((sum, row) => sum + row.open, 0);
   const lateTotal = active.reduce((sum, row) => sum + row.late, 0);
   const summary: Array<{ text: string; tone?: "late" | "risk" }> = [{ text: `${active.length} active` }];
-  if (looks.length > 0) summary.push({ text: `${looks.length} ${looks.length === 1 ? "needs" : "need"} a look`, tone: "risk" });
   summary.push({ text: openTotal === 1 ? "1 open task" : `${openTotal} open tasks` });
   if (lateTotal > 0) summary.push({ text: `${lateTotal} late`, tone: "late" });
 

@@ -181,7 +181,14 @@ export async function readConsoleFactsWith(database: Database, input: ConsoleFac
   }
 
   const nextDates = new Map<string, ConsoleFacts["nextDate"]>();
+  const timelines = new Map<string, NonNullable<ConsoleFacts["timeline"]>[number][]>();
+  const timelineOverflow = new Set<string>();
   for (const row of bigDateRows) {
+    if (!row.workspaceId || !row.dueAt) continue;
+    const milestones = timelines.get(row.workspaceId) ?? [];
+    if (milestones.length < 12) milestones.push({ id: row.id, title: row.title, date: ordinalToIsoDate(dayOf(row.dueAt.getTime())), done: !isOpen(row) });
+    else timelineOverflow.add(row.workspaceId);
+    timelines.set(row.workspaceId, milestones);
     if (!isOpen(row) || !row.dueAt || nextDates.has(row.workspaceId!)) continue;
     nextDates.set(row.workspaceId!, { title: row.title, date: ordinalToIsoDate(dayOf(row.dueAt.getTime())) });
   }
@@ -199,6 +206,8 @@ export async function readConsoleFactsWith(database: Database, input: ConsoleFac
   for (const id of ids) {
     byProject[id] = {
       lead: leads.get(id) ?? null,
+      timeline: timelines.get(id) ?? [],
+      timelineTruncated: timelineOverflow.has(id) || bigDateRows.length === TASK_ROW_LIMIT,
       nextDate: nextDates.get(id) ?? null,
       oldestLate: oldestLate.get(id) ?? null,
       nudge: nudges.get(id) ?? null,
@@ -232,6 +241,7 @@ export function demoConsoleFacts(projectId: string): ConsoleHubFacts {
     byProject: {
       [projectId]: {
         lead: { name, initials },
+        timeline: demoTasks().filter((task) => !task.archivedAt && task.isMilestone && task.dueAt).sort((a, b) => a.dueAt!.getTime() - b.dueAt!.getTime()).slice(0, 12).map((task) => ({ id: task.id, title: task.title, date: ordinalToIsoDate(dayOf(task.dueAt!.getTime())), done: isTaskDone(task, null) })),
         nextDate: bigDate ? { title: bigDate.title, date: ordinalToIsoDate(dayOf(bigDate.dueAt!.getTime())) } : null,
         oldestLate: late ? { id: late.id, title: late.title, dueDate: ordinalToIsoDate(dayOf(late.dueAt!.getTime())) } : null,
         // Review never sends anything.

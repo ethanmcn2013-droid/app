@@ -2186,6 +2186,11 @@
   margin-bottom: 26px;
 }
 
+/* Centre discovery without changing an opened answer's layout. */
+.inner:has(.starters) .askBox {
+  margin-inline: auto;
+}
+
 .askField {
   display: flex;
   align-items: center;
@@ -2341,7 +2346,9 @@
 
 .starter {
   display: grid;
+  grid-template-rows: 28px auto 1fr;
   align-content: start;
+  min-width: 0;
   gap: 10px;
   min-height: 148px;
   padding: 16px;
@@ -2385,6 +2392,7 @@
 }
 
 .starterHint {
+  align-self: end;
   font-size: 13px;
   line-height: 1.4;
   color: var(--v3-text-3);
@@ -2560,6 +2568,7 @@
 
   .starter {
     grid-template-columns: 38px minmax(0, 1fr);
+    grid-template-rows: auto auto;
     column-gap: 14px;
     row-gap: 3px;
     min-height: 0;

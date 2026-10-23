@@ -131,6 +131,17 @@ test("tab-local drafts, files and notifications retain a reachable compact Chat"
   expect(rect.x).toBeGreaterThanOrEqual(0);
   expect(rect.y + rect.height).toBeLessThanOrEqual(page.viewportSize()!.height);
   await expect(panel.getByRole("navigation", { name: "Conversations", exact: true })).toBeVisible();
+  const team = panel.getByRole("button", { name: "Team chat", exact: true });
+  await team.click({ button: "right" });
+  await panel.getByRole("button", { name: "Hide for me", exact: true }).click();
+  await expect(team).toHaveCount(0);
+  await panel.getByRole("button", { name: "Close chat", exact: true }).click();
+  await launcher.click();
+  await expect(team).toHaveCount(0);
+  await expect(panel.getByRole("heading", { name: "Hidden conversations", exact: true })).toBeVisible();
+  await panel.getByRole("button", { name: "Show Team chat", exact: true }).click();
+  await expect(team).toBeVisible();
+  await expect(panel.getByRole("heading", { name: "Hidden conversations", exact: true })).toHaveCount(0);
   await panel.getByRole("button", { name: /Saved notes/ }).click();
   const self = panel.getByRole("region", { name: "Your private conversation" });
   const composer = self.getByRole("textbox", { name: "Message yourself" });
@@ -149,7 +160,7 @@ test("tab-local drafts, files and notifications retain a reachable compact Chat"
   for (const path of ["/app/analytics", "/app/tasks", "/app/files"]) {
     await navigate(page, path);
     expect(await page.evaluate(() => window.__personalChatBrowserDocumentId)).toBe(documentId);
-    await expect(page.locator(".signal-toast-viewport")).toHaveCount(1);
+    await expect(page.locator("[data-toast-viewport]")).toHaveCount(1);
     await emit(page, `UI-only bridge ${path}`);
     await expect(toastsOf(page)).toHaveCount(1);
     await dismissAll(page);
@@ -160,6 +171,24 @@ test("tab-local drafts, files and notifications retain a reachable compact Chat"
   const bytes = (number: number) => Buffer.from(`Synthetic private Chat file ${number}\nExact sample bytes.\n`);
   const sample = (number: number) => ({ name: `small-${number}.txt`, mimeType: "text/plain", buffer: bytes(number) });
   const input = self.locator('input[type="file"]');
+  // Exercise the real clipboard event with a synthetic image; upload remains
+  // in this credential-free preview and does not send a message automatically.
+  await composer.evaluate(element => {
+    const clipboardData = new DataTransfer();
+    clipboardData.items.add(new File([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII="), character => character.charCodeAt(0))], "clipboard.png", { type: "image/png" }));
+    element.dispatchEvent(new ClipboardEvent("paste", { clipboardData, bubbles: true, cancelable: true }));
+  });
+  await expect(self.getByRole("button", { name: "Remove clipboard.png", exact: true })).toBeVisible();
+  await expect(composer).toHaveValue("");
+  await self.getByRole("button", { name: "Remove clipboard.png", exact: true }).click();
+  if (testInfo.project.name === "desktop-light") {
+    await page.evaluate(() => navigator.clipboard.writeText("Ordinary text paste stays text"));
+    await composer.focus();
+    await composer.press("Control+V");
+    await expect(composer).toHaveValue("Ordinary text paste stays text");
+    await composer.fill("");
+  }
+
   const drafts = self.getByRole("list", { name: "Files in your draft" });
   await input.setInputFiles([sample(1), sample(2), sample(3)]);
   await expect(drafts.getByRole("listitem")).toHaveCount(3);
@@ -210,7 +239,7 @@ test("tab-local drafts, files and notifications retain a reachable compact Chat"
       await reachable(page, dismiss);
       if (open) await controls(); else await reachable(page, launcher);
     }
-    const axe = new AxeBuilder({ page }).include(".signal-toast-viewport");
+    const axe = new AxeBuilder({ page }).include("[data-toast-viewport]");
     if (open) axe.include('[aria-label="Chat"][role]');
     expect((await axe.analyze()).violations).toEqual([]);
     await testInfo.attach(open ? "chat-and-notifications" : "launcher-and-notifications", { body: await page.screenshot(), contentType: "image/png" });

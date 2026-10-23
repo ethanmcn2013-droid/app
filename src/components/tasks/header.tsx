@@ -4,7 +4,7 @@
  * The Tasks header, the same on the board, the list and the calendar: the
  * title and the project, one summary line counted from the whole project,
  * one sentence about stuck work that ends in the thing to do, then the
- * team, Stuck, Share and the overflow pinned top right.
+ * team, Share and the overflow pinned top right.
  *
  * There is no create button here. A screen has one, the top bar's New, and
  * the C key opens the same composer (add-task-context.tsx). The actions
@@ -17,6 +17,7 @@ import Link from "next/link";
 import { useActiveWorkspace, useColumnConfig, useDomain, useWorkspaceMembers } from "@/lib/domain-context";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useRoomTools, type RoomDueFilter } from "@/components/app/room/room-tools-context";
+import { HeaderInvite } from "./header-invite";
 import { AvatarStack, type PresenceMember } from "@/components/app/presence/avatar-stack";
 import { ShareButton } from "@/components/app/share/share-button";
 import { useToast } from "@/components/primitives/toast";
@@ -28,7 +29,7 @@ import { withActiveProject } from "@/lib/projects/project-url";
 import { floorProjectName } from "@/lib/projects/floor-project-name";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { useSurface } from "./surface";
-import { STUCK_AFTER_DAYS, dayWords, donePercent } from "./tasks-pulse";
+import { dayWords, donePercent } from "./tasks-pulse";
 import { identityHue } from "./identity-hue";
 import { TIcon } from "./icons";
 import { Kbd } from "./atoms";
@@ -72,8 +73,7 @@ export function TasksHeader() {
         ) : null}
       </div>
       <div className={styles.headerActions} data-new-task-anchor="">
-        <TaskCollaborators />
-        <StuckButton />
+        <TaskCollaborators key={project.id} />
         <span className={styles.shareSlot}>
           <ShareButton view={surface.view} variant="band" />
         </span>
@@ -97,14 +97,14 @@ function TaskCollaborators() {
     () => members.map((member) => ({ id: member.id, name: member.name, initials: member.initials })),
     [members],
   );
-  if (people.length === 0) return null;
-  const settingsHref = parseProjectId(workspace?.id)
-    ? withActiveProject("/app/settings", parseProjectId(workspace?.id)!)
-    : "/app/settings";
+  if (people.length === 0 && !surface.canManage) return null;
+  const projectId = parseProjectId(workspace?.id);
   return (
     <>
       <span className={styles.collaborators} ref={wrap}>
-        <AvatarStack
+        {people.length === 0 ? (
+          <button type="button" className={styles.inviteLink} onClick={() => setAnchor((current) => current ? null : wrap.current)} aria-expanded={Boolean(anchor)}>Invite people</button>
+        ) : <AvatarStack
           members={people}
           max={3}
           size="md"
@@ -112,7 +112,7 @@ function TaskCollaborators() {
           label={`Project members: ${people.map((p) => p.name).join(", ")}`}
           pressed={Boolean(anchor)}
           onClick={() => setAnchor((current) => (current ? null : wrap.current))}
-        />
+        />}
       </span>
       <Popover open={Boolean(anchor)} anchor={anchor} onClose={() => setAnchor(null)} label="Project members" width={300} align="end">
         <div className={styles.membersPanel}>
@@ -128,12 +128,7 @@ function TaskCollaborators() {
               </li>
             ))}
           </ul>
-          {surface.canManage ? (
-            <Link href={settingsHref} className={styles.inviteLink} onClick={() => setAnchor(null)}>
-              <span className={styles.inviteIcon} aria-hidden="true"><TIcon.plus size={14} /></span>
-              Invite people
-            </Link>
-          ) : null}
+          {surface.canManage && projectId ? <HeaderInvite key={projectId} projectId={projectId} /> : null}
         </div>
       </Popover>
     </>
@@ -295,25 +290,6 @@ const hourglass = (
     <path d="M4.5 2.5h7M4.5 13.5h7M5.25 2.5c0 3 5.5 3.25 5.5 5.5s-5.5 2.5-5.5 5.5M10.75 2.5c0 3-5.5 3.25-5.5 5.5s5.5 2.5 5.5 5.5" />
   </svg>
 );
-
-function StuckButton() {
-  const surface = useSurface();
-  const count = surface.pulse.stuck.length;
-  if (count === 0) return null;
-  return (
-    <button
-      type="button"
-      className={styles.stuckChip}
-      aria-pressed={surface.stuckOnly}
-      title={surface.stuckOnly ? "Show everything" : `Show only started work that has not changed in ${STUCK_AFTER_DAYS} days or more`}
-      onClick={() => surface.setStuckOnly(!surface.stuckOnly)}
-    >
-      {hourglass}
-      Stuck
-      <span className={styles.stuckCount}>{count}</span>
-    </button>
-  );
-}
 
 /**
  * One sentence about the work that ends in the thing to do: the task that

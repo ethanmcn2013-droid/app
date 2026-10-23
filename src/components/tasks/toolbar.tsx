@@ -9,7 +9,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTasksViewNavigation } from "./view-navigation";
 import { PRIORITY_LABEL, type Priority } from "@/lib/data";
 import { useRoomTools, type RoomDueFilter, type RoomSortMode } from "@/components/app/room/room-tools-context";
 import { useWorkspaceMembers } from "@/lib/domain-context";
@@ -93,7 +93,7 @@ export function TasksToolbar({ searchRef }: { searchRef: React.RefObject<HTMLInp
 
 function ViewSwitch() {
   const surface = useSurface();
-  const router = useRouter();
+  const { navigate } = useTasksViewNavigation();
   const { blocked, href } = useViewHref();
   return (
     <nav className={styles.viewSwitch} aria-label="Task views">
@@ -117,8 +117,9 @@ function ViewSwitch() {
             aria-keyshortcuts={view.key}
             title={`${view.label} (${view.key})`}
             onClick={(event) => {
+              if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
               event.preventDefault();
-              router.push(href(view.id));
+              navigate(href(view.id));
             }}
           >
             <Icon size={14} />

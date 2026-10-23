@@ -157,8 +157,10 @@ test("no place the old group held is lost, and no row is listed twice", () => {
     ["Apps and tools", "/app/tools"],
   ]);
   assert.deepEqual(UTILITY_DESTINATIONS.filter((destination) => destination.requiresMessages).map((destination) => destination.id), ["messages"]);
-  // Where each is reached now: the bell, Search or jump to, the Chat group, the launcher.
-  assert.match(shellSource, /<Link href="\/app\/inbox" className=\{styles\.iconButton\} aria-label="Inbox">/);
+  // Inbox lives beside Home; other utilities remain in search, Chat and the launcher.
+  const homeTabsSource = readFileSync(path.join(process.cwd(), "src/components/app/home/home-tabs.tsx"), "utf8");
+  assert.match(homeTabsSource, /label: "Inbox", href: "\/app\/inbox"/);
+  assert.doesNotMatch(shellSource, /<ShellIcon\.bell|className=\{styles\.topSearch\}/);
   assert.match(paletteSource, /id: "my-tasks"/);
   assert.match(paletteSource, /id: "inbox"/);
   assert.match(sidebarSource, /href: "\/app\/messages"/);
@@ -190,9 +192,9 @@ test("Projects lists the reader's own catalog with a project marker each and a d
   assert.match(sidebarSource, /const mark = marks\[row\.id\];/);
   assert.match(sidebarSource, /const dot = mark \? <span className=\{styles\.statusDot\} data-tone=\{mark\}/);
   // A row is a link to that Project; a plain click uses the guarded switch.
-  assert.match(sidebarSource, /href=\{buildProjectUrl\(\{ surface: "project" \}, row\.id, readableName\)\}/);
+  assert.match(sidebarSource, /href=\{buildProjectUrl\(\{ surface: "tasks", view: "board" \}, row\.id, readableName\)\}/);
   assert.match(sidebarSource, /const readableName = suiteContext\?\.version === 3 && verifiedProjectName && suiteContext\.workspaceId === row\.id/);
-  assert.match(sidebarSource, /activeProject\.selectProject\(row\.project, \{ surface: "project" \}\)/);
+  assert.match(sidebarSource, /activeProject\.selectProject\(row\.project, \{ surface: "tasks", view: "board" \}\)/);
   for (const literal of ["No projects yet", "Start one", "All {rows.length} projects", 'aria-label="Archived projects"', 'aria-label="All projects"']) {
     assert.ok(sidebarSource.includes(literal), literal);
   }

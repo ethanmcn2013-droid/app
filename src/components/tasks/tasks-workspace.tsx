@@ -15,8 +15,6 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
-import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
 import { useLabStore } from "@/components/hybrid/store";
 import { useRoomTools } from "@/components/app/room/room-tools-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
@@ -38,16 +36,16 @@ import { PropertyPicker } from "./property-picker";
 import { DeleteConfirm } from "./delete-confirm";
 import { ShortcutsSheet } from "./shortcuts-sheet";
 import { TasksColumnsProvider } from "./column-config";
+import { TasksViewNavigation, useTasksViewNavigation } from "./view-navigation";
+import { ProjectCompletion } from "./project-completion";
 import { PingTypedPanel } from "./ping-typed-panel";
-import { BoardSkeleton, CalendarSkeleton, ListSkeleton } from "./skeletons";
+import { BoardView } from "./board-view";
+import { ListView } from "./list-view";
+import { CalendarView } from "./calendar-view";
 import styles from "./workspace.module.css";
 
 /** Targets where a bare j, k or Enter belongs to the control, not the surface. */
 const BARE_SURFACE_EXCLUDE = 'input, textarea, select, button, a, [contenteditable="true"], [contenteditable=""], [data-act], [role="button"], [role="option"], [role="menuitem"]';
-
-const BoardView = dynamic(() => import("./board-view").then((m) => m.BoardView), { loading: () => <BoardSkeleton /> });
-const ListView = dynamic(() => import("./list-view").then((m) => m.ListView), { loading: () => <ListSkeleton /> });
-const CalendarView = dynamic(() => import("./calendar-view").then((m) => m.CalendarView), { loading: () => <CalendarSkeleton /> });
 
 export type TasksWorkspaceProps = {
   view: TasksViewId;
@@ -57,13 +55,14 @@ export type TasksWorkspaceProps = {
 
 export function TasksWorkspace(props: TasksWorkspaceProps) {
   return (
-    <TasksColumnsProvider>
+    <TasksViewNavigation initialView={props.view}><TasksColumnsProvider>
       <WorkspaceData {...props} />
-    </TasksColumnsProvider>
+    </TasksColumnsProvider></TasksViewNavigation>
   );
 }
 
-function WorkspaceData({ view, readOnly, canManage }: TasksWorkspaceProps) {
+function WorkspaceData({ readOnly, canManage }: TasksWorkspaceProps) {
+  const { view } = useTasksViewNavigation();
   const store = useLabStore();
   const tools = useRoomTools();
   const all = store.tasks;
@@ -72,6 +71,7 @@ function WorkspaceData({ view, readOnly, canManage }: TasksWorkspaceProps) {
   return (
     <TasksSurfaceProvider view={view} readOnly={readOnly || store.readOnly} canManage={canManage} all={all} visible={visible} filtering={filtering}>
       <Workspace />
+      <ProjectCompletion />
     </TasksSurfaceProvider>
   );
 }
@@ -105,7 +105,7 @@ function Workspace() {
   const activeWorkspace = useActiveWorkspace();
   const domain = useDomain();
   const tools = useRoomTools();
-  const router = useRouter();
+  const { navigate } = useTasksViewNavigation();
   const { taskId, openTask } = useTaskPanel();
   const wide = useWideSheet();
   const addTask = useAddTask();
@@ -183,7 +183,7 @@ function Workspace() {
         const next = (["board", "list", "calendar"] as const)[Number(key) - 1];
         if (next !== surface.view) {
           event.preventDefault();
-          router.push(viewHref.href(next));
+          navigate(viewHref.href(next));
         }
         return;
       }
@@ -273,7 +273,7 @@ function Workspace() {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [focusedTask, openTask, router, store, surface, taskId, tools, viewHref]);
+  }, [focusedTask, openTask, navigate, store, surface, taskId, tools, viewHref]);
 
   const dockRef = useCallback((node: HTMLElement | null) => setSheetDock(node), []);
 

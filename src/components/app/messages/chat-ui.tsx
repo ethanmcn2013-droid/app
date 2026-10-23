@@ -452,7 +452,7 @@ const EMOJI: readonly (readonly [string, string])[] = [
 
 export type ComposerHandle = Readonly<{ focus: () => void }>;
 
-export function Composer({ value, onChange, onSend, label, placeholder, people, selfId, mentionIds, onMentionIdsChange, unavailableMentionIds, sendDisabled, disabled, blocked, count, note, onArrowUpEmpty, onEscape, inputRef, autoFocus, showHint = true, toolbar, additionalTools, allowEmpty = false }: {
+export function Composer({ value, onChange, onSend, label, placeholder, people, selfId, mentionIds, onMentionIdsChange, unavailableMentionIds, sendDisabled, disabled, blocked, count, note, onArrowUpEmpty, onEscape, inputRef, autoFocus, showHint = true, toolbar, additionalTools, allowEmpty = false, onFilesPaste, maxLength = 8000 }: {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
@@ -478,6 +478,10 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
   /** The full toolbar: an insert menu behind a round plus, then the tools. */
   toolbar?: "full";
   additionalTools?: ReactNode;
+  /** Files only; normal text paste remains native. Caller owns upload validation. */
+  onFilesPaste?: (files: readonly File[]) => void;
+  /** Caller may use its own server limit; ordinary chat remains at 8,000. */
+  maxLength?: number;
   /** A caller with verified ready attachments may send without a text body. */
   allowEmpty?: boolean;
 }) {
@@ -581,10 +585,16 @@ export function Composer({ value, onChange, onSend, label, placeholder, people, 
           autoFocus={autoFocus}
           className={styles.composerInput}
           disabled={disabled}
-          maxLength={8000}
+          maxLength={maxLength}
           onBlur={() => setCaret(null)}
           onChange={(event) => { onChange(event.target.value); setCaret(event.target.selectionStart); setActiveIndex(0); setDismissedAt(null); }}
           onClick={(event) => setCaret(event.currentTarget.selectionStart)}
+          onPaste={onFilesPaste ? (event) => {
+            const files = Array.from(event.clipboardData.files);
+            if (!files.length) return;
+            event.preventDefault();
+            onFilesPaste(files);
+          } : undefined}
           onKeyDown={onKeyDown}
           onKeyUp={(event) => { if (event.key.startsWith("Arrow") || event.key === "Home" || event.key === "End") setCaret(event.currentTarget.selectionStart); }}
           placeholder={placeholder}
