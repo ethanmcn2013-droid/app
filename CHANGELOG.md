@@ -1,5 +1,10 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · App navigation and invitations
+
+Home and Inbox link to each other with tabs. The header is quieter, and switching Projects opens its Tasks board. Invite a Project member from the Tasks header without leaving your work. Toast messages stay near the bottom of the screen, with room beside an open chat.
+
+
 ## 2026-10-23 · Ping Project and folder controls
 
 Ping can prepare archive and restore plans for named Projects, with owner or co-owner permission and Undo when the Project has not changed. Ordinary delete requests use recoverable archive. Tasks, members and history stay saved; existing published Timeline links stay published. Project lifecycle batches contain distinct Projects and stay separate from task and chat edits.
