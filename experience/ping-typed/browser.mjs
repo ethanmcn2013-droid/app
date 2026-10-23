@@ -33,7 +33,7 @@ const receipt = { sourceNormalization: 'LF', status: 'running', head: execFileSy
   'Explicit synthetic fixture authentication, Next navigation/server-action and disabled EventSource adapters; not genuine Next/Clerk admission or voice/provider proof.'
 ] };
 const stubs = new Map([
-  ['next/navigation', `export const useRouter=()=>({push(){throw Error('Unexpected navigation')},replace(){},refresh(){window.fixtureRouterRefreshes=(window.fixtureRouterRefreshes??0)+1;}});export const usePathname=()=>'/app/tasks';export const useSearchParams=()=>new URLSearchParams();`],
+  ['next/navigation', `export const useRouter=()=>({push(){throw Error('Unexpected navigation')},replace(){},refresh(){window.fixtureRouterRefreshes=(window.fixtureRouterRefreshes??0)+1;}});export const usePathname=()=>'/app/tasks/list';export const useSearchParams=()=>new URLSearchParams();`],
   ['next/link', `import {createElement} from 'react';export default function Link({href,prefetch,scroll,...rest}){return createElement('a',{href,...rest})}`],
   ['next/dynamic', `import {createElement,lazy,Suspense} from 'react';export default function dynamic(load,options={}){const View=lazy(()=>load().then(m=>({default:m.default??m})));return function Dynamic(props){return createElement(Suspense,{fallback:null},createElement(View,props))}}`],
   ['@clerk/nextjs', `export const useUser=()=>({isLoaded:true,isSignedIn:true,user:{id:window.pingFixtureUser}});export const useAuth=()=>({isLoaded:true,isSignedIn:true,userId:window.pingFixtureUser,sessionId:window.pingFixtureSession});`],
