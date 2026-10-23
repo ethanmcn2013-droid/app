@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "tasks-reviewed-migration-candidate/1",
+  "id": "ping-subfolders-oct23",
+  "repository": "ethanmcn2013-droid/app",
+  "pullRequestNumber": 315,
+  "candidateSourceRevision": "2d1cf3cbf3812331c2e9b8f67a1b750a1374d9de",
+  "candidateBaseRevision": "a60deb0c7abbd693c1dbd136ff890c4077fa37b3",
+  "baseLedgerSha256": "2a4a09191f960c33ff36fcb1d7c89104d06018eeeec453550fcaefd63223bc14",
+  "candidateLedgerSha256": "8e9a0d5f35485290bb21106eae9ba4c6a1ed87d486a9541bc2bafc572d6a0919",
+  "expectedLastMigrationId": "0045_personal_chat_attachments",
+  "targetUrlSha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "databaseIdentitySha256": "248b09a9d4560a8b66dd2d910e5d95c97b473eda4b656577d030592105a72eb0",
+  "notBefore": "2026-10-23T15:50:23.309Z",
+  "expiresAt": "2026-10-24T14:51:23.309Z",
+  "authorization": {
+    "source": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/111#issuecomment-6368896722",
+    "authorizedBy": "Codex coordinator under Ethan's explicit execution delegation; recommendation recorded, not manual founder inspection"
+  },
+  "review": {
+    "verdict": "approved",
+    "reviewedBy": "Independent Sol 6.1 DATA reviewer; exact immutable four-file candidate",
+    "reference": "https://github.com/ethanmcn2013-droid/signal-studio-workspace/issues/111#issuecomment-6368896722; independent review SHA256 634bdefd9f6fb46be925267437935bdcab55409f6cba5a61cb9978b91af934a6",
+    "sourceRevision": "2d1cf3cbf3812331c2e9b8f67a1b750a1374d9de",
+    "reviewedAt": "2026-10-23T15:51:23.309Z"
+  },
+  "migrations": [
+    {
+      "id": "0046_project_drive_subfolders",
+      "sha256": "0eb95bd1782173f2fb7eb5db0292e2c65d6b26ed5233bc3d8589ab332bc559e6",
+      "receiptSha256": "33f4f547b34135c118310a58fbbb992c7ef12037e80f7a5cf804636595be58b2"
+    }
+  ],
+  "files": [
+    {
+      "path": "drizzle/0046_project_drive_subfolders.sql",
+      "sha256": "0eb95bd1782173f2fb7eb5db0292e2c65d6b26ed5233bc3d8589ab332bc559e6"
+    },
+    {
+      "path": "drizzle/meta/_journal.json",
+      "sha256": "bdc606bd7fad1c9fa57c3fce0864b3fad56193b7da456d0cc1af5ed2a7ed04a2"
+    },
+    {
+      "path": "drizzle/migration-ledger.json",
+      "sha256": "8e9a0d5f35485290bb21106eae9ba4c6a1ed87d486a9541bc2bafc572d6a0919"
+    },
+    {
+      "path": "drizzle/receipts/project-drive-subfolders-2026-10-23.json",
+      "sha256": "33f4f547b34135c118310a58fbbb992c7ef12037e80f7a5cf804636595be58b2"
+    }
+  ]
+}
