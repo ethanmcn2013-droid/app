@@ -677,14 +677,32 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
       );
     }
 
-    const authorizer = exportedAsyncFunctionBlocks(code).find(
+    const sessionAuthorizer = exportedAsyncFunctionBlocks(code).find(
       (fn) => fn.name === "authorizeProjectDrive",
     );
-    assert.ok(authorizer, "authorizeProjectDrive must be the sole minter");
+    assert.ok(sessionAuthorizer, "session Drive authorization must remain available");
+    assert.match(sessionAuthorizer.source, /await\s+getCurrentUser\(\)/);
+    assert.match(
+      sessionAuthorizer.source,
+      /return\s+authorizeProjectDriveForAuthenticatedActor\(projectId,\s*actorUserId,\s*requiredCapability\)/,
+      "session authorization delegates to the same fresh proof after authenticating",
+    );
+    const authorizer = exportedAsyncFunctionBlocks(code).find(
+      (fn) => fn.name === "authorizeProjectDriveForAuthenticatedActor",
+    );
+    assert.ok(authorizer, "authenticated server actors need the canonical proof minter");
+    assert.match(authorizer.source, /actorUserId:\s*string/);
+    assert.doesNotMatch(
+      authorizer.source,
+      /\b(?:getCurrentUser|currentUser|fetch|auth)\s*\(/,
+      "the authenticated-actor proof must not perform session/profile/provider work",
+    );
+    assert.match(authorizer.source, /typeof actorUserId !== "string"\s*\|\|\s*!actorUserId\.trim\(\)/);
+    assert.match(authorizer.source, /actorUserId,\s*archivePolicy:\s*"enforce"/);
     assert.match(
       authorizer.source.slice(0, 1_200),
       new RegExp(`\\b${AUTHORIZED_DRIVE_CONTEXT}\\b`),
-      "authorizeProjectDrive must return the branded context",
+      "the canonical minter must return the same branded context",
     );
     assert.doesNotMatch(
       authorizer.source,
@@ -732,7 +750,7 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
     );
     assert.ok(
       demoAt !== -1 && proofAt > demoAt,
-      "authorizeProjectDrive must refuse demo, then freshly prove the " +
+      "the canonical minter must refuse demo, then freshly prove the " +
         "object's Project before minting its context",
     );
 
@@ -747,7 +765,7 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
     assert.deepEqual(
       illegalMinters,
       [],
-      "only authorizeProjectDrive may construct the branded proof",
+      "only the canonical Drive authorization module may construct the branded proof",
     );
   });
 

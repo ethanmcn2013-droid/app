@@ -224,12 +224,13 @@ test("questions: across every project the same answers name the project a task i
   const wall = buildWall(projects, today);
   const scope = { kind: "all", wall } as const;
   const say = (id: QuestionId) => answerText(answerQuestion(id, a, scope));
-  assert.deepEqual(portfolioSummary(wall, a).map((item) => item.text), [
-    "4 active projects",
-    "2 need a look",
-    "17 open tasks",
-    "4 late",
-    "12 done in the last 7 days",
+  // The removed summary chip does not remove late work or the detailed
+  // question's risk explanation below. Keep the real counts and late tone.
+  assert.deepEqual(portfolioSummary(wall, a), [
+    { text: "4 active projects" },
+    { text: "17 open tasks" },
+    { text: "4 late", tone: "late" },
+    { text: "12 done in the last 7 days" },
   ]);
   // The wall and the calculation count the same work.
   assert.equal(wall.cards.reduce((sum, card) => sum + card.open, 0), a.open.count);
@@ -364,10 +365,14 @@ test("questions: nothing late, nothing open and nothing finished each say so", (
 
 // ── Analytics: every project ────────────────────────────────────────────────
 
-test("every project: the cards are the console's rows, needs a look first", () => {
+test("every project: the cards retain console rows and risk-first ordering without the retired summary chip", () => {
   const { projects, today } = consoleFixture();
   const wall = buildWall(projects, today);
-  assert.deepEqual(wall.summary.map((item) => item.text), ["10 active", "3 need a look", "89 open tasks", "10 late"]);
+  assert.deepEqual(wall.summary, [
+    { text: "10 active" },
+    { text: "89 open tasks" },
+    { text: "10 late", tone: "late" },
+  ]);
   assert.equal(wall.wrapped, 2);
   assert.deepEqual(wall.cards.map((card) => card.id), [
     "p-winter", "p-mara", "p-barn", "p-keane", "p-garden", "p-newyear", "p-harvest", "p-kitchen", "p-website", "p-shared",

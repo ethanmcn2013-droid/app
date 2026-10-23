@@ -31,6 +31,8 @@ export function createAssistantService(deps: {
   context: (actorId: string, request: AssistantRequest) => Promise<AssistantPlannerContext>;
   execute: (input: AssistantExecuteInput) => Promise<AssistantActionResult>;
   authorizeView?: (actorId:string,run:AssistantRunView,authorizationProjects?:readonly string[])=>Promise<boolean>;
+  /** Local canonical receipt authority only; never performs provider work or changes execution guards. */
+  authorizeCompletedFolderResults?: (actorId:string,run:AssistantRunView)=>Promise<boolean>;
   authorizePlan?: (actorId:string,request:AssistantRequest,plan:Extract<AssistantPlan,{outcome:'plan'}>)=>Promise<readonly string[]>;
   bindTargets?:(actorId:string,request:AssistantRequest,plan:Extract<AssistantPlan,{outcome:'plan'}>,priorTaskResult?:AssistantActionResult)=>Promise<AssistantBoundTaskTargets>;
   priorTaskResult?: (actorId:string,request:AssistantRequest)=>Promise<AssistantActionResult|null>;
@@ -71,8 +73,16 @@ export function createAssistantService(deps: {
     // Display the saved/undone receipt after this run changed its own source task.
     // New effects use the stricter default in runtime's transaction-bound guard.
     const currentSources=assistantUnchangedSources(planSources,rows.flatMap(row=>row.resultJson?[JSON.parse(row.resultJson) as AssistantActionResult]:[]),true);
-    const sources=[...(metadata.sources??[]),...currentSources];
-    if(deps.authorizeView&&!await deps.authorizeView(actorId,visible,authorizationProjects)||sources.length&&(!deps.validateSources||!await deps.validateSources(actorId,sources)))return {...visible,accessUnavailable:true,message:'Access changed. Result details are unavailable.',citations:[],steps:visible.steps.map(step=>({...step,result:null,plan:undefined,canUndo:false}))};
+    const projectAllowed=!deps.authorizeView||await deps.authorizeView(actorId,visible,authorizationProjects);
+    const completedFolders=visible.status==='completed'&&visible.steps.length>0&&visible.steps.every(step=>
+      step.kind==='create_drive_subfolder'&&step.status==='completed'&&step.result?.kind==='create_drive_subfolder'&&
+      step.result.status==='completed'&&step.result.code==='drive_folder_ready'&&step.result.stepId===step.id);
+    const receiptAllowed=projectAllowed&&completedFolders&&!!deps.authorizeCompletedFolderResults&&await deps.authorizeCompletedFolderResults(actorId,visible);
+    // Unrelated task edits do not undo an already committed folder. Only its
+    // planning task snapshots may be omitted, after fresh canonical receipt proof.
+    // Quoted answer sources and conversation snapshots retain exact validation.
+    const sources=[...(metadata.sources??[]),...currentSources.filter(source=>!receiptAllowed||source.kind!=='task')];
+    if(!projectAllowed||completedFolders&&deps.authorizeCompletedFolderResults&&!receiptAllowed||sources.length&&(!deps.validateSources||!await deps.validateSources(actorId,sources)))return {...visible,accessUnavailable:true,message:'Access changed. Result details are unavailable.',citations:[],steps:visible.steps.map(step=>({...step,result:null,plan:undefined,canUndo:false}))};
     return visible;
   }
   async function executeRun(actorId: string, runId: string) {
