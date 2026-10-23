@@ -27,6 +27,7 @@ import { resolveConversationControls } from '@/lib/conversations/flags';
 import { loadAssistantTaskContext, validateAssistantTaskSources } from './task-context';
 import { bindAssistantPlanTargets } from './plan-targets';
 import { projectDriveSubfolderServiceFromEnv } from '@/server/connections/project-drive-subfolders';
+import { assistantDriveFolderOperationId } from './drive-folder';
 import type { AssistantExecuteInput } from './service';
 import {validateAssistantTaskPostImages} from './task-snapshot';
 
@@ -170,6 +171,18 @@ function createInstance(target: Target) {
         return true;
       } catch { return false; }
     }),
+    authorizeCompletedFolderResults: async (actorId, run) => {
+      try {
+        const folders=projectDriveSubfolderServiceFromEnv();
+        for(const step of run.steps){
+          const saved=step.result;
+          if(!saved?.projectId||!saved.href)return false;
+          const receipt=await folders.readForHistory({projectId:saved.projectId,actorUserId:actorId,operationId:assistantDriveFolderOperationId(actorId,run.id,step.id)});
+          if(receipt?.status!=='complete'||receipt.folderUrl!==saved.href)return false;
+        }
+        return true;
+      } catch { return false; }
+    },
     execute: input => pingTelemetrySpan("execute", () => executeAssistantAction({ ...input,directMessagesEnabled:resolveConversationControls(process.env).directMessagesEnabled,
       commitStep:guardAssistantCommitStep(input.commitStep,stillCurrent,async tx=>{
         await authorizeExecution(input,tx);

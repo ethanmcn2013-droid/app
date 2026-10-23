@@ -1,0 +1,587 @@
+{
+  "schema": "independent-rendered-review/1",
+  "reviewer": "product_tasks",
+  "candidateSourceRevision": "f9566d4a874255d7b2b4c07d2a8912be2d9dd9b9",
+  "captureRun": "40009053022",
+  "artifactId": "12526047557",
+  "providerArtifactDigestReported": "ea3433fcc8842c1318f8ef165e34766d2c96b14c7d06a2dddcd09752f6655d87",
+  "rawArtifactSha256": "35142860398acbd06d7493dc90f2cba3cd402f4f83a6dbb0b26d5ee7d78f7ea9",
+  "attestationSha256": "ebbb12af3018c4673ce56718e3f1a7cee0c23d67339320492ae9945df523b51e",
+  "inputBindingsVerified": {
+    "browser-contract.json": "838e98594ed9b15cfa6386e15abea30ac0553727a42e77ade1badc31740870e1",
+    "critical-fixtures.json": "003e49b250e85284607e40b621138c276ca692fa2e3d531dea10db36b6f9e119",
+    "playwright.config.ts": "2be57e878ddb600689a2c4f29b6e6529d56cdff7a5663492c77d4b9fbe459534",
+    "tests/critical-experiences.spec.ts": "3fd479c6f663668c65e4f8a840ef6c4bf2a94d3787a82a4893d9d084d34b66a1"
+  },
+  "metadataBinding": "gitCommit.hash exact candidate; CI trigger head is not substituted as source",
+  "verdict": "PASS for supplied rendered materiality initial states",
+  "findings": [],
+  "targetCount": 18,
+  "imageCount": 72,
+  "actualVisualInspection": true,
+  "reuseOfEarlierReview": false,
+  "method": "All 72 actual final-candidate images inspected in 9 labeled, aspect-preserving contact sheets generated solely for review; no artifact/source edits or live browser. Native mobile/tablet/desktop/wide layouts compared for visible chrome, responsive placement, text clipping, skeleton/error recovery controls and blank/broken route states.",
+  "observations": [
+    "Populated demo routes retain coherent dark application chrome and readable primary content.",
+    "Light deterministic component-only loading/error captures retain intended skeleton structure or recovery controls at all widths.",
+    "Explicit unavailable-project recovery is legible with Open Home; Wedding hub is the supplied demo surface.",
+    "Settings screenshot is General, not Security."
+  ],
+  "capturedStateLimits": [
+    "Demo/synthetic initial states only; not production receiving or live auth/session/provider proof.",
+    "No SignIn/SignUp or Security/connected-method detail screenshot is included in the 18-target map; K1 connected-account UI and provider enablement cannot be accepted from these PNGs alone.",
+    "No independent live keyboard/interaction, scroll, contrast measurement or runner check performed by this image review.",
+    "PNG inspection does not convert preview limitations or unavailable provider actions into verified capability.",
+    "Provider zip artifact digest supplied by release coordinator is recorded but no original zip was supplied for independent hashing."
+  ],
+  "testReportObserved": {
+    "expected": 188,
+    "unexpected": 0,
+    "skipped": 0,
+    "flaky": 0
+  },
+  "contactSheets": [
+    {
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\reviews\\auth-f9566d4a-contact\\sheet-1.png",
+      "sha256": "878cb0dd2c5122e543bdb9a29e8573f6cf2c11d14c3851cfcc8dc2cc919560e6"
+    },
+    {
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\reviews\\auth-f9566d4a-contact\\sheet-2.png",
+      "sha256": "79026cdac9e1af5a286c78f019136fb5823bbd9cae0f60a29301b362e6f4c9f4"
+    },
+    {
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\reviews\\auth-f9566d4a-contact\\sheet-3.png",
+      "sha256": "de3e1b5b3fa409ce9678ed31b5532bb7e324c3ea854661c245fbc02fab16b73a"
+    },
+    {
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\reviews\\auth-f9566d4a-contact\\sheet-4.png",
+      "sha256": "6fcaaca7d892f0a05506b5bdac8f17269fccd4e46b89b00cf904c03721e9432b"
+    },
+    {
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\reviews\\auth-f9566d4a-contact\\sheet-5.png",
+      "sha256": "19d01f7eaa8a0d81122cb2e3669731d7810891c1d3ea6c365d319f26e392bcab"
+    },
+    {
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\reviews\\auth-f9566d4a-contact\\sheet-6.png",
+      "sha256": "248655576fc70aef7a0a1e9cf1e160e614ea5475009d93b209975596a910410b"
+    },
+    {
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\reviews\\auth-f9566d4a-contact\\sheet-7.png",
+      "sha256": "4e0b98ca832a6ec0410c668c079df107ee5c1fb2fd18fdcc94e37330ed6d47d7"
+    },
+    {
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\reviews\\auth-f9566d4a-contact\\sheet-8.png",
+      "sha256": "9793d7275ef0bc40e4ba342219bf8b1c5f57cce42568c70cc91418175e3ffa25"
+    },
+    {
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\reviews\\auth-f9566d4a-contact\\sheet-9.png",
+      "sha256": "68da72c767653bb2481dcd59e9326c46020a1fcf77bf0baf3184f424ea376994"
+    }
+  ],
+  "images": [
+    {
+      "target": "tasks.page.app-settings",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-settings-mobile.png",
+      "sha256": "2b7823903d78c33d60fd5da776150a96a07bb56d511806ad35970dd8f9ff12a4",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-settings",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-settings-tablet.png",
+      "sha256": "df55e66b32f8b092a45e6a2c56961ed01be57ca5e060e7b8c7039802fe900a98",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-settings",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-settings-desktop.png",
+      "sha256": "bed95cfea0358e4d44f63c177c78210f9e7d150a4dbde82f9c2fd466de169639",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-settings",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-settings-wide.png",
+      "sha256": "2b5823114aa4d91236fcba3e1cbac1f748543d383f090e9954bae111026cbbee",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-project",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-project-mobile.png",
+      "sha256": "b8785570260139883a19e93f738cdf6ed1af2a1ab6e51d629399e91869c06094",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-project",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-project-tablet.png",
+      "sha256": "f13cd7478827c69a2899155b91f5b90d295bdd0c1b39a74e7f47170b7b6ba06a",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-project",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-project-desktop.png",
+      "sha256": "8fd8b67944e58911a4c1568ddbbc6b11fde43ad0554db38844d4f876ef842bbd",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-project",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-project-wide.png",
+      "sha256": "ec28583a38b6bfc9f441fa90833761b7a3ae16798bfc1bd1c0c7bbe0c01e8cd4",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-project-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-project-loading-mobile.png",
+      "sha256": "7f479ea83e16ba5a40b618ef17613b6dd576de540cfdcfbe0b9f13830aa551b3",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-project-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-project-loading-tablet.png",
+      "sha256": "d43c3f522ef093610b10dcbc31dadcd1e1215e3442c92494c28d1ca88880be2e",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-project-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-project-loading-desktop.png",
+      "sha256": "44b1ad4652f3559d78b7ca94449e8b3bb392f6a322efbf14d51dc0861ccb7967",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-project-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-project-loading-wide.png",
+      "sha256": "350def90d77ea237360d4f8d453614903204a756cdb2fe9a9c3f17e9d7aa9414",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-home-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-home-loading-mobile.png",
+      "sha256": "2e1be11bb0abd80607e25d5f5976f9447aeebca99de951b8f55f9ba35ddd80dd",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-home-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-home-loading-tablet.png",
+      "sha256": "020cde8ce77a66d9ee9b98d5e083683aaeda4e683d88c4120e74b9559159075e",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-home-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-home-loading-desktop.png",
+      "sha256": "1836b620784d1bfcb227c674cf4aeb6a71d3436e3d9100cf7e6d65da119303fa",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-home-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-home-loading-wide.png",
+      "sha256": "e787b2dbb27cef50afd64059d9b9fb52b8826c8ce9ebf3387154916fc1cdb846",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-home-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-home-error-mobile.png",
+      "sha256": "d841b91452667f83e49d5199b8530b4e537e00b567efb5928788b7d415ccdee2",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-home-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-home-error-tablet.png",
+      "sha256": "369413b5a9b9ab13501dc145ef1e5c63eb0e3b6b33770916a8ea0c9b97515a05",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-home-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-home-error-desktop.png",
+      "sha256": "442fdec3e9a8ee0996e811895c000f99d6e742ad02465559253496b1336df889",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-home-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-home-error-wide.png",
+      "sha256": "30d2f40ca50ba5f98f69477c7f1d7fd31b6dba73980534f430754c8b1d0cfcd0",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-tasks-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-tasks-loading-mobile.png",
+      "sha256": "0dc35487606b6f227ddeb4577f1c8a20e11986311cccd34a44a3a2d7005413ce",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-tasks-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-tasks-loading-tablet.png",
+      "sha256": "7f216114eebcb0fc0d47b35bc43ce9c5894c897c220329510931ebd26c856516",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-tasks-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-tasks-loading-desktop.png",
+      "sha256": "97e5ff930760d98d68398d4c4ea870eb11cad3ed98f735a7274f84bcc13151c9",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-tasks-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-tasks-loading-wide.png",
+      "sha256": "1b2aba01bf5a22992a6acdaa49c372595f54843c9ea6ddb3b37da0d8e7b5ed44",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.resources.drive-upload",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.resources.drive-upload-mobile.png",
+      "sha256": "23039254d52761d16ef3c857cd6d79fc8bfe73af052b70b24a71b93c58783e57",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.resources.drive-upload",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.resources.drive-upload-tablet.png",
+      "sha256": "9740f6509b37ac544c37eb34faed38467bdb7942e4c4dbb6f4ca7f83c3e77679",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.resources.drive-upload",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.resources.drive-upload-desktop.png",
+      "sha256": "709bd0f20baf4d7ef197ef57ce390a904029911f076368e7e5f5955f5875107f",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.resources.drive-upload",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.resources.drive-upload-wide.png",
+      "sha256": "7c6ce03b2dc70fdb9272983bc16d7c5246ba302f00ed0f918765741c12b182d9",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-messages",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-messages-mobile.png",
+      "sha256": "377bab3bf4238346b871ca32bd48705166ec31a82861dad0c12b6d208a41280c",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-messages",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-messages-tablet.png",
+      "sha256": "9bb77035300427b892e20fe6719fdcccc41976581a9df6a8d18488825ee4b4f8",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-messages",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-messages-desktop.png",
+      "sha256": "0a2ab8804191a840e666fd1be3cc450386aad9d1a45bbcc041b10d15b99a5437",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-messages",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-messages-wide.png",
+      "sha256": "a6390ee575bccc3aec095ace5f0bebe51f62cdd9ce4cbe833cec09dacef51b68",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-analytics",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-analytics-mobile.png",
+      "sha256": "521de63bb818cea426914d162fa1a364a09ffde5b1e8340cfa3087585e5274c7",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-analytics",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-analytics-tablet.png",
+      "sha256": "99a3b4e876d79be9a2bf05d37264e52b514609d414a27ea9ba2a842549bdef0a",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-analytics",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-analytics-desktop.png",
+      "sha256": "6e96c2fcd0170235987b5fcaf562c4fff9b0e1fd57d61b4fa85211056555c50b",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-analytics",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-analytics-wide.png",
+      "sha256": "957d8574ba7d1fdab1980991ec980e7d6a96cc038ffc046022e53ed08ebbc0f5",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-analytics-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-analytics-loading-mobile.png",
+      "sha256": "e278396b61a2815b1795bd8ecd4a82727a1bc23e835c47733f0e00b540a6a450",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-analytics-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-analytics-loading-tablet.png",
+      "sha256": "faffcc090b20608175a00b53e145ecd4bfc6722e5285ceddffadcad24286c128",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-analytics-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-analytics-loading-desktop.png",
+      "sha256": "a2095617579ed7290a98b6cc2b40e44b8a532c9fc1f784945dbde698173d77ce",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-analytics-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-analytics-loading-wide.png",
+      "sha256": "b2ee8af7b64f70d05de82eaca9ff16e298956bd0dee5e59322a50e9fa9679c7a",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-analytics-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-analytics-error-mobile.png",
+      "sha256": "561715fbc926fb9d40521c8a57faa7f652e24503ab203082d50e96e5d7d2af66",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-analytics-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-analytics-error-tablet.png",
+      "sha256": "75d6ea47666994f033bf08593a38f0730e9cbc9ca95ccda44c98c79b2b55cb15",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-analytics-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-analytics-error-desktop.png",
+      "sha256": "9c10aea7cfa3ca189b5465b9dbc94ce0a8c518d4ec50ece6669c49dcab31dd46",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-analytics-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-analytics-error-wide.png",
+      "sha256": "3793ec4ea61e65e985073e9ffef2358b7209dcd68652e4733a81de035ec44643",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-tools-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-tools-loading-mobile.png",
+      "sha256": "d3c1b89e8007deb384fa21d5e881da8ead5538be7727e871464aab8e8998ac77",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-tools-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-tools-loading-tablet.png",
+      "sha256": "22b4c30abb67722384faa9aa28e5c05259ecd7a1414bb25ddb4334ed28878a52",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-tools-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-tools-loading-desktop.png",
+      "sha256": "75ebfa491aeec3c99a0a6c58110eac4ef30b1323398a66ff6cd1440ba9c0eb74",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-tools-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-tools-loading-wide.png",
+      "sha256": "887c3c4af88d6898b0200f7d7439b65d27c508a597579e78413177ca4fcd86a3",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-concepts",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-concepts-mobile.png",
+      "sha256": "fdd70d88fec51390a9446fc0fa88f154c21a7e80f020a9add38a1f6d442bd87b",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-concepts",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-concepts-tablet.png",
+      "sha256": "f5a41a130208147b5cfe1ec393b64021a16872b1ea5a650552985c3ef11e221f",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-concepts",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-concepts-desktop.png",
+      "sha256": "06638523b11ee046e9e4fcf740353d3447562095d3f99646091b91adf045cd49",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-concepts",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-concepts-wide.png",
+      "sha256": "f63145ebfcbd300c84f49e8d0ff43dde49c8d49100c7febe3565e2ec80f8124d",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-files",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-files-mobile.png",
+      "sha256": "c8f94f9fbb99a8cf5500a5f2acd60c785ca010e6d3e366be9d9ae7dca35a1ac8",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-files",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-files-tablet.png",
+      "sha256": "b59cb727c1e7c4db2c4c813d67eb1525b5767b10b1068ce5d1f663997078c15e",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-files",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-files-desktop.png",
+      "sha256": "a6660663fb08824d6d0ab420283be7f34214a24c01534c91d37c58e39f615f1a",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-files",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-files-wide.png",
+      "sha256": "7c30cb6ef95c3e7e088888544f2f472e645c26bfa04b115081a99d9f171cb959",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-files-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-files-loading-mobile.png",
+      "sha256": "3789a0a6f8e5d6592524c50aad4e8dffe6e68b237efbb8e388a80bd93c8192f1",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-files-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-files-loading-tablet.png",
+      "sha256": "95028344ea5077d1a982d16b1e82cb99d1e76cff506e3cbb161c864a5786ff2e",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-files-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-files-loading-desktop.png",
+      "sha256": "4f4f73a7eaf098ee7367c7a2a8ea94a9ae292d8c72f17d70981658614ff95394",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-files-loading",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-files-loading-wide.png",
+      "sha256": "0937026623d4e35ebc1a6c74ff7a84bd3e2b17dc33a8045eb512cca904a230ff",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-files-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-files-error-mobile.png",
+      "sha256": "a248472e3d74296e3829c084fdcde572c26d16466ba2562d63590f3038dfd283",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-files-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-files-error-tablet.png",
+      "sha256": "62b7c93355ad890b8d53a789d7dddc6bb51fa36e33dce0cc6cc448a665dc5977",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-files-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-files-error-desktop.png",
+      "sha256": "64910ff4f60b0b922a048c5aa44e7cbc83491fd9692b56fca67021f32758bb6a",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.state.app-files-error",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.state.app-files-error-wide.png",
+      "sha256": "070cd8c3783f39d68c16a12022c00fece08bfd75807c47cc3737705588f22b35",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.welcome",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.welcome-mobile.png",
+      "sha256": "46e268b66f6442abe7de4ed673fafe4d95232f53273ee4e65eff15d873e4a09b",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.welcome",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.welcome-tablet.png",
+      "sha256": "41b4bfc12fef40254b4acbc98d0d2aba623cb865c09972bca199044f0e404678",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.welcome",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.welcome-desktop.png",
+      "sha256": "3e964893ac2d953857f9644f77da5d815e94e8147549d63a78a27d9189541a8f",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.welcome",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.welcome-wide.png",
+      "sha256": "f3cc0ef71514cf97b4a5b6432d26a03a5e5f46a84dfbc0febe711310f55548ca",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-tools-by-slug",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-tools-by-slug-mobile.png",
+      "sha256": "1cb4d08361591c8817570fe3ede9d21deb0056e74d7f5c67ba982859c31ac8de",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-tools-by-slug",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-tools-by-slug-tablet.png",
+      "sha256": "827da0f50c33e05c93be79f149624ce86864130d62c8e07edd61d19e304a9309",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-tools-by-slug",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-tools-by-slug-desktop.png",
+      "sha256": "f266104861b245ed847bb9855247551eb117632733af0d5c9fe0bc362562f8a9",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    },
+    {
+      "target": "tasks.page.app-tools-by-slug",
+      "file": "C:\\Users\\ethan\\Documents\\Codex\\2026-10-06\\files-mentioned-by-the-user-project\\work\\product-notes-oct23\\captures\\auth-f9566d4a\\review-images\\tasks.page.app-tools-by-slug-wide.png",
+      "sha256": "cb42f78c598f2a7a8fc140eb076965db91863dae3de590ff15748cb2bcf33078",
+      "inspection": "actual image inspected in labeled comparison sheet; all four widths",
+      "result": "no actionable finding in supplied initial state"
+    }
+  ]
+}
