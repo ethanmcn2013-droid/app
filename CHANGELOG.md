@@ -1,5 +1,10 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Analytics discovery
+
+Analytics opens with a centred search field and aligned question cards. How the numbers are calculated appears when you open an answer.
+
+
 ## 2026-10-23 · Ping Project and folder controls
 
 Ping can prepare archive and restore plans for named Projects, with owner or co-owner permission and Undo when the Project has not changed. Ordinary delete requests use recoverable archive. Tasks, members and history stay saved; existing published Timeline links stay published. Project lifecycle batches contain distinct Projects and stay separate from task and chat edits.
