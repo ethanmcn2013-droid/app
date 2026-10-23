@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   capture-candidate:
-    if: contains(fromJSON('["feat/selected-product-sprint-20261015","feat/chat-files-refinement-20261018","feat/timeline-master3-oct18","feat/ping-controls-receiving-oct23","feat/shell-navigation-release-oct23","feat/analytics-discovery-release-oct23"]'), github.event.pull_request.head.ref) && github.event.pull_request.head.repo.full_name == github.repository
+    if: contains(fromJSON('["feat/selected-product-sprint-20261015","feat/chat-files-refinement-20261018","feat/timeline-master3-oct18","feat/ping-controls-receiving-oct23","feat/shell-navigation-release-oct23","feat/analytics-discovery-release-oct23","fix/ping-folder-history-release-oct23"]'), github.event.pull_request.head.ref) && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
