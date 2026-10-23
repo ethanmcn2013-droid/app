@@ -3,6 +3,12 @@ import { describe, it } from "node:test";
 import { enabledSocialProviders } from "./social-providers";
 
 describe("enabledSocialProviders", () => {
+  it("offers Facebook only when explicitly configured", () => {
+    assert.deepEqual(enabledSocialProviders("oauth_facebook,oauth_unknown,oauth_facebook"), [
+      { id: "oauth_facebook", label: "Facebook" },
+    ]);
+    assert(!enabledSocialProviders(null).some((provider) => provider.id === "oauth_facebook"));
+  });
   it("offers only the provider enabled in the production baseline", () => {
     assert.deepEqual(enabledSocialProviders(null), [
       { id: "oauth_google", label: "Google" },

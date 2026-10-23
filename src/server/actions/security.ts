@@ -7,6 +7,7 @@ import { db } from "@/server/db";
 import { workspaceEvents, workspaceMembers } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth";
 import { isDemoMode } from "@/lib/access-mode";
+import { connectedSocialMethods, primaryAccountPhone, type AccountPhone } from "@/lib/auth/account-methods";
 
 /**
  * Security & Login settings data assembly + mutations.
@@ -32,7 +33,7 @@ function clerkConfigured(): boolean {
 // ── Types ────────────────────────────────────────────────────────────
 
 export type SignInMethod = {
-  kind: "email" | "google" | "github" | "apple";
+  kind: "email" | "google" | "github" | "apple" | "facebook";
   label: string;
   /** The account identifier (email address or OAuth username) if connected. */
   identifier: string | null;
@@ -65,6 +66,8 @@ export type SecurityData = {
   /** Null means Clerk is not configured — render the dev-fallback notice. */
   clerkAvailable: boolean;
   signInMethods: SignInMethod[];
+  /** Verified identifier only; does not assert phone sign-in is enabled. */
+  phone?: AccountPhone | null;
   sessions: ActiveSession[];
   recentActivity: SecurityActivityLine[];
 };
@@ -186,12 +189,6 @@ export async function getSecurityData(): Promise<SecurityData> {
 
   const externalAccounts = clerkUser.externalAccounts ?? [];
 
-  const providerKinds: Array<"google" | "github" | "apple"> = [
-    "google",
-    "github",
-    "apple",
-  ];
-
   const signInMethods: SignInMethod[] = [
     {
       kind: "email",
@@ -203,23 +200,7 @@ export async function getSecurityData(): Promise<SecurityData> {
         )?.verification?.status === "verified",
       connected: hasPassword,
     },
-    ...providerKinds.map((provider) => {
-      const acct = externalAccounts.find(
-        (ea) => ea.provider === provider,
-      );
-      return {
-        kind: provider,
-        label:
-          provider === "google"
-            ? "Google"
-            : provider === "github"
-              ? "GitHub"
-              : "Apple",
-        identifier: acct?.emailAddress ?? acct?.username ?? null,
-        verified: acct?.verification?.status === "verified",
-        connected: Boolean(acct),
-      } satisfies SignInMethod;
-    }),
+    ...connectedSocialMethods(externalAccounts),
   ];
 
   // ── Active sessions ───────────────────────────────────────────────
@@ -295,6 +276,7 @@ export async function getSecurityData(): Promise<SecurityData> {
   return {
     clerkAvailable: true,
     signInMethods,
+    phone: primaryAccountPhone(clerkUser),
     sessions,
     recentActivity,
   };

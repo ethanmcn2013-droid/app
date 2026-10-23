@@ -29,6 +29,13 @@ function fmtLastActive(iso: string): string {
 // ── Provider icons — inline SVG, no new deps ──────────────────────
 
 function ProviderIcon({ kind }: { kind: SignInMethod["kind"] }) {
+  if (kind === "facebook") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="shrink-0">
+        <path d="M14 21v-8h3l.5-4H14V7c0-1 .3-1.5 1.7-1.5H18V2.2c-.4-.1-1.8-.2-3.3-.2C11.5 2 10 3.8 10 7v2H7v4h3v8h4Z" />
+      </svg>
+    );
+  }
   if (kind === "google") {
     return (
       <svg
@@ -145,7 +152,7 @@ function SignInMethodsBlock({ methods }: { methods: SignInMethod[] }) {
       ))}
       {noProvidersEnabledYet ? (
         <div className="px-4 py-3 md:px-5">
-          <Hint>Adding and removing sign-in methods arrives with provider enablement.</Hint>
+          <Hint>Your connected sign-in accounts appear here.</Hint>
         </div>
       ) : null}
     </SettingsGroup>
@@ -398,6 +405,20 @@ export function SecuritySection({ data }: { data: SecurityData }) {
       />
 
       <SignInMethodsBlock methods={data.signInMethods} />
+      {data.phone ? (
+        <SettingsGroup title="Phone number" description="A phone number on your account does not mean phone sign-in is available.">
+          <SettingsListRow className="py-3.5">
+            <IconTile>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                <rect x="4" y="1.5" width="8" height="13" rx="1.5" />
+                <path d="M7 12h2" strokeLinecap="round" />
+              </svg>
+            </IconTile>
+            <span className="min-w-0 flex-1 break-words text-[13.5px] text-[color:var(--v3-text)]">{data.phone.number}</span>
+            <Badge tone={data.phone.verified ? "success" : "warning"}>{data.phone.verified ? "Verified" : "Unverified"}</Badge>
+          </SettingsListRow>
+        </SettingsGroup>
+      ) : null}
       <ActiveSessionsBlock initialSessions={data.sessions} />
       <RecentSecurityActivityBlock lines={data.recentActivity} />
     </div>
