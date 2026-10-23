@@ -43,7 +43,10 @@ test("every sidebar row draws from the approved set", () => {
 
 test("project identity keeps its indigo ring, project colour and status without letter tiles", () => {
   assert.match(sidebar, /<span className=\{styles\.projectProgress\} aria-hidden="true">/);
-  assert.match(sidebar, /<span className=\{styles\.projectProgressCore\} style=\{\{ backgroundColor: projectColor\(row\.id\) \}\} \/>/);
+  // A saved Project colour takes precedence; unspecialised Projects retain
+  // their stable generated identity, separately from the status indicator.
+  assert.match(sidebar, /<span className=\{styles\.projectProgressCore\} style=\{\{ backgroundColor: colors\[row\.id\] \? projectColorToken\(colors\[row\.id\]\) : projectColor\(row\.id\) \}\} \/>/);
+  assert.match(sidebar, /setColors\(result\.colors \?\? \{\}\)/, "saved colours come from the authorized sidebar read");
   assert.doesNotMatch(sidebar, /row\.monogram\.slice\(0, 1\)/);
   assert.match(sidebar, /data-mark=\{mark\}/);
   assert.match(sidebar, /SIDEBAR_MARK_LABEL\[mark\]/);
