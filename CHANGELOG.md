@@ -1,5 +1,10 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Chat tools
+
+Hide a conversation from the floating Chat list just for you, and paste files into Saved notes. Ping shows a character count near its existing request limit.
+
+
 ## 2026-10-23 · Ping Project and folder controls
 
 Ping can prepare archive and restore plans for named Projects, with owner or co-owner permission and Undo when the Project has not changed. Ordinary delete requests use recoverable archive. Tasks, members and history stay saved; existing published Timeline links stay published. Project lifecycle batches contain distinct Projects and stay separate from task and chat edits.
