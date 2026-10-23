@@ -85,6 +85,11 @@ test("each asked-about project gets its lead, next big date, oldest late task an
 
   const a = facts.byProject["p-a"]!;
   assert.deepEqual(a.lead, { name: "Aoife Brennan", initials: "AO" });
+  assert.deepEqual(a.timeline, [
+    { id: "a-big-done", title: "Venue visit", date: "2026-09-20", done: true },
+    { id: "a-big-next", title: "Menu tasting", date: "2026-10-09", done: false },
+    { id: "a-big-later", title: "Wedding day", date: "2026-10-17", done: false },
+  ]);
   // The earliest unfinished big date; finished and undated ones are skipped.
   assert.deepEqual(a.nextDate, { title: "Menu tasting", date: "2026-10-09" });
   // The oldest open, top-level, unarchived task past its date.
@@ -111,6 +116,8 @@ test("each asked-about project gets its lead, next big date, oldest late task an
 
   assert.deepEqual(facts.byProject["p-empty"], {
     lead: { name: "Orla Byrne", initials: "OB" },
+    timeline: [],
+    timelineTruncated: false,
     nextDate: null,
     oldestLate: null,
     nudge: null,

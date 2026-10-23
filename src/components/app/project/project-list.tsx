@@ -16,6 +16,7 @@
  * already shows.
  */
 
+import { ProjectTimelinePreview } from "./project-timeline-preview";
 import { type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
 import { projectColor } from "@/components/shell/app-sidebar";
 import type { ProjectCardStats } from "@/lib/projects/project-hub";
@@ -64,7 +65,7 @@ export function ProjectList({
         <span role="columnheader" className={l.leadCol}>Lead</span>
         <span role="columnheader">Done</span>
         <span role="columnheader" className={l.dateCol}>Target</span>
-        <span role="columnheader" className={l.dateCol}>Next big date</span>
+        <span role="columnheader" className={l.dateCol}>Timeline</span>
         <span role="columnheader" className={l.number}>Open</span>
         <span role="columnheader" className={l.number}>Late</span>
       </div>
@@ -144,7 +145,7 @@ export function ProjectList({
                   {stats?.targetDate ? formatConsoleDate(stats.targetDate, today) : <span className={l.quiet}>Not set</span>}
                 </span>
                 <span role="cell" className={`${l.date} ${l.dateCol}`} title={row.next.caption || undefined}>
-                  <span className={row.next.quiet ? l.quiet : undefined}>{row.next.value}</span>
+                  {row.selectable ? <ProjectTimelinePreview row={row} href={hrefFor(row.id, "timeline")} onGo={() => onGo(row.id, "timeline")} /> : <span className={l.quiet}>Unavailable</span>}
                 </span>
                 <span role="cell" className={l.number}>
                   {row.open}
