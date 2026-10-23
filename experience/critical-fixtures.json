@@ -2931,7 +2931,7 @@
     "src/lib/projects/project-console.test.ts": "25627b8193bb9ddb5d83095eac89404e9cf60e98ca3f1cbaad1e22c39314642f",
     "src/lib/projects/project-console.ts": "27b09063a1cda2fbefa6fb442e5c6cb6234004970af41bb980abcf6d69d577a6",
     "src/lib/projects/project-files-analytics.fixture.ts": "aed3a67057587e973fde7d4be840ea10ba8a8070897d46c21f4cd59224228a94",
-    "src/lib/projects/project-files-analytics.test.ts": "50381e5afa0183788c1ead9fe4a25904c90f697bfe9c58ff4d0df9e23ff3d27e",
+    "src/lib/projects/project-files-analytics.test.ts": "559d9bebef62a7cf73a3ce4a5915e3586fcc5d6cc09f273d77f93e181ff7d9c3",
     "src/lib/projects/project-files.ts": "f6a5f2d3ef5725c71ebe9d17af5b5a5043fa1999806aa5e2fd06a45fc12c1d94",
     "src/lib/projects/project-hub.test.ts": "ce12b35be12c85e17648d96795d0d21e1ae9dd39b3b1973cea9958bf241164f0",
     "src/lib/projects/project-hub.ts": "3d63b7a423fde88861ce96ba6d57a7bdc0fc4842ec3372da13bc6eb72b06d8fa",
