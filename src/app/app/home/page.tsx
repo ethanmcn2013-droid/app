@@ -1,3 +1,4 @@
+import { HomeTabs } from "@/components/app/home/home-tabs";
 import { requireAppAccessTasks } from "@/server/app-access";
 import { HomeBentoUnavailable, HomeBentoView } from "@/components/app/home/bento/home-bento-view";
 import { ActiveProjectRouteSync } from "@/components/app/active-project-route-sync";
@@ -29,6 +30,7 @@ export default async function HomePage({ searchParams }: {
 
   return (
     <>
+      <HomeTabs active="home" />
       <ActiveProjectRouteSync project={project} requestedProjectId={requested} />
       {model ? <HomeBentoView model={model} /> : <HomeBentoUnavailable />}
     </>
