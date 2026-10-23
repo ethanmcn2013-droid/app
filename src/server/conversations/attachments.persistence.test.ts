@@ -8,7 +8,7 @@ import * as schema from "@/server/db/schema";
 import { assertProjectId } from "@/lib/projects/project-ref";
 import { createLocalConversationDatabaseAdapter } from "./database";
 import { createConversationService } from "./service";
-import { createConversationAttachmentService } from "./attachments";
+import { createConversationAttachmentService, type ConversationAttachmentScope } from "./attachments";
 import { eraseConversationAttachmentsWith } from "./attachment-erasure";
 import type { PersonalAttachmentStorage } from "./personal-chat-attachment-storage";
 import { createConversationAttachmentHttp, createConversationAttachmentDownload } from "./attachment-http";
@@ -27,7 +27,7 @@ async function fixture(withFiles=true, foreignKeys=false) {
  const attachments=createConversationAttachmentService(adapter,{enabled:true,directMessagesEnabled:true,storage});
  const service=createConversationService(adapter,{directMessagesEnabled:true,attachmentsEnabled:true,attachmentCleanup:ownerId=>attachments.repair(ownerId)});
  const room=await service.ensureProjectConversation({actorId:"a",projectId});assert.ok(room.ok);if(!room.ok)throw Error("room");
- const scope={ownerId:"a",projectId,conversationId:room.value.conversationId,rootId:null,expectedAudienceEpoch:room.value.audienceEpoch};
+ const scope:ConversationAttachmentScope={ownerId:"a",projectId,conversationId:room.value.conversationId,rootId:null,expectedAudienceEpoch:room.value.audienceEpoch};
  const upload=(request="upload_request_0001",overrides:Partial<typeof scope>={})=>attachments.upload({...scope,...overrides,clientRequestId:request,filename:"shared.txt",mimeType:"text/plain",bytes:fileBytes});
  const send=(ids:readonly string[]=[],request="message_request_001",overrides={})=>service.sendMessage({actorId:"a",input:{...scope,clientRequestId:request,body:ids.length?"":"Legacy text",mentionUserIds:[],attachmentIds:ids,...overrides}});
  return {client,adapter,attachments,service,scope,upload,send,bytes,storage,database:drizzle(client,{schema}),failDelete:()=>{failDelete=true},pendingWrite:()=>{pendingWrite=true}};
