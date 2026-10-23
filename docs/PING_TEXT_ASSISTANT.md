@@ -57,7 +57,7 @@ Step Undo restores captured task state only if it still matches what Ping saved.
 
 Date-only tasks keep the existing calendar-day convention. Explicit clock times retain a local clock label and a time-zone-correct instant. Ambiguous or nonexistent daylight-saving times are refused for clarification.
 
-This candidate adds no migration, provider key, budget increase, publication or general-access activation. Source tests, rendered receiving and live Sonnet evaluation remain separate evidence; only an independent reviewer scores the fixed request set and Ping scorecard.
+The Release 2 baseline added no migration, provider key, budget increase, publication or general-access activation. The later folder expansion requires the separately reviewed `0046` migration described below. Source tests, rendered receiving and live Sonnet evaluation remain separate evidence; only an independent reviewer scores the fixed request set and Ping scorecard.
 
 ## Authorization and privacy
 
