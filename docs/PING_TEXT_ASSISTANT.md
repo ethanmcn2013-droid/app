@@ -23,6 +23,8 @@ The current catalog is deliberately finite:
 | Action | Current behavior |
 | --- | --- |
 | Create Project | Creates a standalone Project owned by the actor, with optional description. |
+| Archive / restore Project | Owners and co-owners can archive or restore distinct named Projects. Apply rechecks their bound canonical IDs, revisions and archive state. Undo refuses intervening changes. Lifecycle batches stay separate from task/chat plans; archive does not revoke published Timeline links. Permanent deletion is unsupported. |
+| Create Drive folder | Creates one named immediate child beneath an existing active, access-ready managed Project Drive root. Requires management permission and the existing connection. No root setup, connection, sharing or OAuth change is implicit. No folder Undo. |
 | Create tasks | Explicit items or a numbered template, up to 100 per action; optional description, assignment, due date, status and milestone flag. Templates can distribute assignees in round-robin order. |
 | Update tasks | Changes the supported title, description, assignees, due date, system status or milestone fields. Subtask and recurring-task edits are refused. |
 | Archive / restore | Ordinary “delete” requests use archive. Archive includes children; Undo restores only the exact IDs changed by that action and preserves previously archived children. No permanent-delete action exists. |
@@ -82,7 +84,9 @@ Use approved secret storage; never put values in this document, source control o
 
 Keep the generic `ANTHROPIC_API_KEY` unset for a Ping-only cohort: that key separately enables existing Tasks reply/summary/weekly narration and Notes extraction outside Ping's allowlist and budget ledger. A dedicated Ping key does not configure those features. Both credential names prevent a provider-free sterile-preview attestation.
 
-The candidate requires Tasks migration `0044_assistant_execution` and the canonical Timeline configuration for preview preparation. Follow `DEPLOY.md` and `drizzle/MIGRATIONS.md`; this guide does not authorize a production migration or flag change.
+The candidate requires Tasks migration `0044_assistant_execution`, and folder controls additionally require `0046_project_drive_subfolders` before the application is deployed. The canonical Timeline configuration is required for preview preparation. Follow `DEPLOY.md` and `drizzle/MIGRATIONS.md`; this guide does not authorize a production migration or flag change.
+
+Folder preparation binds the exact existing storage generation, account lineage and parent privately before the draft is shown. After Apply, Ping commits an original pending receipt before canonical folder preparation or provider work. Explicit Check status reconciles that operation; automatic status polling does not create folders. Cancellation can retire an untouched intent, but cannot retract a physically dispatched creation. Provider timeouts retain the marker for recovery, and safe result links are derived from the exact accepted Drive folder ID. Folder provider diagnostics retain bounded stage/outcome/duration metadata without request text or credentials. These timings do not prove end-to-end or physical provider settlement.
 
 Receive the exact revision on isolated synthetic data first. Exercise Project creation → 100 tasks → 90 archives → exact Undo, a saved draft and Apply, reload/original-result recovery, revoked membership, ambiguous names, private current Timeline preparation and fake delivery uncertainty. Keep external delivery disabled for tests. Check both visible results and durable rows/receipts; a green source test or successful merge alone does not prove the complete experience.
 
