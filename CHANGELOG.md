@@ -4,6 +4,9 @@
 
 Home and Inbox link to each other with tabs. The header is quieter, and switching Projects opens its Tasks board. Invite a Project member from the Tasks header without leaving your work. Toast messages stay near the bottom of the screen, with room beside an open chat.
 
+## 2026-10-23 · Analytics discovery
+
+Analytics opens with a centred search field and aligned question cards. How the numbers are calculated appears when you open an answer.
 
 ## 2026-10-23 · Ping Project and folder controls
 
