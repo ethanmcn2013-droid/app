@@ -9,6 +9,43 @@ const context:AssistantPlannerContext={actorName:'Alice',projectName:'Synthetic'
 const plan:AssistantPlan={version:'ping.assistant.v1',outcome:'plan',mode:'execute',actions:[{id:'one',kind:'open_project',project:{kind:'current'}}]};
 const request={requestId:'request0001',text:'Open Synthetic',scope:{kind:'project' as const,projectId:'synthetic'},mode:'execute' as const};
 
+test('completed folder history survives unrelated task edits and Undo but keeps receipt and source authority',async()=>{
+ const f=await assistantFixture();let revision=1,projectAllowed=true,receiptAllowed=true,chatCurrent=true,effects=0;
+ const task:AssistantSource={ref:'task_source_1',kind:'task',projectId:'synthetic',scopeId:'task1',itemId:'task1',revision:1,audienceEpoch:1,body:'Original task',authorName:'Signal task record',createdAt:'2026-10-18T09:00:00.000Z',href:'/app/tasks?task=task1',timeZone:'UTC'};
+ const chat:AssistantSource={...task,ref:'source1',kind:'conversation',scopeId:'chat1',itemId:'message1',body:'Original conversation'};
+ try{
+  const service=createAssistantService({store:f.store,requireApproval:true,context:async()=>({...context,sources:[task,chat]}),
+   validateSources:async(_actor,sources)=>sources.every(source=>source.kind==='task'?source.revision===revision:chatCurrent),
+   authorizeView:async()=>projectAllowed,authorizeCompletedFolderResults:async()=>receiptAllowed,
+   planner:{plan:async()=>({plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[{id:'folder',kind:'create_drive_subfolder',project:{kind:'current'},folderName:'Contracts'}]}})},
+   execute:async input=>input.commitStep(input.stepId,input.fence,async()=>{effects++;return {stepId:input.stepId,kind:'create_drive_subfolder',status:'completed',projectId:'synthetic',affectedCount:1,code:'drive_folder_ready',summary:'Created Contracts.',href:'https://drive.google.com/drive/folders/child1'};})});
+  const draft=await service.submit('alice',{...request,text:'Create Contracts folder'});
+  const complete=await service.apply('alice',draft.id);assert.equal(complete.steps[0].result?.code,'drive_folder_ready');
+  // Archive/edit changes updatedAt; Undo restores fields with another new updatedAt.
+  for(revision of [2,3])assert.equal((await service.view('alice',draft.id)).steps[0].result?.code,'drive_folder_ready');
+  assert.equal(effects,1);
+  receiptAllowed=false;assert.equal((await service.view('alice',draft.id)).accessUnavailable,true);receiptAllowed=true;
+  projectAllowed=false;assert.equal((await service.view('alice',draft.id)).accessUnavailable,true);projectAllowed=true;
+  chatCurrent=false;assert.equal((await service.view('alice',draft.id)).accessUnavailable,true);chatCurrent=true;
+  // Quoted answer sources must never inherit the planning-snapshot exception.
+  await f.store.finishRun('alice',draft.id,'completed',{sources:[task]});
+  assert.equal((await service.view('alice',draft.id)).accessUnavailable,true);
+  await assert.rejects(service.view('bob',draft.id));
+ }finally{await f.close();}
+});
+
+test('folder history exception cannot make a stale draft executable',async()=>{
+ const f=await assistantFixture();let current=true,effects=0,receiptReads=0;
+ const source:AssistantSource={ref:'task_source_1',kind:'task',projectId:'synthetic',scopeId:'task1',itemId:'task1',revision:1,audienceEpoch:1,body:'Task',authorName:'Signal task record',createdAt:'2026-10-18T09:00:00.000Z',href:'/app/tasks',timeZone:'UTC'};
+ try{
+  const service=createAssistantService({store:f.store,requireApproval:true,context:async()=>({...context,sources:[source]}),validateSources:async()=>current,
+   authorizeCompletedFolderResults:async()=>{receiptReads++;return true;},planner:{plan:async()=>({plan:{version:'ping.assistant.v1',outcome:'plan',mode:'draft',actions:[{id:'folder',kind:'create_drive_subfolder',project:{kind:'current'},folderName:'Contracts'}]}})},execute:async()=>{effects++;throw Error('must not execute');}});
+  const draft=await service.submit('alice',{...request,text:'Create Contracts folder'});current=false;
+  assert.equal((await service.view('alice',draft.id)).accessUnavailable,true);
+  await assert.rejects(service.apply('alice',draft.id));assert.equal(effects,0);assert.equal(receiptReads,0);
+ }finally{await f.close();}
+});
+
 test('draft readiness uses one durable result write and retains its authorized recovery metadata',async()=>{
  const f=await assistantFixture();let readyWrites=0,plans=0,effects=0,clock=1000;
  const source:AssistantSource={ref:'source1',kind:'conversation',projectId:'synthetic',scopeId:'chat_1',itemId:'message_1',revision:1,audienceEpoch:1,body:'The checklist is still open.',authorName:'Alice',createdAt:'2026-10-18T09:00:00.000Z',href:'/app/messages?projectId=synthetic&messageId=message_1'};
