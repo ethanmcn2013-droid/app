@@ -11,7 +11,9 @@ test('0046 additive subfolder custody rehearses from prior head, constrains rece
     await runMigrations({client,context:prior,releaseSha:'synthetic-before-subfolders'});
     await client.execute("INSERT INTO users(id,color,initials) VALUES('actor','#111','AA')");
     await client.execute("INSERT INTO workspaces(id,slug,name,owner_user_id) VALUES('project','project','Project','actor')");
-    const result=await runMigrations({client,releaseSha:'synthetic-subfolders'});
+    // This historical rehearsal owns 0046; later migrations have their own fixtures.
+    const subfolders=loadAndValidateLedger(); subfolders.forward=subfolders.forward.filter(e=>e.ordinal<=46);
+    const result=await runMigrations({client,context:subfolders,releaseSha:'synthetic-subfolders'});
     assert.deepEqual(result.applied,['0046_project_drive_subfolders']);
     assert.equal((await client.execute("SELECT count(*) AS n FROM users WHERE id='actor'")).rows[0].n,1);
     await client.execute("INSERT INTO provider_connections(id,user_id,provider,provider_account_id,root_folder_id,refresh_token_cipher,scopes,connected_at) VALUES('connection','actor','google_drive','account','root','synthetic','[]',1)");
@@ -24,7 +26,7 @@ test('0046 additive subfolder custody rehearses from prior head, constrains rece
     await assert.rejects(client.execute("UPDATE project_drive_subfolders SET provider_diagnostics='{}'"));
     await client.execute('PRAGMA foreign_keys=ON');
     await assert.rejects(client.execute("DELETE FROM workspace_storage WHERE id='generation'"));
-    const replay=await runMigrations({client,releaseSha:'synthetic-subfolders-replay'});
+    const replay=await runMigrations({client,context:subfolders,releaseSha:'synthetic-subfolders-replay'});
     assert.deepEqual(replay.applied,[]);
     assert.equal((await client.execute('PRAGMA integrity_check')).rows[0].integrity_check,'ok');
     assert.equal((await client.execute('PRAGMA foreign_key_check')).rows.length,0);
