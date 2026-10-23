@@ -24,3 +24,13 @@ test("phone projection matches the primary identifier and never invents sign-in 
   assert.deepEqual(primaryAccountPhone({ primaryPhoneNumberId: "phone-a", phoneNumbers }), { number: "+353000000001", verified: true });
   assert.deepEqual(primaryAccountPhone({ primaryPhoneNumberId: "phone-b", phoneNumbers }), { number: "+353000000002", verified: false });
 });
+
+test("Clerk's null verification status stays unverified for linked accounts and phone identifiers", () => {
+  const accounts = [{ provider: "facebook", verification: { status: null } }];
+  assert.equal(connectedSocialMethods(accounts)[0].verified, false);
+  assert.equal(accountSocialProviders(accounts, "oauth_google").find((provider) => provider.id === "oauth_facebook")?.canConnect, false);
+  assert.deepEqual(primaryAccountPhone({
+    primaryPhoneNumberId: "phone-null",
+    phoneNumbers: [{ id: "phone-null", phoneNumber: "+353000000003", verification: { status: null } }],
+  }), { number: "+353000000003", verified: false });
+});
