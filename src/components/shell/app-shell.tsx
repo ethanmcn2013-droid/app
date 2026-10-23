@@ -216,7 +216,6 @@ function Topbar() {
   const pathname = usePathname() ?? "";
   const { setMobileOpen } = useShell();
   const crumbs = crumbsForPath(pathname);
-  const shortcut = useShortcutLabel();
 
   return (
     <header className={styles.topbar}>
@@ -246,14 +245,6 @@ function Topbar() {
         })}
       </nav>
       <div className={styles.topActions}>
-        <button type="button" className={styles.topSearch} onClick={() => openPalette()} aria-label="Search or jump to">
-          <ShellIcon.search />
-          <span>Search or jump to…</span>
-          <kbd className={styles.kbd}>{shortcut}</kbd>
-        </button>
-        <Link href="/app/inbox" className={styles.iconButton} aria-label="Inbox">
-          <ShellIcon.bell />
-        </Link>
         <AppsLauncher />
         <NewMenu />
         <AccountMenu />
