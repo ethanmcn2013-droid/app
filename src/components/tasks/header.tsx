@@ -17,6 +17,7 @@ import Link from "next/link";
 import { useActiveWorkspace, useColumnConfig, useDomain, useWorkspaceMembers } from "@/lib/domain-context";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useRoomTools, type RoomDueFilter } from "@/components/app/room/room-tools-context";
+import { HeaderInvite } from "./header-invite";
 import { AvatarStack, type PresenceMember } from "@/components/app/presence/avatar-stack";
 import { ShareButton } from "@/components/app/share/share-button";
 import { useToast } from "@/components/primitives/toast";
@@ -72,7 +73,7 @@ export function TasksHeader() {
         ) : null}
       </div>
       <div className={styles.headerActions} data-new-task-anchor="">
-        <TaskCollaborators />
+        <TaskCollaborators key={project.id} />
         <StuckButton />
         <span className={styles.shareSlot}>
           <ShareButton view={surface.view} variant="band" />
@@ -97,14 +98,14 @@ function TaskCollaborators() {
     () => members.map((member) => ({ id: member.id, name: member.name, initials: member.initials })),
     [members],
   );
-  if (people.length === 0) return null;
-  const settingsHref = parseProjectId(workspace?.id)
-    ? withActiveProject("/app/settings", parseProjectId(workspace?.id)!)
-    : "/app/settings";
+  if (people.length === 0 && !surface.canManage) return null;
+  const projectId = parseProjectId(workspace?.id);
   return (
     <>
       <span className={styles.collaborators} ref={wrap}>
-        <AvatarStack
+        {people.length === 0 ? (
+          <button type="button" className={styles.inviteLink} onClick={() => setAnchor((current) => current ? null : wrap.current)} aria-expanded={Boolean(anchor)}>Invite people</button>
+        ) : <AvatarStack
           members={people}
           max={3}
           size="md"
@@ -112,7 +113,7 @@ function TaskCollaborators() {
           label={`Project members: ${people.map((p) => p.name).join(", ")}`}
           pressed={Boolean(anchor)}
           onClick={() => setAnchor((current) => (current ? null : wrap.current))}
-        />
+        />}
       </span>
       <Popover open={Boolean(anchor)} anchor={anchor} onClose={() => setAnchor(null)} label="Project members" width={300} align="end">
         <div className={styles.membersPanel}>
@@ -128,12 +129,7 @@ function TaskCollaborators() {
               </li>
             ))}
           </ul>
-          {surface.canManage ? (
-            <Link href={settingsHref} className={styles.inviteLink} onClick={() => setAnchor(null)}>
-              <span className={styles.inviteIcon} aria-hidden="true"><TIcon.plus size={14} /></span>
-              Invite people
-            </Link>
-          ) : null}
+          {surface.canManage && projectId ? <HeaderInvite key={projectId} projectId={projectId} /> : null}
         </div>
       </Popover>
     </>
