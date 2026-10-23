@@ -6,7 +6,7 @@ import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
-import { authorizeProjectDrive, assertProjectDriveCapability, type AuthorizedProjectDriveContext } from "./project-drive-authz";
+import { authorizeProjectDrive, authorizeProjectDriveForAuthenticatedActor, assertProjectDriveCapability, type AuthorizedProjectDriveContext } from "./project-drive-authz";
 import { withAuthorizedProjectDriveSession, type ProjectDriveStorageSession } from "./project-drive-access";
 import { readCurrentProjectDriveFolderSetupState } from "./project-drive-folder-management";
 import { googleDriveAccountErasureFenceKey } from "./project-drive-operation-lifecycle";
@@ -45,6 +45,7 @@ export class ProjectDriveSubfolderConflict extends Error {
 export type ProjectDriveSubfolderDependencies = Readonly<{
   database: Database;
   authorize: typeof authorizeProjectDrive;
+  authorizeAuthenticatedActor: typeof authorizeProjectDriveForAuthenticatedActor;
   withSession: typeof withAuthorizedProjectDriveSession;
   fetchImpl: GoogleFetch;
   now?: () => Date;
@@ -129,6 +130,21 @@ export function createProjectDriveSubfolderService(deps: ProjectDriveSubfolderDe
     await proof(input.projectId, input.actorUserId);
     const [row] = await deps.database.select().from(folders).where(and(eq(folders.workspaceId, input.projectId), eq(folders.actorUserId, input.actorUserId), eq(folders.id, input.operationId)));
     return row ? result(row) : null;
+  }
+
+  /** Historical display checks the current local binding without provider calls.
+   * Keep recovery's read unchanged: it may need custody after a root changes.
+   */
+  async function readForHistory(input: { projectId: string; actorUserId: string; operationId: string }) {
+    const authorization = await deps.authorizeAuthenticatedActor(input.projectId, input.actorUserId, "manageProject");
+    assertProjectDriveCapability(authorization, "manageProject");
+    if (authorization.actorUserId !== input.actorUserId || authorization.archived) throw new ProjectDriveSubfolderConflict();
+    return deps.database.transaction(async tx => {
+      const [row] = await tx.select().from(folders).where(and(eq(folders.workspaceId, input.projectId), eq(folders.actorUserId, input.actorUserId), eq(folders.id, input.operationId)));
+      if (!row || row.status !== "complete" || !row.folderId || row.folderUrl !== canonicalSubfolderUrl(row.folderId)) return null;
+      await fence(tx, authorization, binding(row));
+      return result(row);
+    });
   }
 
   async function execute(input: { projectId: string; actorUserId: string; operationId: string; recoveryOnly?: boolean; assertMutationAllowed?: (transaction: Transaction) => Promise<void> }): Promise<ProjectDriveSubfolderResult> {
@@ -220,9 +236,9 @@ export function createProjectDriveSubfolderService(deps: ProjectDriveSubfolderDe
       return retired.length===1;
     },{behavior:'immediate'});
   }
-  return { bind, prepare, execute, read, retireUnattempted };
+  return { bind, prepare, execute, read, readForHistory, retireUnattempted };
 }
 
 export function projectDriveSubfolderServiceFromEnv() {
-  return createProjectDriveSubfolderService({ database: db, authorize: authorizeProjectDrive, withSession: withAuthorizedProjectDriveSession, fetchImpl: fetch });
+  return createProjectDriveSubfolderService({ database: db, authorize: authorizeProjectDrive, authorizeAuthenticatedActor: authorizeProjectDriveForAuthenticatedActor, withSession: withAuthorizedProjectDriveSession, fetchImpl: fetch });
 }

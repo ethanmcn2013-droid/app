@@ -28,7 +28,7 @@ async function fixture(extra:AssistantAction[]=[]){
     const [row]=await database.select().from(schema.projectDriveSubfolders).where(eq(schema.projectDriveSubfolders.id,input.operationId));
     return row?{operationId:row.id,status:row.status,folderName:row.folderName,folderUrl:row.status==='complete'?row.folderUrl:null}:null;
   };
-  const folders:ReturnType<typeof projectDriveSubfolderServiceFromEnv>={bind:async()=>bind,read,
+  const folders:ReturnType<typeof projectDriveSubfolderServiceFromEnv>={bind:async()=>bind,read,readForHistory:read,
     retireUnattempted:async(input)=>{const [row]=await database.select().from(schema.projectDriveSubfolders).where(eq(schema.projectDriveSubfolders.id,input.operationId));if(!row)return true;if(row.createStarted)return false;await database.delete(schema.projectDriveSubfolders).where(eq(schema.projectDriveSubfolders.id,row.id));return true;},
     prepare:async(binding,id,guard)=>{prepares++;if(mode==='prepare_crash')throw Error('crash before domain prepare');
       await database.transaction(async tx=>{await guard?.(tx);await tx.insert(schema.projectDriveSubfolders).values({id,workspaceId:binding.projectId,actorUserId:binding.actorUserId,storageGenerationId:binding.storageGenerationId,connectionId:binding.connectionId,providerAccountId:binding.providerAccountId,parentId:binding.parentId,folderName:binding.folderName,status:'pending',createdAt:new Date()}).onConflictDoNothing();});return(await read({operationId:id}))!;},
