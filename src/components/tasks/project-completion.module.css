@@ -1,0 +1,10 @@
+.dialog { width: min(420px, calc(100vw - 32px)); margin: auto; padding: 28px; border: 1px solid var(--v3-border); border-radius: var(--v3-radius-lg); color: var(--v3-text); background: var(--v3-surface); overflow: visible; }
+.dialog::backdrop { background: rgb(0 0 0 / 24%); }
+.dialog h2 { margin: 0 0 12px; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+.dialog p { margin: 0 0 20px; font-size: 13.5px; line-height: 1.55; color: var(--v3-text-2); }
+.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.burst { position: absolute; inset: 0; pointer-events: none; }
+.burst i { position: absolute; top: -10px; left: 50%; width: 4px; height: 8px; background: var(--v3-accent); opacity: 0; transform-origin: 0 0; animation: paper 750ms ease-out both; }
+.burst i:nth-child(3n) { background: var(--v3-text-3); }
+@keyframes paper { 10% { opacity: 0.7; } 100% { opacity: 0; transform: rotate(calc(var(--i) * 30deg)) translateY(-96px) rotate(100deg); } }
+@media (prefers-reduced-motion: reduce) { .burst { display: none; } }
