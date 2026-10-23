@@ -72,6 +72,7 @@ export function inventoryNotesExport(raw, { ownerId, sourceRevision }) {
 export function main(argv) {
   const { values } = parseArgs({ args: argv, options: { input: { type: 'string' }, owner: { type: 'string' }, out: { type: 'string' }, 'source-revision': { type: 'string' } }, allowPositionals: false });
   if (!values.input || !values.out || !values.owner || !values['source-revision']) fail('REQUIRED_ARGUMENTS');
+  if ([values.input,values.out].some(value => /^(\\\\|\/\/)/.test(value) || (/^[a-z][a-z0-9+.-]*:\//i.test(value) && !/^[a-z]:[\\/]/i.test(value)))) fail('LOCAL_FILES_REQUIRED');
   const inputPath = path.resolve(values.input);
   const outputPath = path.resolve(values.out);
   if (inputPath === outputPath) fail('OUTPUT_IS_INPUT');

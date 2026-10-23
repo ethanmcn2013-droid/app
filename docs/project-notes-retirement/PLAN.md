@@ -24,7 +24,9 @@ Current source includes `/app/notes`, Notes workspace/composer/review, direct cr
 
 `NOTES_LEGACY_NOTEBOOK_ENABLED` selects an earlier notebook, not retirement. It is not a write lock. The source contains historical comments naming `/api/capture/email` and calendar spawning, but those route/worker implementations were not located in this source snapshot. Do not infer active jobs, their absence in production, successful provider disconnection, or a complete external cutover from those comments. Coordinator must inventory deployed routes/jobs, old deployments, inbound mail provider and integration ownership read-only before a later execution proposal.
 
-No retirement flag or runtime routing is added here. A later reviewed implementation needs an owner-visible archive reader plus server-side mutation refusal across every actual Notes write entrypoint. Removing launcher links alone is insufficient. Extraction endpoints may also serve other flows; gate Notes persistence and Notes-only paths precisely rather than disabling unrelated app capabilities.
+The prepared implementation adds a default-off server switch, `NOTES_RETIREMENT_ARCHIVE_ENABLED` (only `1` or `true` enables it). Nothing configures or activates that switch. When enabled in a separately authorized release, `/app/notes` renders the new owner-only read-only archive, including old `?note=` links, without mounting capture/autosave/review hooks. The reader returns all of the current owner's rows: archived and retained active rows are visibly distinct, so a partial cutover does not hide unpromoted notes or mislabel active data. It preserves the verified Project navigation hint without using Project membership to authorize private note content. Unknown/other-owner note IDs select no content. Account export remains the existing authenticated route.
+
+Nineteen exported Notes mutation/capture/promotion actions now check the server switch before any input, demo, auth, DB or provider work. The exhaustive endpoint contract test requires every Notes action export to be explicitly classified; owner reads, send-recovery inspection and account export/erasure stay available. No launcher, marketing, product URL, Chat Saved notes, database schema, external provider configuration or production data is changed here. Removing launcher links alone remains insufficient. The generic Notes-extract API endpoints are not data persistence paths and are not disabled as a side effect.
 
 ## Offline inventory utility
 
@@ -58,4 +60,38 @@ Disaster recovery first restores the encrypted full Notes backup into a new isol
 
 ## Remaining gates
 
-Production count/identity and encrypted-backup receipts: **not collected**. Archive reader/server mutation gate/app retirement UI: **not implemented**. Notes-specific encrypted custody wrapper and apply/undo runner: **not implemented**. External producer inventory, owner scope, retention/custody owner and explicit production confirmation: **pending**. Saved notes remain untouched. This preparation can be reviewed and merged independently of production retirement, but does not remove Notes from the product yet.
+Production count/identity and encrypted-backup receipts: **not collected**. Archive reader and Notes mutation guards: **implemented behind a default-off switch**, not activated. Offline Notes-specific encrypted custody wrapper: **implemented**, no production dump supplied or encryption run performed. Apply/undo archival runner: **not implemented**. External producer inventory, owner scope, retention/custody owner and explicit production confirmation: **pending**. Saved notes remain untouched. This preparation can be reviewed and merged independently of production retirement, but does not remove Notes from the product yet.
+
+## Prepared backup wrapper and staging procedure
+
+`scripts/db/notes-backup-custody.mjs` is an offline adapter over the shipped backup-bundle/encryption preflight/age engine and the shipped local restore verifier. It has only `prepare` and `recover` commands. It accepts no URL, token, connection, migration or archival argument and reads no credentials. The independently supplied body, manifest, raw manifest hash, Notes identity and source commit must agree. The wrapper also checks an independent canonical manifest hash on recovery, checksum-pins the age executable, refuses a dirty/wrong source checkout, requires new private output directories outside the repository, verifies every restored table hash and DDL plus integrity/FKs, and emits only `backup.age` plus an allowlisted receipt in the ciphertext directory. Its temporary private restoration/bundle directory is checked and removed after successful preparation. On failure it preserves possible private state for controlled recovery; never upload that state.
+
+The supported Notes schema is the five canonical module tables in `drizzle-notes/0000_notes_baseline.sql`. Unknown tables or another module cause refusal before restore. Source search references a historical `notes_fts` table although the tracked baseline does not define it. If a fresh authorized inventory discovers FTS shadow tables, extra migration tables or other schema, stop and add reviewed full preservation/replay support using the observed immutable schema; do not omit the tables, delete/rebuild them in production, or weaken the allowlist to get a green receipt.
+
+The wrapper does not obtain the original read-transaction dump, prove its freshness, upload ciphertext, establish independent escrow or mutate a source database. Its receipt says `sourceConsistency: unverified-supplied-dump`, `artifactUpload: not-performed` and `productionMutation: none`. Tests inject a synthetic age process to verify delegation/binding/custody behavior; that is not evidence of real ciphertext or real key recovery. A real approved age binary and a separately held identity are still required for the authorized rehearsal.
+
+Staging, with no production visibility or writes:
+
+1. Review the exact commit and run the focused tests below. The wrapper's successful prepare test requires a clean checkout at that commit. Do not enable the server switch in any shared deployment. Server-rendered component tests verify old-link selection, escaped private content and no edit controls; browser/layout verification of the disabled-by-default alternate surface remains a receiving gate before activation.
+2. If the coordinator authorizes obtaining source data, the coordinator uses the approved read-only backup engine under an actual Notes read transaction and retains a private receipt tying the independent Notes identity to body/manifest hashes. Plain `backup.mjs` invocation alone does not assert a transaction-backed cutover snapshot. No source backup was acquired for this work.
+3. In the clean reviewed checkout, run `prepare` with explicit local private inputs, trusted independently retained hashes/identity, approved recipient and checksum-pinned age binary. All placeholder paths/hashes below must be real private values; none are filled in by this preparation:
+
+```text
+node scripts/db/notes-backup-custody.mjs prepare --backup PRIVATE_NOTES_JSONL --manifest PRIVATE_NOTES_MANIFEST --expected-backup-sha256 TRUSTED_BODY_SHA256 --expected-manifest-sha256 TRUSTED_RAW_MANIFEST_SHA256 --expected-database-identity INDEPENDENT_NOTES_IDENTITY_16_HEX --expected-source-revision REVIEWED_APP_COMMIT --age-binary APPROVED_ABSOLUTE_AGE_PATH --expected-age-sha256 APPROVED_AGE_SHA256 --recipient APPROVED_AGE_RECIPIENT --private-dir NEW_PRIVATE_TEMP_DIRECTORY --cipher-dir NEW_PRIVATE_CIPHERTEXT_DIRECTORY
+```
+
+4. Retain the ciphertext and sanitized receipt through the approved custody destination; independently record ciphertext/body/raw-and-canonical-manifest hashes and upload acknowledgment. Only the ciphertext directory is suitable for an encrypted backup artifact. The existing source JSONL remains private; its removal/retention is separately owned. Recovery tests must use trusted hashes from the independent receipt, never trust hashes merely because they accompanied downloaded ciphertext.
+5. With a separately held identity and a fresh private recovery directory, decrypt and fully verify locally. The wrapper never writes back to Notes or Tasks:
+
+```text
+node scripts/db/notes-backup-custody.mjs recover --cipher PRIVATE_BACKUP_AGE --identity PRIVATE_AGE_IDENTITY --expected-cipher-sha256 TRUSTED_CIPHER_SHA256 --expected-backup-sha256 TRUSTED_BODY_SHA256 --expected-manifest-sha256 TRUSTED_RAW_MANIFEST_SHA256 --expected-canonical-manifest-sha256 TRUSTED_CANONICAL_MANIFEST_SHA256 --expected-database-identity INDEPENDENT_NOTES_IDENTITY_16_HEX --expected-source-revision REVIEWED_APP_COMMIT --age-binary APPROVED_ABSOLUTE_AGE_PATH --expected-age-sha256 APPROVED_AGE_SHA256 --private-dir NEW_PRIVATE_RECOVERY_DIRECTORY
+```
+
+6. Verify the recovery receipt, retain ciphertext/recovery evidence, and remove only the exact owned plaintext recovery directory after its custody purpose ends. Windows private ACLs and private parent-directory custody must be established by the operator; mode bits alone do not establish them. Then the coordinator can present the concrete archive/freeze/release operation for Ethan's required approval. No prepared command changes `NOTES_RETIREMENT_ARCHIVE_ENABLED` or archives a row.
+
+Focused verification commands:
+
+```text
+node --test scripts/notes/retirement-inventory.test.mjs scripts/db/notes-backup-custody.test.mjs
+node --import tsx --test src/modules/notes/lib/notes-retirement.test.ts src/modules/notes/server/actions/retirement.test.ts src/modules/notes/server/notes-retirement-write-contract.test.mjs
+```

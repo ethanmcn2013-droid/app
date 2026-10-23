@@ -1,5 +1,7 @@
 "use server";
 
+import { assertNotesWritable } from "@/modules/notes/lib/notes-retirement";
+
 import { and, eq } from "drizzle-orm";
 import {
   createTimelinePromotionCommand,
@@ -23,6 +25,7 @@ export async function promoteSelectedExtractToTimeline(input: {
   completion: number;
   audienceLabel: string;
 }): Promise<TimelinePromotionReceipt & { preview: string }> {
+  assertNotesWritable();
   // demo mode never touches the DB — cross-product Timeline writes are unavailable in demo.
   if (isDemoMode()) {
     return {

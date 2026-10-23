@@ -34,6 +34,8 @@ import { resolveProjectForRoute } from "@/server/projects/route-authz";
 import { ActiveProjectRouteSync } from "@/components/app/active-project-route-sync";
 import { SuiteContextPublisher } from "@/components/app/suite-context-publisher";
 import { notesHref } from "@/modules/notes/lib/notes-view-model";
+import { notesRetirementEnabled } from "@/modules/notes/lib/notes-retirement";
+import { NotesRetirementArchive } from "@/modules/notes/app/workspace/NotesRetirementArchive";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +100,14 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
     ));
   }
   const captureAllowed = projectDecision?.kind !== "unavailable" && projectDecision?.kind !== "archived";
+
+  if (notesRetirementEnabled()) {
+    return <>
+      {activeProjectEnabled ? <ActiveProjectRouteSync project={verifiedProject} requestedProjectId={workspaceHint} /> : null}
+      {!activeProjectEnabled && projectDecision !== null ? <SuiteContextPublisher workspaceId={verifiedProject?.id ?? null} planningPeriodId={null} /> : null}
+      <NotesRetirementArchive requestedNoteId={typeof params.note === "string" ? params.note : null} workspaceId={verifiedProject?.id ?? null} />
+    </>;
+  }
 
   let initialNotes: Awaited<ReturnType<typeof listNotes>>;
   let initialArchivedNotes: Awaited<ReturnType<typeof listArchivedNotes>>;

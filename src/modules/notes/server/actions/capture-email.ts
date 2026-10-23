@@ -1,5 +1,7 @@
 "use server";
 
+import { assertNotesWritable } from "@/modules/notes/lib/notes-retirement";
+
 import { randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { requireUser } from "@/modules/notes/server/notes-auth";
@@ -44,6 +46,7 @@ export type CaptureEmailResult =
  * this feature AND can use it.
  */
 export async function getCaptureEmail(): Promise<CaptureEmailResult> {
+  assertNotesWritable();
   // Demo/Review: show the free-tier upgrade nudge rather than a live inbound
   // address. Keeps the notebook visually complete without touching the DB.
   if (isDemoMode()) return { ok: false, reason: "free-tier-not-enabled" };
@@ -96,6 +99,7 @@ export async function getCaptureEmail(): Promise<CaptureEmailResult> {
  * after this returns. Tier-gated.
  */
 export async function regenerateCaptureSlug(): Promise<CaptureEmailResult> {
+  assertNotesWritable();
   // demo mode never touches the DB — return the same free-tier nudge as getCaptureEmail.
   if (isDemoMode()) return { ok: false, reason: "free-tier-not-enabled" };
   const userId = await requireUser();

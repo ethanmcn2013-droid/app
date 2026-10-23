@@ -1,5 +1,7 @@
 "use server";
 
+import { assertNotesWritable } from "@/modules/notes/lib/notes-retirement";
+
 import { generateObject, jsonSchema } from "ai";
 
 import { getModel, aiConfigured, AI_RATE_LIMITED_MESSAGE } from "@/server/ai";
@@ -80,6 +82,7 @@ async function guard(): Promise<{ ok: true; userId: string } | { ok: false; mess
 export async function extractNotesFromSpeech(
   input: ExtractFromSpeechInput,
 ): Promise<NoteExtraction> {
+  assertNotesWritable();
   // Tidied, but NOT capped to one note's length: the cap belongs to a note,
   // not to what a person said. Capping here truncated a three-minute
   // dictation to six hundred characters and called it a success.
@@ -128,6 +131,7 @@ export async function extractNotesFromSpeech(
 export async function extractNotesFromPhoto(
   input: ExtractFromPhotoInput,
 ): Promise<NoteExtraction> {
+  assertNotesWritable();
   const mediaType = input.mediaType.trim().toLowerCase();
   if (!ALLOWED_IMAGE_TYPES.includes(mediaType as AllowedImageType)) {
     return {
