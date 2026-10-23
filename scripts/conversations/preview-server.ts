@@ -79,7 +79,12 @@ const server = createServer(async (incoming, outgoing) => {
   }
   const attachmentEndpoint = path.pathname === "/api/conversations/attachments" || /^\/api\/conversations\/attachments\/ca_[a-f0-9]{32}$/.test(path.pathname);
   if (path.pathname === "/api/conversations" || path.pathname === "/api/task-discussion" || attachmentEndpoint) {
-    const fixtureActor = typeof incoming.headers["x-fixture-actor"] === "string" ? incoming.headers["x-fixture-actor"] : null;
+    // Native browser downloads omit injected fixture headers. Only this local
+    // synthetic download endpoint accepts the explicitly set test actor cookie.
+    const downloadActorCookie = attachmentEndpoint && incoming.method === "GET" && path.pathname !== "/api/conversations/attachments"
+      ? (incoming.headers.cookie ?? "").split(";").map(value => value.trim()).find(value => value.startsWith("__conversation_fixture_actor="))?.slice("__conversation_fixture_actor=".length) ?? null
+      : null;
+    const fixtureActor = typeof incoming.headers["x-fixture-actor"] === "string" ? incoming.headers["x-fixture-actor"] : downloadActorCookie;
     if (incoming.method === "GET" && path.searchParams.get("action") === "receipt" && fixtureActor && unavailableReceipts.has(fixtureActor)) {
       outgoing.writeHead(503, { "content-type": "application/json", "cache-control": "no-store" });
       outgoing.end('{"ok":false,"code":"temporarily_unavailable"}'); return;
