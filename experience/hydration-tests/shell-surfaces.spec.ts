@@ -205,7 +205,7 @@ for (const theme of ["dark", "light"] as const) {
       await search.focus();
       await expect(search).toBeFocused();
       await search.press("Enter");
-      const palette = page.getByRole("dialog", { name: "Command palette", exact: true });
+      const palette = page.getByRole("dialog", { name: "Search or jump to", exact: true });
       await expect(palette).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(palette).toBeHidden();
