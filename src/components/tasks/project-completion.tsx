@@ -37,7 +37,7 @@ export function ProjectCompletion() {
   useEffect(() => {
     const next: CompletionSnapshot = { projectId: project?.id ?? "", tasks: confirmedTasks };
     if (project && !readOnly && columns.current === columnVersion && justCompletedProject(previous.current, next)) {
-      const completed = { id: project.id, name: domain.workspaceName };
+      const completed = { id: project.id, name: domain.workspaceName?.trim() || "This project" };
       queueMicrotask(() => { setOffer(completed); setError(null); });
     }
     if (offer && (offer.id !== next.projectId || all.some((task) => !isDone(task)) || next.tasks.some((task) => !task.done) || next.tasks.length === 0)) queueMicrotask(() => setOffer(null));
