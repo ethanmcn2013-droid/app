@@ -3817,7 +3817,7 @@
     "src/components/tasks/project-completion-model.test.ts": "6ef92a50b593c17000ed72e1d09b8e53bef299402634cd32667b0f6ff653aa28",
     "src/components/tasks/project-completion-model.ts": "b534a54e58db6b02d077e9371c5ee6c18d753b71b8ef84a7265a2e28d4be8218",
     "src/components/tasks/project-completion.module.css": "624a7d9d8402d5bc652702aac45c13dd133c9d47dfd5b3965f7c3208ec2915dc",
-    "src/components/tasks/project-completion.tsx": "79852b2fd471dbf4ccc30846c37a163e1969477b1be792d0397f7b1894ddbb48",
+    "src/components/tasks/project-completion.tsx": "91854397453d9b49fc8f92535cd4081e83196c0cd5e32169a43d60c96a289037",
     "src/components/tasks/view-navigation.tsx": "9a727325f7eaf70841cfc42a0a335b5efb3c43d3bf41f20891ba51db0e5a7614"
   }
 }
