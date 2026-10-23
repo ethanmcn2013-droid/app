@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "reviewedBy": "Implementation self-check; independent revision-bound review required before release.",
+  "authorizedBy": "Founder product notes G5, coordinator-admitted isolated implementation 23 October 2026.",
+  "authorizationSource": "Project and direct-message upload/paste brief; no production apply.",
+  "id": "conversation-chat-attachments-2026-10-23",
+  "migrations": [
+    {
+      "risk": "Additive shared conversation upload claims; default-off gate and same-transaction canonical authorization. No existing text hashes or personal claims changed.",
+      "proofs": [
+        {
+          "id": "shared-file-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('conversation_chat_attachments') WHERE name IN ('workspace_id','conversation_id','audience_epoch','id','owner_id','client_request_id','request_hash','filename','mime_type','size_bytes','backend','store_identity','storage_key','state','writer_settled','custody_until','expires_at','created_at') AND \"notnull\"=1",
+          "expected": 18
+        },
+        {
+          "id": "shared-file-indexes",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type='index' AND name IN ('idx_conversation_chat_attachment_request','idx_conversation_chat_attachment_owner','idx_conversation_chat_attachment_message','idx_conversation_chat_attachment_project')",
+          "expected": 4
+        },
+        {
+          "id": "shared-file-no-cascade",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('conversation_chat_attachments')",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ],
+      "postconditions": [
+        "Exact backend/store/key and unsettled writer custody survives parent deletion.",
+        "Uploader, Project, conversation, root and audience epoch pinned before binding.",
+        "No cascading byte custody; canonical lifecycle must confirm deletion first."
+      ],
+      "rollbackPlan": "Disable SIGNAL_CONVERSATION_ATTACHMENTS_ENABLED; preserve all existing custody and bytes. Apply only through mandatory verified backup and encrypted migration flow.",
+      "sha256": "90f51e2e6f35e069d211dc2b3743aeeda2f6f74f8c357115c653c1604f41304b",
+      "id": "0047_conversation_chat_attachments",
+      "reviewedAt": "2026-10-23T00:00:00.000Z"
+    }
+  ]
+}

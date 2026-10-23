@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-home-error",
+  "source": "tasks/src/app/app/home/error.tsx",
+  "materialityHash": "f0e4960b366e6091",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_timeline_files independent Sol6.1 rendered reviewer; no founder attribution",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-b4d99be02933bb66cd23f765-78c288e2d8b64fa1.json",
+    "attestationSha256": "acf3318649b13a7bafd498de8a69bc228b129fd92e4178fca832a52a9f90aa48",
+    "runId": "tasks-playwright-b4d99be02933bb66cd23f765",
+    "canonicalEvidenceSha256": "b4d99be02933bb66cd23f765271e539c71105f14c24c7f9e0c7816846ac46ea5",
+    "rawArtifactSha256": "78c288e2d8b64fa15d4c36d4f759fe51086fb1d85f9832d4de6bae683736d2e5",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-home-error",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Ping history candidatec44ace02 capture40014024849 passed188/188 outcomes. Independent reviewer verified all72 images against exact raw title/case/viewport PNG bodies and original attachments;66 match retained independently reviewed PNG bytes, and all6 new images were individually inspected with no visible blocker. Source is the recorded exact checkoutc44, not raw CI event merge metadata. This accepts supplied synthetic initial states only: inherited664px mobile Tasks-loading width, old Files demo, unavailable Welcome, upload affordance and unseen interaction limits remain. Images do not establish history GET, provider behavior, authenticated live receiving or production acceptance. No numerical score or quality coverage advance.",
+  "decision": "accepted for supplied synthetic initial-state materiality only; explicit inherited, interaction, history/provider and live limits retained"
+}
