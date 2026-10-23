@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-analytics",
+  "source": "tasks/src/app/app/analytics/page.tsx",
+  "materialityHash": "d89f2a4abd38ee57",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_timeline_files independent Sol6.1 rendered reviewer; no founder attribution",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-ac09f641bfcbdef2da0aa146-b593816441d8ebbe.json",
+    "attestationSha256": "3159d5c8a7577bb23b653939a5107cff57eccc6fd3c3079b49f67aaf97be1b25",
+    "runId": "tasks-playwright-ac09f641bfcbdef2da0aa146",
+    "canonicalEvidenceSha256": "ac09f641bfcbdef2da0aa146c3d360051b03a8b0ec8ebc305f54a8b3e7c6d649",
+    "rawArtifactSha256": "b593816441d8ebbe61c8c88f9d52bd6f5ef70bad420462b99402c4f3831419ce",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-analytics",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Corrected Tasks b54 capture40015662749 passed188/188 canonical outcomes. Independent reviewer verified exact source, four contracts, raw canonical digest and all72 mapped PNGs against original attachments.71 images were verified identical to retained previously independently reviewed bytes; one new wide upload drawer image was individually viewed. No new blocking visible finding in supplied initial states. Static synthetic Files demo, Welcome fallback, upload-affordance, inherited664px Tasks loading width and unseen board/completion/invite/archive interactions remain explicit limitations. Open Chat toast, historyGET, provider and live acceptance are not certified. No numerical score or quality coverage advance.",
+  "decision": "accepted for supplied synthetic initial-state materiality only; interaction and live/provider limits retained"
+}

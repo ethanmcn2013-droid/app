@@ -1,0 +1,1711 @@
+{
+  "schema": "signal-independent-rendered-review/1",
+  "reviewedAt": "2026-10-23T20:15:28.901Z",
+  "reviewer": {
+    "agent": "product_timeline_files",
+    "authoredPingHistory": false,
+    "role": "independent rendered reviewer",
+    "founderAttribution": false
+  },
+  "source": {
+    "schemaVersion": "signal-experience-candidate-source/1",
+    "head": "c44ace02e4d7ae059b0fa18c15723c9ee9f9372f",
+    "tree": "f1e69fb0b98ee2f977112b8ab41a2146042d7a65",
+    "captureOnly": true,
+    "reviewedRegistryOrReceipts": false,
+    "boundary": "Synthetic Preview browser capture only. Existing required registry, fixture, review, quality and release gates remain required. A capture or candidate attestation does not establish receiving acceptance.",
+    "pullRequest": 331,
+    "workflowRunId": "40014024849",
+    "verifiedSourceBoundary": "Exact checkout recorded by workflow candidate-source and its exact-PR-head guard; raw CI environment commit metadata is not treated as checked-out source."
+  },
+  "coverage": {
+    "targets": 18,
+    "images": 72,
+    "newActualImagesIndividuallyInspected": 6,
+    "byteIdenticalPriorActualImagesReused": 66,
+    "note": "Every new image was individually opened with view_image. Reuse was admitted only after exact image bytes and retained prior review/image hashes were verified, not by inheriting a source-level verdict."
+  },
+  "evidence": {
+    "runId": "tasks-playwright-b4d99be02933bb66cd23f765",
+    "canonicalEvidenceSha256": "b4d99be02933bb66cd23f765271e539c71105f14c24c7f9e0c7816846ac46ea5",
+    "rawReport": {
+      "path": "output/critical-evidence.json",
+      "sha256": "78c288e2d8b64fa15d4c36d4f759fe51086fb1d85f9832d4de6bae683736d2e5"
+    },
+    "attestation": {
+      "path": "output/evidence-attestation.json",
+      "sha256": "acf3318649b13a7bafd498de8a69bc228b129fd92e4178fca832a52a9f90aa48"
+    },
+    "candidateSource": {
+      "path": "output/candidate-source.json",
+      "sha256": "0c6333bf1e838c3be7bbe63f6b89426f2133a979fe2d3bf8017b2d37c71a532c"
+    },
+    "mapping": {
+      "path": "materiality-target-png-map.json",
+      "sha256": "e10cb7d7dae04ea9a41eb97c300e0b95c301b2ff4b373a06d9e3e3d2ed4383af"
+    },
+    "browserContract": {
+      "path": "browser-contract.json",
+      "sha256": "838e98594ed9b15cfa6386e15abea30ac0553727a42e77ade1badc31740870e1"
+    },
+    "fixtureManifest": {
+      "path": "critical-fixtures.json",
+      "sha256": "62880606c342145807ee2af6c08ac9b2a0a1593f6f489889e2936a64c612ae2e"
+    },
+    "playwrightConfig": {
+      "path": "playwright.config.ts",
+      "sha256": "2be57e878ddb600689a2c4f29b6e6529d56cdff7a5663492c77d4b9fbe459534"
+    },
+    "playwrightSpec": {
+      "path": "tests/critical-experiences.spec.ts",
+      "sha256": "3fd479c6f663668c65e4f8a840ef6c4bf2a94d3787a82a4893d9d084d34b66a1"
+    },
+    "artifact": {
+      "id": "12528617569",
+      "providerReportedZipDigest": "a2a68bc4e25c33d64bc09a873a267b7f02b95141d84bb936e0b8184c83100df1",
+      "independentlyVerifiedZipDigest": false,
+      "scope": "Review binds extracted files; provider ZIP digest is provenance only."
+    },
+    "imageBindings": "Each named PNG independently hash-matched to its exact raw-report test title/case/project PNG body and to retained original report-data bytes. Four contract/input hashes verified against attestation.",
+    "rawCiMetadata": {
+      "commitHash": "63757ff021a786c03f342352a5351b8baeaa96b0",
+      "meaning": "Event merge metadata differs from recorded candidate checkout. No exact-source claim is derived from this environment metadata."
+    }
+  },
+  "reportedAutomation": {
+    "canonicalOutcomes": 188,
+    "passedOutcomes": 188,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0,
+    "independentBrowserReplay": false,
+    "note": "Report/attestation inspected and outcome fields checked, not independently rerun."
+  },
+  "verdict": "No blocking visible regression found in the supplied static initial states",
+  "blockingFindings": [],
+  "nonBlockingObservations": [
+    "Inherited mobile Tasks-loading PNG width is664 rather than nominal390. It matches retained prior reviewed bytes and is not a new clean-overflow claim.",
+    "New Analytics and wide upload-affordance PNGs remain legible; their image changes do not imply a Ping UI or runtime change."
+  ],
+  "visibleChanges": [
+    "Six image-byte differences were inspected: Analytics tablet/desktop/wide, Analytics loading desktop/wide and Drive-upload affordance wide. No new blocking layout issue was visible.",
+    "Sixty-six images reuse independently inspected exact prior bytes; original review paths and SHA256 evidence are retained per image."
+  ],
+  "limitations": [
+    "Synthetic preview screenshots and deterministic component fixtures are not authenticated production receiving, live data or founder acceptance.",
+    "No Ping completed-history GET, current membership authorization, model execution, folder creation, Apply/Undo, Drive or Blob provider behavior can be inferred from these materiality stills.",
+    "Chat sends, invitations, Project switching, completion/confetti, board/collapse/reorder, retry and other unseen interactions were not independently replayed.",
+    "Files uses the known demo surface; Welcome is its known unavailable fallback; upload target shows an affordance rather than a completed upload.",
+    "This review does not qualify later Analytics/Shell/Tasks/Notes/H2/Whiteboard/recipe tail source; it binds only the exact Ping candidate and retained evidence files.",
+    "The188-outcome run and sidebar success are producer execution evidence. This review independently checks raw hashes/outcomes and images; it does not claim rerunning the cloud browser or independently validating the provider ZIP digest."
+  ],
+  "targets": [
+    {
+      "id": "tasks.page.app-settings",
+      "case": "own surface in demo",
+      "path": "/app/settings",
+      "observation": "Settings groups, labels and review-mode controls remain legible across the four retained views. This initial state does not demonstrate account mutations, hidden settings sections or production provider configuration.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-settings-mobile.png",
+          "sha256": "c42571edccdadd8b352c93260e9332aed5fa034a8d918b942bc30887b2445584",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-settings-mobile.png",
+            "imageSha256": "c42571edccdadd8b352c93260e9332aed5fa034a8d918b942bc30887b2445584",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\c12a5cb90d9036db27f2cd7972a6fb629203d753.app-settings-own-surface-in-demo-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-settings-tablet.png",
+          "sha256": "d9e165c7202c7b972a5f50563f45cd61abd8f508fd8ab962cb2d11961211b27b",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-settings-tablet.png",
+            "imageSha256": "d9e165c7202c7b972a5f50563f45cd61abd8f508fd8ab962cb2d11961211b27b",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\ec954df5cdf899b12b5794a53e539894d29a51c8.app-settings-own-surface-in-demo-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-settings-desktop.png",
+          "sha256": "51ce3fc28e4e7e9285020ae5aa5453e187f8297d19a1f10f90e42c5e43c6d8e0",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-settings-desktop.png",
+            "imageSha256": "51ce3fc28e4e7e9285020ae5aa5453e187f8297d19a1f10f90e42c5e43c6d8e0",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\bac4aa5147b5727d63a43c3e816588faea26e751.app-settings-own-surface-in-demo-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-settings-wide.png",
+          "sha256": "7ff98d38f2938b087fbfa85228da95b889737666473f96b9fa85e344ccd23365",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-settings-wide.png",
+            "imageSha256": "7ff98d38f2938b087fbfa85228da95b889737666473f96b9fa85e344ccd23365",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\96d84ec5fa98d9a6871147923743e50c47e66820.app-settings-own-surface-in-demo-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-project",
+      "case": "own surface in demo",
+      "path": "/app/project",
+      "observation": "The captured Project/Tasks surface retains readable synthetic work and its shell. Still images do not prove Project selection, completion, saved layouts or current production data.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-project-mobile.png",
+          "sha256": "59e88e8ba87b5fcf3f3e7635fd3682bd66a36ddbf16df3709572d40a398bf475",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-project-mobile.png",
+            "imageSha256": "59e88e8ba87b5fcf3f3e7635fd3682bd66a36ddbf16df3709572d40a398bf475",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\ee818aba077e0eea061ef81678a5535fdb70de9d.app-project-own-surface-in-demo-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-project-tablet.png",
+          "sha256": "05b9c731c088852bbb73f6e008c4bb119f952de0874b0243fedf17055ed82b44",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-project-tablet.png",
+            "imageSha256": "05b9c731c088852bbb73f6e008c4bb119f952de0874b0243fedf17055ed82b44",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\9fc0d987a304b677116f8ea2c1dfab25f01ab587.app-project-own-surface-in-demo-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-project-desktop.png",
+          "sha256": "ffb25b00889d7f69cf973cc8266d18245a80698dd4d5b35f5172a91cd70fc5c2",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-project-desktop.png",
+            "imageSha256": "ffb25b00889d7f69cf973cc8266d18245a80698dd4d5b35f5172a91cd70fc5c2",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\0fc1e60101a7262f2c54300be642d4f052266b13.app-project-own-surface-in-demo-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-project-wide.png",
+          "sha256": "bf09c8af975d2af9a22fca33c47cbf82c0f3f36460db9c92a419c9b621def05a",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-project-wide.png",
+            "imageSha256": "bf09c8af975d2af9a22fca33c47cbf82c0f3f36460db9c92a419c9b621def05a",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\8a35b1901eb3af2be8ab236a3d86e02e01d04394.app-project-own-surface-in-demo-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-project-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-project-loading",
+      "observation": "Project loading component remains a neutral, responsive skeleton in the deterministic fixture; no readiness or authenticated Project result is implied.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-project-loading-mobile.png",
+          "sha256": "7f479ea83e16ba5a40b618ef17613b6dd576de540cfdcfbe0b9f13830aa551b3",
+          "pixelWidth": 390,
+          "pixelHeight": 920,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-project-loading-mobile.png",
+            "imageSha256": "7f479ea83e16ba5a40b618ef17613b6dd576de540cfdcfbe0b9f13830aa551b3",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-project-loading",
+              "viewport": "mobile",
+              "reviewPath": "review-images/tasks.state.app-project-loading-mobile.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\cb67bdae78c901a07c0f3b562f1e86a030e17c1c.app-project-loading-actual-component-with-deterministic-local-inputs-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-project-loading-tablet.png",
+          "sha256": "d43c3f522ef093610b10dcbc31dadcd1e1215e3442c92494c28d1ca88880be2e",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-project-loading-tablet.png",
+            "imageSha256": "d43c3f522ef093610b10dcbc31dadcd1e1215e3442c92494c28d1ca88880be2e",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-project-loading",
+              "viewport": "tablet",
+              "reviewPath": "review-images/tasks.state.app-project-loading-tablet.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\9dc57b7138b2066ecadaaab9d5203398694c51d7.app-project-loading-actual-component-with-deterministic-local-inputs-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-project-loading-desktop.png",
+          "sha256": "44b1ad4652f3559d78b7ca94449e8b3bb392f6a322efbf14d51dc0861ccb7967",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-project-loading-desktop.png",
+            "imageSha256": "44b1ad4652f3559d78b7ca94449e8b3bb392f6a322efbf14d51dc0861ccb7967",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-project-loading",
+              "viewport": "desktop",
+              "reviewPath": "review-images/tasks.state.app-project-loading-desktop.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\c4327db35c72aab13f2b7dba2020832ad731cf05.app-project-loading-actual-component-with-deterministic-local-inputs-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-project-loading-wide.png",
+          "sha256": "350def90d77ea237360d4f8d453614903204a756cdb2fe9a9c3f17e9d7aa9414",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-project-loading-wide.png",
+            "imageSha256": "350def90d77ea237360d4f8d453614903204a756cdb2fe9a9c3f17e9d7aa9414",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-project-loading",
+              "viewport": "wide",
+              "reviewPath": "review-images/tasks.state.app-project-loading-wide.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\f680d46615e23001d25e06142ceb743659bc4316.app-project-loading-actual-component-with-deterministic-local-inputs-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-home-loading",
+      "observation": "Home loading component preserves its structural placeholders across viewports; static capture does not establish loading duration or final Home behavior.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-home-loading-mobile.png",
+          "sha256": "2e1be11bb0abd80607e25d5f5976f9447aeebca99de951b8f55f9ba35ddd80dd",
+          "pixelWidth": 390,
+          "pixelHeight": 1342,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-home-loading-mobile.png",
+            "imageSha256": "2e1be11bb0abd80607e25d5f5976f9447aeebca99de951b8f55f9ba35ddd80dd",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-home-loading",
+              "viewport": "mobile",
+              "reviewPath": "review-images/tasks.state.app-home-loading-mobile.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\c109de9d361651053e7575331b5c66e7d27eb7c2.app-home-loading-actual-component-with-deterministic-local-inputs-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-home-loading-tablet.png",
+          "sha256": "020cde8ce77a66d9ee9b98d5e083683aaeda4e683d88c4120e74b9559159075e",
+          "pixelWidth": 768,
+          "pixelHeight": 1370,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-home-loading-tablet.png",
+            "imageSha256": "020cde8ce77a66d9ee9b98d5e083683aaeda4e683d88c4120e74b9559159075e",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-home-loading",
+              "viewport": "tablet",
+              "reviewPath": "review-images/tasks.state.app-home-loading-tablet.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\071f50854b2122300496d157c2b9c16125a4a40c.app-home-loading-actual-component-with-deterministic-local-inputs-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-home-loading-desktop.png",
+          "sha256": "1836b620784d1bfcb227c674cf4aeb6a71d3436e3d9100cf7e6d65da119303fa",
+          "pixelWidth": 1280,
+          "pixelHeight": 1370,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-home-loading-desktop.png",
+            "imageSha256": "1836b620784d1bfcb227c674cf4aeb6a71d3436e3d9100cf7e6d65da119303fa",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-home-loading",
+              "viewport": "desktop",
+              "reviewPath": "review-images/tasks.state.app-home-loading-desktop.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\549dfe69d0888bcf61afc9c72ff361d2e9bda6db.app-home-loading-actual-component-with-deterministic-local-inputs-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-home-loading-wide.png",
+          "sha256": "e787b2dbb27cef50afd64059d9b9fb52b8826c8ce9ebf3387154916fc1cdb846",
+          "pixelWidth": 1440,
+          "pixelHeight": 970,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-home-loading-wide.png",
+            "imageSha256": "e787b2dbb27cef50afd64059d9b9fb52b8826c8ce9ebf3387154916fc1cdb846",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-home-loading",
+              "viewport": "wide",
+              "reviewPath": "review-images/tasks.state.app-home-loading-wide.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\05a9cab7f5464df6e6f1f1af80f6569ae6535818.app-home-loading-actual-component-with-deterministic-local-inputs-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-home-error",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-home-error",
+      "observation": "Home error fixture keeps the visible recovery message and action readable; successful retry and live failure recovery are not certified.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-home-error-mobile.png",
+          "sha256": "d841b91452667f83e49d5199b8530b4e537e00b567efb5928788b7d415ccdee2",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-home-error-mobile.png",
+            "imageSha256": "d841b91452667f83e49d5199b8530b4e537e00b567efb5928788b7d415ccdee2",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-home-error",
+              "viewport": "mobile",
+              "reviewPath": "review-images/tasks.state.app-home-error-mobile.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\52d9258dce6d0ea614c30295e2803717fcf81983.app-home-error-actual-component-with-deterministic-local-inputs-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-home-error-tablet.png",
+          "sha256": "369413b5a9b9ab13501dc145ef1e5c63eb0e3b6b33770916a8ea0c9b97515a05",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-home-error-tablet.png",
+            "imageSha256": "369413b5a9b9ab13501dc145ef1e5c63eb0e3b6b33770916a8ea0c9b97515a05",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-home-error",
+              "viewport": "tablet",
+              "reviewPath": "review-images/tasks.state.app-home-error-tablet.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\e92b9b6e97c433ce9142f292b913359d7511812f.app-home-error-actual-component-with-deterministic-local-inputs-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-home-error-desktop.png",
+          "sha256": "442fdec3e9a8ee0996e811895c000f99d6e742ad02465559253496b1336df889",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-home-error-desktop.png",
+            "imageSha256": "442fdec3e9a8ee0996e811895c000f99d6e742ad02465559253496b1336df889",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-home-error",
+              "viewport": "desktop",
+              "reviewPath": "review-images/tasks.state.app-home-error-desktop.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\8e37d5a6aa47f90229ba0ba9612a8025fc9aa60b.app-home-error-actual-component-with-deterministic-local-inputs-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-home-error-wide.png",
+          "sha256": "30d2f40ca50ba5f98f69477c7f1d7fd31b6dba73980534f430754c8b1d0cfcd0",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-home-error-wide.png",
+            "imageSha256": "30d2f40ca50ba5f98f69477c7f1d7fd31b6dba73980534f430754c8b1d0cfcd0",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-home-error",
+              "viewport": "wide",
+              "reviewPath": "review-images/tasks.state.app-home-error-wide.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\ba41780918b0b75f999df308ce7656c89ab3f5d6.app-home-error-actual-component-with-deterministic-local-inputs-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-tasks-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-tasks-loading",
+      "observation": "Tasks loading fixture is unchanged at matching image hashes. Its mobile PNG remains 664px wide against the nominal 390px project; this inherited fixture observation is explicitly not a zero-overflow claim.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-tasks-loading-mobile.png",
+          "sha256": "0dc35487606b6f227ddeb4577f1c8a20e11986311cccd34a44a3a2d7005413ce",
+          "pixelWidth": 664,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-tasks-loading-mobile.png",
+            "imageSha256": "0dc35487606b6f227ddeb4577f1c8a20e11986311cccd34a44a3a2d7005413ce",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-tasks-loading",
+              "viewport": "mobile",
+              "reviewPath": "review-images/tasks.state.app-tasks-loading-mobile.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\38d8ae6c7d509f5c13d21709d8672236b40af107.app-tasks-loading-actual-component-with-deterministic-local-inputs-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-tasks-loading-tablet.png",
+          "sha256": "7f216114eebcb0fc0d47b35bc43ce9c5894c897c220329510931ebd26c856516",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-tasks-loading-tablet.png",
+            "imageSha256": "7f216114eebcb0fc0d47b35bc43ce9c5894c897c220329510931ebd26c856516",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-tasks-loading",
+              "viewport": "tablet",
+              "reviewPath": "review-images/tasks.state.app-tasks-loading-tablet.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\f153b52aa6073fbe728d7b1d839fea3b255b785b.app-tasks-loading-actual-component-with-deterministic-local-inputs-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-tasks-loading-desktop.png",
+          "sha256": "97e5ff930760d98d68398d4c4ea870eb11cad3ed98f735a7274f84bcc13151c9",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-tasks-loading-desktop.png",
+            "imageSha256": "97e5ff930760d98d68398d4c4ea870eb11cad3ed98f735a7274f84bcc13151c9",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-tasks-loading",
+              "viewport": "desktop",
+              "reviewPath": "review-images/tasks.state.app-tasks-loading-desktop.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\fca7f01910e63806f313b7139d96e0f507cc2da7.app-tasks-loading-actual-component-with-deterministic-local-inputs-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-tasks-loading-wide.png",
+          "sha256": "1b2aba01bf5a22992a6acdaa49c372595f54843c9ea6ddb3b37da0d8e7b5ed44",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-tasks-loading-wide.png",
+            "imageSha256": "1b2aba01bf5a22992a6acdaa49c372595f54843c9ea6ddb3b37da0d8e7b5ed44",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-tasks-loading",
+              "viewport": "wide",
+              "reviewPath": "review-images/tasks.state.app-tasks-loading-wide.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\6db14e327e8c1b1babbf8b30512b1bdfbbc95ca9.app-tasks-loading-actual-component-with-deterministic-local-inputs-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.resources.drive-upload",
+      "case": "own surface in demo",
+      "path": "/app/tasks",
+      "observation": "Actual task detail drawer shows the Files and links drop area and Attach file action. The newly inspected wide capture keeps the drawer and controls legible. The empty attachment affordance is not an upload result or provider proof.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.resources.drive-upload-mobile.png",
+          "sha256": "164f99cbf99a3d9e0623fae90f9f6513a4d75cc36532b4df0078559b3fa10421",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.resources.drive-upload-mobile.png",
+            "imageSha256": "164f99cbf99a3d9e0623fae90f9f6513a4d75cc36532b4df0078559b3fa10421",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\649042325b70ac4bc5f55aee4879d407ad8c1d58.drive-upload-own-surface-in-demo-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.resources.drive-upload-tablet.png",
+          "sha256": "f32309b118e2c60fc59b7ec66f2e6c952ec9598322388a5d7f9632b755bd4d6d",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.resources.drive-upload-tablet.png",
+            "imageSha256": "f32309b118e2c60fc59b7ec66f2e6c952ec9598322388a5d7f9632b755bd4d6d",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\734e05051b2a8ca9df5ef01c2bce3192f37ea1d6.drive-upload-own-surface-in-demo-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.resources.drive-upload-desktop.png",
+          "sha256": "5ea7e6f9b2785097b144f52e10bbf2d0d5881c87b5fc4aa41206003e552596e9",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.resources.drive-upload-desktop.png",
+            "imageSha256": "5ea7e6f9b2785097b144f52e10bbf2d0d5881c87b5fc4aa41206003e552596e9",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\b0b86460b88e751bb59d752199253b212f06521f.drive-upload-own-surface-in-demo-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.resources.drive-upload-wide.png",
+          "sha256": "f10bdfcf6d8a7dc801c18ae2f909fff61b8e1894f64df66bcbc9e9e67131326a",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "reviewMethod": "new actual PNG individually inspected with view_image",
+          "priorExactImageReview": null,
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\925361603a808112d4f0bc29dc8b2025a79619fc.drive-upload-own-surface-in-demo-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-messages",
+      "case": "own surface in demo",
+      "path": "/app/messages",
+      "observation": "Chat initial preview preserves visible conversation content and the established layout. No message send, history persistence, file upload, audience mutation, delivery or Ping assistant behavior is certified by these stills.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-messages-mobile.png",
+          "sha256": "ae5cf2f3bf13ae9cd8e8e0e2c841f10d67606c49d087fa9e65035c9460b8bc55",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-messages-mobile.png",
+            "imageSha256": "ae5cf2f3bf13ae9cd8e8e0e2c841f10d67606c49d087fa9e65035c9460b8bc55",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\2f9648a5ad459e9c88289b12e73a84b08baaf02a.app-messages-own-surface-in-demo-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-messages-tablet.png",
+          "sha256": "a1294859d0200e32d4f29c273585f639782d8b7548a879d49380764f0a230af6",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-messages-tablet.png",
+            "imageSha256": "a1294859d0200e32d4f29c273585f639782d8b7548a879d49380764f0a230af6",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\c953116009926e33be890cde73beb7f167ea648b.app-messages-own-surface-in-demo-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-messages-desktop.png",
+          "sha256": "36bdb82e451784e9463341aa0b5b088a22a9a1770aad2e1bd16710a9a4127c5f",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-messages-desktop.png",
+            "imageSha256": "36bdb82e451784e9463341aa0b5b088a22a9a1770aad2e1bd16710a9a4127c5f",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\f1e72391f499d8ace165245073e1cbaa9a6ff66a.app-messages-own-surface-in-demo-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-messages-wide.png",
+          "sha256": "0a7721f70137d75dc1e5ebcf1447a4c49208bdb79c909ee05019aa0ad07b22af",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-messages-wide.png",
+            "imageSha256": "0a7721f70137d75dc1e5ebcf1447a4c49208bdb79c909ee05019aa0ad07b22af",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\4a36bdba9ec03fc38935740731462f5bdd6053d9.app-messages-own-surface-in-demo-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-analytics",
+      "case": "own surface in demo",
+      "path": "/app/analytics",
+      "observation": "New tablet/desktop/wide PNGs show readable question cards, scope/header counts and search; tablet/desktop use two columns while wide uses three, with content continuing below smaller viewport frames. The matching mobile image was previously inspected. No answer interaction or live calculation is certified.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-analytics-mobile.png",
+          "sha256": "b312aaf05cd01f6ed97086bc27afdb1d4d5bcb85fec74addc0dd9d863dd86db2",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-analytics-mobile.png",
+            "imageSha256": "b312aaf05cd01f6ed97086bc27afdb1d4d5bcb85fec74addc0dd9d863dd86db2",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\09691b66709a9f10b3e31fe55b13ef3d537b000b.app-analytics-own-surface-in-demo-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-analytics-tablet.png",
+          "sha256": "07d1a32441af7a2146f7b553a0278460ce05769cbd737485c21ed01856e4a2e5",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "new actual PNG individually inspected with view_image",
+          "priorExactImageReview": null,
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\99ce6e8ef8f5fc46002168093687b31d15b82452.app-analytics-own-surface-in-demo-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-analytics-desktop.png",
+          "sha256": "75477a98ca7184f0811eb0b4fe996bef7a38dce6d116dfda683e65185afeb483",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "reviewMethod": "new actual PNG individually inspected with view_image",
+          "priorExactImageReview": null,
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\12d6ff169c8089c0db599b2e338ef4078e559d41.app-analytics-own-surface-in-demo-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-analytics-wide.png",
+          "sha256": "4d0ae74b1bd9bb98eb24e4657ed3496e4d09d7b65ee3e06fb515a450bad84a8a",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "reviewMethod": "new actual PNG individually inspected with view_image",
+          "priorExactImageReview": null,
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\43282d1a246fbd70eeef5e91345129247f950201.app-analytics-own-surface-in-demo-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-analytics-loading",
+      "observation": "New desktop/wide light skeletons retain search and question-card placeholders with clear spacing; mobile/tablet reuse exact previously inspected bytes. No load timing or final answer state is implied.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-analytics-loading-mobile.png",
+          "sha256": "e278396b61a2815b1795bd8ecd4a82727a1bc23e835c47733f0e00b540a6a450",
+          "pixelWidth": 390,
+          "pixelHeight": 1694,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.state.app-analytics-loading-mobile.png",
+            "imageSha256": "e278396b61a2815b1795bd8ecd4a82727a1bc23e835c47733f0e00b540a6a450",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\d8b1eac5641181454b1f81bc97f710288bee9615.app-analytics-loading-actual-component-with-deterministic-local-inputs-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-analytics-loading-tablet.png",
+          "sha256": "faffcc090b20608175a00b53e145ecd4bfc6722e5285ceddffadcad24286c128",
+          "pixelWidth": 768,
+          "pixelHeight": 1028,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-analytics-loading-tablet.png",
+            "imageSha256": "faffcc090b20608175a00b53e145ecd4bfc6722e5285ceddffadcad24286c128",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-analytics-loading",
+              "viewport": "tablet",
+              "reviewPath": "review-images/tasks.state.app-analytics-loading-tablet.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\66725b51af5618092ad4a006ab31a3888e76e4e0.app-analytics-loading-actual-component-with-deterministic-local-inputs-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-analytics-loading-desktop.png",
+          "sha256": "d80a78b8647bdaa49d59f7f27fac456ccb23ef4433a7816c7f8dc1a84168daf5",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "reviewMethod": "new actual PNG individually inspected with view_image",
+          "priorExactImageReview": null,
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\dcc20d80b8a0366769b8b84a9379214191db41b8.app-analytics-loading-actual-component-with-deterministic-local-inputs-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-analytics-loading-wide.png",
+          "sha256": "da059a79707ff697709caf4261292573d2b8f8ce5aa2a5dbbc7f3ea4e0877fdf",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "reviewMethod": "new actual PNG individually inspected with view_image",
+          "priorExactImageReview": null,
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\64cac4e292a3d2447dd01fb51c77e456cc02566d.app-analytics-loading-actual-component-with-deterministic-local-inputs-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-analytics-error",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-analytics-error",
+      "observation": "Analytics error fixture remains legible with its recovery affordance; retry behavior and production failure handling are not established by the still.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-analytics-error-mobile.png",
+          "sha256": "561715fbc926fb9d40521c8a57faa7f652e24503ab203082d50e96e5d7d2af66",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-analytics-error-mobile.png",
+            "imageSha256": "561715fbc926fb9d40521c8a57faa7f652e24503ab203082d50e96e5d7d2af66",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-analytics-error",
+              "viewport": "mobile",
+              "reviewPath": "review-images/tasks.state.app-analytics-error-mobile.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\a4baa47a9dc7465cd5907d8ce8c8fb7542f2dd8d.app-analytics-error-actual-component-with-deterministic-local-inputs-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-analytics-error-tablet.png",
+          "sha256": "75d6ea47666994f033bf08593a38f0730e9cbc9ca95ccda44c98c79b2b55cb15",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-analytics-error-tablet.png",
+            "imageSha256": "75d6ea47666994f033bf08593a38f0730e9cbc9ca95ccda44c98c79b2b55cb15",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-analytics-error",
+              "viewport": "tablet",
+              "reviewPath": "review-images/tasks.state.app-analytics-error-tablet.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\02baedee154cb4b4617d4c00931b48d833244028.app-analytics-error-actual-component-with-deterministic-local-inputs-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-analytics-error-desktop.png",
+          "sha256": "9c10aea7cfa3ca189b5465b9dbc94ce0a8c518d4ec50ece6669c49dcab31dd46",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-analytics-error-desktop.png",
+            "imageSha256": "9c10aea7cfa3ca189b5465b9dbc94ce0a8c518d4ec50ece6669c49dcab31dd46",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-analytics-error",
+              "viewport": "desktop",
+              "reviewPath": "review-images/tasks.state.app-analytics-error-desktop.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\17d78277328aa94d9904e05b5ccd8cb087f8108a.app-analytics-error-actual-component-with-deterministic-local-inputs-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-analytics-error-wide.png",
+          "sha256": "3793ec4ea61e65e985073e9ffef2358b7209dcd68652e4733a81de035ec44643",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-analytics-error-wide.png",
+            "imageSha256": "3793ec4ea61e65e985073e9ffef2358b7209dcd68652e4733a81de035ec44643",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-analytics-error",
+              "viewport": "wide",
+              "reviewPath": "review-images/tasks.state.app-analytics-error-wide.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\418fe1d1468d7cda7fa59fe555a75763757e1660.app-analytics-error-actual-component-with-deterministic-local-inputs-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-tools-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-tools-loading",
+      "observation": "Tools loading fixture retains its existing placeholder layout in each matching viewport; it does not qualify any Coming soon tool as functional.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-tools-loading-mobile.png",
+          "sha256": "d3c1b89e8007deb384fa21d5e881da8ead5538be7727e871464aab8e8998ac77",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-tools-loading-mobile.png",
+            "imageSha256": "d3c1b89e8007deb384fa21d5e881da8ead5538be7727e871464aab8e8998ac77",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-tools-loading",
+              "viewport": "mobile",
+              "reviewPath": "review-images/tasks.state.app-tools-loading-mobile.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\ffdcdd3e3336ecad10a1ef53aaeb14a59399b59e.app-tools-loading-actual-component-with-deterministic-local-inputs-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-tools-loading-tablet.png",
+          "sha256": "22b4c30abb67722384faa9aa28e5c05259ecd7a1414bb25ddb4334ed28878a52",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-tools-loading-tablet.png",
+            "imageSha256": "22b4c30abb67722384faa9aa28e5c05259ecd7a1414bb25ddb4334ed28878a52",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-tools-loading",
+              "viewport": "tablet",
+              "reviewPath": "review-images/tasks.state.app-tools-loading-tablet.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\9d84edb4bbc849e1a46a8c751de2e82cc46342a6.app-tools-loading-actual-component-with-deterministic-local-inputs-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-tools-loading-desktop.png",
+          "sha256": "75ebfa491aeec3c99a0a6c58110eac4ef30b1323398a66ff6cd1440ba9c0eb74",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-tools-loading-desktop.png",
+            "imageSha256": "75ebfa491aeec3c99a0a6c58110eac4ef30b1323398a66ff6cd1440ba9c0eb74",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-tools-loading",
+              "viewport": "desktop",
+              "reviewPath": "review-images/tasks.state.app-tools-loading-desktop.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\bf3d43e93828bf6bf5c95c0b0e2257dbd919afd4.app-tools-loading-actual-component-with-deterministic-local-inputs-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-tools-loading-wide.png",
+          "sha256": "887c3c4af88d6898b0200f7d7439b65d27c508a597579e78413177ca4fcd86a3",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-tools-loading-wide.png",
+            "imageSha256": "887c3c4af88d6898b0200f7d7439b65d27c508a597579e78413177ca4fcd86a3",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-tools-loading",
+              "viewport": "wide",
+              "reviewPath": "review-images/tasks.state.app-tools-loading-wide.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\adc488692d255a6c01197d7c0b6acb7d559efea4.app-tools-loading-actual-component-with-deterministic-local-inputs-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-concepts",
+      "case": "own surface in demo",
+      "path": "/app/concepts",
+      "observation": "Concept route fixture retains its existing presentation. A concept screenshot is not production feature availability or an executed workflow.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-concepts-mobile.png",
+          "sha256": "43bd7e294776f1366c459f44c60216e69f7dc2be55677c01c46e30b3321abadd",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-concepts-mobile.png",
+            "imageSha256": "43bd7e294776f1366c459f44c60216e69f7dc2be55677c01c46e30b3321abadd",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\27bea32741904522fd2ed3e49e52d9cfe61db273.app-concepts-own-surface-in-demo-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-concepts-tablet.png",
+          "sha256": "2fc62418c01abc152d0bc2e5cee751b0e3d06cd242a0fe241e50fdd2b7a02d7d",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-concepts-tablet.png",
+            "imageSha256": "2fc62418c01abc152d0bc2e5cee751b0e3d06cd242a0fe241e50fdd2b7a02d7d",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\7c2cc9abd13a452c7b74a8407bfa24ea0ed74dc0.app-concepts-own-surface-in-demo-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-concepts-desktop.png",
+          "sha256": "d4a8dc090fe7ba0b152c12e3709d42454c27ac3b9a9040325afcd68eb8d834c6",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-concepts-desktop.png",
+            "imageSha256": "d4a8dc090fe7ba0b152c12e3709d42454c27ac3b9a9040325afcd68eb8d834c6",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\b2241050ca3985be738e4836c10949f907480856.app-concepts-own-surface-in-demo-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-concepts-wide.png",
+          "sha256": "8640d58b72e97d7ec1cb79d5a1eb08beed7253b54ca160913d45eec2ce4312be",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-concepts-wide.png",
+            "imageSha256": "8640d58b72e97d7ec1cb79d5a1eb08beed7253b54ca160913d45eec2ce4312be",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\cbe87085d522abc84385d52fcde23bea2369ae51.app-concepts-own-surface-in-demo-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-files",
+      "case": "own surface in demo",
+      "path": "/app/files",
+      "observation": "The retained Files demo surface remains visually unchanged. It is the captured synthetic demo, not proof of the newer production Sources shelf, a live Drive inventory or real uploads.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-files-mobile.png",
+          "sha256": "17b163b85b6284bad29852d4f491df9383cb60df3c585ea4b903d8a906d5cf3a",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-files-mobile.png",
+            "imageSha256": "17b163b85b6284bad29852d4f491df9383cb60df3c585ea4b903d8a906d5cf3a",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\acff239cfcfd00612677736df8a48809ce92cca7.app-files-own-surface-in-demo-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-files-tablet.png",
+          "sha256": "62d8a4ffb3c22be4fd9a7e10d7983e4bd5520e07b850694ce80385e2106ebaee",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-files-tablet.png",
+            "imageSha256": "62d8a4ffb3c22be4fd9a7e10d7983e4bd5520e07b850694ce80385e2106ebaee",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\5d59e66227b07f1cb285f853cb22e133ff1af951.app-files-own-surface-in-demo-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-files-desktop.png",
+          "sha256": "8eef4269c2b229eca36e0ae0667ec38278cc4daf5587037c627664c1d9864759",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-files-desktop.png",
+            "imageSha256": "8eef4269c2b229eca36e0ae0667ec38278cc4daf5587037c627664c1d9864759",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\cae2506e9280f59d10b7f7c9698c5fa10b6274dc.app-files-own-surface-in-demo-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-files-wide.png",
+          "sha256": "678cc8c951239930fd2957bc06542eadaf277186bf92d8296b2783dd1d150a9c",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-files-wide.png",
+            "imageSha256": "678cc8c951239930fd2957bc06542eadaf277186bf92d8296b2783dd1d150a9c",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\b272be4b23d9c5d000a929e5c007b62afdbaa8e9.app-files-own-surface-in-demo-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-loading",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-files-loading",
+      "observation": "Files loading skeleton is unchanged across the exact matching images. It establishes visible placeholder layout only.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-files-loading-mobile.png",
+          "sha256": "3789a0a6f8e5d6592524c50aad4e8dffe6e68b237efbb8e388a80bd93c8192f1",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-files-loading-mobile.png",
+            "imageSha256": "3789a0a6f8e5d6592524c50aad4e8dffe6e68b237efbb8e388a80bd93c8192f1",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-files-loading",
+              "viewport": "mobile",
+              "reviewPath": "review-images/tasks.state.app-files-loading-mobile.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\3f1c30178eb2addda02969c2a4c2cde5f95408ec.app-files-loading-actual-component-with-deterministic-local-inputs-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-files-loading-tablet.png",
+          "sha256": "95028344ea5077d1a982d16b1e82cb99d1e76cff506e3cbb161c864a5786ff2e",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-files-loading-tablet.png",
+            "imageSha256": "95028344ea5077d1a982d16b1e82cb99d1e76cff506e3cbb161c864a5786ff2e",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-files-loading",
+              "viewport": "tablet",
+              "reviewPath": "review-images/tasks.state.app-files-loading-tablet.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\6da742bde42eb33a7280ad0a8395bded621a700d.app-files-loading-actual-component-with-deterministic-local-inputs-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-files-loading-desktop.png",
+          "sha256": "4f4f73a7eaf098ee7367c7a2a8ea94a9ae292d8c72f17d70981658614ff95394",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-files-loading-desktop.png",
+            "imageSha256": "4f4f73a7eaf098ee7367c7a2a8ea94a9ae292d8c72f17d70981658614ff95394",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-files-loading",
+              "viewport": "desktop",
+              "reviewPath": "review-images/tasks.state.app-files-loading-desktop.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\0a07aed560fa458791321d5d0a0b5558a389ac29.app-files-loading-actual-component-with-deterministic-local-inputs-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-files-loading-wide.png",
+          "sha256": "0937026623d4e35ebc1a6c74ff7a84bd3e2b17dc33a8045eb512cca904a230ff",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-files-loading-wide.png",
+            "imageSha256": "0937026623d4e35ebc1a6c74ff7a84bd3e2b17dc33a8045eb512cca904a230ff",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-files-loading",
+              "viewport": "wide",
+              "reviewPath": "review-images/tasks.state.app-files-loading-wide.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\5e4c5831c5a86f7c64d7b6cdd487a453f0698c29.app-files-loading-actual-component-with-deterministic-local-inputs-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.state.app-files-error",
+      "case": "actual component with deterministic local inputs",
+      "path": "/materiality/tasks.state.app-files-error",
+      "observation": "Files error fixture keeps its message and recovery affordance visible; recovery execution and provider availability remain untested here.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.state.app-files-error-mobile.png",
+          "sha256": "a248472e3d74296e3829c084fdcde572c26d16466ba2562d63590f3038dfd283",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-files-error-mobile.png",
+            "imageSha256": "a248472e3d74296e3829c084fdcde572c26d16466ba2562d63590f3038dfd283",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-files-error",
+              "viewport": "mobile",
+              "reviewPath": "review-images/tasks.state.app-files-error-mobile.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\8f64bfce7e231878d39fc9786665f9140a671323.app-files-error-actual-component-with-deterministic-local-inputs-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.state.app-files-error-tablet.png",
+          "sha256": "62b7c93355ad890b8d53a789d7dddc6bb51fa36e33dce0cc6cc448a665dc5977",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-files-error-tablet.png",
+            "imageSha256": "62b7c93355ad890b8d53a789d7dddc6bb51fa36e33dce0cc6cc448a665dc5977",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-files-error",
+              "viewport": "tablet",
+              "reviewPath": "review-images/tasks.state.app-files-error-tablet.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\daefe7025113797427ceb5f1a67462fb89c60249.app-files-error-actual-component-with-deterministic-local-inputs-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.state.app-files-error-desktop.png",
+          "sha256": "64910ff4f60b0b922a048c5aa44e7cbc83491fd9692b56fca67021f32758bb6a",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-files-error-desktop.png",
+            "imageSha256": "64910ff4f60b0b922a048c5aa44e7cbc83491fd9692b56fca67021f32758bb6a",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-files-error",
+              "viewport": "desktop",
+              "reviewPath": "review-images/tasks.state.app-files-error-desktop.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\a525baff25b61c763c7c2bf0ec0f6aba57adfa6e.app-files-error-actual-component-with-deterministic-local-inputs-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.state.app-files-error-wide.png",
+          "sha256": "070cd8c3783f39d68c16a12022c00fece08bfd75807c47cc3737705588f22b35",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.state.app-files-error-wide.png",
+            "imageSha256": "070cd8c3783f39d68c16a12022c00fece08bfd75807c47cc3737705588f22b35",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.state.app-files-error",
+              "viewport": "wide",
+              "reviewPath": "review-images/tasks.state.app-files-error-wide.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\762fe7c628d3210fd3a4dc612a7c039c5da3a7d7.app-files-error-actual-component-with-deterministic-local-inputs-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.welcome",
+      "case": "unavailable explicit project recovery",
+      "path": "/welcome?workspaceId=",
+      "observation": "The retained Welcome route shows its known unavailable/fallback state. It does not establish a successful onboarding journey.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.welcome-mobile.png",
+          "sha256": "46e268b66f6442abe7de4ed673fafe4d95232f53273ee4e65eff15d873e4a09b",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.page.welcome-mobile.png",
+            "imageSha256": "46e268b66f6442abe7de4ed673fafe4d95232f53273ee4e65eff15d873e4a09b",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.page.welcome",
+              "viewport": "mobile",
+              "reviewPath": "review-images/tasks.page.welcome-mobile.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\fd3f02d396ca1ecbdab13652f94f4fda8fd7ce10.welcome-unavailable-explicit-project-recovery-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.welcome-tablet.png",
+          "sha256": "41b4bfc12fef40254b4acbc98d0d2aba623cb865c09972bca199044f0e404678",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.page.welcome-tablet.png",
+            "imageSha256": "41b4bfc12fef40254b4acbc98d0d2aba623cb865c09972bca199044f0e404678",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.page.welcome",
+              "viewport": "tablet",
+              "reviewPath": "review-images/tasks.page.welcome-tablet.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\e22e875210d885fec00cb38ba32f65cdf72737d7.welcome-unavailable-explicit-project-recovery-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.welcome-desktop.png",
+          "sha256": "3e964893ac2d953857f9644f77da5d815e94e8147549d63a78a27d9189541a8f",
+          "pixelWidth": 1280,
+          "pixelHeight": 900,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.page.welcome-desktop.png",
+            "imageSha256": "3e964893ac2d953857f9644f77da5d815e94e8147549d63a78a27d9189541a8f",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.page.welcome",
+              "viewport": "desktop",
+              "reviewPath": "review-images/tasks.page.welcome-desktop.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\5915e2b2fb6dbbcc5e318aac75693e719815337a.welcome-unavailable-explicit-project-recovery-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.welcome-wide.png",
+          "sha256": "f3cc0ef71514cf97b4a5b6432d26a03a5e5f46a84dfbc0febe711310f55548ca",
+          "pixelWidth": 1440,
+          "pixelHeight": 960,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/tasks-f29c4c0e-independent-rendered-review.json",
+            "receiptSha256": "e14fd48650103ee659ae440cd17981ab7d7b628616cf12bfda8e0c8dd3a9eacf",
+            "image": "captures/tasks-f29c4c0e/review-images/tasks.page.welcome-wide.png",
+            "imageSha256": "f3cc0ef71514cf97b4a5b6432d26a03a5e5f46a84dfbc0febe711310f55548ca",
+            "originalMethod": "reused byte-identical SHA256 of actual previously inspected PNG",
+            "originalPriorReference": {
+              "id": "tasks.page.welcome",
+              "viewport": "wide",
+              "reviewPath": "review-images/tasks.page.welcome-wide.png"
+            }
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\4a29d60d8f704062ffbcdd559eb2d4f432cc1ade.welcome-unavailable-explicit-project-recovery-wide"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tasks.page.app-tools-by-slug",
+      "case": "wedding hub in demo",
+      "path": "/app/tools/wedding-planner",
+      "observation": "Tool-route initial fixture preserves its existing content and shell; planned-tool labels do not establish implementation or acceptance of new tail features.",
+      "verdict": "No blocking visible issue found in supplied static state",
+      "images": [
+        {
+          "viewport": "mobile",
+          "reviewPath": "review-images/tasks.page.app-tools-by-slug-mobile.png",
+          "sha256": "f4eb6f8b0d8a19d46f329ef252788d790bbac4505af1a124f38e34fa8b9c137f",
+          "pixelWidth": 390,
+          "pixelHeight": 844,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-tools-by-slug-mobile.png",
+            "imageSha256": "f4eb6f8b0d8a19d46f329ef252788d790bbac4505af1a124f38e34fa8b9c137f",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\f3a4640513a823c15ce180469c48dab91c9c67b4.app-tools-by-slug-wedding-hub-in-demo-mobile"
+          ]
+        },
+        {
+          "viewport": "tablet",
+          "reviewPath": "review-images/tasks.page.app-tools-by-slug-tablet.png",
+          "sha256": "cd590844a780824f98266da5c0d0c02ce93c95256d24957972be89d132192941",
+          "pixelWidth": 768,
+          "pixelHeight": 1024,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-tools-by-slug-tablet.png",
+            "imageSha256": "cd590844a780824f98266da5c0d0c02ce93c95256d24957972be89d132192941",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\020b9fdde48561f9b05953aaeaa176106121ccb5.app-tools-by-slug-wedding-hub-in-demo-tablet"
+          ]
+        },
+        {
+          "viewport": "desktop",
+          "reviewPath": "review-images/tasks.page.app-tools-by-slug-desktop.png",
+          "sha256": "304bfe7efb09cc5a610ad50f43cccd3310075012189913d29dd59851590287c7",
+          "pixelWidth": 1280,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-tools-by-slug-desktop.png",
+            "imageSha256": "304bfe7efb09cc5a610ad50f43cccd3310075012189913d29dd59851590287c7",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\0103d6c47701c31558084deca8ab68467ec3adf1.app-tools-by-slug-wedding-hub-in-demo-desktop"
+          ]
+        },
+        {
+          "viewport": "wide",
+          "reviewPath": "review-images/tasks.page.app-tools-by-slug-wide.png",
+          "sha256": "8800d1889eaaff9a75cb48b95c44721f9a6089298802fd9e6a0116924fef609f",
+          "pixelWidth": 1440,
+          "pixelHeight": 1090,
+          "reviewMethod": "exact prior independently inspected PNG bytes reused",
+          "priorExactImageReview": {
+            "receipt": "reviews/analytics-7c75fded-independent-rendered-review.json",
+            "receiptSha256": "5be4e2237633bcf88984c3eae1ce1c8e2b6b243d8930b97c6b161d2a75eacea8",
+            "image": "captures/analytics-7c75fded/review-images/tasks.page.app-tools-by-slug-wide.png",
+            "imageSha256": "8800d1889eaaff9a75cb48b95c44721f9a6089298802fd9e6a0116924fef609f",
+            "originalPriorReference": null
+          },
+          "byteIdenticalOriginalAttachments": [
+            "output\\playwright-report\\data\\541988c346a94eca3501f68beeeb1ff5571e9a49.app-tools-by-slug-wedding-hub-in-demo-wide"
+          ]
+        }
+      ]
+    }
+  ]
+}
