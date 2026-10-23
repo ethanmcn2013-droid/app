@@ -4,20 +4,21 @@ import { useState } from "react";
 import type { UserResource } from "@clerk/shared/types";
 import { SettingsRow } from "@/components/settings/section";
 import {
-  enabledSocialProviders,
   type SocialProviderId,
 } from "@/lib/auth/social-providers";
+import { accountSocialProviders } from "@/lib/auth/account-methods";
 
 export function OAuthRow({ user }: { user: UserResource }) {
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const providers = enabledSocialProviders();
+  const providers = accountSocialProviders(user.externalAccounts);
 
   const hasPassword = user.passwordEnabled;
   const accounts = user.externalAccounts;
   const onlyAuthMethod = !hasPassword && accounts.length <= 1;
 
   async function connect(p: (typeof providers)[number]) {
+    if (!p.canConnect) return;
     setPending(p.id);
     setError(null);
     try {
@@ -95,7 +96,7 @@ export function OAuthRow({ user }: { user: UserResource }) {
                   >
                     Disconnect
                   </button>
-                ) : (
+                ) : p.canConnect ? (
                   <button
                     type="button"
                     disabled={isPending}
@@ -104,7 +105,7 @@ export function OAuthRow({ user }: { user: UserResource }) {
                   >
                     {isPending ? "Connecting…" : "Connect"}
                   </button>
-                )}
+                ) : null}
               </div>
             );
           })}
@@ -122,6 +123,13 @@ function providerSlug(id: SocialProviderId): string {
 }
 
 function ProviderGlyph({ id }: { id: SocialProviderId }) {
+  if (id === "oauth_facebook") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <path d="M14 21v-8h3l.5-4H14V7c0-1 .3-1.5 1.7-1.5H18V2.2c-.4-.1-1.8-.2-3.3-.2C11.5 2 10 3.8 10 7v2H7v4h3v8h4Z" />
+      </svg>
+    );
+  }
   if (id === "oauth_google") {
     return (
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>

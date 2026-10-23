@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.welcome",
+  "source": "tasks/src/app/welcome/page.tsx",
+  "materialityHash": "56f4c16d02cbcebb",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_tasks independent Sol6.1 rendered reviewer; no founder attribution",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e7a5e1555e9e7e18a1f6bc45-19c9396c88c4a2a7.json",
+    "attestationSha256": "d2e1de7f6c6fc027f93397af89c4418f92ec6888ee9dfd9d57d06b02c1491c49",
+    "runId": "tasks-playwright-e7a5e1555e9e7e18a1f6bc45",
+    "canonicalEvidenceSha256": "e7a5e1555e9e7e18a1f6bc45aab3c997f041c62b96d75ba9621c1a6de7204ab8",
+    "rawArtifactSha256": "19c9396c88c4a2a7ee6f49292fbacf8bed5d24c8410675d4bb14330fef77c6e0",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.welcome",
+    "caseName": "unavailable explicit project recovery",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Corrected Auth prefixef97 capture40016080224 passed188/188 outcomes. Independent reviewer verified exact source, all2073 source bindings, four capture contracts, canonical raw digest and all72 PNG bodies against original attachments.70 images verified identical to retained independently reviewed bytes; two new resource desktop and Analytics loading mobile images individually inspected with no blocking finding. The mapped Settings General page does not certify Security, connected methods, sign-in/sign-up, provider UI, sessions or activation. Static synthetic initial-state limits include inherited Tasks loading width, Files demo, Welcome fallback, upload-affordance and unseen interactions. No live/provider claim, numerical score or quality coverage advance.",
+  "decision": "accepted for supplied synthetic initial-state materiality only; interaction and live/provider limits retained"
+}

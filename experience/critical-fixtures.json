@@ -2154,7 +2154,7 @@
     "src/components/app/settings/sections/notifications.tsx": "09438883df3cf5c8ab996822f3aff5550a1b117afdeed1990743784a782ab83d",
     "src/components/app/settings/sections/privacy.tsx": "8f53080b31786a05ee60328f347c4965f1ccb93740e5cdd025f852611e17fde4",
     "src/components/app/settings/sections/sample-data.tsx": "72d7996a9b12e0f5c38b273b2a87e69d4722df1bd131bdd9d9ae58028d84ce9a",
-    "src/components/app/settings/sections/security.tsx": "86480e42a7346788a1ad01aa566530e96bf94071d17873cc812552e47c2ba548",
+    "src/components/app/settings/sections/security.tsx": "17338ded9aa891dbbdabbdaf779e688f0b759a4b87cabc6cf76c37c5fcd74b96",
     "src/components/app/settings/sections/storage.tsx": "23ca8bbf3a43e20624d71e173ae7874a57ad05b9b2a99950319b34d1716c0962",
     "src/components/app/settings/sections/workspace.tsx": "b17f3d12066b9bdf3b008bdabb2d9a5db7754520ee309fff565df2c76a58b0f9",
     "src/components/app/settings/settings-app.tsx": "8e68356149b3e00efe0aba8e35f2b8546d12da4b9fac6ca940b7782354ee44a2",
@@ -2622,7 +2622,7 @@
     "src/components/settings/profile/data-privacy.tsx": "3dbddd3fd95ad154fcc610975924e60ff2b31142612e3fb78828e3c055e20829",
     "src/components/settings/profile/email-row.tsx": "aa982d611b200de63fb1ade8e4e15505dfb86951568746c15484e679cf2eb010",
     "src/components/settings/profile/name-avatar-row.tsx": "18d6c627955c7817fa1eb3134b83d4dd88d9b0ad2774f887f649c57c548bf29e",
-    "src/components/settings/profile/oauth-row.tsx": "e295b9ce2bcd369a444ac10294b0bc75dcbd9c910e4ead17dab1f67fab68a9ea",
+    "src/components/settings/profile/oauth-row.tsx": "396208a8e4b72925ccc51880bdd29590d1df297b456f0b7161bde55207b9250a",
     "src/components/settings/profile/password-row.tsx": "1bae5ea4fc7dcc92f1a8609541b40ea03ee5d7afe28d1c27f6a432752d43c55f",
     "src/components/settings/profile/profile-panel.tsx": "4ec170cc50769400c33fa12836293a14ecfbc1b9a88eb312abbb3de06eae0cb6",
     "src/components/settings/profile/sessions-row.tsx": "0b800cc13a354314ccb34a92657b3be17f11f5f0ef5a28e451a6ef1a6a358942",
@@ -2774,8 +2774,8 @@
     "src/lib/auth/invite-intent.ts": "cf1751e7d8d94d12acc09e496834c32ea1e394e160f126eb17050bd320d11717",
     "src/lib/auth/recipient-proof-authorized-parties.test.ts": "a03c8732886ebc08bf0ca01c2d4cf36df49aa03a4ae7c9c218b28a3be5336c57",
     "src/lib/auth/recipient-proof-authorized-parties.ts": "7de684fc81f680a3624fe445bc14ffd9ab1288c90ef9b27dd751361a3fcacb6b",
-    "src/lib/auth/social-providers.test.ts": "0c577e1428a08ec8f7847a69d36df28f480e5daeb5dac0e58fa6070423be1390",
-    "src/lib/auth/social-providers.ts": "8fe8180da73602571ccef5d3a2ff9c1a01d0f20ee7099907bf61be2946b9062f",
+    "src/lib/auth/social-providers.test.ts": "46b5d4ac0280422fae840a6961cdc4849a16d5d6b5b1b19bef8669cc60e1ce98",
+    "src/lib/auth/social-providers.ts": "c3368e49387d7e4af2db105d73b7b4b3abf9ed1b3b163df2883d035f3dbe2788",
     "src/lib/automations/automations.test.ts": "ea7e4be3064bc4c2d19281ddadab498c4408e46bb9f08326a1f2c426a7aa3424",
     "src/lib/automations/catalogue.ts": "1449e55336f879e627860272c3b8a690d759ec3a4e22a300f69b9711a7fa7b9e",
     "src/lib/automations/draft-store.ts": "81bdcd75afc44216d01d720ac40319d21c7327aaa7cf48d9c86d684a3174b521",
@@ -3295,7 +3295,7 @@
     "src/server/actions/roll-forward.ts": "590d7b861668c965b672ef3bb88d33b617d8326b51da8f7403fcded26a3a917f",
     "src/server/actions/room.ts": "eb26165145528250c2f0e7eb7d4fa7e33a08d3cdeac29c285cf13fd9c591be7d",
     "src/server/actions/sample-data.ts": "03233cc932213571b75044fbe44e8d45cd5a41a25e5d6e15c8bf3d68c760efce",
-    "src/server/actions/security.ts": "0f2800b1af56df4c9fb91be043ce642415292e936527cdd026d5076a0c67bf8d",
+    "src/server/actions/security.ts": "0e31ffa3277ebd78c68a6c8855ba019c85ee7842d0d5236311d21da8373bf906",
     "src/server/actions/seed-materialization.test.ts": "4926137e0ea3829b7c26450e9c94e579eae9b340737fdf9fc5b3cbcd058eb4d7",
     "src/server/actions/seed-materialization.ts": "efe4f8d9ff235bb93cab9020a6878b9eceb7601578254a77fee0676abeed470b",
     "src/server/actions/seed.test.RED.ts": "77cbe438f52bb2c2c708973488f35e5db45f5a86a6934c35054931ef2919385a",
@@ -3828,6 +3828,8 @@
     "src/components/tasks/project-completion.tsx": "91854397453d9b49fc8f92535cd4081e83196c0cd5e32169a43d60c96a289037",
     "src/components/tasks/view-navigation.tsx": "9a727325f7eaf70841cfc42a0a335b5efb3c43d3bf41f20891ba51db0e5a7614",
     "src/components/app/project/project-timeline-preview.module.css": "9692ff476f2819d35d835777dc3188f0195c23780d1ab9fbe3dc668c72fa5b59",
-    "src/components/app/project/project-timeline-preview.tsx": "346ac497f74bb39c849acad172c266179146d2214284c9f0cbd8c72909435259"
+    "src/components/app/project/project-timeline-preview.tsx": "346ac497f74bb39c849acad172c266179146d2214284c9f0cbd8c72909435259",
+    "src/lib/auth/account-methods.test.ts": "d44bbf4940d4760d33d1cd3311965b6cd599a9dad6e60cf165ab660d7c2f7e78",
+    "src/lib/auth/account-methods.ts": "3d92ae297581d760a07457b45248a1a5d4c6c9b435e2e481f025e0031a0447f7"
   }
 }

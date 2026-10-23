@@ -1,5 +1,9 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Account sign-in details
+
+Account settings shows an already connected Facebook account and lists a verified phone number separately from an email address. Available connection actions still follow the enabled sign-in providers.
+
 ## 2026-10-23 · Chat tools
 
 Hide a conversation from the floating Chat list just for you, and paste files into Saved notes. Ping shows a character count near its existing request limit.
