@@ -1,3 +1,4 @@
+import { validConversationAttachmentIds } from "@/lib/conversations/attachment-contracts";
 import { conversationFailureCode, newConversationCorrelation, reportConversationFailure } from "./failure-diagnostic";
 import { parseProjectId } from "../../lib/projects/project-ref";
 import { conversationAvailability, type ConversationControls } from "../../lib/conversations/flags";
@@ -169,10 +170,11 @@ export function createConversationHttp(deps: Dependencies) {
         if (!id(body.messageId) || !positive(body.expectedRevision)) return fail("invalid_input");
         return response(await service.tombstoneMessage({ ...common, messageId: body.messageId, expectedRevision: body.expectedRevision }));
       }
-      if (!validMessageBody(body.body) || !Array.isArray(body.mentionUserIds) || body.mentionUserIds.length > 50 || !body.mentionUserIds.every(id)) return fail("invalid_input");
+      if ((!validMessageBody(body.body) && !(body.action === "send" && body.body === "" && Array.isArray(body.attachmentIds) && body.attachmentIds.length > 0)) || !Array.isArray(body.mentionUserIds) || body.mentionUserIds.length > 50 || !body.mentionUserIds.every(id)) return fail("invalid_input");
       if (body.action === "send") {
-        if (body.rootId !== null && !id(body.rootId)) return fail("invalid_input");
-        return response(await service.sendMessage({ actorId, input: { projectId, conversationId, clientRequestId, expectedAudienceEpoch, body: body.body, rootId: body.rootId, mentionUserIds: body.mentionUserIds } }));
+        const sendFields = new Set(["action","projectId","conversationId","clientRequestId","expectedAudienceEpoch","body","rootId","mentionUserIds","attachmentIds"]);
+        if (Object.keys(body).some(key => !sendFields.has(key)) || !validConversationAttachmentIds(body.attachmentIds === undefined ? [] : body.attachmentIds) || (body.rootId !== null && !id(body.rootId))) return fail("invalid_input");
+        return response(await service.sendMessage({ actorId, input: { projectId, conversationId, clientRequestId, expectedAudienceEpoch, body: body.body, rootId: body.rootId, mentionUserIds: body.mentionUserIds, ...(body.attachmentIds === undefined ? {} : { attachmentIds: body.attachmentIds as string[] }) } }));
       }
       if (body.action === "edit" && id(body.messageId) && positive(body.expectedRevision)) {
         return response(await service.editMessage({ ...common, messageId: body.messageId, expectedRevision: body.expectedRevision, body: body.body, mentionUserIds: body.mentionUserIds }));

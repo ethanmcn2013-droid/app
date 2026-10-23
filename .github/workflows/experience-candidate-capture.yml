@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   capture-candidate:
-    if: contains(fromJSON('["feat/selected-product-sprint-20261015","feat/chat-files-refinement-20261018","feat/timeline-master3-oct18","feat/ping-controls-receiving-oct23","feat/shell-navigation-release-oct23","feat/header-collaboration-release-oct23","feat/account-methods-release-oct23","feat/chat-tools-release-oct23","feat/projects-console-release-oct23","feat/tasks-controls-release-oct23","feat/analytics-discovery-release-oct23","feat/project-menus-release-oct23","fix/ping-folder-history-release-oct23"]'), github.event.pull_request.head.ref) && github.event.pull_request.head.repo.full_name == github.repository
+    if: contains(fromJSON('["feat/selected-product-sprint-20261015","feat/chat-files-refinement-20261018","feat/timeline-master3-oct18","feat/ping-controls-receiving-oct23","feat/shell-navigation-release-oct23","feat/header-collaboration-release-oct23","feat/account-methods-release-oct23","feat/chat-tools-release-oct23","feat/projects-console-release-oct23","feat/tasks-controls-release-oct23","feat/analytics-discovery-release-oct23","feat/project-menus-release-oct23","feat/conversation-files-runtime-release-oct23","fix/ping-folder-history-release-oct23"]'), github.event.pull_request.head.ref) && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -85,6 +85,10 @@ jobs:
         if: always() && steps.browser.outcome == 'success'
         run: node experience/sidebar/fixture-run.mjs --capture experience/output/sidebar-fixture
 
+      - name: Capture Project and private conversation files
+        if: always() && steps.browser.outcome == 'success'
+        run: pnpm test:conversation-attachments:browser
+
       - name: Upload candidate evidence, including unsuccessful runs
         if: always()
         uses: actions/upload-artifact@v4
@@ -99,6 +103,7 @@ jobs:
             experience/output/playwright-results
             experience/output/sidebar-fixture
             experience/output/project-menu-fixture
+            experience/output/conversation-attachments
             experience/evidence-runs
             experience/critical-fixtures.json
             experience/browser-contract.json

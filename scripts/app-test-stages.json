@@ -469,5 +469,10 @@
     "scripts/db/timeline-production-backup-custody.test.mjs",
     "experience/timeline-master3/harness.test.mjs",
     "experience/timeline-master3/guest-fixture.test.mjs"
+  ],
+  [
+    "node",
+    "--test",
+    "experience/conversation-attachments/run.test.mjs"
   ]
 ]

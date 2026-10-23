@@ -72,6 +72,9 @@ jobs:
       - name: Verify compact personal Chat, files and notifications
         run: pnpm test:personal-chat-files:browser
 
+      - name: Verify Project and private conversation file recovery
+        run: pnpm test:conversation-attachments:browser
+
       # The preceding build supplies the local Geist assets required by this
       # fixture. Its explicit framework/identity adapters remain documented;
       # these results do not establish real Clerk or production continuity.
@@ -125,6 +128,7 @@ jobs:
             experience/output/recipient-project-work/wedding-date-readback
             experience/output/event-account-export
             experience/output/project-recovery
+            experience/output/conversation-attachments
             experience/output/settings-hydration-results/**/test-failed-*.png
             experience/output/settings-hydration-results/**/error-context.md
           if-no-files-found: ignore

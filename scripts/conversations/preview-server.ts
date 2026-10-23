@@ -8,6 +8,9 @@ import { createClient } from "@libsql/client";
 import { createLocalConversationDatabaseAdapter, type ConversationSqlExecutor } from "../../src/server/conversations/database";
 import { createConversationService } from "../../src/server/conversations/service";
 import { createConversationTaskOutcomeService } from "../../src/server/conversations/work-links";
+import { createConversationAttachmentService } from "../../src/server/conversations/attachments";
+import { createPersonalAttachmentStorage } from "../../src/server/conversations/personal-chat-attachment-storage";
+import { createConversationAttachmentHttp, createConversationAttachmentDownload } from "../../src/server/conversations/attachment-http";
 import { createConversationHttp } from "../../src/server/conversations/http";
 import { createTaskDiscussionService } from "../../src/server/conversations/task-discussion";
 import { createTaskDiscussionHttp } from "../../src/server/conversations/task-discussion-http";
@@ -43,7 +46,9 @@ for (const [id, workspaceId, title] of [
   args: [id, workspaceId, title],
 });
 const adapter = createLocalConversationDatabaseAdapter({ client: client as unknown as ConversationSqlExecutor });
-const service = createConversationService(adapter, { directMessagesEnabled: true });
+const fileStorage = createPersonalAttachmentStorage({ env: () => ({}), root: () => join(directory, "files") });
+const attachments = createConversationAttachmentService(adapter, { enabled: true, directMessagesEnabled: true, storage: fileStorage });
+const service = createConversationService(adapter, { directMessagesEnabled: true, attachmentsEnabled: true, attachmentCleanup: ownerId => attachments.repair(ownerId) });
 const taskOutcomes = createConversationTaskOutcomeService(adapter, { directMessagesEnabled: true });
 const taskDiscussion = createTaskDiscussionService(adapter);
 let sendsEnabled = true;
@@ -72,20 +77,26 @@ const server = createServer(async (incoming, outgoing) => {
     } catch { outgoing.writeHead(500); outgoing.end(); }
     return;
   }
-  if (path.pathname === "/api/conversations" || path.pathname === "/api/task-discussion") {
-    const fixtureActor = typeof incoming.headers["x-fixture-actor"] === "string" ? incoming.headers["x-fixture-actor"] : null;
+  const attachmentEndpoint = path.pathname === "/api/conversations/attachments" || /^\/api\/conversations\/attachments\/ca_[a-f0-9]{32}$/.test(path.pathname);
+  if (path.pathname === "/api/conversations" || path.pathname === "/api/task-discussion" || attachmentEndpoint) {
+    // Native browser downloads omit injected fixture headers. Only this local
+    // synthetic download endpoint accepts the explicitly set test actor cookie.
+    const downloadActorCookie = attachmentEndpoint && incoming.method === "GET" && path.pathname !== "/api/conversations/attachments"
+      ? (incoming.headers.cookie ?? "").split(";").map(value => value.trim()).find(value => value.startsWith("__conversation_fixture_actor="))?.slice("__conversation_fixture_actor=".length) ?? null
+      : null;
+    const fixtureActor = typeof incoming.headers["x-fixture-actor"] === "string" ? incoming.headers["x-fixture-actor"] : downloadActorCookie;
     if (incoming.method === "GET" && path.searchParams.get("action") === "receipt" && fixtureActor && unavailableReceipts.has(fixtureActor)) {
       outgoing.writeHead(503, { "content-type": "application/json", "cache-control": "no-store" });
       outgoing.end('{"ok":false,"code":"temporarily_unavailable"}'); return;
     }
-    if (incoming.method === "POST" && fixtureActor && refuseNextWrite.delete(fixtureActor)) {
+    if (!attachmentEndpoint && incoming.method === "POST" && fixtureActor && refuseNextWrite.delete(fixtureActor)) {
       incoming.resume();
       outgoing.writeHead(503, { "content-type": "application/json", "cache-control": "no-store" });
       outgoing.end('{"ok":false,"code":"temporarily_unavailable"}'); return;
     }
     const dependencies = {
       authenticate: async () => people.some(([id]) => id === fixtureActor) ? fixtureActor : null,
-      controls: () => resolveConversationControls({ SIGNAL_CONVERSATION_INTERNAL_ENABLED: "true", SIGNAL_CONVERSATION_INTERNAL_ACTOR_IDS: people.map(([id]) => id).join(","), SIGNAL_CONVERSATION_SEND_ENABLED: String(sendsEnabled) }),
+      controls: () => resolveConversationControls({ SIGNAL_CONVERSATION_INTERNAL_ENABLED: "true", SIGNAL_CONVERSATION_INTERNAL_ACTOR_IDS: people.map(([id]) => id).join(","), SIGNAL_CONVERSATION_SEND_ENABLED: String(sendsEnabled), SIGNAL_CONVERSATION_DM_ENABLED: "true" }),
     };
     const handle = path.pathname === "/api/task-discussion"
       ? createTaskDiscussionHttp({ ...dependencies, service: async () => taskDiscussion })
@@ -95,13 +106,17 @@ const server = createServer(async (incoming, outgoing) => {
     const request = new Request(path, { method: incoming.method, headers: requestHeaders,
       ...(!["GET", "HEAD"].includes(incoming.method ?? "GET") ? { body: Readable.toWeb(incoming) as ReadableStream<Uint8Array>, duplex: "half" } : {}),
     });
-    const result = await handle(request);
-    if (incoming.method === "POST" && result.ok && fixtureActor && withholdNextReceipt.delete(fixtureActor)) {
+    const result = attachmentEndpoint
+      ? path.pathname === "/api/conversations/attachments"
+        ? await createConversationAttachmentHttp({ ...dependencies, service: async () => attachments })(request)
+        : await createConversationAttachmentDownload({ ...dependencies, service: async () => attachments, open: row => fileStorage.open!(row) })(request, { params: Promise.resolve({ id: path.pathname.split("/").at(-1)! }) })
+      : await handle(request);
+    if (!attachmentEndpoint && incoming.method === "POST" && result.ok && fixtureActor && withholdNextReceipt.delete(fixtureActor)) {
       // A deterministic uncertain outcome, unaffected by browser socket retries.
       outgoing.writeHead(503, { "content-type": "application/json", "cache-control": "no-store" });
       outgoing.end('{"ok":false,"code":"temporarily_unavailable"}'); return;
     }
-    if (incoming.method === "POST" && result.ok && fixtureActor && dropNextResponse.delete(fixtureActor)) {
+    if (!attachmentEndpoint && incoming.method === "POST" && result.ok && fixtureActor && dropNextResponse.delete(fixtureActor)) {
       outgoing.destroy(); return; // The service has committed; the browser must reconcile the original ID.
     }
     outgoing.writeHead(result.status, Object.fromEntries(result.headers));

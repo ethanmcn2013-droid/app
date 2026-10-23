@@ -2,14 +2,15 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { ConversationAttachmentCache } from "./conversation-attachment-drafts";
 import type { DraftCache, OutgoingCache, ScrollCache } from "./conversation-client-model";
 import type { TaskDiscussionOutgoingCache } from "@/components/app/detail-panel/conversation-feed";
 
 type SessionCaches = { actorId: string; drafts: DraftCache; outgoing: OutgoingCache;
-  scroll: ScrollCache; taskDiscussions: TaskDiscussionOutgoingCache };
+  attachments: ConversationAttachmentCache; scroll: ScrollCache; taskDiscussions: TaskDiscussionOutgoingCache };
 const SessionContext = createContext<SessionCaches | null>(null);
 const newCaches = (actorId: string): SessionCaches => ({
-  actorId, drafts: new Map(), outgoing: new Map(), scroll: new Map(), taskDiscussions: new Map(),
+  actorId, drafts: new Map(), outgoing: new Map(), attachments: new ConversationAttachmentCache(), scroll: new Map(), taskDiscussions: new Map(),
 });
 
 /** Memory only; the authenticated layout owns this across client route navigation. */
@@ -20,7 +21,7 @@ export function ConversationSessionProvider({ actorId, children }: { actorId: st
 function SessionOwner({ actorId, children }: { actorId: string; children: ReactNode }) {
   const [caches] = useState(() => newCaches(actorId));
   useEffect(() => () => {
-    caches.drafts.clear(); caches.outgoing.clear(); caches.scroll.clear(); caches.taskDiscussions.clear();
+    caches.drafts.clear(); caches.outgoing.clear(); caches.scroll.clear(); caches.taskDiscussions.clear(); caches.attachments.clear();
   }, [caches]);
   return <SessionContext.Provider value={caches}>{children}</SessionContext.Provider>;
 }

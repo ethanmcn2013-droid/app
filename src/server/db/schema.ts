@@ -2024,3 +2024,25 @@ export const personalChatAttachments = sqliteTable("personal_chat_attachments", 
   check("personal_chat_attachment_hash", sql`length(${table.requestHash})=64`),
   check("personal_chat_attachment_binding", sql`(${table.state}='bound' AND ${table.messageId} IS NOT NULL AND ${table.position} IS NOT NULL) OR ${table.state}!='bound'`),
 ]);
+
+/** Private file claims retain exact cleanup custody after owner erasure. */
+export const conversationChatAttachments = sqliteTable("conversation_chat_attachments", {
+  id: text("id").primaryKey(), ownerId: text("owner_id").notNull(), messageId: text("message_id"), position: integer("position"),
+  workspaceId: text("workspace_id").notNull(), conversationId: text("conversation_id").notNull(), rootId: text("root_id"), audienceEpoch: integer("audience_epoch").notNull(),
+  clientRequestId: text("client_request_id").notNull(), requestHash: text("request_hash").notNull(),
+  filename: text("filename").notNull(), mimeType: text("mime_type").notNull(), sizeBytes: integer("size_bytes").notNull(),
+  backend: text("backend").$type<"disk" | "blob">().notNull(), storeIdentity: text("store_identity").notNull(), storageKey: text("storage_key").notNull(), storedPath: text("stored_path"),
+  state: text("state").$type<"uploading" | "ready" | "bound" | "cleanup" | "deleted">().notNull(),
+  writerSettled: integer("writer_settled").notNull().default(0), custodyUntil: integer("custody_until").notNull(),
+  expiresAt: integer("expires_at").notNull(), createdAt: integer("created_at").notNull(),
+}, table => [
+  uniqueIndex("idx_conversation_chat_attachment_request").on(table.ownerId, table.clientRequestId),
+  index("idx_conversation_chat_attachment_owner").on(table.ownerId, table.state, table.createdAt),
+  index("idx_conversation_chat_attachment_message").on(table.conversationId, table.messageId, table.position),
+  index("idx_conversation_chat_attachment_project").on(table.workspaceId, table.state),
+  check("conversation_chat_attachment_state", sql`${table.state} IN ('uploading','ready','bound','cleanup','deleted')`),
+  check("conversation_chat_attachment_backend", sql`${table.backend} IN ('disk','blob')`),
+  check("conversation_chat_attachment_bytes", sql`${table.sizeBytes} > 0 AND ${table.sizeBytes} <= 2097152`),
+  check("conversation_chat_attachment_hash", sql`length(${table.requestHash})=64`),
+  check("conversation_chat_attachment_binding", sql`(${table.state}='bound' AND ${table.messageId} IS NOT NULL AND ${table.position} IS NOT NULL) OR ${table.state}!='bound'`),
+]);

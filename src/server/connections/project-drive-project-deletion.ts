@@ -20,6 +20,7 @@ import {
   workspaces,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
+import { eraseConversationAttachmentsWith } from "@/server/conversations/attachment-erasure";
 import { deleteProjectRowsInTransaction } from "@/server/projects/project-deletion-rows";
 import { assertProjectDriveSubfoldersSettled } from "./project-drive-subfolders-lifecycle";
 import { createNativeByteCleanupService } from "@/server/attachments/native-byte-cleanup";
@@ -842,6 +843,8 @@ export function createProjectDriveProjectDeletionService(
       }
 
       try {
+        // The durable deletion fence is committed; no new file writer can enter.
+        await eraseConversationAttachmentsWith(deps.database, { projectId: workspaceId });
         for (const receipt of providerReceipts.values()) {
           // Deliberately outside both writer transactions. If any call fails,
           // the Project, membership, storage and exact receipts all remain.

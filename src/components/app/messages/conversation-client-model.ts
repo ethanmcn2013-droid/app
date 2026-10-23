@@ -1,3 +1,5 @@
+import { validMessageBody } from "@/lib/conversations/contracts";
+import type { ConversationAttachmentCache } from "./conversation-attachment-drafts";
 import { parseProjectId, type ProjectId } from "@/lib/projects/project-ref";
 import type { PendingSend, RecoveredDraft } from "@/lib/conversations/reducer";
 import type { ConversationClientState } from "@/lib/conversations/reducer";
@@ -18,16 +20,17 @@ export function retainConversationState(drafts: DraftCache, outgoing: OutgoingCa
   else outgoing.delete(key);
 }
 
-export function listSavedDrafts(actorId: string, drafts: DraftCache, outgoing: OutgoingCache) {
-  return [...new Set([...drafts.keys(), ...outgoing.keys()])].flatMap((key) => {
+export function listSavedDrafts(actorId: string, drafts: DraftCache, outgoing: OutgoingCache, attachments?: ConversationAttachmentCache) {
+  return [...new Set([...drafts.keys(), ...outgoing.keys(), ...attachments?.keys() ?? []])].flatMap((key) => {
     try {
       const tuple: unknown = JSON.parse(key);
       if (!Array.isArray(tuple) || tuple.length !== 4 || tuple[0] !== actorId || typeof tuple[1] !== "string" || typeof tuple[2] !== "string" || (tuple[3] !== null && typeof tuple[3] !== "string")) return [];
       const projectId = parseProjectId(tuple[1]);
       if (!projectId) return [];
       const saved = outgoing.get(key);
-      return [{ key, scope: { projectId, conversationId: tuple[2], rootId: tuple[3], kind: saved?.scopeKind ?? "project" } as SavedConversationScope,
+      return [{ key, scope: { projectId, conversationId: tuple[2], rootId: tuple[3], kind: saved?.scopeKind ?? attachments?.get(key)?.[0]?.scopeKind ?? "project" } as SavedConversationScope,
         bodies: [drafts.get(key), ...saved?.pending.map((item) => item.input.body) ?? [], ...saved?.recoveredDrafts.map((item) => item.body) ?? []].filter((body): body is string => !!body),
+        files: attachments?.get(key)?.length ?? 0,
         selectedPeople: saved?.draftMentionUserIds?.length ?? 0,
         unresolved: !!(saved?.pending.length || saved?.recoveredDrafts.length) }];
     } catch { return []; }
@@ -41,8 +44,8 @@ export function rememberDraft(cache: DraftCache, key: string, value: string, lim
   return true;
 }
 
-export function hasDraftCapacity(drafts: DraftCache, outgoing: OutgoingCache, key: string, limit = 20): boolean {
-  const occupied = new Set([...drafts.keys(), ...outgoing.keys()]);
+export function hasDraftCapacity(drafts: DraftCache, outgoing: OutgoingCache, key: string, limit = 20, attachments?: ConversationAttachmentCache): boolean {
+  const occupied = new Set([...drafts.keys(), ...outgoing.keys(), ...attachments?.keys() ?? []]);
   return occupied.has(key) || occupied.size < limit;
 }
 
@@ -98,4 +101,9 @@ export function conversationHeaders(fixtureActor: string | undefined, hasBody: b
   if (hasBody) headers.set("content-type", "application/json");
   if (fixtureActor) headers.set("x-fixture-actor", fixtureActor);
   return headers;
+}
+
+/** A checked attachment can carry an otherwise empty message; text limits stay unchanged. */
+export function validConversationDraftBody(body: string, hasFiles: boolean): boolean {
+  return (hasFiles && !body.trim()) || validMessageBody(body);
 }

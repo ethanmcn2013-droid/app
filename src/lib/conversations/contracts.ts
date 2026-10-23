@@ -1,4 +1,5 @@
 /** Project Conversation v1. Transport data only; these types never grant access. */
+import type { ConversationAttachment } from "./attachment-contracts";
 import type { ProjectId } from "../projects/project-ref";
 
 export const CONVERSATION_LIMITS = Object.freeze({
@@ -29,6 +30,7 @@ export type SendInput = Readonly<{
   body: string;
   rootId: string | null;
   mentionUserIds: readonly string[];
+  attachmentIds?: readonly string[];
 }>;
 /** Only a committed record is a receipt. Unknown network outcomes remain uncertain. */
 export type MessageReceipt = Readonly<{
@@ -38,6 +40,7 @@ export type MessageReceipt = Readonly<{
   changeSeq: number;
   revision: number;
   committedAt: number;
+  attachments?: readonly ConversationAttachment[];
 }>;
 export type ReceiptLookup = ConversationResult<
   | { state: "committed"; receipt: MessageReceipt }
@@ -54,6 +57,7 @@ export type MessageRecord = Readonly<{
   editedAt: number | null;
   deletedAt: number | null;
   /** Present on root pages; thread replies never contribute to observation implicitly. */
+  attachments?: readonly ConversationAttachment[];
   replyCount?: number;
   replyCountChangeSeq?: number;
 }>;

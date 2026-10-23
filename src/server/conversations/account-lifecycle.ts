@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "@/server/db/schema";
+import { eraseConversationAttachmentsWith } from "./attachment-erasure";
 import { erasePersonalChatAttachmentsWith } from "./personal-chat-attachment-erasure";
 import {
   comments, conversationChanges, conversationMessages, conversations,
@@ -12,6 +13,12 @@ type RawWriter = Pick<Database, "run">;
 
 /** Explicit cleanup: the production libSQL connection cannot rely on FK cascades. */
 export async function eraseProjectConversationRows(database: RawWriter, projectId: string) {
+  const filesTable = await database.run(sql`SELECT name FROM sqlite_master WHERE type='table' AND name='conversation_chat_attachments'`);
+  if (filesTable.rows.length) {
+    const custody = await database.run(sql`SELECT 1 FROM conversation_chat_attachments WHERE workspace_id=${projectId} AND state!='deleted' LIMIT 1`);
+    if (custody.rows.length) throw new Error("Project deletion deferred: conversation attachment custody remains");
+    await database.run(sql`DELETE FROM conversation_chat_attachments WHERE workspace_id=${projectId} AND state='deleted'`);
+  }
   await database.run(sql`DELETE FROM suite_outbox WHERE type='task.created' AND EXISTS (
     SELECT 1 FROM work_links l WHERE (l.source_project_id=${projectId} OR l.destination_project_id=${projectId})
       AND CASE WHEN json_valid(suite_outbox.object_ref) THEN json_extract(suite_outbox.object_ref,'$.workLinkId') END=l.id)`);
@@ -37,6 +44,7 @@ export async function eraseConversationUserFootprint(database: Database, userId:
     .where(sql`${userId} IN (${conversations.dmLowUserId}, ${conversations.dmHighUserId})`).limit(1);
   if (dm.length) throw new Error("account erasure blocked: existing DM requires its separate retention decision");
 
+  await eraseConversationAttachmentsWith(database, { ownerId: userId });
   await erasePersonalChatAttachmentsWith(database, userId);
 
   // Private self-chat is owner-keyed and has no conversation/project parent.

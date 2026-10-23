@@ -8,6 +8,7 @@ import { createConversationTaskOutcomeService } from "./work-links";
 import { createTaskDiscussionService } from "./task-discussion";
 import { createMessageAttentionService } from "./attention";
 import { createPersonalChatService } from "./personal-chat";
+import { createConversationAttachmentService, type ConversationAttachmentService } from "./attachments";
 import { createPersonalChatAttachmentService, type PersonalChatAttachmentService } from "./personal-chat-attachments";
 import { createLocalConversationDatabaseAdapter, createRemoteConversationDatabaseAdapter, createUnavailableConversationDatabaseAdapter, type ConversationDatabaseAdapter } from "./database";
 import { resolveConversationRuntimeTarget } from "./runtime-target";
@@ -17,20 +18,22 @@ type TaskOutcomes = ReturnType<typeof createConversationTaskOutcomeService>;
 type TaskDiscussion = ReturnType<typeof createTaskDiscussionService>;
 type Attention = ReturnType<typeof createMessageAttentionService>;
 type PersonalChat = ReturnType<typeof createPersonalChatService>;
-type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes; taskDiscussion: TaskDiscussion; attention: Attention; personalChat: PersonalChat; personalChatAttachments: PersonalChatAttachmentService }>;
+type RuntimeServices = Readonly<{ conversation: Service; taskOutcomes: TaskOutcomes; taskDiscussion: TaskDiscussion; attention: Attention; personalChat: PersonalChat; personalChatAttachments: PersonalChatAttachmentService; conversationAttachments: ConversationAttachmentService }>;
 const runtimeGlobal = globalThis as typeof globalThis & { conversationRuntime?: { cacheKey: string; services: RuntimeServices } };
 
 function servicesFor(adapter: ConversationDatabaseAdapter): RuntimeServices {
   const directMessagesEnabled = resolveConversationControls(process.env).directMessagesEnabled;
   const filesEnabled = process.env.SIGNAL_PERSONAL_CHAT_ATTACHMENTS_ENABLED === "true";
+  const sharedFilesEnabled = process.env.SIGNAL_CONVERSATION_ATTACHMENTS_ENABLED === "true";
+  const conversationAttachments = createConversationAttachmentService(adapter, { enabled: sharedFilesEnabled, directMessagesEnabled });
   const personalChatAttachments = createPersonalChatAttachmentService(adapter, { enabled: filesEnabled });
   return {
-    conversation: createConversationService(adapter, { directMessagesEnabled }),
+    conversation: createConversationService(adapter, { directMessagesEnabled, attachmentsEnabled: sharedFilesEnabled, attachmentCleanup: ownerId => conversationAttachments.repair(ownerId) }),
     taskOutcomes: createConversationTaskOutcomeService(adapter, { directMessagesEnabled }),
     taskDiscussion: createTaskDiscussionService(adapter),
     attention: createMessageAttentionService(adapter),
     personalChat: createPersonalChatService(adapter, undefined, filesEnabled ? personalChatAttachments : undefined),
-    personalChatAttachments,
+    personalChatAttachments, conversationAttachments,
   };
 }
 
@@ -42,7 +45,7 @@ function unavailableServices(reason: string): RuntimeServices {
 async function getRuntimeServices(): Promise<RuntimeServices> {
   const target = resolveConversationRuntimeTarget(process.env, isDemoMode());
   if (target.mode === "unavailable") return unavailableServices(target.reason);
-  const cacheKey = `${target.cacheKey}:dm=${resolveConversationControls(process.env).directMessagesEnabled}:personal-files=${process.env.SIGNAL_PERSONAL_CHAT_ATTACHMENTS_ENABLED === "true"}`;
+  const cacheKey = `${target.cacheKey}:dm=${resolveConversationControls(process.env).directMessagesEnabled}:shared-files=${process.env.SIGNAL_CONVERSATION_ATTACHMENTS_ENABLED === "true"}:personal-files=${process.env.SIGNAL_PERSONAL_CHAT_ATTACHMENTS_ENABLED === "true"}`;
   const cached = runtimeGlobal.conversationRuntime;
   if (cached) return cached.cacheKey === cacheKey ? cached.services : unavailableServices("runtime_configuration_changed");
   const client = createClient(target.mode === "remote"
@@ -106,4 +109,8 @@ export async function authenticateConversationActor(mode: "read" | "write" = "re
   if (!actorId) return null;
   const availability = conversationAvailability(controls, actorId);
   return availability.read && (mode === "read" || availability.send) ? actorId : null;
+}
+
+export async function getConversationAttachmentService(): Promise<ConversationAttachmentService> {
+  return (await getRuntimeServices()).conversationAttachments;
 }

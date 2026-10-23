@@ -209,7 +209,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "Niamh O\u2019Connell added you to The Orchard, events.",
+              "name": "Niamh O’Connell added you to The Orchard, events.",
               "proves": [
                 "default"
               ]
@@ -404,7 +404,7 @@
           "assertions": [
             {
               "kind": "text",
-              "text": "Read-only \u00b7 Shared link",
+              "text": "Read-only · Shared link",
               "proves": [
                 "default",
                 "read-only"
@@ -520,7 +520,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "You\u2019re already signed in here.",
+              "name": "You’re already signed in here.",
               "proves": [
                 "default",
                 "disabled"
@@ -647,7 +647,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "Couldn\u2019t find that one. The link, the task, or both.",
+              "name": "Couldn’t find that one. The link, the task, or both.",
               "proves": [
                 "error"
               ]
@@ -673,7 +673,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "This share link doesn\u2019t exist.",
+              "name": "This share link doesn’t exist.",
               "proves": [
                 "error"
               ]
@@ -732,7 +732,7 @@
         {
           "kind": "role",
           "role": "combobox",
-          "name": "Search, jump or create\u2026",
+          "name": "Search, jump or create…",
           "value": "recommended suppliers",
           "proves": [
             "default"
@@ -2057,13 +2057,13 @@
     "src/components/app/messages/chat-view-model.test.ts": "6d0c1cfbc5e92c6b8942620fdeadf455b7bf23fa4fcdd156f9b65ff231940446",
     "src/components/app/messages/chat-view-model.ts": "96de87402079c44461aad32e1baf61d7fe292ebea3a8ebd5ac6d4b560b84ad0e",
     "src/components/app/messages/chat.module.css": "e57d923832742fc37f9d316c7fedcaffa6edc384cc71eeba3c1a8cfd6d7b984c",
-    "src/components/app/messages/conversation-client-model.test.ts": "011f43198809ef0c768433da7bfd2fdbf8e12133dfd6046640c7dacab2bf76ea",
-    "src/components/app/messages/conversation-client-model.ts": "1368dac6690246056cfec2c5f71955a261cc0e17143fff05525d1fadbc68c65c",
+    "src/components/app/messages/conversation-client-model.test.ts": "5203f3a712b1232da241f2f623a2fc13991d646d1613fee951ccc465abc431c9",
+    "src/components/app/messages/conversation-client-model.ts": "51b8f83fbe67f6a44cb31a3f754f1c8fdfb77953b44b3217db21528b1bfa3936",
     "src/components/app/messages/conversation-lab-session.tsx": "67498a43b22e17005db8c1535faf477da4ad7b7a8b8a1bddcc6446123521d5cb",
     "src/components/app/messages/conversation-options.tsx": "6ab08fc2c99d60f5221d5d5d509768d048530694d5b58ac6ab47056b075f7028",
-    "src/components/app/messages/conversation-session-provider.tsx": "82f25c370c90084ad2f11ddc4208fda3f6cfee65ebf76a886a28f71f55dfc6d1",
-    "src/components/app/messages/conversation-workspace.module.css": "8acef406979844d9f868a4a423159f4ebb9fe75b40277bd5d79d3c4b5624438a",
-    "src/components/app/messages/conversation-workspace.tsx": "103b4f1eb53a81807f039e1bd6a756acfdc3c06821e1dc075080114b38f650b6",
+    "src/components/app/messages/conversation-session-provider.tsx": "089aff0131c98ee1cb300556e94c379e0b7af251ec88db05e46e61130eb4ea4f",
+    "src/components/app/messages/conversation-workspace.module.css": "9df740e6f2c16c35f311915eaedf0b7cb0eee3cfec2e12783ec0e8563627d00a",
+    "src/components/app/messages/conversation-workspace.tsx": "51883d6f283bd4bca6a21a93eccaf0e420108b026f8348fd56281dbd8010363e",
     "src/components/app/messages/demo-messages-app.tsx": "cdfc2156b68faa42e450bbc2e1c7d6dcef3dd3901c9385835511b256c2be7ade",
     "src/components/app/messages/demo-messages-model.test.ts": "4fb264576bc195d1177c4b72942474478887eec1f94f2a6f257aa7792c1ea05a",
     "src/components/app/messages/demo-messages-model.ts": "ea4c9238a87ef2128ca905d5496c16fa13e0a484e4954849960a42969dd685a0",
@@ -2079,7 +2079,7 @@
     "src/components/app/messages/prototype-shell.tsx": "e982fb155f2926b4ef30ad4dcea8c93f03a0a4198416bc6a9260d24349e62476",
     "src/components/app/messages/prototype.module.css": "de5b7333f615b8b816837525b8f7f90e381b2a18fbd36510855963f563fab1d6",
     "src/components/app/messages/saved-drafts-panel.test.ts": "200e5941ed5aba92e570ecc7611df74363f52bfa37c3b61c1a215f4ce2467723",
-    "src/components/app/messages/saved-drafts-panel.tsx": "fb6e3a8fe00506d4f10f280d44709544469be8ef16ca3b752fb2058fcae807cf",
+    "src/components/app/messages/saved-drafts-panel.tsx": "c8b6e3f1b251fe60615427c3781a1ee9ef04bff1697d2db87ce0db1af63b2554",
     "src/components/app/messages/task-discussion-directory.tsx": "82b2fe17dd1569f994e2bad75ddd9ef792c56750554e5a0caa7040d9d83a9b30",
     "src/components/app/messages/task-discussion-preview.tsx": "254c7d04bc8d5f06dc8e75b8430723e379431c8b789d56c4586f033f47752de9",
     "src/components/app/messages/task-outcome-client.ts": "b0a84e266bc9c01bf2f137cd4aacd9208c65081593c9d087938a959243afd139",
@@ -2798,7 +2798,7 @@
     "src/lib/comp-code.ts": "787de473442a33d13dc32e96245d90e9d583bf08314d084cb8c1c2f101d4d6a8",
     "src/lib/comp-notes.test.ts": "c08a20b31d7eca9709124bc47b50dbece0b30014cce2b63b565d374e94361599",
     "src/lib/comp-notes.ts": "ec91f012cf95bd6bb90ad3eba020552726143ea55b1aef7fea0389e0926743b7",
-    "src/lib/conversations/contracts.ts": "cb60b624ef79f5066010190eacf2190690b35e15f5e6c3cb1760eccd18210017",
+    "src/lib/conversations/contracts.ts": "9e622bead0f812a0b6974607c7704e6f620fd923616386e6009464f09cc3d003",
     "src/lib/conversations/deep-link-comment.test.ts": "ba3ce4f32a5728f713fe0085df1b1d76aed6d86eb526bd6c01d1eb43e87e3c08",
     "src/lib/conversations/deep-link-comment.ts": "4fc44577da05348d66f6d278618b657974270ec5b13d44085aaaddedde7a1e16",
     "src/lib/conversations/flags.test.ts": "a1f8593a0f56140e2f525b26f603245d673e414e69ca6bdc684551e039189449",
@@ -2806,8 +2806,8 @@
     "src/lib/conversations/personal-chat-contracts.ts": "10230922d7ef4fc2babac1543b8fcbdf8dcdb583d182487e9eb6c41865fd5c16",
     "src/lib/conversations/polling.test.ts": "ac323e19eadd1774ab91b8db8677797193ad449b9f9f497e67ac19187e532168",
     "src/lib/conversations/polling.ts": "460e80ed5ed94648d1703c3b929ce133afd3d4c8f0246a617badd8c8f2df21a4",
-    "src/lib/conversations/reducer.test.ts": "c853dd35277169093b04b622510a882d9a94c03c17947d19848b660f397e54df",
-    "src/lib/conversations/reducer.ts": "ab7dc11f77b8900290f6c8e337779074c06190ba9b35e02718894b9351eedf9d",
+    "src/lib/conversations/reducer.test.ts": "70d90f368fb369d9553ac578d38c9e7c5e950a7d8594de11e58b3e5df3451fb3",
+    "src/lib/conversations/reducer.ts": "02dea7cac741936f55884f1789cba38f9af5e8ae7248235dcbabbf4b5d5d0625",
     "src/lib/conversations/task-comment-draft.ts": "3a62386fdca240eb5a2ae346769a260061d948f7c630f63db5bee5ce51372790",
     "src/lib/conversations/task-discussion-client.test.ts": "c3fe855d5666a2d30d85657bc8486ee2beee2a6f46d2f81be28a30f0e3095f41",
     "src/lib/conversations/task-discussion-contracts.ts": "9382c69e01d9505956d53fc762e90981c220ee0d2f50307cc381a5c02fb481b6",
@@ -3389,7 +3389,7 @@
     "src/server/connections/project-drive-permission-mutation-lease.test.ts": "746e4f0a7216137045e6ce903f173fa9cb33815f788d7704ff5267f3e439b015",
     "src/server/connections/project-drive-permission-mutation-lease.ts": "0632230923e77a686df211b7bce037cd839875541992c7ae6150a2b81682c4df",
     "src/server/connections/project-drive-project-deletion.test.ts": "a2ce0a2cc9f1c415f2f1bb7e22e349f3d85772c14d95ddbcbeef18da4897b3eb",
-    "src/server/connections/project-drive-project-deletion.ts": "e735741e65207ff30dd964d82f73aa76bd615f09c02263c60884f5acb618921d",
+    "src/server/connections/project-drive-project-deletion.ts": "edb1385cfc15b00ba49897270a8f7830a7642b7f35168643cb673c11f34d8cbc",
     "src/server/connections/project-drive-storage-handover.test.ts": "c40950ccafd05bb2729f2026d96a0a10ac2ae6599aefd49df31a3a208bb65571",
     "src/server/connections/project-drive-storage-handover.ts": "a986ee69e106330b2572ba9215ecf3c74d78c94ef240b00ccac655b5f4270d0b",
     "src/server/connections/project-drive-storage-restore.test.ts": "248cbb49a086d7b15054afbcfbe792d397da6a32a59bcf626266d02920861556",
@@ -3402,7 +3402,7 @@
     "src/server/connections/project-drive-upload-receipts.ts": "f6f3d8034e7a41bf61f0baaade160093867ee672dd627a92515f42f2c338d69e",
     "src/server/connections/project-drive-upload-recovery.test.ts": "97594ed8a20b6dfe06c2bfc8d6ed130e40319535eae1ce89b8ec343a70e47146",
     "src/server/conversations/account-lifecycle.test.ts": "fbf5ffa2111c9b534000dea8766e7207656542ecd86fe609f13883254e8e3608",
-    "src/server/conversations/account-lifecycle.ts": "a50a37e883f98556fc0503a4cb1e66f7ab11ccfeba23de63725ee0db10c86990",
+    "src/server/conversations/account-lifecycle.ts": "56acc9ca760dce31dde8f379668be035395155cb76db4e4c3670b2dce6b197e7",
     "src/server/conversations/attention-http.test.ts": "3c2cfb52f0fe8cb0d1ecf32ee8a9e69653b188ac8ece0bef0f9c797439d699e8",
     "src/server/conversations/attention-http.ts": "1c74aa489dcf274d042872d4281e804243fa7cd9a022cd51a98ce8d2809e251b",
     "src/server/conversations/attention-loader.test.ts": "472703f028d9e79340fa8197848884732b26798c0fb0a187b139977472469968",
@@ -3420,7 +3420,7 @@
     "src/server/conversations/failure-diagnostic.ts": "1b50b953af8d85fa014f88516bc1f398dd3fdcd759d976d026e20ee706e401ce",
     "src/server/conversations/fixtures/restart-process.ts": "32da227bef95575c49a81c082e6bf9d7e3b5d7d4a00eafed5797ec634b3be29e",
     "src/server/conversations/http.test.ts": "c35e3e63c67764f4e9371ca0caf0bd159e3d2ecb4c552a44544d3b14732b845d",
-    "src/server/conversations/http.ts": "9731c1491b2a1c42b626797e157c90671d79bc17396e39664f6f1eff1df5ab1e",
+    "src/server/conversations/http.ts": "064d05c3d8f9608210492c31c472b2a426fb974618ba35ab9a96d43998339c7a",
     "src/server/conversations/personal-chat-http.ts": "f3ea7d56492dfdf05f0dd2bffabcceff815bbfa554cb671dd87822acf04dcbdc",
     "src/server/conversations/personal-chat.persistence.test.ts": "f0c40b58bfe9a94830b18def2c2ce23f4079a13460e33e8dafc0f05b2cca7ab6",
     "src/server/conversations/personal-chat.ts": "567e76a6dbfef8fb3fa9dd958de48cebfb0ff2c7a451fbde57775600d9a02cd3",
@@ -3429,9 +3429,9 @@
     "src/server/conversations/runtime-target.test.ts": "6a9c8e6a99b3455102e33295f3e86af526e977ca26e38612ca4d4569a94745c9",
     "src/server/conversations/runtime-target.ts": "5076112cfc21141c3b625030de259923b73455f0d33236b5b95f9b867ca2515a",
     "src/server/conversations/runtime.test.ts": "dce6c60d9d501f5225edca737eb28d7808e38d0ee9cc8d2c10ed6d76ee8dac1e",
-    "src/server/conversations/runtime.ts": "ce2957f4590116bd484af2f912838ca1475684985bcfd99c92c52d1c0f72a3d6",
+    "src/server/conversations/runtime.ts": "41e19f504c22f744d62d4214133f9e4d89fd5ac3607abee81c04640622e14096",
     "src/server/conversations/service.persistence.test.ts": "66aa23cc3b73f9fa48ece00f5313defbdcf07eaf281f3ce107b679f5b5b20845",
-    "src/server/conversations/service.ts": "ed0ce1887244214c9f07a5214424c7f9a61afe9d1347e6785a039eee4209864c",
+    "src/server/conversations/service.ts": "2db0139f20f3e4dda94f86259c4a2ca1731541a32c4fecc982d8ff5479241c3d",
     "src/server/conversations/task-discussion-http.ts": "121ca76686553d0c34de9ae9f6c98596def14a400ba576ebc47931b1d575676b",
     "src/server/conversations/task-discussion.persistence.test.ts": "a18d81eda58a71d6ff4aaffe33581ab4405c8f0f02c85b5f9c2f6da827c58bdb",
     "src/server/conversations/task-discussion.ts": "2db2d5ab1d0b0de3b0828e1ec072256b0fb975a42b392e68d1efb6738c3bfc17",
@@ -3489,7 +3489,7 @@
     "src/server/db/retry.test.ts": "d55e331ade79816db443fce42b8d144f7893b5bfc47012e18c059ad9a6a79bc1",
     "src/server/db/retry.ts": "42db5f9d48318867c0ff8a40154794876c2869403b72b7d8263219c74b52a907",
     "src/server/db/row-mappers.ts": "1542ddd0f88863ad61e184a51c0ec623b6edd9f6093a3d7b5f08242812426702",
-    "src/server/db/schema.ts": "14bd038e08a25d5243df56f8c450566a9f948b912ba0835a8e0e888ee2532364",
+    "src/server/db/schema.ts": "c66204c5f5bb3f51b37cde2099e8eec31635be7b84784e55ef0a46962f636443",
     "src/server/db/seed-published-wedding.ts": "b61aa7a34467532d77a075b30c9b79524acfe84a26f9114a254c78675cc6285b",
     "src/server/db/seed.ts": "b1bd4576e77277314e50aba08d600b2a06fa8c5809ab3f9926226190f8588cc8",
     "src/server/db/serialized-provisioning.ts": "90eae8cff6e3083138b20175a73aeb77b16e105db9a3832c1d20536c2f1a7742",
@@ -3840,6 +3840,19 @@
     "src/lib/projects/project-appearance.ts": "f90960631052aa9be94c0c03451761ca83bba6de999af6d16ad88f4a81f0315d",
     "src/server/actions/project-menu.ts": "08ffcc756f9ec689ddfcc81848864fc81346ff66608c8a05d6f112515318dc23",
     "src/server/projects/project-appearance.test.ts": "ab491d6f0ab893afdd6440a6c810031f582cf40231afdda338dd7a8de912add5",
-    "src/server/projects/project-appearance.ts": "26488f5fa665a65d81f6661c15c4ae56d1d2efec941b3bd71258c7afecb63a3f"
+    "src/server/projects/project-appearance.ts": "26488f5fa665a65d81f6661c15c4ae56d1d2efec941b3bd71258c7afecb63a3f",
+    "src/app/api/conversations/attachments/[id]/route.ts": "2203e5642e9411d947bfb759afb6cbb5d1434151b3747d9af1e93ce535564665",
+    "src/app/api/conversations/attachments/route.ts": "aabc773d6e801cbc58ee938c05479dbb4d0d9a6a9d3cf6b5ac5d800ccca4be75",
+    "src/components/app/messages/conversation-attachment-client.test.ts": "1d51e7f168a3e21d5ae983dd44090d4ffaaa25bfd695fa2ad7570eec5eb23dd3",
+    "src/components/app/messages/conversation-attachment-client.ts": "1c80c26aa3a7eead05dbcd5953f444a73974dcab1fe82f1702e8d6bcdd35825b",
+    "src/components/app/messages/conversation-attachment-drafts.test.ts": "143449cbff85e69075aaf5b98fe076bde9a151ad4f02f890cf70a19c22947b26",
+    "src/components/app/messages/conversation-attachment-drafts.ts": "205d07ad554a776ab0940c3f98d027d690b0aa65f69275eb5691168d7de9ebc8",
+    "src/components/app/messages/conversation-attachments.tsx": "b68235e862a9e3f4f8063cbec9b0683262529c337b83556a8878e2c016a10fc3",
+    "src/components/app/messages/use-conversation-attachments.ts": "d7bdd8e3611f3d1500b0458fc29281addf293c997a230ce361d7546f9f7822a2",
+    "src/lib/conversations/attachment-contracts.ts": "a7214bc1613bc99c8c1d1eaa20ffd2d221ce9746dc4400f7429b3467bf37b2fd",
+    "src/server/conversations/attachment-erasure.ts": "ca1f7eac0cb7846c83d3c4d52de1cfe5e4d1de316b65ee32159e2429467d1aac",
+    "src/server/conversations/attachment-http.ts": "964066ec4bc3cd86b60362f65c571fbaba1eb4c4e5ea708a77f3664a7bf8a1e6",
+    "src/server/conversations/attachments.persistence.test.ts": "ac9b50bf3243ef4f24ba46b8afbe3415a6d4c0dd8099e41f2faee863154044b5",
+    "src/server/conversations/attachments.ts": "d47d289692f1984bb2cb316df01798548a774f8d215e241669029e2aa8374550"
   }
 }
