@@ -1,6 +1,6 @@
 # Signal Studio consolidated app
 
-This Next.js repository serves the one Signal Studio web app. Its three products are Notes, Tasks, and Timeline; Home is the authenticated front door, carrying the daily briefing (Today's Signal) and the Full Briefing.
+This Next.js repository serves the one Signal Studio web app: project management for non-technical teams. Home is the authenticated front door. The Full Briefing was retired on 20 October 2026.
 
 ## URL contract
 
