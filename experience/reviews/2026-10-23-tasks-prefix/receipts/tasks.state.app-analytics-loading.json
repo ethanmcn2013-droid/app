@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-analytics-loading",
+  "source": "tasks/src/app/app/analytics/loading.tsx",
+  "materialityHash": "9a83f9e97a750b1b",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_timeline_files independent rendered reviewer (not founder attribution)",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-07d356763a067224064f8329-1c37a40e69588d97.json",
+    "attestationSha256": "799da1bc3b8d38b7ada9a1cd0492e835f8620ffd99037723e83a898c1bb094e0",
+    "runId": "tasks-playwright-07d356763a067224064f8329",
+    "canonicalEvidenceSha256": "07d356763a067224064f832930a8c80b30fa34c665217fae67a3a53cc15d77f3",
+    "rawArtifactSha256": "1c37a40e69588d971d7eacb502e719a2ba4bc58a854de609690c08c04540eb8c",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-analytics-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Final Analytics, Shell and Tasks prefix f29c4c0e capture40006342536. Independent review covers18targets/72images:33 changed images individually inspected and39 exact-byte hashes reused from the same reviewer prior Analytics review; all original attachments verified,188/188 outcomes passed. No blocking visual regression in supplied initial states. Board is mostly behind a drawer: light-board layout, column interactions, view switching, completion/confetti/archive and invitation popover are not certified by these images. Synthetic preview, inherited loading width and demo/fallback/upload-affordance limits retained; no provider/authenticated/production or numerical rating claim.",
+  "decision": "accepted for supplied synthetic initial states; interaction and inherited limits retained"
+}

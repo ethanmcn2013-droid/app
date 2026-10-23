@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-files-loading",
+  "source": "tasks/src/app/app/files/loading.tsx",
+  "materialityHash": "9beac142f8f04cb2",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_brief_architecture independent rendered reviewer (not founder attribution)",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-09f860459e46e3a202e3abeb-2dd7a7abd0165dcf.json",
+    "attestationSha256": "6925fce44d1de81b660e83d1a279da0c367e16f2eae9716fc78f0122169e0fb2",
+    "runId": "tasks-playwright-09f860459e46e3a202e3abeb",
+    "canonicalEvidenceSha256": "09f860459e46e3a202e3abeb8f50c723dea19920d5a5475ab47056407259860e",
+    "rawArtifactSha256": "2dd7a7abd0165dcfd175cefd15a414ee562051fe8cd3ecfcf6a869f5f4c7e780",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-files-loading",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Final Analytics and Shell prefix1465f9ea captured in run40005072954. Independent reviewer inspected32changed materiality images, independently rehashed40 byte-identical previously inspected images, and individually viewed8Home/Inbox images; all80 hashes retained in independent-rendered-review.json. Home/Inbox active states and header cleanup accepted in captured states. Synthetic preview; invitation sending, toast Undo interactions and authenticated continuity are not established by these static images. Inherited Tasks loading mobile width and Files/demo, Welcome fallback, Drive affordance limits remain; no numerical design rating or production claim.",
+  "decision": "accepted for current synthetic captured states; explicit interaction and inherited limits retained"
+}
