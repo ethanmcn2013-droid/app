@@ -701,6 +701,12 @@ export function TasksProvider({
 }
 
 /** Changes only when the server's task snapshot changes, never optimistically. */
+export function useAuthoritativeTaskVersions(): AuthoritativeTaskVersions {
+  const versions = useContext(AuthoritativeTaskContext);
+  if (!versions) throw new Error("useAuthoritativeTaskVersions must be used within <TasksProvider>");
+  return versions;
+}
+
 export function useAuthoritativeTaskRevision(taskId: string): number {
   const versions = useContext(AuthoritativeTaskContext);
   if (!versions) throw new Error("useAuthoritativeTaskRevision must be used within <TasksProvider>");

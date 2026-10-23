@@ -27,6 +27,7 @@ import {
   setColumnLimitAction,
 } from "@/server/actions/board";
 import { BoardColumnsOverrideProvider } from "@/components/hybrid/columns-context";
+import { reorderColumn } from "./column-order";
 import {
   initialBoardConfigState,
   setBoardOptimisticForEpoch,
@@ -41,6 +42,7 @@ type ColumnActions = {
   setColor: (column: BoardColumn, color: ColumnColorKey) => void;
   toggleDone: (column: BoardColumn) => boolean;
   move: (column: BoardColumn, direction: -1 | 1) => void;
+  reorder: (fromKey: string, toKey: string) => void;
   remove: (column: BoardColumn, destination: string | undefined) => void;
   add: (name: string, options?: { description?: string; color?: ColumnColorKey; position?: number }) => void;
   pending: boolean;
@@ -141,6 +143,10 @@ export function TasksColumnsProvider({ children }: { children: ReactNode }) {
       order.splice(to, 0, moved);
       const next = base();
       commit({ ...next, order }, (id) => reorderColumnsAction(id, order));
+    },
+    reorder: (fromKey, toKey) => {
+      const order = reorderColumn(columns.map((column) => column.key), fromKey, toKey);
+      if (order) commit({ ...base(), order }, (id) => reorderColumnsAction(id, order));
     },
     remove: (column, destination) => {
       if (column.isSystem) return;
