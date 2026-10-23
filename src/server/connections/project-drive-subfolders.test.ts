@@ -28,6 +28,7 @@ async function fixture() {
   const deps: ProjectDriveSubfolderDependencies = {
     database: core.db,
     authorize: async (project) => coreAuthorization("owner", project!),
+    authorizeAuthenticatedActor: async (project) => coreAuthorization("owner", project!),
     now: () => new Date(clock),
     withSession: async (_authorization, _selector, operation) => operation({ accessToken: "fake-secret", credential: { id: "conn-new", ownerUserId: "owner", providerAccountId: "account-owner", providerAccountEmail: null, rootFolderId: "root-new" }, storageRootFolderId: "root-old", storage: { id: "gen-current", workspaceId: "ws-a", connectionId: "conn-old", folderId: "folder-current", folderWebViewLink: "https://drive.google.com/drive/folders/folder-current", state: "active", isCurrent: true } }),
     fetchImpl: async (url, init) => {
@@ -78,6 +79,68 @@ test("creates exactly one immediate child and durable receipt; retries are idemp
     await assert.rejects(f.service.prepare(await f.service.bind({ ...f.actor, folderName: "Contracts" }), randomUUID()));
     await f.db.transaction(tx => retireProjectDriveSubfolders(tx, eq(projectDriveSubfolders.workspaceId, "ws-a")), { behavior: "immediate" });
     assert.equal((await f.db.select().from(projectDriveSubfolders)).length, 0);
+    assert.equal(f.creates, 1);
+  } finally { f.cleanup(); }
+});
+
+test("history reads require the exact active local receipt binding and never call Google", async () => {
+  const f = await fixture(); try {
+    const locator = await f.prepared();
+    assert.equal(await f.service.readForHistory(locator), null);
+    await f.service.execute(locator);
+    const providerCalls = f.calls.length;
+    // History must not resolve the session/profile again or acquire credentials.
+    const history = createProjectDriveSubfolderService({ ...f.deps,
+      authorize: async () => { throw Error("history must not resolve the session"); },
+      withSession: async () => { throw Error("history must not acquire provider credentials"); },
+      fetchImpl: async () => { throw Error("history must not call Google"); },
+      authorizeAuthenticatedActor: async (projectId, actorId, capability) => {
+        assert.equal(actorId, "owner"); assert.equal(capability, "manageProject");
+        return coreAuthorization(actorId, projectId!);
+      },
+    });
+    assert.equal((await history.readForHistory(locator))?.status, "complete");
+    assert.equal((await f.service.readForHistory(locator))?.folderUrl, "https://drive.google.com/drive/folders/child-1");
+    assert.equal(await f.service.readForHistory({ ...locator, operationId: randomUUID() }), null);
+    assert.equal(await f.service.readForHistory({ ...locator, projectId: "ws-b" }), null);
+    await assert.rejects(f.service.readForHistory({ ...locator, actorUserId: "other" }));
+    await f.client.execute("UPDATE workspace_members SET role='member' WHERE workspace_id='ws-a' AND user_id='owner'");
+    await assert.rejects(f.service.readForHistory(locator));
+    await f.client.execute("UPDATE workspace_members SET role='owner' WHERE workspace_id='ws-a' AND user_id='owner'");
+    await f.client.execute("UPDATE workspace_storage SET folder_id='changed-parent' WHERE id='gen-current'");
+    await assert.rejects(f.service.readForHistory(locator));
+    // Recovery's read deliberately retains custody after a parent changes.
+    assert.equal((await f.service.read(locator))?.status, "complete");
+    await f.client.execute("UPDATE workspace_storage SET folder_id='folder-current' WHERE id='gen-current'");
+    await f.client.execute("UPDATE provider_connections SET status='revoked' WHERE id='conn-old'");
+    await assert.rejects(f.service.readForHistory(locator));
+    await f.client.execute("UPDATE provider_connections SET status='active' WHERE id='conn-old'");
+    await f.client.execute("UPDATE workspace_storage SET connection_id='conn-new' WHERE id='gen-current'");
+    await assert.rejects(f.service.readForHistory(locator));
+    await f.client.execute("UPDATE workspace_storage SET connection_id='conn-old' WHERE id='gen-current'");
+    await f.client.execute("UPDATE provider_connections SET provider_account_id='changed-account' WHERE id='conn-old'");
+    await assert.rejects(f.service.readForHistory(locator));
+    await f.client.execute("UPDATE provider_connections SET provider_account_id='account-owner' WHERE id='conn-old'");
+    await f.client.execute("UPDATE workspace_storage SET state='needs_reauth' WHERE id='gen-current'");
+    await assert.rejects(f.service.readForHistory(locator));
+    await f.client.execute("UPDATE workspace_storage SET state='active' WHERE id='gen-current'");
+    await f.client.execute("INSERT INTO workspace_members(workspace_id,user_id,role) VALUES('ws-a','member-a','member')");
+    await assert.rejects(f.service.readForHistory(locator));
+    await f.client.execute("DELETE FROM workspace_members WHERE workspace_id='ws-a' AND user_id='member-a'");
+    await f.db.insert(meta).values({ key: googleDriveAccountErasureFenceKey("owner"), value: "erasing" });
+    await assert.rejects(f.service.readForHistory(locator));
+    await f.db.delete(meta).where(eq(meta.key, googleDriveAccountErasureFenceKey("owner")));
+    await f.client.execute("INSERT INTO project_drive_operations(id,workspace_id,operation_kind,status,dedupe_key) VALUES('history-delete','ws-a','project_delete','pending','aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')");
+    await assert.rejects(f.service.readForHistory(locator));
+    await f.client.execute("DELETE FROM project_drive_operations WHERE id='history-delete'");
+    await f.client.execute("UPDATE workspace_storage SET is_current=0 WHERE id='gen-current'");
+    await assert.rejects(f.service.readForHistory(locator));
+    await f.client.execute("UPDATE workspace_storage SET is_current=1 WHERE id='gen-current'");
+    await f.client.execute("UPDATE workspaces SET archived_at=100 WHERE id='ws-a'");
+    await assert.rejects(f.service.readForHistory(locator));
+    await f.client.execute("UPDATE workspaces SET archived_at=NULL WHERE id='ws-a'");
+    assert.equal((await f.service.readForHistory(locator))?.status, "complete");
+    assert.equal(f.calls.length, providerCalls);
     assert.equal(f.creates, 1);
   } finally { f.cleanup(); }
 });

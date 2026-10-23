@@ -18,7 +18,7 @@
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;
-  transition: color var(--v3-dur-fast, 120ms);
+  transition: color var(--motion-fast) var(--ease-out);
 }
 
 .tab:hover { color: var(--v3-text); }
