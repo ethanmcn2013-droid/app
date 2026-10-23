@@ -462,5 +462,20 @@
     "scripts/db/timeline-production-backup-custody.test.mjs",
     "experience/timeline-master3/harness.test.mjs",
     "experience/timeline-master3/guest-fixture.test.mjs"
+  ],
+  [
+    "node",
+    "--test",
+    "scripts/notes/retirement-inventory.test.mjs",
+    "scripts/db/notes-backup-custody.test.mjs"
+  ],
+  [
+    "node",
+    "--import",
+    "tsx",
+    "--test",
+    "src/modules/notes/lib/notes-retirement.test.ts",
+    "src/modules/notes/server/actions/retirement.test.ts",
+    "src/modules/notes/server/notes-retirement-write-contract.test.mjs"
   ]
 ]
