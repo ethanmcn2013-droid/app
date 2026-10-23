@@ -175,7 +175,7 @@ export function FloatingChatRoot({ actorId, actorName, projects, directMessagesE
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
     }} ref={panel} role={page ? "main" : mobile ? "dialog" : "region"} style={page ? bounds : viewportBounds} tabIndex={-1}>
-      <div className={styles.body} hidden={activeTab !== "home"} inert={activeTab !== "home"} ref={homeRef}><ChatHome actions={panelActions} assistantEnabled={assistantEnabled} demo={!!demoSnapshot} projects={demoSnapshot || catalogUnavailable || pageCatalogUnavailable ? [] : availableProjects} onOpen={openTarget}
+      <div className={styles.body} hidden={activeTab !== "home"} inert={activeTab !== "home"} ref={homeRef}><ChatHome actorId={actorId} actions={panelActions} assistantEnabled={assistantEnabled} demo={!!demoSnapshot} projects={demoSnapshot || catalogUnavailable || pageCatalogUnavailable ? [] : availableProjects} onOpen={openTarget}
         projectsNotice={!demoSnapshot && (catalogUnavailable || pageCatalogUnavailable) ? <ChatCatalogUnavailable retrying={catalogRetrying} onRetry={() => startCatalogRetry(() => router.refresh())} /> : undefined} /></div>
       <div className={styles.body} hidden={activeTab !== "project"} inert={activeTab !== "project"}>{demoSnapshot
         ? <div className={styles.stack}><ChatHeader panel onBack={goHome} backLabel="All chats" title="Team chat" subtitle="Preview · nothing here is saved" actions={panelActions} /><DemoMessagesApp embedded requestedConversationId={requested.demoId} snapshot={demoSnapshot} visible={visible && activeTab === "project"} /></div>

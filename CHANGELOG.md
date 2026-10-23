@@ -1,5 +1,9 @@
 # Signal Tasks · the dispatch
 
+## 2026-10-23 · Chat tools
+
+Hide a conversation from the floating Chat list just for you, and paste files into Saved notes. Ping shows a character count near its existing request limit.
+
 ## 2026-10-23 · Projects at a glance
 
 Projects keeps progress and ownership together in a simpler list. See timeline previews the Project's dated milestones, with a clear message when the preview is empty, unavailable or limited.

@@ -21,7 +21,7 @@ The design contract for the floating Chat panel and Ping inside it. Founder-appr
 
 ## Release 1 (this change)
 
-- The panel opens on one list: Ping and Saved notes first, then each Project's conversation. Each view has a back button, the same header, Full view and Close.
+- The panel opens on one list: Ping and Saved notes first, then available Project conversations. A person can use Hide for me (also through the conversation row's right-click menu) and restore from Hidden conversations. This preference is private to the person in this browser; it changes neither history, membership nor Project lifecycle. This amends the original always-visible Project list for product note G7. Each view has a back button, the same header, Full view and Close.
 - Project conversations: the header shows the Project tile and who can see it; direct messages and task threads are one tap away. People's avatars use their tone. Message actions are quiet until reached for (always shown on touch). The composer keeps its tools on one line.
 - Ping: the ink tile with the indigo ring and dot. Requests read as a conversation, newest at the bottom. Every request is a plan first (production draft mode), with Cancel and Apply plan; nothing changes until Apply.
 - Opening to everyone is two explicit server switches, never the actor lists:

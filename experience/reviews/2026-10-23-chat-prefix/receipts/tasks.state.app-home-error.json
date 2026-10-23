@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-home-error",
+  "source": "tasks/src/app/app/home/error.tsx",
+  "materialityHash": "f0e4960b366e6091",
+  "reviewedAt": "2026-10-23",
+  "reviewer": "product_brief_architecture independent rendered reviewer; no founder attribution",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-b27cd0ca6aad693dad31c2fc-d67b6225aa797c63.json",
+    "attestationSha256": "2be09c2e0f6b6931051c84bd6c6d54708e3c20aa39b7cd6e0635d0978c3e7988",
+    "runId": "tasks-playwright-b27cd0ca6aad693dad31c2fc",
+    "canonicalEvidenceSha256": "b27cd0ca6aad693dad31c2fc0efc2471549d568010bc4d918e366854e23cf8ef",
+    "rawArtifactSha256": "d67b6225aa797c6312a81729835fec92cd429009f0b50f9ebd6817362cd0b56b",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.state.app-home-error",
+    "caseName": "actual component with deterministic local inputs",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Final Chat prefixc57fa620 capture40006480720,188/188 passing outcomes. Independent review recomputed72imagehashes;70 exactly match prior independently inspected Shell/Tasks bytes, two fresh Drive-wide/Analytics-loading-mobile originals inspected, and current Chat mobile/wide reopened. No blocking layout finding in supplied initial states. Initial Chat does not prove personal-hide, file-paste, near-limit Ping interactions or later G5 attachments. Synthetic preview and inherited drawer/Files-demo/Welcome/notice-overlay limits retained; no numerical score, provider or authenticated-production claim.",
+  "decision": "accepted for supplied synthetic initial states; explicit interaction and inherited limits retained"
+}
