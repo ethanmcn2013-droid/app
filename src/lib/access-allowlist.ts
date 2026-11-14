@@ -1,9 +1,10 @@
 /**
  * Closed-beta access allowlist.
  *
- * Signal Studio is invite-only right now: the general public must not be able
- * to create an account or reach the real product screens. Access is granted two
- * ways, belt-and-braces (operator decision 2026-07-04):
+ * Before the explicit public launch, Signal Studio is invite-only: the general
+ * public must not be able to create an account or reach the real product
+ * screens. Access is granted two ways, belt-and-braces (operator decision
+ * 2026-07-04):
  *   1. Clerk sign-up mode is Restricted (no public sign-ups) — dashboard config.
  *   2. This code allowlist gates /app: only approved emails get in.
  *
@@ -34,8 +35,8 @@ export function allowlist(): Set<string> {
 }
 
 /**
- * Whether an email may reach /app. Fail closed: no email, or an email not on
- * the list, is denied. The founder always passes.
+ * Whether an email may reach /app during the closed beta. Fail closed: no
+ * email, or an email not on the list, is denied. The founder always passes.
  */
 export function isEmailAllowed(email: string | null | undefined): boolean {
   if (!email) return false;

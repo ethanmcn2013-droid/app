@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { cache } from "react";
 import { isEmailAllowed } from "@/lib/access-allowlist";
 import { isProductionMode } from "@/lib/access-mode";
+import { isPreLaunch } from "@/lib/launch";
 import { db } from "@/server/db";
 import { users, workspaceMembers } from "@/server/db/schema";
 import { beginAppGateTiming, type AppGateSite } from "@/server/diagnostics/identity-timing";
@@ -18,10 +19,12 @@ const currentUserForRender = cache(async () => currentUser());
  *
  * The shared `requireAppAccess()` in require-app-access.ts is a byte-identical
  * four-repo copy and must not be modified. This wrapper extends the rule for
- * Tasks: a user passes the gate if EITHER
+ * Tasks: before the public launch, a user passes the gate if EITHER
  *   1. their primary verified email is on the shared allowlist, OR
  *   2. they have at least one workspace_members row (they accepted a workspace
  *      invite, which means an owner explicitly granted them access).
+ * Once the canonical launch flag is open, any signed-in Clerk user may use
+ * their own provisioned workspace.
  *
  * Without this extension, an invited non-allowlisted user would accept the
  * invite, burn the token, then bounce to /waitlist forever — worst-of-both.
@@ -29,8 +32,8 @@ const currentUserForRender = cache(async () => currentUser());
  * The shared file is preserved untouched (four-repo copy invariant). Call this
  * function instead of requireAppAccess() at the Tasks /app layout gate.
  *
- * Production-mode only: demo/dev posture unchanged, matching the shared file's
- * behaviour exactly.
+ * Production-mode only: demo/dev posture is unchanged. The launch flag keeps
+ * the closed-beta allowlist available for a deliberate rollback.
  */
 export async function requireAppAccessTasks(site: AppGateSite = "other"): Promise<void> {
   const timing = beginAppGateTiming(site);
@@ -39,6 +42,11 @@ export async function requireAppAccessTasks(site: AppGateSite = "other"): Promis
     if (!isProductionMode()) return;
 
     const user = await timing.measure("profile", () => currentUserForRender());
+    // Public signup and the /app gate switch together. Clerk provisions each
+    // new account with its own workspace before its first authenticated visit.
+    // A missing Clerk identity still falls through to the closed gate below.
+    if (user && !isPreLaunch()) return;
+
     const email = user
       ? (user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)
           ?.emailAddress ??
