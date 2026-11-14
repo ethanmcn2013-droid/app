@@ -29,6 +29,8 @@ import { sql } from "drizzle-orm";
 // The gates are no-ops outside production mode, so a test that forgets this
 // passes vacuously. `isProductionMode` is asserted below to prove it took.
 process.env.SIGNAL_ACCESS_MODE = "production";
+// Default closed-beta assertions to the explicit pre-launch posture.
+process.env.NEXT_PUBLIC_SIGNAL_LAUNCH_STATE = "pre";
 // An allowlist that deliberately excludes every identity below except the
 // founder, who is hardcoded into ALWAYS_ALLOW and cannot be removed.
 process.env.SIGNAL_ALLOWLIST = "someone-else@example.test";
@@ -193,6 +195,19 @@ test("a stranger with no membership row is still refused by both gates", async (
     "widening the page gates must not have opened /app to the public. Signal Studio is still invite-only.",
   );
   assert.equal(await land(requireAppAccess, STRANGER), "/waitlist");
+});
+
+test("public launch admits a signed-in account with no invitation or membership", async () => {
+  process.env.NEXT_PUBLIC_SIGNAL_LAUNCH_STATE = "open";
+  try {
+    assert.equal(
+      await land(requireAppAccessTasks, STRANGER),
+      "admitted",
+      "once public signup opens, a newly provisioned account must not be bounced back to the waitlist.",
+    );
+  } finally {
+    process.env.NEXT_PUBLIC_SIGNAL_LAUNCH_STATE = "pre";
+  }
 });
 
 test("a signed-out visitor is refused by both gates", async () => {

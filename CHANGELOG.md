@@ -1,5 +1,9 @@
 # Signal Tasks · the dispatch
 
+## 2026-11-14 · Public free account access
+
+Anyone can create a free Signal Studio account and sign in once the explicit public launch flag is opened. Signed-in users still need a real Clerk identity, and the existing user-created webhook provisions a separate personal workspace. The email allowlist remains the pre-launch rollback path; tenant-scoped data access is unchanged. Paid checkout and paid access remain closed.
+
 ## 2026-10-23 · Ping folder result history
 
 Ping keeps a completed folder result visible when an unrelated task changes. It checks current Project membership and folder access before showing that result; removed access still hides it. Waiting plans retain their existing change checks, and checking history does not repeat folder creation.
