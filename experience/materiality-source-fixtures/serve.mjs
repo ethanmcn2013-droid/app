@@ -46,9 +46,10 @@ const result = await esbuild.build({
 });
 const builtRoot = path.join(root, '.next/static');
 if (!fs.existsSync(builtRoot)) throw Error('Actual completed App build assets required');
-const css = fs.readdirSync(path.join(builtRoot, 'chunks')).filter(name => name.endsWith('.css'));
+const css = ['chunks', 'css'].flatMap(dir => fs.existsSync(path.join(builtRoot, dir))
+  ? fs.readdirSync(path.join(builtRoot, dir)).filter(name => name.endsWith('.css')).map(name => dir + '/' + name) : []);
 if (!css.length) throw Error('Actual completed App CSS required');
-const fontClasses = css.flatMap(file => [...fs.readFileSync(path.join(builtRoot, 'chunks', file), 'utf8')
+const fontClasses = css.flatMap(file => [...fs.readFileSync(path.join(builtRoot, file), 'utf8')
   .matchAll(/\.([a-zA-Z0-9_-]+)\s*\{\s*--font-geist-(?:sans|mono):[^}]+}/g)].map(match => match[1]));
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const files = Object.fromEntries(result.outputFiles.map(file => [path.basename(file.path), file.contents]));
@@ -85,7 +86,7 @@ const server = createServer((req, res) => {
   if (!componentId) { res.writeHead(404); return res.end(); }
   res.setHeader('Content-Type', 'text/html');
   res.end('<!doctype html><html lang="en" data-theme="light"><head>' + componentDocumentHead(componentId) + '<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">' +
-    css.map(file => `<link rel="stylesheet" href="/_next/static/chunks/${file}">`).join('') +
+    css.map(file => `<link rel="stylesheet" href="/_next/static/${file}">`).join('') +
     Object.keys(files).filter(name => name.endsWith('.css')).map(name => `<link rel="stylesheet" href="/${name}">`).join('') +
     '</head><body class="' + fontClasses.join(' ') + '" style="margin:0;background:var(--v3-canvas);color:var(--ink)"><main id="root"></main>' +
     Object.keys(files).filter(name => name.endsWith('.js')).map(name => `<script src="/${name}"></script>`).join('') + '</body></html>');

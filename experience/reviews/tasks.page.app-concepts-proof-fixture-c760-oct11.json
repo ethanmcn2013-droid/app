@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-concepts",
+  "source": "tasks/src/app/app/concepts/page.tsx",
+  "materialityHash": "63e7924b683e8c06",
+  "reviewedAt": "2026-10-11",
+  "reviewer": "Independent canonical matrix receiving reviewer",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-701499e8cd5860c35480550e-71580e35af66fd71.json",
+    "attestationSha256": "297dcd433a6eabb2a75cdac917e585efad9b55cdfc99d80749752e97f40a215d",
+    "runId": "tasks-playwright-701499e8cd5860c35480550e",
+    "canonicalEvidenceSha256": "701499e8cd5860c35480550e85651f9e4c9ef0ef80c43d4f3c90acfb4079bbd1",
+    "rawArtifactSha256": "71580e35af66fd7140c7c65d8026cce4e84b93554195758f2f95776773d80487",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app-concepts",
+    "caseName": "own surface in demo",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Canonical 0041 proof-fixture compatibility and webpack CSS locator receiving; fresh 196 actual cases with final inventory reconciled after capture; App source unchanged.",
+  "decision": "ACCEPT bounded source materiality receiving. Preserve mobile039 Tasks loading 664x844 despite configured390x844 and command palette No tasks match; no width-perfect, positive-match, authentication, provider or production claim."
+}
