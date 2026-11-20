@@ -1,0 +1,30 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--v3-border);
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+}
+
+.pill[data-health="at_risk"] {
+  border-color: transparent;
+  background: var(--v3-warning-soft);
+  color: var(--v3-warning-text);
+}
+
+.pill[data-health="off_track"] {
+  border-color: transparent;
+  background: var(--v3-danger-soft);
+  color: var(--v3-danger-text);
+}
+
+.pill[data-health="too_early"] {
+  border-style: dashed;
+  color: var(--v3-text-3);
+}

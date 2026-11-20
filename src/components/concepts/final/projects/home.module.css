@@ -1,0 +1,498 @@
+/* Project home: the pieces the ledger brought to the cover's home. Colour from src/ds/v3.css only. */
+
+.pillPast {
+  background: transparent;
+  color: var(--v3-danger-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v3-danger) 55%, transparent);
+}
+
+.stale {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--v3-warning-soft);
+  color: var(--v3-warning-text);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.datePast .dateBig,
+.datePast {
+  color: var(--v3-danger-text);
+}
+
+/* Lead and the ways out: one quiet line under the purpose. */
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 14px;
+}
+
+.metaBtn,
+.jumpLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 10px 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 140ms var(--v3-ease), color 140ms var(--v3-ease);
+}
+
+.metaBtn {
+  margin-left: -6px;
+}
+
+.jumpLink {
+  gap: 6px;
+  padding: 0 10px;
+  color: var(--v3-text-2);
+}
+
+.metaBtn:hover,
+.jumpLink:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.metaBtn:focus-visible,
+.jumpLink:focus-visible,
+.post:focus-visible,
+.composerInput:focus-visible,
+.stationBtn:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 2px;
+}
+
+.metaLabel {
+  color: var(--v3-text-3);
+}
+
+.metaSep {
+  width: 1px;
+  height: 16px;
+  background: var(--v3-border);
+}
+
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+/* Past its date is lifecycle, not trouble: a quiet prompt with the two ways out. */
+.calloutPast {
+  background: var(--v3-sunken);
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+}
+
+.calloutPast > span:first-child {
+  background: var(--v3-solid);
+  color: var(--v3-on-solid);
+}
+
+/* A late task of yours: red is late. */
+.calloutLate {
+  background: color-mix(in srgb, var(--v3-danger) 5%, var(--v3-canvas));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v3-danger) 22%, transparent);
+}
+
+.calloutLate > span:first-child {
+  background: var(--v3-danger);
+  color: #ffffff;
+}
+
+/* What the ring counts, said in words beside it. */
+.ringWords {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 84px;
+}
+
+.ringWordsBig {
+  font-size: 19px;
+  line-height: 1.1;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--v3-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ringWordsSmall {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--v3-text-2);
+  white-space: nowrap;
+}
+
+.ringLate {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--v3-danger-soft);
+  color: var(--v3-danger-text);
+  font-weight: 650;
+  font-size: 12px;
+}
+
+/* Latest update and the composer: the status reason, said by a person. */
+.update {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 14px 12px 16px;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px var(--v3-border);
+  border-left: 3px solid var(--v3-border-strong);
+}
+
+.update[data-status="at_risk"] {
+  border-left-color: var(--v3-warning-stroke);
+}
+
+.update[data-status="off_track"] {
+  border-left-color: var(--v3-danger);
+}
+
+.updateText {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--v3-text);
+  text-wrap: pretty;
+}
+
+.updateText > span:first-child {
+  margin-top: 1px;
+}
+
+.composer {
+  display: flex;
+  gap: 8px;
+}
+
+.composerInput {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--v3-control-border);
+  border-radius: 9px;
+  background: var(--v3-canvas);
+  color: var(--v3-text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.composerInput::placeholder {
+  color: var(--v3-text-3);
+}
+
+.post {
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--v3-accent);
+  color: var(--v3-on-accent);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.post:disabled {
+  background: var(--v3-fill);
+  color: var(--v3-text-3);
+  cursor: default;
+}
+
+/* Open tasks over two weeks, under the progress bar. */
+.trend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--v3-border);
+}
+
+.trendHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.trendLabel {
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--v3-text);
+}
+
+.trendSub {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--v3-text-3);
+}
+
+.trend svg {
+  max-width: 100%;
+}
+
+/* People with their share of the open work. */
+.person {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.load {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 76px;
+}
+
+.loadBar {
+  position: relative;
+  display: block;
+  width: 64px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--v3-fill);
+  overflow: hidden;
+}
+
+.loadBar > span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: var(--v3-text-3);
+}
+
+.loadBar > .loadLate {
+  background: var(--v3-danger);
+}
+
+.loadN {
+  font-size: 12px;
+  color: var(--v3-text-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.loadLateN {
+  color: var(--v3-danger-text);
+}
+
+/* Milestone stations are toggles. */
+.stationBtn {
+  display: inline-grid;
+  width: max-content;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+}
+
+.stationBtn:hover > span {
+  border-color: var(--p);
+}
+
+.stationLate {
+  color: var(--v3-danger-text);
+}
+
+@container (max-width: 760px) {
+  .metaSep {
+    display: none;
+  }
+
+  .jump {
+    width: 100%;
+    margin-left: -10px;
+  }
+}
+
+/* The forecast, said once under the trend: red only when it runs past the date. */
+.pace {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--v3-border);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--v3-text-2);
+}
+
+.pace[data-verdict="behind"] {
+  color: var(--v3-danger-text);
+}
+
+/* ── Updates feed ─────────────────────────────────────────────────── */
+
+.updateLead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.updateMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 0 32px;
+  font-size: 12.5px;
+  color: var(--v3-text-3);
+}
+
+.updateTag {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--v3-sunken);
+  color: var(--v3-text-2);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.update[data-status="at_risk"] .updateLead .updateTag {
+  background: var(--v3-warning-soft, var(--v3-sunken));
+  color: var(--v3-warning-text);
+}
+
+.update[data-status="off_track"] .updateLead .updateTag {
+  background: var(--v3-danger-soft, var(--v3-sunken));
+  color: var(--v3-danger-text);
+}
+
+.updateEmpty {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 0 0;
+  list-style: none;
+  border-top: 1px solid var(--v3-border);
+}
+
+.feedItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-left: 2px;
+}
+
+.feedBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.feedText {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--v3-text-2);
+  text-wrap: pretty;
+}
+
+.feedMeta {
+  font-size: 12px;
+  color: var(--v3-text-3);
+}
+
+.feedMore {
+  align-self: flex-start;
+  height: 26px;
+  margin-top: 2px;
+  padding: 0 8px;
+  margin-left: -8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--v3-text-2);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.feedMore:hover {
+  background: var(--v3-hover);
+  color: var(--v3-text);
+}
+
+.feedMore:focus-visible {
+  outline: 2px solid var(--v3-accent);
+  outline-offset: 1px;
+}
+
+/* ── A project with no tasks ──────────────────────────────────────── */
+
+.emptyTasks {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 18px 18px 16px;
+  border: 1px dashed var(--v3-border-strong);
+  border-radius: 14px;
+}
+
+.emptyTasksTitle {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--v3-text);
+}
+
+.emptyTasksBody {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--v3-text-2);
+  max-width: 46ch;
+}
+
+/* Why it is at risk or off track, right under the health it explains. */
+.healthReason {
+  margin: 6px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--v3-warning-stroke);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--v3-text-2);
+  max-width: 70ch;
+  text-wrap: pretty;
+}
+
+.healthReason[data-status="off_track"] {
+  border-left-color: var(--v3-danger);
+}

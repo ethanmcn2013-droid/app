@@ -2,114 +2,63 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
+/**
+ * The shared timeline's contract.
+ *
+ * On 28 September 2026 the founder picked the Countdown direction for the
+ * shared page (concept B, with A's to-scale strip and D's finale; see
+ * remote-redesign `work/2026-09-28-timeline-artifact`). It replaced the
+ * Option D rail, and this file replaced the rail's contract with it.
+ *
+ * The rules that were about the product rather than the rail carry over
+ * unchanged: no tracking, one vocabulary, the owner embeds, the completed ink
+ * drawn to the last completed dot, container sizing, the entrance seen once,
+ * reduced motion and the light-only public page. The rules that belonged to
+ * the rail's mechanics (roving keys across marks, label nudges, clusters,
+ * the metric toggle) went with it.
+ */
+
 const artifact = readFileSync(new URL("./timeline-artifact.tsx", import.meta.url), "utf8");
 const phonePreview = readFileSync(new URL("./timeline-phone-preview.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("./timeline-artifact.module.css", import.meta.url), "utf8");
-const studioStyles = readFileSync(
-  new URL("../../app/audience/artifact-studio.module.css", import.meta.url),
-  "utf8",
-);
-const ownerProject = readFileSync(
-  new URL("../../app/plan/[projectSlug]/page.tsx", import.meta.url),
-  "utf8",
-);
-const artifactStudio = readFileSync(
-  new URL("../../app/audience/artifact-studio.tsx", import.meta.url),
-  "utf8",
-);
-const ownerPreview = readFileSync(
-  new URL("../../app/audience/project-preview.tsx", import.meta.url),
-  "utf8",
-);
-/**
- * The module's one vocabulary. Every state word and structural noun the
- * artifact renders now lives here rather than in the component, so the
- * assertions that used to grep the component for a phrase grep its home
- * instead — and the component is checked for reading from that home.
- */
-const vocabulary = readFileSync(
-  new URL("../../lib/vocabulary.ts", import.meta.url),
-  "utf8",
-);
+const studioStyles = readFileSync(new URL("../../app/audience/artifact-studio.module.css", import.meta.url), "utf8");
+const ownerProject = readFileSync(new URL("../../app/plan/[projectSlug]/page.tsx", import.meta.url), "utf8");
+const artifactStudio = readFileSync(new URL("../../app/audience/artifact-studio.tsx", import.meta.url), "utf8");
+const ownerPreview = readFileSync(new URL("../../app/audience/project-preview.tsx", import.meta.url), "utf8");
+const vocabulary = readFileSync(new URL("../../lib/vocabulary.ts", import.meta.url), "utf8");
 
-/**
- * Comments are documentation, not rendered output. The "no studio chrome"
- * rule below is about what the artifact RENDERS, and it was firing on the
- * JSDoc that explains why the owner view suppresses its own wordmark — which
- * is the rule being honoured, described. E06.10, 2026-08-03.
- */
-const artifactCode = artifact
-  .replace(/\/\*[\s\S]*?\*\//g, "")
-  .replace(/^\s*\/\/.*$/gm, "");
+/** Comments are documentation, not rendered output. */
+const artifactCode = artifact.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
-test("the artifact keeps the locked Option D identity and line-first hierarchy", () => {
+/** The declaration block for a selector, at the top level of the stylesheet. */
+function block(selector) {
+  const pattern = new RegExp(`(?:^|\\n)${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{([^}]*)\\}`);
+  const match = styles.replaceAll("\r\n", "\n").match(pattern);
+  assert.ok(match, `${selector} must exist`);
+  return match[1];
+}
+
+test("the artifact keeps its identity: wordmark, one progressbar, a Today marker, no studio chrome", () => {
   assert.match(artifact, /data-timeline-wordmark/);
   assert.match(artifact, />\s*timeline<span/);
-  assert.match(artifact, /role="progressbar"/);
+  assert.equal((artifactCode.match(/role="progressbar"/g) ?? []).length, 1);
   assert.match(artifact, /data-today-marker/);
-  assert.match(vocabulary, /current: "Our next milestone"/);
-  assert.match(artifact, /MILESTONE_RAIL_LABELS\.current/);
-  assert.match(styles, /\.baseRail/);
-  assert.match(styles, /\.milestoneButton/);
   assert.doesNotMatch(artifactCode, /StudioRail|StudioBar|dashboard/i);
 });
 
-test("the phone preview renders the exact artifact in compact mode and cannot track views", () => {
+test("the phone preview renders the exact artifact in compact mode and nothing on the page can track a view", () => {
   assert.match(phonePreview, /<TimelineArtifact timeline=\{timeline\} compact \/>/);
   assert.doesNotMatch(phonePreview, /\bfetch\s*\(|sendBeacon|\/api\//);
   assert.doesNotMatch(artifact, /\bfetch\s*\(|sendBeacon|\/api\//);
   assert.match(phonePreview, /Previewing it never adds a view/);
 });
 
-test("the milestone rail exposes roving keyboard navigation and touch-safe targets", () => {
-  assert.match(artifact, /event\.key === "ArrowRight"/);
-  assert.match(artifact, /event\.key === "ArrowLeft"/);
-  assert.match(artifact, /event\.key === "Home"/);
-  assert.match(artifact, /event\.key === "End"/);
-  assert.match(artifact, /tabIndex=\{index === boundedFocusIndex \? 0 : -1\}/);
-  assert.match(styles, /--x-timeline-hit:\s*3rem/);
-  assert.match(styles, /overflow-x:\s*auto/);
-  assert.match(artifact, /completedRailVertical/);
-  assert.match(styles, /\.completedRailVertical/);
-  assert.match(styles, /overflow-x:\s*hidden/);
-  // Moving along the rail scrolls the RAIL. `scrollIntoView` on a mark would
-  // drag the whole document sideways and vertically every time an arrow key
-  // moved focus, so the rail's own navigation uses viewport.scrollTo and the
-  // ban on scrollIntoView inside it stands.
-  assert.match(artifact, /viewport\.scrollTo/);
-  assert.doesNotMatch(
-    artifact,
-    /const scrollPointIntoView[\s\S]{0,400}scrollIntoView/,
-  );
-  assert.doesNotMatch(artifact, /const focusPoint[\s\S]{0,300}scrollIntoView/);
-  // Choosing a milestone is different, and it owed the viewer a visible
-  // consequence: on a phone the detail sits a whole stacked rail below the
-  // mark that was tapped. `block: "nearest"` leaves a detail that is already
-  // on screen exactly where it is, so desktop pays nothing for it.
-  assert.match(artifact, /scrollIntoView\(\{[\s\S]{0,80}block: "nearest"/);
-  assert.match(artifact, /behavior: reduceMotion \? "auto" : "smooth"/);
-});
-
-test("motion has a reduced-motion path and the metric swaps as a single face", () => {
-  assert.match(artifact, /useReducedMotion/);
-  assert.match(artifact, /<AnimatePresence initial=\{false\} mode="wait"/);
-  assert.match(styles, /prefers-reduced-motion:\s*reduce/);
-});
-
-test("motion preference is hydration-safe and never changes the initial metric subtree", () => {
-  assert.match(artifact, /import \{ useHydrated \} from "@\/lib\/use-hydrated"/);
-  assert.match(artifact, /function useArtifactReducedMotion\(\): boolean/);
-  assert.match(artifact, /return hydrated && Boolean\(prefersReducedMotion\)/);
-  assert.equal(
-    (artifact.match(/useReducedMotion\(\)/g) ?? []).length,
-    1,
-    "only the hydration-safe wrapper may read the browser motion preference",
-  );
-  assert.doesNotMatch(
-    artifact,
-    /\{reduceMotion \? \(\s*<span className=\{styles\.metricMotion\}/,
-  );
-  assert.doesNotMatch(artifact, /\{!reduceMotion \? \(\s*<motion\.span/);
+test("Add to my calendar is built in the browser from facts the page already shows", () => {
+  assert.match(artifactCode, /text\/calendar/);
+  assert.match(artifactCode, /DTSTART;VALUE=DATE/);
+  assert.match(artifactCode, /URL\.createObjectURL/);
+  // The day is the only thing it names: a label, a date and the page's own id.
+  assert.doesNotMatch(artifactCode, /ownerDisplayLabel[^\n]*SUMMARY|DESCRIPTION:/);
 });
 
 test("the owner studio owns vertical scrolling inside the app shell", () => {
@@ -119,11 +68,6 @@ test("the owner studio owns vertical scrolling inside the app shell", () => {
 });
 
 test("owner surfaces embed the exact artifact without claiming a document-height viewport", () => {
-  // v3 (24 Sep 2026): the owner's plan is a working surface, not the guest's
-  // poster, so it no longer embeds the artifact at all. The guest's page is
-  // shown where it can be claimed honestly: Preview (the frozen publication,
-  // rendered with the artifact's own defaults) and the studio, an exhibit
-  // frame that keeps the header.
   assert.doesNotMatch(ownerProject, /<TimelineArtifact\b/);
   assert.match(ownerPreview, /<TimelineArtifact timeline=\{timeline\} \/>/);
   assert.match(artifactStudio, /<TimelineArtifact timeline=\{timeline\} embedded \/>/);
@@ -132,201 +76,92 @@ test("owner surfaces embed the exact artifact without claiming a document-height
 });
 
 test("the completed ink is drawn to the frontier dot, never the count percentage", () => {
-  assert.match(artifact, /scaleX\(\$\{\(model\.completedFrontier \?\? 0\) \/ 100\}\)/);
-  assert.match(artifact, /scaleY\(\$\{\(model\.completedStackFrontier \?\? 0\) \/ 100\}\)/);
-  // The spoken progressbar keeps the honest count — `aria-valuetext` is the
-  // sentence a screen reader announces, and it is still "N of N milestones
-  // complete". The machine value now tracks the drawing rather than the count
-  // percentage: a bar reading 40 while painting 0.34 of its own track is one
-  // element making two different claims, which is the defect a visual sweep
-  // found and unit tests could not.
-  assert.match(artifact, /aria-valuenow=\{Math\.round\(model\.completedFrontier \?\? 0\)\}/);
-  assert.doesNotMatch(artifact, /aria-valuenow=\{model\.percent\}/);
+  // The strip draws only the time still to come, so it maps dates itself; its
+  // ink still stops at the furthest completed dot inside that range.
+  assert.match(artifactCode, /doneInRange\.map\(\(point\) => toAt\(dayOf\(point\.item\.date as string\)\)\)/);
+  assert.match(artifactCode, /scaleX\(\$\{geometry\.frontier \/ 100\}\)/);
+  assert.match(artifactCode, /aria-valuenow=\{Math\.round\(geometry\.frontier\)\}/);
+  assert.doesNotMatch(artifactCode, /model\.percent/);
+  assert.match(artifactCode, /aria-valuetext=\{`\$\{model\.completedCount\} of \$\{model\.totalCount\} milestones complete`\}/);
 });
 
-test("every metric face declares its width class so no value can clip", () => {
-  // The face carries its own scale rather than the view guessing from the
-  // string, because progress is a sentence and the countdown is a number and
-  // they take different treatments at the same moment in the same box.
-  assert.match(artifact, /data-metric-scale=\{active\.scale\}/);
-  assert.match(artifact, /data-metric-scale=\{completion\.scale\}/);
-  assert.match(artifact, /scale: metricValueScale\(value\)/);
-  assert.match(styles, /data-metric-scale="word"/);
-  assert.match(styles, /data-metric-scale="four"/);
-  assert.match(styles, /data-metric-scale="count"/);
+test("the strip spends its width on what is still to come", () => {
+  // Starting at the plan's first milestone gave most of the line to months
+  // already behind the couple. It starts a little before today, and earlier
+  // work folds into a stub that says what it holds.
+  assert.match(artifactCode, /const lead = 12 \* DAY_MS;/);
+  assert.match(artifactCode, /className=\{styles\.stripStub\}/);
+  assert.match(artifactCode, /since \{formatTimelineDate/);
 });
 
-test("paper keeps the content from ONE list, not a second copy of it", () => {
-  // The printed page used to carry a separate ruled index below the rail, so
-  // every milestone was rendered into the document twice. Print now stands the
-  // rail's own list up as the stacked layout instead: same <ol>, every label
-  // visible, nothing rendered a second time.
-  assert.doesNotMatch(artifact, /printIndex/);
-  assert.doesNotMatch(styles, /\.printIndex/);
-  assert.match(artifact, /styles\.printFacts/);
-  assert.match(styles, /\.printFacts\s*\{\s*display:\s*none;/);
-
-  const print = styles.slice(styles.indexOf("@media print"));
-  assert.match(print, /\.milestone\s*\{[^}]*inset-block-start:\s*var\(--timeline-position-stack/);
-  assert.match(print, /\.milestone\[data-labelled="false"\][\s\S]{0,120}\{\s*opacity:\s*1;/);
-  assert.match(print, /\.completedRailVertical\s*\{\s*display:\s*block;/);
+test("rows are read as they are seen, and the strip stays out of the keyboard's way", () => {
+  // Row text used to be aria-hidden behind a label on the list item, which
+  // several screen readers ignore, so a milestone could read as nothing.
+  const rowBlock = artifactCode.slice(artifactCode.indexOf("const row = ("), artifactCode.indexOf("<section className={styles.moments}"));
+  assert.doesNotMatch(rowBlock, /<li[^>]*aria-label/);
+  assert.doesNotMatch(rowBlock, /className=\{styles\.rowText\} aria-hidden/);
+  assert.doesNotMatch(rowBlock, /className=\{styles\.rowFigureCell\} aria-hidden|aria-hidden="true" className=\{styles\.rowFigureCell\}/);
+  assert.match(rowBlock, /className=\{styles\.pin\} aria-hidden="true"/);
+  // The dots repeat the rows for a pointer; the keyboard takes the rows.
+  const strip = artifactCode.slice(artifactCode.indexOf("function Strip("), artifactCode.indexOf("function RowFigure("));
+  assert.equal((strip.match(/tabIndex=\{-1\}/g) ?? []).length, 2);
 });
 
-test("the marks are never moved to make room for their own labels", () => {
-  // The proportionality repair, held at the source. A dated mark's position
-  // IS its date; when two labels collide it is the label that steps aside,
-  // and the model publishes that as a rail-percent the CSS draws in pixels.
-  assert.match(artifact, /labelShifts/);
-  assert.match(artifact, /--timeline-label-shift/);
-  assert.match(styles, /--timeline-label-shift, 0\) \* var\(--x-timeline-rail-width/);
-  // A label that moved owes a line back to the mark it names.
-  assert.match(styles, /\.milestone\[data-label-shifted="true"\] \.milestoneLabel::after/);
-  // The rail's width is measured, because a percentage on the label would
-  // resolve against its own hit target rather than the rail.
-  assert.match(artifact, /--x-timeline-rail-width/);
+test("the page says each thing once", () => {
+  // The next moment lives in its row and on the strip; the hero no longer
+  // repeats it. Add to my calendar lives in the hero; the finale offers the
+  // wait in other words rather than the same number again.
+  const hero = artifactCode.slice(artifactCode.indexOf("function Hero("), artifactCode.indexOf("const DAY_MS"));
+  assert.doesNotMatch(hero, /isNext|nextUp/);
+  const finale = artifactCode.slice(artifactCode.indexOf("function Finale("), artifactCode.indexOf("function PlanningDecisions("));
+  assert.doesNotMatch(finale, /CalendarButton/);
+  assert.match(artifactCode, /weeks\$\{rest \? ` and \$\{rest\} \$\{plural\(rest, "day", "days"\)\}` : ""\} to go\./);
+  assert.match(artifactCode, /!timeline\.ownerDisplayLabel\.includes\(timeline\.label\)/);
 });
 
-test("the month names a guest reads clear AA, and the axis says what it spans", () => {
-  // --ink-ghost is 1.48:1 on paper. The month names were set in it at 10px on
-  // the only page an audience ever sees. --ink-faint took them to 4.83:1,
-  // which passed by a third of a point; both the hairline and the name now
-  // take --x-timeline-quiet, the module's alias for the suite's 12-13px
-  // metadata ink at roughly 7:1. The pin moves with the fix and the floor
-  // only rises: --ink-ghost stays banned outright, and the alias itself is
-  // asserted to fall back to --ink-faint rather than to anything lighter, so
-  // the worst case this file can render is the value it used to.
-  const tick = styles.slice(styles.indexOf(".monthTick {"), styles.indexOf(".todayMarker"));
-  assert.doesNotMatch(tick, /var\(--ink-ghost\)/);
-  assert.doesNotMatch(tick, /var\(--ink-faint\)/);
-  assert.match(tick, /background: var\(--x-timeline-quiet\)/);
-  assert.match(tick, /color: var\(--x-timeline-quiet\)/);
-  assert.match(
-    styles,
-    /--x-timeline-quiet:\s*var\(--x-ink-quiet,\s*var\(--ink-faint\)\);/,
-  );
-  // A mark and a boundary cannot share a pixel column: a milestone dated the
-  // first of the month had its dot drawn straight through the tick naming
-  // that month, and the tick is the one carrying decoration.
-  assert.match(artifact, /markCollisionGap/);
-  assert.match(artifact, /markLabelGap/);
-  assert.match(styles, /\.monthTick\[data-collides="true"\]::before/);
-  // The ticks are aria-hidden decoration, so the span they describe is stated
-  // in words instead of being available only to people who can see it.
-  assert.match(artifact, /timelineAxisDescription/);
-  assert.match(artifact, /aria-roledescription="timeline axis"/);
+test("every state says something true", () => {
+  // Nothing done yet leads with what is ahead, not a zero; a plan with undated
+  // work never claims an end date; the day alone is not "no milestones".
+  assert.match(artifactCode, /model\.completedCount === 0/);
+  assert.match(artifactCode, /model\.points\.every\(\(point\) => point\.item\.date\)/);
+  assert.match(artifactCode, /Nothing else is planned before the day\./);
+  assert.doesNotMatch(artifactCode, /"Sept"|month: "short"/);
 });
 
-test("a crowded span names itself instead of going silent", () => {
-  // The density rule's second half. Where no title fits, the run of marks
-  // carries one caption saying how many it holds — so a cluster is never a
-  // row of anonymous dots that a low-vision viewer has to probe one at a
-  // time. It is a count, never a borrowed title: the model builds the label
-  // from the run's length and nothing else.
-  assert.match(artifact, /labelClusters\(model\.points, persistentLabels\)/);
-  assert.match(artifact, /styles\.cluster\b/);
-  assert.match(styles, /\.cluster::before/);
-  assert.match(styles, /\.cluster > span/);
-  // Real labels are rendered after the clusters, so a title always paints
-  // over a count and never the other way round.
-  assert.ok(
-    artifact.indexOf("styles.clusters") < artifact.indexOf("styles.milestones"),
-    "cluster captions must be rendered before the milestone labels that outrank them",
-  );
-  // The stacked axis and paper both show every label, so there is nothing
-  // left to cluster on either.
-  const vertical = styles.slice(
-    styles.indexOf("@container timeline-artifact (max-width: 620px)"),
-  );
-  assert.match(vertical, /\.clusters\s*\{\s*display:\s*none;/);
-  assert.match(
-    styles.slice(styles.indexOf("@media print")),
-    /\.clusters,\s+\.startCap/,
-  );
+test("rows hold a reading measure", () => {
+  assert.match(block(".moments"), /max-width:\s*60rem;/);
 });
 
-test("the hero states its three facts as one stat unit", () => {
-  // Countdown, completion and the day itself used to be three ungrouped
-  // blocks with no shared container, the date floating clear of the pair
-  // above it because the reserved metric box top-set its face and left the
-  // slack underneath. A hairline opens the block, the face is bottom-set so
-  // the count closes it, and one rhythm runs between the metadata lines.
-  const lens = styles.match(/(?:^|\s)\.timeLens \{([^}]*)\}/)[1];
-  assert.match(lens, /border-block-start:\s*1px solid var\(--hairline\);/);
-  assert.match(styles, /\.metricMotion\s*\{[^}]*align-content:\s*end;/);
-  for (const selector of [".metricReceipt", ".metricDate"]) {
-    // Both selectors also appear in the grouped tabular-numerals rule, so the
-    // check is "one of this selector's own blocks carries the rhythm", not
-    // "the first block that mentions it does".
-    const blocks = [
-      ...styles.matchAll(new RegExp(`(?:^|[\\r\\n])\\${selector} \\{([^}]*)\\}`, "g")),
-    ].map((match) => match[1]);
-    assert.ok(blocks.length > 0, `${selector} must have a rule of its own`);
-    assert.ok(
-      blocks.some((rule) => /margin-block-start:\s*var\(--space-2\);/.test(rule)),
-      `${selector} must sit on the stat unit's own rhythm`,
-    );
-  }
-  // The narrow tier runs one column against one edge. It used to mix three
-  // alignment logics across four lines.
-  const narrow = styles.slice(
-    styles.indexOf("@container timeline-artifact (max-width: 620px)"),
-    styles.indexOf("@container timeline-artifact (max-width: 390px)"),
-  );
-  assert.match(narrow, /\.timeLens\s*\{[\s\S]*?justify-items:\s*start;/);
-  assert.doesNotMatch(narrow, /justify-self:\s*end;/);
-  // And the metric's tracking is capped at the design system's display cap.
-  assert.match(styles, /--x-artifact-metric-tracking:\s*-0\.04em;/);
+test("the reader never chooses a layout: the width does", () => {
+  // The suite asked a guest to pick Across or Down, and the metric was a
+  // toggle. Both are gone; the page reads the room it has.
+  assert.doesNotMatch(artifactCode, /\bAcross\b|\bDown\b|data-timeline-metric-toggle|setRequestedMode/);
+  assert.match(styles, /@container timeline-artifact \(max-width: 760px\)\s*\{\s*\.strip\s*\{\s*display:\s*none;/);
+  assert.match(styles, /@container timeline-artifact \(max-width: 620px\)/);
 });
 
-test("choosing a milestone does not look identical to pointing at one", () => {
-  // These were one selector and one box-shadow, so a phone — which has no
-  // hover at all — was given no mark for selection whatsoever.
-  const hover = styles.match(/\.milestoneButton:hover \.point \{[^}]*\}/)[0];
-  const chosen = styles.match(/\.milestone\[data-selected="true"\] \.point \{[^}]*\}/)[0];
-  assert.notEqual(hover, chosen);
-  // Two rings of ink with paper between them: a different shape, not a
-  // heavier version of the same one, and contained inside the mark so it
-  // cannot draw over the month name beneath the rail.
-  assert.match(chosen, /0 0 0 7px var\(--paper\),\s*0 0 0 8px var\(--ink\)/);
-  assert.doesNotMatch(styles, /\.milestone\[data-selected="true"\] \.point::after/);
-  // Selection persists after the pointer leaves, so it also carries into the
-  // title's weight — legible in a still frame and in greyscale.
-  assert.match(styles, /\.milestone\[data-selected="true"\] \.milestoneLabel strong/);
+test("both arrangements are sized by container width, so the artifact is right inside the phone preview too", () => {
+  assert.match(styles, /container-name:\s*timeline-artifact;/);
+  assert.match(styles, /container-type:\s*inline-size;/);
+  const layoutMediaQueries = styles.match(/@media\s*\([^)]*width[^)]*\)/g) ?? [];
+  assert.deepEqual(layoutMediaQueries, []);
 });
 
-test("the rail's cartography rides the model's mapping and yields to information", () => {
-  // Month ticks come from the model (the same distortion mapping as the
-  // points), never from raw calendar math in the view; their labels yield
-  // near the Today chip and the rail's edges. On the stacked axis the
-  // ticks keep the rhythm but drop their text.
-  assert.match(artifact, /model\.monthTicks/);
-  assert.match(artifact, /styles\.monthTick\b/);
-  assert.match(artifact, /data-quiet=/);
-  assert.match(styles, /\.monthTick\[data-quiet="true"\] > span/);
-  assert.match(styles, /\.monthTick\s*\{[\s\S]*?--timeline-position/);
-  assert.doesNotMatch(artifact, /new Date\(\)/);
+test("the plan renders as one list, and the day closes the page instead of being listed twice", () => {
+  // One place renders a milestone row. The strip's dots are links into those
+  // rows, not a second copy of the plan, and paper prints the same rows.
+  assert.equal((artifactCode.match(/<li\b/g) ?? []).length, 1);
+  assert.match(artifactCode, /model\.points\.filter\(\(point\) => point\.item\.publicId !== destinationId\)/);
+  assert.match(artifactCode, /href=\{isDestination \? `#\$\{finaleId\}` : `#m-\$\{point\.item\.publicId\}`\}/);
+  assert.doesNotMatch(block(".strip"), /display:\s*none/);
 });
 
-test("the hidden scrollbar owes an affordance and the attribution walks", () => {
-  assert.match(artifact, /data-overflow-start/);
-  assert.match(artifact, /data-overflow-end/);
-  assert.match(styles, /\.railFrame\[data-overflow-end="true"\]::after/);
-  // The growth loop's last step: attribution is a link built from the typed
-  // product-URL contract, never an invented hostname.
-  assert.match(artifact, /PRODUCT_MARKETING_URLS\.timeline/);
-  assert.doesNotMatch(artifact, /https?:\/\/(?:www\.)?signalstudio/);
-});
-
-test("low-information timelines receive density-only refinements after the generic mobile rules", () => {
-  const genericMobileRule = styles.indexOf("@container timeline-artifact (max-width: 620px)");
-  const densityRules = styles.indexOf('.artifact[data-density="empty"]');
-
-  assert.match(artifact, /data-density=\{model\.density\}/);
-  assert.ok(genericMobileRule >= 0);
-  assert.ok(densityRules > genericMobileRule);
-  assert.match(styles, /\.artifact\[data-density="single"\]/);
-  assert.match(styles, /\.artifact\[data-density="sparse"\]/);
-  assert.doesNotMatch(styles, /data-density="standard"/);
+test("every number says what it counts", () => {
+  // "16" on its own was the old line's fault. Every figure carries its word.
+  assert.match(artifactCode, /plural\(days, "day", "days"\)/);
+  assert.match(artifactCode, /plural\(-days, "day late", "days late"\)/);
+  assert.match(artifactCode, /until the \$\{dayName\}/);
+  assert.match(artifactCode, /plural\(weeks, "week", "weeks"\)\} later/);
 });
 
 test("undated milestone copy states the truth without implying a future date", () => {
@@ -336,104 +171,51 @@ test("undated milestone copy states the truth without implying a future date", (
 });
 
 test("one state machine speaks one vocabulary", () => {
-  // The five stored states, the two the rail derives, and the structural
-  // nouns all have exactly one home, and the artifact reads them from it
-  // rather than declaring its own.
   assert.match(artifact, /from "@\/modules\/timeline\/lib\/vocabulary"/);
-  assert.match(vocabulary, /MILESTONE_STATE_LABELS/);
-  assert.match(vocabulary, /MILESTONE_STATE_OPTIONS/);
-  assert.match(vocabulary, /timelineNouns/);
-  // The artifact used to hard-code its own nouns, and the section heading
-  // said "Project timeline" on a wedding page.
+  assert.match(artifact, /timelinePointStatus/);
+  assert.match(vocabulary, /current: "Our next milestone"/);
   assert.doesNotMatch(artifactCode, /"A shared (?:wedding|class|project) timeline"/);
   assert.doesNotMatch(artifactCode, />Project timeline</);
-  // And the reader's words, not the schema's: "Covered" was a storage enum on
-  // a page a couple reads.
   assert.doesNotMatch(vocabulary, /covered: "Covered"/);
 });
 
-test("no fact in the metric column is printed twice", () => {
-  // The countdown face prints the completion count as its receipt, and the
-  // alternate line offered to "Show" the same sentence one line below it.
-  assert.match(artifact, /otherFace\.alternate === active\.receipt/);
-  assert.match(artifact, /const alternate = receiptIsAffordance \? null : otherFace/);
-  // Suppressing the line may not move the page: the row it sat in is
-  // reserved off its own type.
-  assert.match(
-    styles,
-    /\.metricAlternateViewport\s*\{[\s\S]*?min-height:\s*calc\(var\(--text-caption\)/,
-  );
+test("the strip says what it spans, and the month names clear AA", () => {
+  assert.match(artifactCode, /aria-label=\{timelineAxisDescription\(model\)\}/);
+  assert.match(block(".stripMonth > span"), /color:\s*var\(--x-timeline-quiet\);/);
+  assert.match(block(".gap"), /color:\s*var\(--x-timeline-quiet\);/);
 });
 
-// ── E06.09 / E06.10 · the two Timelines are different objects ─────────
-//
-// Added 2026-08-03. The vertical mobile Timeline (E06.09) and the desktop
-// editorial Timeline (E06.10) already shipped, in commit 20be8d7 / PR #48.
-// What did not exist was anything in CI that says so, and a layout nobody
-// asserts is a layout the next refactor quietly flattens back into one
-// responsive rail. These pin the identity of each, not their pixels.
-
-/** The block of rules that only apply below the 620px container width. */
-function verticalBlock() {
-  const start = styles.indexOf("@container timeline-artifact (max-width: 620px)");
-  assert.ok(start > 0, "the vertical mobile tier must exist");
-  const end = styles.indexOf("@container", start + 10);
-  return styles.slice(start, end > 0 ? end : styles.length);
-}
-
-test("the rail flips its axis below 620px rather than being the same rail, rewrapped", () => {
-  // Horizontal by default: a line across the page, positioned by inline offset.
-  assert.match(styles, /\.progressGeometry\s*\{[^}]*inset-inline:\s*0;[^}]*height:\s*2px;/);
-  assert.match(styles, /\.todayMarker\s*\{[^}]*width:\s*1px;\s*height:\s*2rem;/);
-
-  // Vertical below the breakpoint: the rail becomes a column, the Today dash
-  // rotates a quarter turn, and milestones stack by block offset.
-  const vertical = verticalBlock();
-  assert.match(vertical, /\.progressGeometry\s*\{[^}]*width:\s*2px;\s*height:\s*auto;/);
-  assert.match(vertical, /\.todayMarker\s*\{[^}]*width:\s*2rem;\s*height:\s*1px;/);
-  assert.match(vertical, /\.milestone\s*\{[^}]*inset-block-start:\s*var\(--timeline-position-stack,\s*var\(--timeline-position\)\);/);
-  assert.match(vertical, /\.completedRail\s*\{\s*display:\s*none;\s*\}/);
-  assert.match(vertical, /\.completedRailVertical\s*\{\s*display:\s*block;/);
+test("controls are touch-safe", () => {
+  assert.match(block(".pillButton"), /min-height:\s*2\.75rem;/);
+  assert.match(block(".productMeta button"), /min-height:\s*2\.75rem;/);
+  assert.match(block(".stripDot::after"), /inset:\s*-0\.8rem;/);
 });
 
-test("collision avoidance is replaced by showing every label on the vertical Timeline", () => {
-  // Wide rails hide crowded labels and reveal the ones that fit.
-  assert.match(
-    styles,
-    /\.milestone\[data-labelled="false"\][\s\S]{0,120}\{\s*opacity:\s*0;\s*pointer-events:\s*none;/,
-  );
-  // The vertical rail has room for all of them, so none is hidden.
-  assert.match(
-    verticalBlock(),
-    /\.milestone\[data-labelled="false"\][\s\S]{0,120}\{\s*opacity:\s*1;\s*pointer-events:\s*auto;/,
-  );
+test("the countdown is the hero, and it supersedes the rule that the counter never outranks the name", () => {
+  // Superseded 28 Sep 2026 by the founder's pick of the Countdown direction:
+  // on a page a guest opens to learn how long is left, the number is the
+  // point. The name still comes first in reading order and in the outline.
+  const h1 = artifactCode.indexOf("<h1>");
+  const count = artifactCode.indexOf("data-timeline-metric-value");
+  assert.ok(h1 > 0 && count > h1, "the name is read before the number");
+  assert.match(block(".countValue"), /font-family:\s*var\(--font-sans\);/);
+  assert.doesNotMatch(styles, /--font-mono/);
+  assert.match(block(".countValue"), /font-variant-numeric:\s*tabular-nums;/);
+  assert.match(artifactCode, /role="group" aria-label=\{spoken\}/);
 });
 
-test("the desktop editorial Timeline keeps its own widest tier", () => {
-  assert.match(styles, /@container timeline-artifact \(max-width: 980px\)/);
-  // The extra-label gate used to be a second breakpoint at 980px, and it was
-  // the wrong instrument: the rail is a scroll canvas at least
-  // `count x --x-timeline-pitch` wide, so a twenty-two-milestone plan renders
-  // the same 1848px rail at 768 and at 1920 and the breakpoint could not see
-  // that. The model measures the label's real share of the real rail now, so
-  // the only gate left is the horizontal tier's own floor — below it the rail
-  // stacks and shows every label anyway.
-  assert.match(styles, /@container timeline-artifact \(min-width: 621px\)/);
-  assert.match(
-    styles,
-    /@container timeline-artifact \(min-width: 621px\)\s*\{\s*\.milestone\[data-labelled="extra"\]/,
-  );
-  // Horizontal scroll with hidden scrollbars is the editorial rail's own
-  // affordance and belongs only to the wide layout.
-  assert.match(styles, /\.stageViewport\s*\{[^}]*overflow-x:\s*auto;/);
-  assert.match(verticalBlock(), /overflow-x:\s*hidden;/);
+test("the entrance plays once per session and reduced motion removes it outright", () => {
+  assert.match(artifact, /ENTRANCE_SESSION_KEY = "signal:timeline-entrance"/);
+  assert.match(artifact, /useLayoutEffect\(\(\) => markEntranceSeen\(artifactRef\.current\), \[\]\)/);
+  assert.match(styles, /\.artifact\[data-entrance="seen"\] \.row/);
+  const reduced = styles.match(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/);
+  assert.ok(reduced, "a reduced-motion block must exist");
+  for (const selector of [".header", ".strip", ".stripInk", ".row", ".finale"]) {
+    assert.ok(reduced[1].includes(selector), `reduced motion must stop ${selector}`);
+  }
 });
 
-test("both Timelines are sized by container width, so the artifact is correct inside the phone preview too", () => {
-  assert.match(styles, /container-name:\s*timeline-artifact;/);
-  assert.match(styles, /container-type:\s*inline-size;/);
-  // No viewport media query may decide the layout: the artifact renders inside
-  // an owner panel and a phone frame as well as a full page.
-  const layoutMediaQueries = styles.match(/@media\s*\([^)]*width[^)]*\)/g) ?? [];
-  assert.deepEqual(layoutMediaQueries, []);
+test("the published page is the same keepsake for every guest; only the owner's copy follows the app theme", () => {
+  assert.match(block(".artifact"), /color-scheme:\s*only light;/);
+  assert.match(styles, /:global\(\[data-theme="dark"\]\) \.artifact\s*\{\s*color-scheme:\s*dark;/);
 });

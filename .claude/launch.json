@@ -4,10 +4,30 @@
     {
       "name": "tasks-review",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev", "--port", "3210"],
+      "runtimeArgs": [
+        "dev",
+        "--port",
+        "3210"
+      ],
       "port": 3210,
       "env": {
         "NEXT_PUBLIC_SIGNAL_ACCESS_MODE": "review"
+      }
+    },
+    {
+      "name": "concepts-review",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "exec",
+        "next",
+        "dev",
+        "--port",
+        "3217"
+      ],
+      "port": 3217,
+      "env": {
+        "NEXT_PUBLIC_SIGNAL_ACCESS_MODE": "review",
+        "SIGNAL_ACTIVE_PROJECT_V3_ENABLED": "true"
       }
     }
   ]

@@ -1,0 +1,128 @@
+/* Cover shelf: generated cover art. --p is the project identity colour. */
+
+.art {
+  --c-ground: color-mix(in oklab, var(--p) 13%, #ffffff);
+  --c-ink: var(--p);
+  --c-mid: color-mix(in oklab, var(--p) 46%, #ffffff);
+  --c-soft: color-mix(in oklab, var(--p) 24%, #ffffff);
+  --c-hi: color-mix(in oklab, var(--p) 5%, #ffffff);
+  --c-blue: color-mix(in oklab, var(--p) 78%, #0b1020);
+  --c-paper: color-mix(in oklab, var(--p) 4%, #fdfcf8);
+  --c-line: #ffffff;
+  --c-bulb: #fff4c7;
+  --c-glow: rgba(255, 214, 120, 0.42);
+  --c-margin: color-mix(in oklab, var(--v3-project-7) 70%, #ffffff);
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+:global(html[data-theme="dark"]) .art {
+  --c-ground: color-mix(in oklab, var(--p) 30%, #18181b);
+  --c-ink: color-mix(in oklab, var(--p) 78%, #ffffff);
+  --c-mid: color-mix(in oklab, var(--p) 58%, #18181b);
+  --c-soft: color-mix(in oklab, var(--p) 42%, #18181b);
+  --c-hi: color-mix(in oklab, var(--p) 44%, #2a2a2e);
+  --c-blue: color-mix(in oklab, var(--p) 55%, #0b0d16);
+  --c-paper: color-mix(in oklab, var(--p) 14%, #1d1d20);
+  --c-line: #dfe6ff;
+  --c-bulb: #ffe7a0;
+  --c-glow: rgba(255, 200, 90, 0.3);
+  --c-margin: color-mix(in oklab, var(--v3-project-7) 80%, #ffffff);
+}
+
+/* Wrapped: a muted duotone, about a third of the project's colour over a
+   paper tint, so it still reads as that place, just put away. */
+.wrapped {
+  filter: saturate(0.34) sepia(0.14) contrast(0.92) brightness(1.03);
+}
+
+:global(html[data-theme="dark"]) .wrapped {
+  filter: saturate(0.4) sepia(0.1) contrast(0.9) brightness(0.9);
+}
+
+.parallax {
+  transform: translate(calc(var(--mx, 0) * -7px), calc(var(--my, 0) * -5px));
+  transition: transform 500ms var(--v3-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parallax {
+    transform: none;
+    transition: none;
+  }
+}
+
+.gGround { fill: var(--c-ground); }
+.gBlue { fill: var(--c-blue); }
+.gPaper { fill: var(--c-paper); }
+.fInk { fill: var(--c-ink); }
+.fMid { fill: var(--c-mid); }
+.fHi { fill: var(--c-hi); }
+.fSoft { fill: var(--c-soft); }
+.fDot { fill: var(--c-ink); stroke: var(--c-paper); stroke-width: 2; }
+.fBulb { fill: var(--c-bulb); stroke: var(--c-ink); stroke-width: 1; }
+.fGlow { fill: var(--c-glow); }
+.sInk { stroke: var(--c-ink); }
+.sMid { stroke: var(--c-mid); }
+.sSoft { stroke: var(--c-soft); }
+.sHi { stroke: var(--c-hi); }
+.sLine { stroke: var(--c-line); }
+.sWarm { stroke: #ffb86b; }
+.sMargin { stroke: var(--c-margin); }
+
+.tLine {
+  fill: var(--c-line);
+  opacity: 0.72;
+  font: 500 11px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+.tHand {
+  fill: var(--c-ink);
+  opacity: 0.8;
+  font: 400 17px/1 "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+}
+
+.tSmall {
+  fill: var(--c-ink);
+  opacity: 0.78;
+  font: 500 10px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.fSnow {
+  fill: var(--c-hi);
+  stroke: var(--c-mid);
+  stroke-width: 0.8;
+}
+
+.tWord {
+  fill: var(--c-ink);
+  font-weight: 400;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  letter-spacing: -0.01em;
+}
+
+.tList {
+  fill: var(--c-ink);
+  opacity: 0.8;
+  font: 400 15px/1 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+.tGlyph {
+  fill: var(--c-ink);
+  font: 400 312px/1 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+.tGlyphOutline {
+  fill: none;
+  stroke: var(--c-ink);
+  stroke-width: 2;
+  font: italic 400 312px/1 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+.tSpecimen {
+  fill: var(--c-ink);
+  opacity: 0.55;
+  font: 400 22px/1 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
